@@ -1,0 +1,88 @@
+@import "tailwindcss";
+
+@font-face {
+  font-family: "Krona One";
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url("/fonts/KronaOne/KronaOne-Regular.ttf") format("truetype");
+}
+
+@font-face {
+  font-family: "Great Vibes";
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url("/fonts/GreatVibes/GreatVibes-Regular.ttf") format("truetype");
+}
+
+@theme {
+  --font-sans: "Helvetica Neue", Helvetica, Arial, sans-serif;
+
+  --font-krone-one: "Krona One", sans-serif;
+  --font-great-vibes: "Great Vibes", sans-serif;
+
+  --color-rich-black: #19191c;
+  --color-gray-slate: #d9d9d9;
+  --color-dark: #27272a;
+  --color-baby-blue: #2489ff;
+  /* --color-light-baby-blue: #dbecff;*/
+  --color-light-baby-blue: #c5e0ff;
+  --color-light-peach: #ffe3c7;
+  --color-peach: #ffb266;
+  --color-dark-peach: #ff8000;
+}
+
+@layer base {
+  :root {
+    --background: 255 255 255;
+    --foreground: 25 25 28;
+  }
+
+  .dark {
+    --background: 25 25 28;
+    --foreground: 255 255 255;
+  }
+
+  *,
+  *::before,
+  *::after {
+    box-sizing: border-box;
+  }
+}
+
+@utility container {
+  width: 100%;
+  max-width: 80rem; /* 1280px - adjust as needed */
+  margin-inline: auto; /* This is mx-auto */
+
+  /* Responsive horizontal padding only */
+  padding-inline: 1rem; /* 16px on mobile */
+
+  @media (width >= theme(--breakpoint-sm)) {
+    padding-inline: 1.5rem; /* 24px on small screens */
+  }
+
+  @media (width >= theme(--breakpoint-md)) {
+    padding-inline: 2rem; /* 32px on medium screens */
+  }
+
+  @media (width >= theme(--breakpoint-lg)) {
+    padding-inline: 2.5rem; /* 40px on large screens */
+  }
+
+  @media (width >= theme(--breakpoint-xl)) {
+    padding-inline: 3rem; /* 48px on xl screens */
+  }
+}
+
+.krona-one-regular {
+  font-family: "Krona One", sans-serif;
+  font-weight: 400;
+  font-style: normal;
+}
+.great-vibes-regular {
+  font-family: "Great Vibes", sans-serif;
+  font-weight: 400;
+  font-style: normal;
+}
