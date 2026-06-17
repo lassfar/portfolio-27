@@ -2,8 +2,10 @@
 export default {
   parserPreset: {
     parserOpts: {
-      // Expected format: P27-5 - feat(Hero): Add entrance animation
-      headerPattern: /^(P27-\d+) - (\w+)(?:\(([^)]*)\))?: (.+)$/,
+      // Expected formats:
+      //   Single task:  P27-5 - feat(Hero): Add entrance animation
+      //   Range:        P27-1..P27-10 - chore(m1): Batch cleanup
+      headerPattern: /^(P27-\d+(?:\.\.P27-\d+)?) - (\w+)(?:\(([^)]*)\))?: (.+)$/,
       headerCorrespondence: ["taskId", "type", "scope", "subject"],
     },
   },

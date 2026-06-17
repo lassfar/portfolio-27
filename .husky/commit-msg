@@ -3,17 +3,18 @@
 COMMIT_MSG=$(cat "$1")
 
 # ── Step 1: Validate P27-X prefix ─────────────────────────────────────────────
-if ! echo "$COMMIT_MSG" | grep -qE '^P27-[0-9]+ - '; then
+if ! echo "$COMMIT_MSG" | grep -qE '^P27-[0-9]+(\.\.[Pp]27-[0-9]+)? - '; then
   echo ""
   echo "  ❌  Commit rejected — missing task ID prefix."
   echo ""
   echo "  Expected format:"
   echo "    P27-{number} - {type}({scope}): {Description}"
+  echo "    P27-{n}..P27-{m} - {type}({scope}): {Description}  (batch commits only)"
   echo ""
   echo "  Examples:"
   echo "    P27-5 - feat(Hero): Add entrance animation"
   echo "    P27-12 - fix(About): Correct scroll trigger offset"
-  echo "    P27-3 - chore(deps): Upgrade GSAP to v3.13"
+  echo "    P27-1..P27-10 - chore(m1): Batch technical debt cleanup"
   echo ""
   echo "  Valid types: feat | fix | chore | refactor | docs | test | style | perf | ci | build | revert"
   echo ""
