@@ -1,0 +1,24 @@
+#!/bin/sh
+
+COMMIT_MSG=$(cat "$1")
+
+# ── Step 1: Validate P27-X prefix ─────────────────────────────────────────────
+if ! echo "$COMMIT_MSG" | grep -qE '^P27-[0-9]+ - '; then
+  echo ""
+  echo "  ❌  Commit rejected — missing task ID prefix."
+  echo ""
+  echo "  Expected format:"
+  echo "    P27-{number} - {type}({scope}): {Description}"
+  echo ""
+  echo "  Examples:"
+  echo "    P27-5 - feat(Hero): Add entrance animation"
+  echo "    P27-12 - fix(About): Correct scroll trigger offset"
+  echo "    P27-3 - chore(deps): Upgrade GSAP to v3.13"
+  echo ""
+  echo "  Valid types: feat | fix | chore | refactor | docs | test | style | perf | ci | build | revert"
+  echo ""
+  exit 1
+fi
+
+# ── Step 2: Validate full format with Commitlint ───────────────────────────────
+npx --no -- commitlint --edit "$1"

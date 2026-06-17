@@ -97,16 +97,48 @@ chore/task-description   # Tooling, config, cleanup
 refactor/what-changed    # Refactoring without behavior change
 ```
 
-### Commit format (Conventional Commits)
+### Commit format
+
+Every commit **must** include the Notion task ID. Format enforced by Husky + Commitlint:
+
 ```
-feat(scope): short description
-fix(scope): short description
-chore(scope): short description
-refactor(scope): short description
-docs(scope): short description
+P27-{number} - {type}({scope}): {Description starting with capital letter}
 ```
 
+**Examples:**
+```
+P27-5 - feat(Hero): Add entrance animation with GSAP SplitText
+P27-12 - fix(About): Correct scroll trigger start offset
+P27-3 - chore(deps): Upgrade GSAP to v3.13
+P27-8 - refactor(Button): Extract size logic into getSize helper
+P27-21 - docs(readme): Add deployment instructions
+```
+
+**Valid types:**
+| Type | When to use |
+|---|---|
+| `feat` | New feature or section |
+| `fix` | Bug fix |
+| `chore` | Tooling, config, cleanup, deps |
+| `refactor` | Code change with no behavior change |
+| `docs` | Documentation only |
+| `test` | Adding or updating tests |
+| `style` | Formatting, missing semicolons (no logic change) |
+| `perf` | Performance improvement |
+| `ci` | CI/CD pipeline changes |
+| `build` | Build system or dependency changes |
+| `revert` | Reverting a previous commit |
+
+### Commit hook enforcement
+
+Husky validates every commit with two checks:
+1. **Prefix check** — must start with `P27-{number} - `
+2. **Commitlint** — type must be valid, description must start with capital letter
+
+Failing either check rejects the commit with a clear error message.
+
 ### Rules
+- Every commit must reference a Notion task ID (P27-X)
 - One logical change per commit
 - Never commit with `markers: true` in GSAP code
 - Never commit commented-out code blocks
