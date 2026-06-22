@@ -1,0 +1,202 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Portfolio-27 — Motion Storyboard</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Great+Vibes&display=swap" rel="stylesheet" />
+<style>
+  :root { --peach:#ffb266; --dark-peach:#ff8000; --light-peach:#ffe3c7; --baby-blue:#2489ff; --light-baby-blue:#c5e0ff; }
+  * { box-sizing:border-box; margin:0; padding:0; }
+  body { background:#08090f; color:#fff; font-family:"Helvetica Neue",Helvetica,Arial,sans-serif;
+         min-height:100vh; display:flex; flex-direction:column; align-items:center; padding:34px 16px 60px; }
+  .wrap { width:100%; max-width:860px; }
+  .title { font-family:"Great Vibes",cursive; font-size:46px; }
+  .title .pk { color:var(--peach); }
+  .sub { color:rgba(255,255,255,0.55); font-size:14px; margin-top:6px; line-height:1.7; }
+
+  .legend { display:flex; flex-wrap:wrap; gap:8px; margin:20px 0 28px; }
+  .tag { font-size:10.5px; letter-spacing:0.5px; text-transform:uppercase; padding:3px 9px; border-radius:20px; white-space:nowrap; }
+  .t-enter { background:rgba(255,178,102,0.16); color:var(--peach); }
+  .t-3d { background:rgba(36,137,255,0.22); color:var(--light-baby-blue); border:0.5px solid rgba(36,137,255,0.5); }
+  .t-text { background:rgba(255,227,199,0.14); color:var(--light-peach); }
+  .t-scroll { background:rgba(197,224,255,0.13); color:var(--light-baby-blue); }
+  .t-exit { background:rgba(255,255,255,0.08); color:rgba(255,255,255,0.6); }
+
+  .arc { display:flex; align-items:center; gap:6px; flex-wrap:wrap; background:#0b0d16; border:0.5px solid rgba(255,255,255,0.07);
+         border-radius:12px; padding:14px 16px; margin-bottom:8px; }
+  .arc span { font-size:12px; color:rgba(255,255,255,0.7); }
+  .arc .step { color:var(--peach); }
+  .arc .arr { color:rgba(255,255,255,0.3); }
+  .note { font-size:12.5px; color:rgba(255,255,255,0.5); line-height:1.7; margin:10px 2px 30px; }
+
+  .card { background:#0a0b12; border:0.5px solid rgba(255,255,255,0.07); border-radius:14px; padding:20px;
+          margin-bottom:18px; display:grid; grid-template-columns:180px 1fr; gap:22px; align-items:start; }
+  @media (max-width:640px){ .card { grid-template-columns:1fr; } }
+  .stage { position:relative; height:160px; border-radius:10px; background:#05060a; overflow:hidden;
+           display:flex; align-items:center; justify-content:center; }
+  .role { font-size:11px; letter-spacing:1px; text-transform:uppercase; color:var(--light-baby-blue); margin-bottom:3px; }
+  .sname { font-family:"Great Vibes",cursive; font-size:30px; margin-bottom:14px; }
+  .sname .pk { color:var(--peach); }
+  .ann { display:flex; gap:10px; margin-bottom:11px; align-items:flex-start; }
+  .ann p { font-size:13px; line-height:1.65; color:rgba(255,255,255,0.74); }
+  .ann .tag { margin-top:1px; flex-shrink:0; }
+  .badge3d { display:inline-block; font-size:10px; color:var(--light-baby-blue); border:0.5px solid rgba(36,137,255,0.5);
+             border-radius:5px; padding:1px 6px; margin-left:4px; }
+
+  .star { position:absolute; border-radius:50%; background:#fff; }
+  .neb { position:absolute; width:120px; height:120px; border-radius:50%; filter:blur(5px);
+         background:radial-gradient(circle,#fff 0%,rgba(255,255,255,0.9) 5%,rgba(255,240,225,0.6) 10%,transparent 17%),
+                    radial-gradient(circle,transparent 14%,rgba(197,224,255,0.5) 21%,transparent 36%),
+                    radial-gradient(circle,transparent 32%,rgba(226,75,74,0.4) 42%,transparent 60%); }
+  .neb-core { position:absolute; width:12px; height:12px; border-radius:50%; background:#fff;
+              box-shadow:0 0 18px 6px #fff,0 0 40px 16px rgba(255,238,214,0.6),0 0 64px 28px rgba(255,128,0,0.22); }
+  .planet { position:relative; width:74px; height:74px; border-radius:50%;
+            background:radial-gradient(circle at 34% 30%,#ffe3c7,#ffb266 38%,#ff8000 68%,#5e2f05 100%);
+            box-shadow:inset -9px -8px 20px rgba(0,0,0,0.6); }
+  .ring { position:absolute; left:50%; top:50%; width:128px; height:34px; transform:translate(-50%,-50%) rotate(-22deg);
+          border:2px solid rgba(197,224,255,0.42); border-radius:50%; }
+  .world { border-radius:50%; box-shadow:inset -5px -4px 11px rgba(0,0,0,0.55); }
+  .galaxy { width:150px; height:60px; border-radius:50%; filter:blur(2px); transform:rotate(-18deg);
+            background:radial-gradient(ellipse 50% 100%,#fff 0%,rgba(255,238,214,0.8) 8%,rgba(255,178,102,0.35) 22%,rgba(36,137,255,0.18) 48%,transparent 72%); }
+  .shoot { position:absolute; width:24px; height:1.5px; background:linear-gradient(90deg,#fff,transparent); transform:rotate(-20deg); }
+
+  .bookend { background:#0b0d16; border:0.5px solid rgba(255,178,102,0.25); border-radius:14px; padding:22px; margin-top:14px; }
+  .bookend h3 { font-family:"Great Vibes",cursive; font-weight:400; font-size:26px; color:var(--peach); margin-bottom:8px; }
+  .bookend p { font-size:13.5px; line-height:1.8; color:rgba(255,255,255,0.72); }
+  .bookend p + p { margin-top:10px; }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <p class="title">Motion <span class="pk">storyboard</span></p>
+  <p class="sub">How the portfolio moves — from the first frame to the last. Each section: how it enters, where Three.js lives, how text behaves, what scroll does, and how it hands off to the next.</p>
+
+  <div class="legend">
+    <span class="tag t-enter">Entrance</span>
+    <span class="tag t-3d">3D · React Three Fiber</span>
+    <span class="tag t-text">Text &amp; titles</span>
+    <span class="tag t-scroll">Scroll behavior</span>
+    <span class="tag t-exit">Hand-off</span>
+  </div>
+
+  <div class="arc">
+    <span class="step">Black</span><span class="arr">→</span>
+    <span class="step">Star ignites</span><span class="arr">→</span>
+    <span>Planet</span><span class="arr">→</span>
+    <span>Constellation</span><span class="arr">→</span>
+    <span>Worlds</span><span class="arr">→</span>
+    <span>Lab</span><span class="arr">→</span>
+    <span class="step">Galaxy</span>
+  </div>
+  <p class="note">One continuous drift through space. ScrollSmoother (already built) drives everything; a single scroll-progress value parallaxes a faint starfield behind every section, so it reads as one journey, not six stacked pages. All autoplay respects <code>prefers-reduced-motion</code> — reduced = everything static, nothing loops.</p>
+
+  <div class="card">
+    <div class="stage">
+      <span class="star" style="width:2px;height:2px;left:24px;top:26px"></span>
+      <span class="star" style="width:2px;height:2px;right:30px;top:40px;background:#c5e0ff"></span>
+      <div class="neb"></div><div class="neb-core"></div>
+    </div>
+    <div>
+      <p class="role">Hero · the star</p>
+      <p class="sname">a quiet maker of <span class="pk">small universes</span></p>
+      <div class="ann"><span class="tag t-enter">Entrance</span><p>On load: black screen → faint stars fade in (stagger) → the star core ignites (scale 0→1 + bloom rising) → nebula shells bloom outward with a slow rotation → diffraction spikes flicker in. ~1.5s, ease <code>power3.out</code>.</p></div>
+      <div class="ann"><span class="tag t-3d">3D</span><p><span class="badge3d">R3F</span> The centerpiece. Emissive sphere + <code>Bloom</code> post-processing for the glow; a noise (fbm) shader for the nebula gas; the star drifts subtly toward the cursor and shimmers on a time uniform when idle.</p></div>
+      <div class="ann"><span class="tag t-text">Text</span><p>Eyebrow "I'm Aymane —" fades up. Headline (Great Vibes) writes in character-by-character via SplitText. Sub-line fades up after. "scroll to wander ↓" gently bobs on a loop.</p></div>
+      <div class="ann"><span class="tag t-scroll">Scroll</span><p>As you scroll away, the star shrinks and drifts upward, nebula fades — it recedes into the distance.</p></div>
+      <div class="ann"><span class="tag t-exit">Hand-off</span><p>The star becomes just another point of light in the background starfield as the planet rises into view.</p></div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="stage"><div class="ring"></div><div class="planet"></div></div>
+    <div>
+      <p class="role">About · the planet</p>
+      <p class="sname">Beyond <span class="pk">the code</span></p>
+      <div class="ann"><span class="tag t-enter">Entrance</span><p>On scroll-in: the planet scales up from small while rotating in; the ring draws itself (stroke dash); the atmosphere rim glows on. Then title + paragraphs reveal.</p></div>
+      <div class="ann"><span class="tag t-3d">3D</span><p><span class="badge3d">R3F</span> Planet = textured sphere (color + normal map) on a slow auto-rotation; ring = a thin torus; a fresnel shell for the atmosphere glow. Rotation speed can nudge with scroll velocity.</p></div>
+      <div class="ann"><span class="tag t-text">Text</span><p>Title writes in (SplitText). The two paragraphs fade + rise on enter, staggered line by line. Planet sits centered above the title.</p></div>
+      <div class="ann"><span class="tag t-scroll">Scroll</span><p>Planet parallaxes slower than the text (depth) and keeps gently rotating as you pass.</p></div>
+      <div class="ann"><span class="tag t-exit">Hand-off</span><p>Planet drifts off-screen as the camera continues into deeper space toward the constellation.</p></div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="stage">
+      <svg viewBox="0 0 180 120" width="150" role="img" aria-label="camera constellation preview">
+        <g stroke="#2489ff" stroke-width="1" opacity="0.45" fill="none"><path d="M50,46 L130,46 L130,80 L50,80 Z"/><circle cx="90" cy="63" r="14"/></g>
+        <g fill="#ffb266"><circle cx="50" cy="46" r="3"/><circle cx="130" cy="46" r="3"/><circle cx="130" cy="80" r="3"/><circle cx="50" cy="80" r="3"/><circle cx="90" cy="63" r="2.5"/></g>
+      </svg>
+    </div>
+    <div>
+      <p class="role">What I'm drawn to · constellation</p>
+      <p class="sname">A camera in <span class="pk">the stars</span></p>
+      <div class="ann"><span class="tag t-enter">Entrance</span><p>Stars pop in one by one (scale + twinkle), then connector lines draw between them (stroke-dashoffset) until the camera shape forms. Labels fade in at their stars last.</p></div>
+      <div class="ann"><span class="tag t-3d">3D</span><p><span class="badge3d">CSS / SVG now</span> Crisp SVG line-draw is best here; optional light 3D parallax giving stars different depths later. Stars twinkle on an opacity loop; hovering a star highlights its label.</p></div>
+      <div class="ann"><span class="tag t-text">Text</span><p>Intro line writes in. Skill labels (React, Three.js, GSAP…) fade + scale in at their star positions.</p></div>
+      <div class="ann"><span class="tag t-scroll">Scroll</span><p><strong>Signature scrub:</strong> the lines draw in time with your scroll — scroll down and the camera assembles itself; scroll up and it comes apart.</p></div>
+      <div class="ann"><span class="tag t-exit">Hand-off</span><p>Constellation drifts back into the field; the camera continues toward the little worlds.</p></div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="stage" style="gap:14px">
+      <div class="world" style="width:26px;height:26px;background:radial-gradient(circle at 35% 30%,#ffe3c7,#ff8000 75%,#3a1d03)"></div>
+      <div class="world" style="width:40px;height:40px;background:radial-gradient(circle at 35% 30%,#c5e0ff,#2489ff 70%,#08203f)"></div>
+      <div class="world" style="width:30px;height:30px;background:radial-gradient(circle at 35% 30%,#ffe3c7,#ffb266 70%,#5e2f05)"></div>
+    </div>
+    <div>
+      <p class="role">Light I've caught · the worlds</p>
+      <p class="sname">Each photo, <span class="pk">a world</span></p>
+      <div class="ann"><span class="tag t-enter">Entrance</span><p>Worlds drift in from depth (scale + fade), staggered, then settle into a gentle continuous float (each on its own y-bob phase).</p></div>
+      <div class="ann"><span class="tag t-3d">3D</span><p><span class="badge3d">R3F</span> Strongest interactive moment: each world = a textured sphere, slowly rotating + floating. <strong>Hover → the world expands and opens into the photograph</strong> (texture/plane reveal). Landscape shots map naturally onto planet surfaces.</p></div>
+      <div class="ann"><span class="tag t-text">Text</span><p>Lead line "I photograph the sky when I'm not coding it" writes in; body fades up.</p></div>
+      <div class="ann"><span class="tag t-scroll">Scroll</span><p>Worlds parallax at different speeds (depth) and drift horizontally as you scroll — like passing planets.</p></div>
+      <div class="ann"><span class="tag t-exit">Hand-off</span><p>Worlds drift out into the dark as you approach the Lab.</p></div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="stage">
+      <div style="position:relative;width:60px;height:60px">
+        <span class="star" style="width:6px;height:6px;left:27px;top:27px;background:#ffb266"></span>
+        <span class="star" style="width:3px;height:3px;left:54px;top:14px;background:#c5e0ff"></span>
+      </div>
+    </div>
+    <div>
+      <p class="role">The lab · in progress</p>
+      <p class="sname">Half-finished <span class="pk">thoughts</span></p>
+      <div class="ann"><span class="tag t-enter">Entrance</span><p>Title writes in; a small dot quietly orbits a point next to "more orbiting soon," signalling work-in-progress without feeling empty.</p></div>
+      <div class="ann"><span class="tag t-3d">3D</span><p><span class="badge3d">CSS now → R3F later</span> Minimal for launch (an orbiting particle / soft portal shimmer). Later, each experiment becomes its own lazy-loaded <code>&lt;Canvas&gt;</code> tile.</p></div>
+      <div class="ann"><span class="tag t-text">Text</span><p>Title write-in; body fades up on enter.</p></div>
+      <div class="ann"><span class="tag t-scroll">Scroll</span><p>Calm — a slow drift, letting the page breathe before the finale.</p></div>
+      <div class="ann"><span class="tag t-exit">Hand-off</span><p>Fades toward the galaxy.</p></div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="stage"><div class="galaxy"></div><span class="shoot" style="right:24px;top:38px"></span></div>
+    <div>
+      <p class="role">Contact · the galaxy</p>
+      <p class="sname">Say <span class="pk">hello</span></p>
+      <div class="ann"><span class="tag t-enter">Entrance</span><p>The galaxy fades and rotates into view, then keeps slowly spinning; a shooting star streaks across on a loop with a random delay. Title writes in; form fields fade up staggered; the CTA softly pulses.</p></div>
+      <div class="ann"><span class="tag t-3d">3D</span><p><span class="badge3d">R3F</span> Closing showpiece: galaxy = particle system (thousands of points on spiral arms) slowly rotating with a bloomed core. The shooting star is a moving particle.</p></div>
+      <div class="ann"><span class="tag t-text">Text</span><p>"Say hello" writes in; invitation fades up. Input focus adds a soft glow.</p></div>
+      <div class="ann"><span class="tag t-scroll">Scroll</span><p>The galaxy is the destination — scroll settles here; it keeps living (spinning) while you read.</p></div>
+      <div class="ann"><span class="tag t-exit">Micro-interaction</span><p><strong>On submit:</strong> "Send it into orbit" — the message launches as a shooting star arcing into the galaxy. A tiny, delightful ending.</p></div>
+    </div>
+  </div>
+
+  <div class="bookend">
+    <h3>How it starts &amp; ends</h3>
+    <p><strong>Start:</strong> a black, silent screen. One star is born — your star — and ignites with light. Your name writes itself beneath it, and a quiet line invites: <em>scroll to wander</em>.</p>
+    <p><strong>End:</strong> you arrive at a whole galaxy, slowly turning, and send a message that flies off as a shooting star into the dark.</p>
+    <p><strong>The bookend:</strong> the journey begins with a single star and ends inside a galaxy — from one light to many. From a quiet person alone, to a connection made across the dark. That arc <em>is</em> the story.</p>
+  </div>
+
+</div>
+</body>
+</html>

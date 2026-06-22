@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Portfolio-27 — Concept 1: Sunrise Journey</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Great+Vibes&display=swap" rel="stylesheet" />
+<style>
+  :root {
+    --rich-black: #19191c;
+    --dark: #27272a;
+    --peach: #ffb266;
+    --dark-peach: #ff8000;
+    --light-peach: #ffe3c7;
+    --baby-blue: #2489ff;
+    --light-baby-blue: #c5e0ff;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    background: #0c0c0e;
+    color: #fff;
+    font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 32px 16px;
+  }
+  .doc-head { max-width: 720px; width: 100%; margin-bottom: 18px; }
+  .doc-head h1 { font-weight: 400; font-size: 20px; letter-spacing: 0.5px; }
+  .doc-head p { color: rgba(255,255,255,0.5); font-size: 13px; margin-top: 4px; }
+  .frame { width: 100%; max-width: 720px; background: #161618; border-radius: 14px; padding: 14px; }
+  .win { border-radius: 10px; overflow: hidden; border: 0.5px solid rgba(255,255,255,0.08); }
+  .bar { display: flex; align-items: center; gap: 8px; padding: 10px 13px; background: #0f0f12; }
+  .dot { width: 11px; height: 11px; border-radius: 50%; }
+  .url { margin-left: 8px; font-size: 11px; color: rgba(255,255,255,0.4); font-family: monospace; }
+  .sec { position: relative; padding: 26px 22px; min-height: 150px; border-bottom: 0.5px solid rgba(255,255,255,0.05); }
+  .chip { display: inline-flex; align-items: center; gap: 5px; font-size: 11px; color: var(--light-peach);
+          background: rgba(255,178,102,0.12); padding: 3px 10px; border-radius: 20px; margin-bottom: 14px; letter-spacing: 0.3px; }
+  .h { font-family: "Great Vibes", cursive; color: #fff; font-size: 38px; line-height: 1.05; }
+  .pk { color: var(--peach); }
+  .note { font-size: 11px; color: rgba(255,255,255,0.42); margin-top: 10px; }
+  .pill { display: inline-block; font-size: 13px; color: var(--peach); border: 1px solid var(--peach); border-radius: 8px; padding: 6px 18px; }
+  .skill { font-size: 11px; color: var(--light-peach); background: rgba(255,255,255,0.06);
+           border: 0.5px solid rgba(255,178,102,0.35); padding: 5px 11px; border-radius: 7px; }
+  .card { flex: 1; height: 52px; border-radius: 8px; background: rgba(255,178,102,0.1); border: 0.5px solid rgba(255,178,102,0.3); }
+  .star { position: absolute; width: 2px; height: 2px; border-radius: 50%; background: var(--light-baby-blue); }
+  .center { text-align: center; }
+</style>
+</head>
+<body>
+  <div class="doc-head">
+    <h1>Concept 1 — Sunrise Journey</h1>
+    <p>Scrolling the page is a journey through a day: dawn → sunrise → midday → golden hour → night.</p>
+  </div>
+
+  <div class="frame">
+    <div class="win">
+      <div class="bar">
+        <span class="dot" style="background:#ff8000"></span>
+        <span class="dot" style="background:#ffb266"></span>
+        <span class="dot" style="background:#ffe3c7"></span>
+        <span class="url">aymanelassfar.com</span>
+      </div>
+
+      <section class="sec center" style="background:var(--rich-black)">
+        <div style="position:absolute;inset:16px;border-radius:12px;border:0.5px solid rgba(255,255,255,0.05);background:var(--dark)"></div>
+        <div style="position:relative">
+          <span class="chip">Hero · dawn</span>
+          <div style="width:52px;height:52px;border-radius:50%;background:var(--peach);margin:0 auto 12px"></div>
+          <p class="h"><span class="pk">Crafted</span> Realities</p>
+          <p class="note">titles loop: write → erase → next ⟳</p>
+          <div style="margin-top:12px"><span class="pill">Explore</span></div>
+        </div>
+      </section>
+
+      <section class="sec center" style="background:#1d1820;overflow:hidden">
+        <div style="position:absolute;left:50%;top:40px;width:280px;height:280px;transform:translateX(-50%);border-radius:50%;background:radial-gradient(circle,rgba(255,128,0,0.35),transparent 65%)"></div>
+        <div style="position:relative">
+          <span class="chip">About · sunrise</span>
+          <div style="width:130px;height:65px;border-radius:130px 130px 0 0;background:var(--dark-peach);margin:6px auto 10px"></div>
+          <p class="h">Beyond <span class="pk">The Code</span></p>
+          <p class="note">half-sun scales up on scroll, glow bleeds over hero ⤴</p>
+        </div>
+      </section>
+
+      <section class="sec center" style="background:#201d26">
+        <span class="chip">Skills · midday</span>
+        <div style="display:flex;gap:8px;flex-wrap:wrap;justify-content:center;margin-top:4px">
+          <span class="skill">React</span><span class="skill">Next.js</span><span class="skill">TypeScript</span>
+          <span class="skill">GSAP</span><span class="skill">Three.js</span><span class="skill">R3F</span>
+        </div>
+        <p class="note">skills light up one by one on scroll ✦</p>
+      </section>
+
+      <section class="sec" style="background:#241c17">
+        <span class="chip">Lab · golden hour</span>
+        <p class="h" style="font-size:30px;margin-bottom:12px">The <span class="pk">Lab</span></p>
+        <div style="display:flex;gap:11px"><div class="card"></div><div class="card"></div><div class="card"></div></div>
+        <p class="note">each card is a live interactive canvas ▶</p>
+      </section>
+
+      <section class="sec center" style="background:#101321;border-bottom:none">
+        <span class="star" style="left:48px;top:26px"></span><span class="star" style="left:150px;top:44px"></span>
+        <span class="star" style="left:300px;top:22px"></span><span class="star" style="left:460px;top:52px"></span>
+        <span class="star" style="left:520px;top:80px"></span><span class="star" style="left:110px;top:84px"></span>
+        <span class="chip">Contact · night</span>
+        <p class="h" style="font-size:32px">Let's build <span class="pk">something</span></p>
+        <div style="margin:12px 0"><span class="pill" style="border-color:var(--dark-peach);color:var(--dark-peach)">Get in touch</span></div>
+        <p class="note">GitHub · LinkedIn · Email — stars fade in at dusk</p>
+      </section>
+
+    </div>
+  </div>
+</body>
+</html>

@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Portfolio-27 — Concept 2c: Living Canvas (3D worlds)</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Great+Vibes&display=swap" rel="stylesheet" />
+<style>
+  :root {
+    --peach:#ffb266; --dark-peach:#ff8000; --light-peach:#ffe3c7;
+    --baby-blue:#2489ff; --light-baby-blue:#c5e0ff; --space:#0a0b12;
+  }
+  * { box-sizing:border-box; margin:0; padding:0; }
+  body { background:#0c0c0e; color:#fff; font-family:"Helvetica Neue",Helvetica,Arial,sans-serif;
+         min-height:100vh; display:flex; flex-direction:column; align-items:center; padding:32px 16px; }
+  .head { max-width:720px; width:100%; margin-bottom:18px; }
+  .head h1 { font-weight:400; font-size:20px; letter-spacing:0.5px; }
+  .head p { color:rgba(255,255,255,0.5); font-size:13px; margin-top:4px; }
+  .frame { width:100%; max-width:720px; background:#161618; border-radius:14px; padding:14px; }
+  .win { border-radius:10px; overflow:hidden; border:0.5px solid rgba(255,255,255,0.08); }
+  .bar { display:flex; align-items:center; gap:8px; padding:10px 13px; background:#07080d; }
+  .d { width:11px; height:11px; border-radius:50%; }
+  .url { margin-left:8px; font-size:11px; color:rgba(255,255,255,0.4); font-family:monospace; }
+  .sec { position:relative; padding:30px 26px; min-height:150px; border-bottom:0.5px solid rgba(255,255,255,0.05); overflow:hidden; }
+  .chip { display:inline-block; font-size:11px; letter-spacing:1px; text-transform:uppercase; color:var(--light-baby-blue);
+          background:rgba(36,137,255,0.13); padding:3px 11px; border-radius:20px; margin-bottom:16px; }
+  .h { font-family:"Great Vibes",cursive; color:#fff; font-size:42px; line-height:1.08; }
+  .pk { color:var(--peach); }
+  .body { font-size:14px; line-height:1.75; color:rgba(255,255,255,0.64); max-width:460px; }
+  .mut { font-size:12px; color:rgba(255,255,255,0.42); }
+  .pill { display:inline-block; font-size:13px; color:var(--peach); border:1px solid var(--peach); border-radius:8px; padding:7px 20px; }
+  .star { position:absolute; border-radius:50%; background:#fff; }
+  .rstar { position:absolute; border-radius:50%; background:var(--dark-peach); box-shadow:0 0 4px 1px rgba(255,128,0,0.6); }
+  .center { text-align:center; }
+
+  .neb-wrap { position:relative; width:230px; height:230px; margin:0 auto 10px; }
+  .neb-plume { position:absolute; width:172px; height:120px; left:-26px; top:26px; border-radius:50%;
+               background:radial-gradient(circle,rgba(255,128,0,0.32),transparent 65%); filter:blur(12px); }
+  .neb { position:absolute; inset:0; border-radius:50%; filter:blur(6px);
+         background:radial-gradient(circle,#fff 0%,rgba(255,255,255,0.9) 5%,rgba(255,240,225,0.6) 10%,transparent 17%),
+                    radial-gradient(circle,transparent 14%,rgba(197,224,255,0.5) 21%,rgba(150,190,255,0.3) 28%,transparent 36%),
+                    radial-gradient(circle,transparent 32%,rgba(226,75,74,0.4) 42%,rgba(216,90,48,0.28) 50%,transparent 60%),
+                    radial-gradient(circle,transparent 52%,rgba(255,128,0,0.18) 62%,transparent 74%); }
+  .neb-spikes { position:absolute; left:50%; top:50%; width:220px; height:220px; transform:translate(-50%,-50%);
+                opacity:0.5; filter:blur(2px);
+                background:linear-gradient(0deg,transparent 47%,rgba(255,255,255,0.55) 50%,transparent 53%),
+                           linear-gradient(90deg,transparent 47%,rgba(255,255,255,0.55) 50%,transparent 53%);
+                -webkit-mask:radial-gradient(circle,#000 0%,transparent 55%); mask:radial-gradient(circle,#000 0%,transparent 55%); }
+  .neb-core { position:absolute; left:50%; top:50%; width:20px; height:20px; transform:translate(-50%,-50%); border-radius:50%;
+              background:#fff; box-shadow:0 0 26px 8px #fff,0 0 58px 22px rgba(255,238,214,0.6),0 0 95px 42px rgba(255,128,0,0.22); }
+
+  .planet3d { position:absolute; width:120px; height:120px; border-radius:50%;
+              background:radial-gradient(circle at 34% 30%,#ffe3c7,#ffb266 38%,#ff8000 68%,#5e2f05 100%);
+              box-shadow:inset -15px -12px 34px rgba(0,0,0,0.6),0 0 30px rgba(255,128,0,0.28); }
+  .planet-atmo { position:absolute; inset:-3px; border-radius:50%; box-shadow:inset 0 0 14px 2px rgba(197,224,255,0.5); }
+  .planet-ring { position:absolute; left:50%; top:50%; width:208px; height:56px;
+                 transform:translate(-50%,-50%) rotate(-24deg); border:2px solid rgba(197,224,255,0.45); border-radius:50%; }
+
+  .world { border-radius:50%; position:relative; box-shadow:inset -7px -6px 15px rgba(0,0,0,0.55); }
+
+  .galaxy { position:relative; width:260px; height:130px; margin:0 auto; }
+  .galaxy-disk { position:absolute; left:50%; top:50%; width:250px; height:250px;
+                 transform:translate(-50%,-50%) rotate(-20deg) scaleY(0.42); border-radius:50%; filter:blur(3px);
+                 background:radial-gradient(circle,#fff 0%,rgba(255,238,214,0.85) 6%,rgba(255,178,102,0.4) 17%,rgba(36,137,255,0.2) 42%,transparent 70%); }
+</style>
+</head>
+<body>
+  <div class="head">
+    <h1>Concept 2c — Living Canvas, 3D worlds</h1>
+    <p>Cosmic concept where each section becomes a space object: planet, camera constellation, photo-worlds, galaxy. Conceptual — final 3D is built in Three.js.</p>
+  </div>
+
+  <div class="frame">
+    <div class="win">
+      <div class="bar">
+        <span class="d" style="background:#2489ff"></span><span class="d" style="background:#c5e0ff"></span><span class="d" style="background:#ffb266"></span>
+        <span class="url">aymanelassfar.com</span>
+      </div>
+
+      <section class="sec center" style="background:#05060a;min-height:300px">
+        <span class="star" style="width:2px;height:2px;left:60px;top:36px"></span>
+        <span class="star" style="width:3px;height:3px;left:600px;top:44px;background:var(--light-baby-blue)"></span>
+        <span class="rstar" style="width:3px;height:3px;left:130px;top:200px"></span>
+        <span class="rstar" style="width:3px;height:3px;left:560px;top:230px"></span>
+        <span class="star" style="width:2px;height:2px;left:330px;top:28px"></span>
+        <div class="neb-wrap">
+          <div class="neb-plume"></div><div class="neb"></div><div class="neb-spikes"></div><div class="neb-core"></div>
+        </div>
+        <p class="mut" style="margin-bottom:8px">I'm Aymane —</p>
+        <p class="h">a quiet maker of <span class="pk">small universes</span></p>
+        <p class="body" style="margin:14px auto 0">I notice light. I've been drawing since before I could write. Now I do it with code.</p>
+        <p class="mut" style="margin-top:16px">scroll to wander ↓</p>
+      </section>
+
+      <section class="sec" style="background:#0b0d16;min-height:200px">
+        <div style="position:absolute;right:38px;top:42px;width:120px;height:120px">
+          <div class="planet-ring"></div>
+          <div class="planet3d"><div class="planet-atmo"></div></div>
+        </div>
+        <span class="chip">About · the planet</span>
+        <p class="h">Beyond <span class="pk">the code</span></p>
+        <p class="body" style="margin-top:12px">I don't fill rooms — I notice them. I'm happiest in the details: the right easing, the soft edge of a shadow, the moment a page finally breathes. I build the way I drew as a kid — slowly, and for the love of it.</p>
+      </section>
+
+      <section class="sec center" style="background:#0a0c14;min-height:200px">
+        <span class="chip">What I'm drawn to</span>
+        <svg viewBox="0 0 470 140" width="100%" height="150" style="max-width:470px;display:block;margin:0 auto" role="img" aria-label="Skills as a constellation shaped like a camera">
+          <g stroke="#2489ff" stroke-width="1" opacity="0.45" fill="none">
+            <path d="M150,52 L320,52 L320,108 L150,108 Z"/>
+            <path d="M196,52 L196,38 L242,38 L242,52"/>
+            <circle cx="235" cy="80" r="22"/>
+          </g>
+          <g fill="#ffb266">
+            <circle cx="150" cy="52" r="3.5"/><circle cx="320" cy="52" r="3.5"/>
+            <circle cx="320" cy="108" r="3.5"/><circle cx="150" cy="108" r="3.5"/>
+            <circle cx="196" cy="38" r="3"/><circle cx="242" cy="38" r="3"/>
+            <circle cx="235" cy="80" r="3"/>
+            <circle cx="213" cy="80" r="2.5"/><circle cx="257" cy="80" r="2.5"/><circle cx="235" cy="58" r="2.5"/><circle cx="235" cy="102" r="2.5"/>
+          </g>
+          <g fill="#c5e0ff" font-size="10" text-anchor="middle">
+            <text x="128" y="46">TypeScript</text>
+            <text x="344" y="46">Next.js</text>
+            <text x="128" y="122">React</text>
+            <text x="344" y="122">GSAP</text>
+            <text x="219" y="30">R3F</text>
+            <text x="235" y="134">Three.js</text>
+          </g>
+        </svg>
+        <p class="mut" style="margin-top:2px">the stars connect into a camera as you scroll ✦</p>
+      </section>
+
+      <section class="sec" style="background:#0b0d16;min-height:200px">
+        <span class="chip">Light I've caught</span>
+        <p class="body" style="margin-bottom:18px">Every photo I've taken is a little world. Drift between them:</p>
+        <div style="display:flex;align-items:center;gap:24px;justify-content:center">
+          <div class="world" style="width:38px;height:38px;background:radial-gradient(circle at 35% 30%,#ffe3c7,#ff8000 75%,#3a1d03)"></div>
+          <div class="world" style="width:58px;height:58px;background:radial-gradient(circle at 35% 30%,#c5e0ff,#2489ff 70%,#08203f)"></div>
+          <div style="position:relative;width:50px;height:50px">
+            <div style="position:absolute;left:50%;top:50%;width:84px;height:22px;transform:translate(-50%,-50%) rotate(-20deg);border:1.5px solid rgba(197,224,255,0.4);border-radius:50%"></div>
+            <div class="world" style="width:50px;height:50px;background:radial-gradient(circle at 35% 30%,#ffe3c7,#ffb266 70%,#5e2f05)"></div>
+          </div>
+          <div class="world" style="width:34px;height:34px;background:radial-gradient(circle at 35% 30%,#d9d9d9,#888780 70%,#2c2c2a)"></div>
+          <div class="world" style="width:50px;height:50px;background:radial-gradient(circle at 35% 30%,#f4c0d1,#d4537e 72%,#3a1020)"></div>
+        </div>
+        <p class="mut" style="margin-top:16px">hover a world and it opens into the photograph ✦</p>
+      </section>
+
+      <section class="sec center" style="background:#07080d;min-height:210px;border-bottom:none">
+        <span class="star" style="width:2px;height:2px;left:80px;top:28px"></span>
+        <span class="star" style="width:2px;height:2px;left:580px;top:44px;background:var(--light-baby-blue)"></span>
+        <span class="star" style="width:34px;height:1.5px;left:470px;top:168px;border-radius:0;background:linear-gradient(90deg,#fff,transparent);transform:rotate(-20deg)"></span>
+        <span class="chip">From across the dark</span>
+        <div class="galaxy"><div class="galaxy-disk"></div></div>
+        <p class="h" style="margin-top:4px">Say <span class="pk">hello</span></p>
+        <p class="body" style="margin:8px auto 0">I'm warmer up close than I look from all the way down here.</p>
+        <div style="margin:14px 0 4px"><span class="pill">Get in touch</span></div>
+        <p class="mut">GitHub · LinkedIn · Email</p>
+      </section>
+
+    </div>
+  </div>
+</body>
+</html>
