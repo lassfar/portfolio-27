@@ -46,16 +46,19 @@ const About = () => {
       }
     );
 
+    // Scale the half sun with scroll progress: grows from 0 to full size
+    // as the section travels from entering the viewport to centered.
     gsap.fromTo(
       halfSunRef.current,
       { scale: 0 },
       {
         scale: 1,
-        duration: 3,
-        ease: "power1.out",
+        ease: "none",
         scrollTrigger: {
-          trigger: titleRef.current,
-          toggleActions: "play none none reset",
+          trigger: containerRef.current,
+          start: "top bottom",
+          end: "center center",
+          scrub: true,
         },
       }
     );
@@ -65,11 +68,12 @@ const About = () => {
       { scale: 0 },
       {
         scale: 3,
-        duration: 1,
-        ease: "power1.out",
+        ease: "none",
         scrollTrigger: {
-          trigger: titleRef.current,
-          toggleActions: "play none none reset",
+          trigger: containerRef.current,
+          start: "top bottom",
+          end: "center center",
+          scrub: true,
         },
       }
     );
@@ -90,14 +94,20 @@ const About = () => {
   });
 
   return (
-    <section className="flex relative h-screen" ref={containerRef}>
+    <section
+      // overflow-x-clip prevents horizontal scroll WITHOUT clipping the vertical
+      // axis (unlike overflow-x-hidden), so the shine can bleed up over the Hero.
+      // z-20 lifts About above the Hero so the overflowing shine paints on top.
+      className="flex relative z-20 min-h-screen overflow-x-clip"
+      ref={containerRef}
+    >
       <div
-        className="relative flex flex-col items-center flex-1"
+        className="relative flex flex-col items-center flex-1 px-4"
         ref={contentRef}
       >
         <div className="flex flex-col h-1/2 items-center relative">
           <HalfSunShape
-            className="absolute h-48 w-96 origin-bottom bottom-0 z-10"
+            className="absolute h-32 w-64 sm:h-40 sm:w-80 md:h-48 md:w-96 origin-bottom bottom-0 z-10"
             ref={halfSunRef}
             data-lag="2"
             data-speed="1.5"
@@ -116,13 +126,13 @@ const About = () => {
           <h2
             className={clsx(
               "home-about__title",
-              "font-great-vibes text-center text-white text-6xl md:text-8xl lg:text-9xl leading-0",
+              "font-great-vibes text-center text-white text-5xl sm:text-6xl md:text-8xl lg:text-9xl leading-0",
               "mb-10 z-20 h-1/2"
             )}
             ref={titleRef}
           >
-            <span className="text-9xl">Beyond</span> <span>The</span>{" "}
-            <span className="text-peach">Code</span>
+            <span className="text-7xl sm:text-8xl md:text-9xl">Beyond</span>{" "}
+            <span>The</span> <span className="text-peach">Code</span>
           </h2>
         </div>
       </div>
