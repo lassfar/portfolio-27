@@ -3,7 +3,7 @@ import Hero from "#/components/pages/home/Hero";
 
 export default function Home() {
   return (
-    <main className="bg-rich-black w-screen">
+    <main className="bg-rich-black">
       <Hero />
       <About />
     </main>
