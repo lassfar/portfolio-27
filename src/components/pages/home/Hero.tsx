@@ -1,193 +1,217 @@
 "use client";
 
 import { useRef } from "react";
+import dynamic from "next/dynamic";
 import useTextsWritingMotion from "#/components/hooks/motions/texts/useTextsWritingMotion";
-import useTextsTypewriterSequenceMotion from "#/components/hooks/motions/texts/useTextsTypewriterSequenceMotion";
 import SunriseLogo from "#/components/assets/pictures/logos/sunrise-logo";
+import Button from "#/components/UI/buttons/Button";
 import { useGSAP } from "@gsap/react";
 import gsap from "gsap";
+import { ScrollSmoother, ScrollTrigger } from "gsap/all";
 import clsx from "clsx";
-import Button from "#/components/UI/buttons/Button";
+import { useHeroScroll } from "#/stores/useHeroScroll";
+import { HERO_SCROLL } from "#/components/three.js/star/config";
 
-gsap.registerPlugin(useGSAP);
+gsap.registerPlugin(useGSAP, ScrollTrigger);
+
+// WebGL-only — load on the client, never during SSR.
+const StarScene = dynamic(
+  () => import("#/components/three.js/star/StarScene"),
+  { ssr: false }
+);
 
 const Hero = () => {
   const containerRef = useRef<HTMLDivElement | null>(null);
-  const heroPanelRef = useRef<HTMLDivElement | null>(null);
-  const sunriseShapeRef = useRef<SVGSVGElement | null>(null);
+  const logoRef = useRef<HTMLDivElement | null>(null);
+  const eyebrowRef = useRef<HTMLParagraphElement | null>(null);
+  const headlineRef = useRef<HTMLHeadingElement | null>(null);
+  const subRef = useRef<HTMLParagraphElement | null>(null);
+  const ctaRef = useRef<HTMLDivElement | null>(null);
+  const contentRef = useRef<HTMLDivElement | null>(null);
 
-  const mainTitleRef = useRef<HTMLHeadingElement | null>(null);
-  const mainTitleRef2 = useRef<HTMLHeadingElement | null>(null);
-  const mainTitleRef3 = useRef<HTMLHeadingElement | null>(null);
-
-  const mainIntroRef = useRef<HTMLParagraphElement | null>(null);
-  const mainIntroRef2 = useRef<HTMLParagraphElement | null>(null);
-  const exploreButtonRef = useRef<HTMLDivElement | null>(null);
-
-  // Titles play as a typewriter sequence: write 1 → erase → write 2 → erase → write 3 (loops).
-  useTextsTypewriterSequenceMotion({
-    elements: [mainTitleRef, mainTitleRef2, mainTitleRef3],
-    hold: 4,
-    loop: true,
-    writeVars: { color: "var(--color-peach)" },
-  });
-
-  // Intro paragraphs type in once.
+  // Headline writes in, character by character.
   useTextsWritingMotion({
     elements: [
       {
-        ref: mainIntroRef,
+        ref: headlineRef,
         vars: {
-          color: "var(--color-peach)",
-          stagger: 0.01,
-          duration: 0.5,
-          translateX: 20,
-        },
-      },
-      {
-        ref: mainIntroRef2,
-        vars: {
-          color: "var(--color-peach)",
-          stagger: 0.01,
-          duration: 0.5,
-          translateX: 20,
+          translateX: 0,
+          scale: 1,
+          y: 24,
+          stagger: 0.03,
+          duration: 0.6,
+          ease: "power3.out",
         },
       },
     ],
   });
 
-  // Reveal the logo and Explore button last — they stay hidden (opacity 0)
-  // until `delay` elapses, which is timed to land after the intro writing
-  // motion finishes, so they fade in at the end of the Hero sequence.
+  // Logo, eyebrow, sub-line and button fade up around the headline.
   useGSAP(() => {
-    gsap.from([sunriseShapeRef.current, exploreButtonRef.current], {
+    const tl = gsap.timeline();
+    tl.from(logoRef.current, {
       opacity: 0,
-      duration: 2,
-      delay: 3.5,
-      ease: "power1.out",
-    });
+      y: -10,
+      duration: 0.8,
+      ease: "power2.out",
+    })
+      .from(
+        eyebrowRef.current,
+        { opacity: 0, y: 14, duration: 0.6, ease: "power2.out" },
+        0.2
+      )
+      .from(
+        subRef.current,
+        { opacity: 0, y: 18, duration: 0.9, ease: "power2.out" },
+        1.0
+      )
+      .from(
+        ctaRef.current,
+        { opacity: 0, y: 14, duration: 0.7, ease: "power2.out" },
+        1.4
+      );
   });
 
+  // Pinned scroll sequence: hold the hero, lift + fade the content, then drive
+  // the star's grow/center/fly-in zoom (in R3F) via the shared scroll store,
+  // before releasing to About. Skipped for reduced motion.
   useGSAP(() => {
-    gsap.from(heroPanelRef.current, {
-      scale: 0.75,
-      opacity: 0.25,
-      duration: 3,
-      ease: "back.inOut",
+    const reduce =
+      typeof window !== "undefined" &&
+      window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    if (reduce) return;
+
+    const setProgress = useHeroScroll.getState().setProgress;
+
+    const tl = gsap.timeline({
+      scrollTrigger: {
+        trigger: containerRef.current,
+        start: "top top",
+        // Longer pin → the star gets real scroll distance to travel to center,
+        // hold there, and then burst. Tuned in config.HERO_SCROLL.
+        end: HERO_SCROLL.pinLength,
+        pin: true,
+        scrub: 1,
+        onUpdate: (self) => setProgress(self.progress),
+      },
     });
+
+    // Phase 1 — content rises and fades out early (the star journey takes over).
+    tl.to(
+      contentRef.current,
+      {
+        yPercent: -60,
+        autoAlpha: 0,
+        ease: "power1.in",
+        duration: HERO_SCROLL.contentExit,
+      },
+      0
+    )
+      .to(
+        logoRef.current,
+        { autoAlpha: 0, ease: "power1.in", duration: HERO_SCROLL.contentExit },
+        0
+      )
+      // Spacer so the pin (and the scrubbed progress) extends through the zoom.
+      .to({}, { duration: 0.8 });
+
+    return () => {
+      setProgress(0);
+    };
   });
+
+  // Smooth-scroll to the About section, via ScrollSmoother when present.
+  const handleWander = () => {
+    const smoother = ScrollSmoother.get();
+    if (smoother) {
+      smoother.scrollTo("#about", true, "top top");
+    } else {
+      document.querySelector("#about")?.scrollIntoView({ behavior: "smooth" });
+    }
+  };
 
   return (
     <div
       className={clsx(
         "home-hero",
-        "relative",
-        "flex",
-        "min-h-screen",
-        "py-12 md:py-0",
-        "overflow-hidden"
+        "relative min-h-screen overflow-hidden",
+        "bg-rich-black"
       )}
       ref={containerRef}
     >
+      {/* Full-bleed, draggable space + star, behind the content */}
+      <div className="absolute inset-0 z-0">
+        <StarScene />
+      </div>
+
+      {/* Logo, top-left */}
       <div
-        className={clsx(
-          "home-hero__foreground-panel",
-          "absolute top-0 left-0 right-0 bottom-0 m-auto rounded-2xl",
-          "w-11/12 h-11/12",
-          "flex flex-col",
-          "bg-dark"
-        )}
-        ref={heroPanelRef}
-      />
+        className="absolute top-6 left-6 z-10 pointer-events-auto"
+        ref={logoRef}
+      >
+        <SunriseLogo width={56} height={48} className="w-10 sm:w-12 h-auto" />
+      </div>
+
+      {/* Content overlay — pointer-events-none so drags reach the space;
+          interactive children re-enable pointer events. */}
       <section
         className={clsx(
           "home-hero__section",
-          "relative",
-          "w-11/12 m-auto",
-          "flex"
+          "relative z-10 pointer-events-none",
+          "w-11/12 mx-auto min-h-screen",
+          "flex flex-col items-center justify-end text-center",
+          "pb-[10vh]"
         )}
       >
         <div
-          className={clsx("home-hero__content", "flex flex-col", "m-auto px-4")}
+          className={clsx(
+            "home-hero__content",
+            "flex flex-col items-center text-center",
+            "px-4 select-none"
+          )}
+          ref={contentRef}
         >
-          <div className="m-auto mb-8 md:mb-14">
-            <SunriseLogo
-              width={240}
-              height={200}
-              className="rounded-xl w-40 sm:w-52 md:w-60 h-auto translate-x-6 md:translate-x-10"
-              ref={sunriseShapeRef}
-            />
-          </div>
-          <div className={clsx("home-hero__titles", "grid mb-6 md:mb-10")}>
-            <h1
-              className={clsx(
-                "home-hero__title",
-                "[grid-area:1/1]",
-                "font-great-vibes text-center text-white text-5xl sm:text-6xl md:text-8xl lg:text-9xl 2xl:text-[10rem]"
-              )}
-              ref={mainTitleRef}
-            >
-              <span className="text-peach">Crafted</span> Realities
-            </h1>
-            <h1
-              className={clsx(
-                "home-hero__title",
-                "[grid-area:1/1]",
-                "font-great-vibes text-center text-white text-5xl sm:text-6xl md:text-8xl lg:text-9xl 2xl:text-[10rem]"
-              )}
-              ref={mainTitleRef2}
-            >
-              <span className="text-peach">Build</span> to Scale
-            </h1>
-            <h1
-              className={clsx(
-                "home-hero__title",
-                "[grid-area:1/1]",
-                "font-great-vibes text-center text-white text-5xl sm:text-6xl md:text-8xl lg:text-9xl 2xl:text-[10rem]"
-              )}
-              ref={mainTitleRef3}
-            >
-              <span className="text-peach">Elegant</span> Experiences
-            </h1>
-          </div>
           <p
             className={clsx(
-              "home-hero__intro",
-              "text-white text-base sm:text-lg md:text-xl lg:text-2xl font-light text-center"
+              "home-hero__eyebrow",
+              "text-sm sm:text-base text-white/55 mb-4"
             )}
-            ref={mainIntroRef}
+            ref={eyebrowRef}
           >
-            I’m Aymane, a{" "}
-            <span className="text-peach">
-              Product-focused Frontend Engineer
-            </span>{" "}
-            turning ambitious ideas into polished digital products.{" "}
-            <br className="hidden lg:inline" />
-            From rich user interfaces to enterprise platforms, I craft
-            experiences that are intuitive for users
-            <br className="hidden lg:inline" /> and scalable for teams that blur
-            the line between code and art.
-          </p>
-          <div className="h-6"></div>
-          <p
-            className={clsx(
-              "home-hero__intro",
-              "text-white text-base sm:text-lg md:text-xl lg:text-2xl font-light text-center"
-            )}
-            ref={mainIntroRef2}
-          >
-            <span className="text-peach">✦</span> Crafted with an{" "}
-            <span className="text-peach">artist’s eye</span> and an{" "}
-            <span className="text-peach">engineer’s mindset</span>.
+            I&rsquo;m Aymane &mdash;
           </p>
 
-          <div className="flex my-8 md:my-10" ref={exploreButtonRef}>
+          <h1
+            className={clsx(
+              "home-hero__title",
+              "font-great-vibes text-white",
+              "text-4xl sm:text-6xl md:text-6xl lg:text-7xl xl:text-8xl",
+              "leading-tight"
+            )}
+            ref={headlineRef}
+          >
+            A quiet maker of <span className="text-peach">Small Universes</span>
+          </h1>
+
+          <p
+            className={clsx(
+              "home-hero__intro",
+              "text-white/65 font-light",
+              "text-base sm:text-lg md:text-xl",
+              "max-w-xl mt-6"
+            )}
+            ref={subRef}
+          >
+            I notice light. I&rsquo;ve been drawing since before I could write.
+            Now I do it with code.
+          </p>
+
+          <div className="mt-8 pointer-events-auto" ref={ctaRef}>
             <Button
-              label="Explore"
+              label="To wander"
               variant="outline"
               size="large"
-              className="mx-auto"
-              state="filled"
+              onClick={handleWander}
             />
           </div>
         </div>

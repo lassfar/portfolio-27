@@ -95,6 +95,7 @@ const About = () => {
 
   return (
     <section
+      id="about"
       // overflow-x-clip prevents horizontal scroll WITHOUT clipping the vertical
       // axis (unlike overflow-x-hidden), so the shine can bleed up over the Hero.
       // z-20 lifts About above the Hero so the overflowing shine paints on top.

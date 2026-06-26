@@ -58,8 +58,8 @@ All tokens are defined in `src/styles/globals.css` under `@theme`. Do not add co
 |---|---|---|
 | `--color-rich-black` | `#19191C` | Page background |
 | `--color-dark` | `#27272A` | Card / panel backgrounds |
-| `--color-peach` | `#FFB266` | Primary accent, CTAs |
-| `--color-dark-peach` | `#FF8000` | Hover state for peach |
+| `--color-peach` | `#FFA14A` | Primary accent, CTAs, body text accents |
+| `--color-dark-peach` | `#EF7D14` | Hover state, high-contrast accents |
 | `--color-light-peach` | `#FFE3C7` | Subtle peach tints |
 | `--color-baby-blue` | `#2489FF` | Secondary accent |
 | `--color-light-baby-blue` | `#C5E0FF` | Subtle blue tints |
