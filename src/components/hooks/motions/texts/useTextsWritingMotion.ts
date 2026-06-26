@@ -37,8 +37,10 @@ const useTextsWritingMotion = <T extends HTMLElement>({
       const splitTexts: SplitText[] = [];
 
       for (let i = 0; i < elements.length; i++) {
+        // Split by words AND chars so whitespace between words is preserved
+        // (splitting by chars alone collapses spaces inside nested spans).
         const splitText = new SplitText(elements[i].ref.current, {
-          type: "chars",
+          type: "words,chars",
         });
         splitTexts.push(splitText);
       }
