@@ -5,7 +5,7 @@ import { useEffect, useRef } from "react";
 import { Group } from "three";
 import Nebula from "./Nebula";
 import Starfield from "./Starfield";
-import { LAYOUT, ROTATION, ZOOM } from "./config";
+import { LAYOUT, ROTATION, SCREEN_FILL_SCALE, ZOOM } from "./config";
 import { damp, remap01 } from "./utils";
 import { useHeroScroll } from "#/stores/useHeroScroll";
 
@@ -104,8 +104,10 @@ const Universe = ({ animate = true, count }: Props) => {
     const centering = remap01(progress, ZOOM.centerStart, ZOOM.centerEnd);
     const targetY = LAYOUT.starY * (1 - centering);
 
+    // Grow continuously (ease-in) until the star's visible height equals the
+    // viewport height exactly at growEnd — the instant it bursts. No hold.
     const growth = remap01(progress, ZOOM.growStart, ZOOM.growEnd);
-    const targetScale = 1 + growth * growth * ZOOM.scaleGain;
+    const targetScale = 1 + growth * growth * (SCREEN_FILL_SCALE - 1);
 
     const flying = remap01(progress, ZOOM.flyStart, 1);
     const targetZ = flying * flying * ZOOM.flyDistance;

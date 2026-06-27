@@ -85,11 +85,14 @@ export const ROTATION = {
 //
 //   0.00–0.20  content lifts + fades out
 //   0.24–0.48  star travels top → center
-//   0.34–0.58  blue core glow erodes from its outer edge
-//   0.48–0.62  star HOLDS at center
-//   0.62–0.85  explosion (particles burst outward)
+//   0.24–0.62  star zooms in CONTINUOUSLY (no hold), reaching exactly the
+//              viewport height (100vh) at the moment it bursts
+//   0.62–0.85  explosion (particles burst outward; core glow dissolves with them)
 //   0.82–1.00  debris flies through the camera
 //   0.90–1.00  fades out → About
+
+/** The progress at which the star fills the screen and detonates. */
+const EXPLOSION_START = 0.62;
 
 /** Pin + content exit (read by the DOM-side Hero, hence the GSAP-friendly form). */
 export const HERO_SCROLL = {
@@ -102,18 +105,40 @@ export const ZOOM = {
   centerStart: 0.24,
   centerEnd: 0.48,
   growStart: 0.24,
-  growEnd: 0.5,
-  scaleGain: 2, // how much bigger the star grows (× on top of 1)
+  growEnd: EXPLOSION_START, // grow right up to the burst — no fixed hold
   flyStart: 0.82,
   flyDistance: 10, // world units travelled toward the camera
   damping: 0.12,
 } as const;
 
-/** The burst, fade-out and glow erosion (Nebula). */
+/** The burst and fade-out (Nebula). */
 export const BURST = {
-  explosionStart: 0.62, // after the star has held at center for a while
+  explosionStart: EXPLOSION_START,
   explosionEnd: 0.85,
   fadeStart: 0.9,
-  glowErodeStart: 0.34,
-  glowErodeEnd: 0.58,
 } as const;
+
+// ── Screen-fill scale (derived) ──────────────────────────────────────────────
+//
+// The vertical world-space height the camera sees at the star's resting
+// distance. Depends only on the (vertical) FOV and the camera distance — NOT on
+// aspect ratio — so a star scaled to this height fills 100vh on any screen.
+const VIEWPORT_WORLD_HEIGHT =
+  2 * CAMERA.z * Math.tan((CAMERA.fov * Math.PI) / 180 / 2);
+
+/**
+ * Effective visible radius of the nebula in its own local units (i.e. before
+ * `LAYOUT.nebulaScale`). The particle cloud has soft, bloomed edges with no hard
+ * boundary, so this is an eyeball-tuned value, not a strict geometric bound —
+ * raise it to make the star burst "earlier" (at a smaller scale), lower it to
+ * let the star grow larger before it fills the frame.
+ */
+export const NEBULA_VISIBLE_RADIUS = 2.4;
+
+/**
+ * The zoom scale at which the star's visible diameter equals the viewport
+ * height (100vh). Growth ramps to exactly this by `ZOOM.growEnd`, so the star
+ * fills the screen at the instant it explodes.
+ */
+export const SCREEN_FILL_SCALE =
+  VIEWPORT_WORLD_HEIGHT / 2 / (NEBULA_VISIBLE_RADIUS * LAYOUT.nebulaScale);

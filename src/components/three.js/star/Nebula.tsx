@@ -3,7 +3,7 @@
 import { useFrame } from "@react-three/fiber";
 import { Billboard } from "@react-three/drei";
 import { useMemo, useRef } from "react";
-import { AdditiveBlending, Color, Points, ShaderMaterial } from "three";
+import { AdditiveBlending, Color, Group, Points, ShaderMaterial } from "three";
 import { useHeroScroll } from "#/stores/useHeroScroll";
 import {
   BURST,
@@ -11,6 +11,7 @@ import {
   LAYOUT,
   NEBULA_PALETTE,
   PARTICLES,
+  ZOOM,
 } from "./config";
 import { remap01 } from "./utils";
 
@@ -41,6 +42,7 @@ const Nebula = ({ count = PARTICLES.count, animate = true }: Props) => {
   const pointsRef = useRef<Points>(null);
   const materialRef = useRef<ShaderMaterial>(null);
   const glowMatRef = useRef<ShaderMaterial>(null);
+  const glowGroupRef = useRef<Group>(null);
 
   const { positions, colors, scales, seeds } = useMemo(() => {
     const positions = new Float32Array(count * 3);
@@ -98,13 +100,8 @@ const Nebula = ({ count = PARTICLES.count, animate = true }: Props) => {
     return { positions, colors, scales, seeds };
   }, [count]);
 
-  // Uniforms for the soft blue core glow. `uReveal` controls a radial erode
-  // (1 = full, 0 = gone) so the glow dissolves from its outer edge inward.
   const glowUniforms = useMemo(
-    () => ({
-      uReveal: { value: 1 },
-      uOpacity: { value: GLOW_OPACITY },
-    }),
+    () => ({ uOpacity: { value: GLOW_OPACITY } }),
     []
   );
 
@@ -143,34 +140,43 @@ const Nebula = ({ count = PARTICLES.count, animate = true }: Props) => {
     const fade = 1 - remap01(progress, BURST.fadeStart, 1);
     u.uOpacity.value = fade;
 
-    // Core glow: erode it radially from the edge inward as you scroll, so it
-    // never reads as a hard circle and is gone before the burst.
+    // Inner blue circle shrinks (local scale 1 → 0) as the star nears full
+    // screen, reaching 0 exactly when the explosion starts.
+    if (glowGroupRef.current) {
+      const glowScale =
+        1 - remap01(progress, ZOOM.centerEnd, BURST.explosionStart);
+      glowGroupRef.current.scale.setScalar(glowScale);
+    }
+
+    // Core glow scales with the star (it lives inside this group) and dissolves
+    // as the star bursts, so the explosion is particles — not a lingering blob.
     if (glowMatRef.current) {
-      const glow = glowMatRef.current.uniforms;
-      glow.uReveal.value =
-        1 - remap01(progress, BURST.glowErodeStart, BURST.glowErodeEnd);
-      glow.uOpacity.value = GLOW_OPACITY * fade;
+      glowMatRef.current.uniforms.uOpacity.value =
+        GLOW_OPACITY * (1 - u.uExplosion.value) * fade;
     }
   });
 
   return (
     <group scale={LAYOUT.nebulaScale}>
-      {/* Blue core glow — soft and edgeless; erodes radially from its edge as
-          you scroll (uReveal). Billboarded so it always faces the camera. */}
-      <Billboard>
-        <mesh>
-          <planeGeometry args={[LAYOUT.glowSize, LAYOUT.glowSize]} />
-          <shaderMaterial
-            ref={glowMatRef}
-            transparent
-            depthWrite={false}
-            blending={AdditiveBlending}
-            uniforms={glowUniforms}
-            vertexShader={GLOW_VERTEX_SHADER}
-            fragmentShader={GLOW_FRAGMENT_SHADER}
-          />
-        </mesh>
-      </Billboard>
+      {/* Blue core glow — soft and edgeless, billboarded to face the camera.
+          Its own scale shrinks to 0 as the star fills the screen, vanishing
+          right as the burst begins. */}
+      <group ref={glowGroupRef}>
+        <Billboard>
+          <mesh>
+            <planeGeometry args={[LAYOUT.glowSize, LAYOUT.glowSize]} />
+            <shaderMaterial
+              ref={glowMatRef}
+              transparent
+              depthWrite={false}
+              blending={AdditiveBlending}
+              uniforms={glowUniforms}
+              vertexShader={GLOW_VERTEX_SHADER}
+              fragmentShader={GLOW_FRAGMENT_SHADER}
+            />
+          </mesh>
+        </Billboard>
+      </group>
 
       <points ref={pointsRef}>
         <bufferGeometry>
@@ -351,7 +357,6 @@ void main(){
 
 const GLOW_FRAGMENT_SHADER = /* glsl */ `
 precision highp float;
-uniform float uReveal;   // 1 = full, 0 = fully eroded
 uniform float uOpacity;
 varying vec2 vUv;
 
@@ -366,10 +371,7 @@ void main(){
     GLOW_PALETTE.edge
   )}, pow(dist, 0.7));
 
-  // Radial reveal — erode from the outer edge inward as uReveal → 0.
-  float mask = 1.0 - smoothstep(uReveal - 0.3, uReveal, dist);
-
-  float alpha = grad * mask * uOpacity;
+  float alpha = grad * uOpacity;
   if (alpha < 0.003) discard;
   gl_FragColor = vec4(col, alpha);
 }
