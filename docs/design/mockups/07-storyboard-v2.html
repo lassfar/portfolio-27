@@ -1,0 +1,557 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Portfolio-27 — Motion Storyboard v2</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Great+Vibes&display=swap" rel="stylesheet" />
+<style>
+  :root { --peach:#ffb266; --dark-peach:#ff8000; --light-peach:#ffe3c7; --baby-blue:#2489ff; --light-baby-blue:#c5e0ff; }
+  * { box-sizing:border-box; margin:0; padding:0; }
+  body { background:#08090f; color:#fff; font-family:"Helvetica Neue",Helvetica,Arial,sans-serif;
+         min-height:100vh; display:flex; flex-direction:column; align-items:center; padding:34px 16px 60px; }
+  .wrap { width:100%; max-width:880px; }
+  .title { font-family:"Great Vibes",cursive; font-size:46px; }
+  .title .pk { color:var(--peach); }
+  .sub { color:rgba(255,255,255,0.55); font-size:14px; margin-top:6px; line-height:1.7; max-width:640px; }
+
+  /* Legend */
+  .legend { display:flex; flex-wrap:wrap; gap:8px; margin:20px 0 28px; }
+  .tag { font-size:10.5px; letter-spacing:0.5px; text-transform:uppercase; padding:3px 9px; border-radius:20px; white-space:nowrap; flex-shrink:0; }
+  .t-enter { background:rgba(255,178,102,0.16); color:var(--peach); }
+  .t-3d { background:rgba(36,137,255,0.22); color:var(--light-baby-blue); border:0.5px solid rgba(36,137,255,0.5); }
+  .t-text { background:rgba(255,227,199,0.14); color:var(--light-peach); }
+  .t-scroll { background:rgba(197,224,255,0.13); color:var(--light-baby-blue); }
+  .t-exit { background:rgba(255,255,255,0.08); color:rgba(255,255,255,0.6); }
+
+  /* Arc strip */
+  .arc { display:flex; align-items:center; gap:5px; flex-wrap:wrap; background:#0b0d16;
+         border:0.5px solid rgba(255,255,255,0.07); border-radius:12px; padding:14px 16px; margin-bottom:8px; }
+  .arc span { font-size:12px; color:rgba(255,255,255,0.7); }
+  .arc .step { color:var(--peach); }
+  .arc .step-key { color:var(--light-baby-blue); font-weight:500; }
+  .arc .arr { color:rgba(255,255,255,0.28); }
+  .note { font-size:12.5px; color:rgba(255,255,255,0.5); line-height:1.7; margin:10px 2px 30px; }
+
+  /* Section cards */
+  .card { background:#0a0b12; border:0.5px solid rgba(255,255,255,0.07); border-radius:14px; padding:20px;
+          margin-bottom:18px; display:grid; grid-template-columns:180px 1fr; gap:22px; align-items:start; }
+  @media (max-width:640px) { .card { grid-template-columns:1fr; } }
+
+  /* Stage thumbnail */
+  .stage { position:relative; height:160px; border-radius:10px; background:#05060a; overflow:hidden;
+           display:flex; align-items:center; justify-content:center; }
+
+  /* Card text */
+  .role { font-size:11px; letter-spacing:1px; text-transform:uppercase; color:var(--light-baby-blue); margin-bottom:3px; }
+  .sname { font-family:"Great Vibes",cursive; font-size:28px; margin-bottom:12px; line-height:1.2; }
+  .sname .pk { color:var(--peach); }
+  .ann { display:flex; gap:10px; margin-bottom:10px; align-items:flex-start; }
+  .ann p { font-size:12.5px; line-height:1.65; color:rgba(255,255,255,0.72); }
+  .ann .tag { margin-top:1px; }
+  .badge3d { display:inline-block; font-size:10px; color:var(--light-baby-blue);
+             border:0.5px solid rgba(36,137,255,0.5); border-radius:5px; padding:1px 6px; margin-left:4px; }
+
+  /* Transition card */
+  .t-card { background:#07090e; border:0.5px solid rgba(197,224,255,0.12); border-radius:12px;
+            padding:16px 20px; margin-bottom:18px; display:flex; align-items:center; gap:20px; }
+  .t-stage { position:relative; width:140px; height:76px; border-radius:8px; background:#020306;
+             flex-shrink:0; overflow:hidden; }
+  .t-body { flex:1; }
+  .t-label { font-size:10px; letter-spacing:1px; text-transform:uppercase; color:rgba(197,224,255,0.45); margin-bottom:5px; }
+  .t-desc { font-size:13px; color:rgba(255,255,255,0.68); line-height:1.7; font-style:italic; }
+  .t-sub { font-size:11.5px; color:rgba(255,255,255,0.38); margin-top:6px; line-height:1.6; }
+
+  /* Shared visual atoms */
+  .star { position:absolute; border-radius:50%; background:#fff; }
+  .particle { position:absolute; border-radius:50%; }
+
+  /* Hero nebula */
+  .neb { position:absolute; border-radius:50%; filter:blur(4px);
+         left:50%; top:50%; transform:translate(-50%,-50%);
+         background:radial-gradient(circle,#fff 0%,rgba(255,255,255,0.9) 5%,rgba(255,240,225,0.6) 10%,transparent 17%),
+                    radial-gradient(circle,transparent 14%,rgba(197,224,255,0.5) 21%,transparent 36%),
+                    radial-gradient(circle,transparent 32%,rgba(226,75,74,0.4) 42%,transparent 60%); }
+  .neb-core { position:absolute; border-radius:50%; background:#fff;
+              left:50%; top:50%; transform:translate(-50%,-50%);
+              box-shadow:0 0 14px 4px #fff,0 0 32px 12px rgba(255,238,214,0.6),0 0 54px 22px rgba(255,128,0,0.22); }
+
+  /* About planet */
+  .planet3d { position:relative; width:76px; height:76px; border-radius:50%;
+              background:radial-gradient(circle at 34% 30%,#ffe3c7,#ffb266 38%,#ff8000 68%,#5e2f05 100%);
+              box-shadow:inset -9px -8px 20px rgba(0,0,0,0.65),0 0 18px rgba(255,128,0,0.2); }
+  .planet-ring { position:absolute; left:50%; top:50%; width:144px; height:38px; border-radius:50%;
+                 transform:translate(-50%,-50%) rotate(-22deg); border:1.5px solid rgba(197,224,255,0.4); }
+  .planet-atmo { position:absolute; inset:-2px; border-radius:50%;
+                 box-shadow:inset 0 0 10px 2px rgba(197,224,255,0.35); }
+  .p-dot { position:absolute; border-radius:50%; background:rgba(255,255,255,0.72); }
+
+  /* Galaxy */
+  .galaxy-disk { width:164px; height:66px; border-radius:50%; filter:blur(3px); transform:rotate(-18deg);
+                 background:radial-gradient(ellipse 50% 100%,#fff 0%,rgba(255,238,214,0.8) 8%,rgba(255,178,102,0.35) 22%,rgba(36,137,255,0.18) 48%,transparent 72%); }
+
+  /* Lab */
+  .lab-wrap { position:relative; width:84px; height:84px; }
+  .lab-star { position:absolute; left:50%; top:50%; width:8px; height:8px; border-radius:50%;
+              transform:translate(-50%,-50%); background:var(--peach);
+              box-shadow:0 0 10px 4px rgba(255,128,0,0.5); }
+  .lab-ring { position:absolute; inset:12px; border-radius:50%; border:1px dashed rgba(255,255,255,0.14); }
+  .lab-dot { position:absolute; width:5px; height:5px; border-radius:50%; background:var(--light-baby-blue);
+             top:10px; right:12px; box-shadow:0 0 5px 2px rgba(36,137,255,0.5); }
+
+  /* Bookend */
+  .bookend { background:#0b0d16; border:0.5px solid rgba(255,178,102,0.25); border-radius:14px;
+             padding:22px; margin-top:14px; }
+  .bookend h3 { font-family:"Great Vibes",cursive; font-weight:400; font-size:26px; color:var(--peach); margin-bottom:8px; }
+  .bookend p { font-size:13.5px; line-height:1.8; color:rgba(255,255,255,0.72); }
+  .bookend p + p { margin-top:10px; }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <p class="title">Motion storyboard <span class="pk">v2</span></p>
+  <p class="sub">The updated portfolio story — as built and planned. One material (particles), many forms. One scroll, one universe.</p>
+
+  <div class="legend">
+    <span class="tag t-enter">Entrance</span>
+    <span class="tag t-3d">3D · React Three Fiber</span>
+    <span class="tag t-text">Text &amp; titles</span>
+    <span class="tag t-scroll">Scroll behavior</span>
+    <span class="tag t-exit">Hand-off</span>
+  </div>
+
+  <div class="arc">
+    <span class="step">Black</span><span class="arr">→</span>
+    <span class="step">Star ignites</span><span class="arr">→</span>
+    <span class="step-key">EXPLODES</span><span class="arr">→</span>
+    <span>Debris condenses</span><span class="arr">→</span>
+    <span>Planet born</span><span class="arr">→</span>
+    <span>Constellation</span><span class="arr">→</span>
+    <span>9 Worlds in orbit</span><span class="arr">→</span>
+    <span>Lab</span><span class="arr">→</span>
+    <span class="step">Galaxy</span>
+  </div>
+  <p class="note">One material, many forms. The star was you at your most raw. After it detonates, those same particles gravitate inward and become your planet — denser, quieter, yours. A sun remains at the center of it all. Nine worlds orbit it, each one a piece of light you caught. ScrollSmoother drives the whole journey; one progress value connects every form into one continuous drift through space. All autoplay respects <code>prefers-reduced-motion</code>.</p>
+
+  <!-- ─────────────────────────────────────────────────────────────────────── -->
+  <!-- 1 · HERO · The Star                                                     -->
+  <!-- ─────────────────────────────────────────────────────────────────────── -->
+  <div class="card">
+    <div class="stage">
+      <!-- Background starfield -->
+      <span class="star" style="width:2px;height:2px;left:14px;top:18px"></span>
+      <span class="star" style="width:1px;height:1px;right:22px;top:30px;background:#c5e0ff"></span>
+      <span class="star" style="width:2px;height:2px;left:158px;top:134px"></span>
+      <!-- Nebula (dimmed — being destroyed) -->
+      <div class="neb" style="width:78px;height:78px;opacity:0.6"></div>
+      <div class="neb-core" style="width:9px;height:9px"></div>
+      <!-- Explosion particles radiating outward from center (90, 80) -->
+      <!-- Upper area -->
+      <span class="particle" style="width:2px;height:2px;background:#fff;top:8px;left:94px;opacity:0.8"></span>
+      <span class="particle" style="width:3px;height:3px;background:#cfe0ff;top:16px;left:130px;box-shadow:0 0 5px #2489ff;opacity:0.9"></span>
+      <span class="particle" style="width:2px;height:2px;background:#ffb266;top:22px;left:58px;opacity:0.8"></span>
+      <!-- Upper right -->
+      <span class="particle" style="width:2px;height:2px;background:#fff;top:28px;right:30px;opacity:0.75"></span>
+      <span class="particle" style="width:4px;height:4px;background:#ffb266;top:40px;right:14px;box-shadow:0 0 6px rgba(255,128,0,0.6)"></span>
+      <!-- Right -->
+      <span class="particle" style="width:3px;height:3px;background:#e24b4a;top:74px;right:10px;box-shadow:0 0 4px rgba(226,75,74,0.5)"></span>
+      <span class="particle" style="width:2px;height:2px;background:#cfe0ff;top:90px;right:16px;opacity:0.7"></span>
+      <!-- Lower right -->
+      <span class="particle" style="width:4px;height:4px;background:#ffb266;bottom:26px;right:28px;box-shadow:0 0 6px rgba(255,128,0,0.5)"></span>
+      <span class="particle" style="width:2px;height:2px;background:#fff;bottom:16px;right:52px;opacity:0.8"></span>
+      <!-- Bottom -->
+      <span class="particle" style="width:3px;height:3px;background:#e24b4a;bottom:10px;left:96px;box-shadow:0 0 4px rgba(226,75,74,0.4)"></span>
+      <!-- Lower left -->
+      <span class="particle" style="width:2px;height:2px;background:#fff;bottom:20px;left:40px;opacity:0.7"></span>
+      <span class="particle" style="width:3px;height:3px;background:#ffb266;bottom:32px;left:16px;box-shadow:0 0 5px rgba(255,128,0,0.5)"></span>
+      <!-- Left -->
+      <span class="particle" style="width:2px;height:2px;background:#cfe0ff;top:82px;left:10px;opacity:0.8"></span>
+      <span class="particle" style="width:3px;height:3px;background:#fff;top:60px;left:12px;opacity:0.7"></span>
+      <!-- Upper left -->
+      <span class="particle" style="width:2px;height:2px;background:#ffb266;top:30px;left:26px;opacity:0.8"></span>
+      <span class="particle" style="width:3px;height:3px;background:#cfe0ff;top:14px;left:54px;box-shadow:0 0 4px #2489ff;opacity:0.9"></span>
+    </div>
+    <div>
+      <p class="role">Hero · the star · as built ✓</p>
+      <p class="sname">a quiet maker of <span class="pk">small universes</span></p>
+      <div class="ann">
+        <span class="tag t-enter">Entrance</span>
+        <p>Black → faint stars fade in (stagger) → star core ignites (scale 0→1 + bloom) → nebula shells bloom outward → diffraction spikes flicker. ~1.5s, ease <code>power3.out</code>.</p>
+      </div>
+      <div class="ann">
+        <span class="tag t-3d">3D</span>
+        <p><span class="badge3d">R3F ✓</span> 50k-particle nebula, GLSL 3D simplex noise, 3 layers: blue core / blue-white inner shell / red–peach outer gas. Bloom post-processing. Drag-rotates freely (idle drift + pointer). Particle count halved on mobile.</p>
+      </div>
+      <div class="ann">
+        <span class="tag t-text">Text</span>
+        <p>Eyebrow "I'm Aymane —" fades up. Headline "a quiet maker of small universes" writes in char-by-char (SplitText). Sub-line fades. "scroll to wander ↓" bobs on loop.</p>
+      </div>
+      <div class="ann">
+        <span class="tag t-scroll">Scroll ✓</span>
+        <p>0→0.2: content exits (yPercent −60 + fade). 0.24→0.48: star centers on screen. 0.24→0.62: star zooms <em>continuously</em> (ease-in) until visible height = 100vh exactly. Core glow shrinks to 0 as frame fills. 0.62→0.85: explosion — particles burst radially, core dissolves. 0.82→1.0: debris fly-through camera. Full fade to black at 1.0.</p>
+      </div>
+      <div class="ann">
+        <span class="tag t-exit">Hand-off</span>
+        <p>Screen goes dark. The same particles are now below — drifting inward, pulled by gravity toward a new center.</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- ─────────────────────────────────────────────────────────────────────── -->
+  <!-- TRANSITION · Debris → Planet birth                                       -->
+  <!-- ─────────────────────────────────────────────────────────────────────── -->
+  <div class="t-card">
+    <div class="t-stage">
+      <svg viewBox="0 0 140 76" width="140" height="76" xmlns="http://www.w3.org/2000/svg">
+        <defs>
+          <radialGradient id="coreForm" cx="50%" cy="50%" r="50%">
+            <stop offset="0%" stop-color="#ffb266" stop-opacity="0.5"/>
+            <stop offset="100%" stop-color="#ff8000" stop-opacity="0"/>
+          </radialGradient>
+        </defs>
+        <!-- Drift paths (very faint, dashed) pulling toward center -->
+        <path d="M12,10 Q40,30 66,37" stroke="rgba(255,255,255,0.07)" stroke-width="0.7" fill="none" stroke-dasharray="2,3"/>
+        <path d="M128,9 Q100,29 74,37" stroke="rgba(255,255,255,0.07)" stroke-width="0.7" fill="none" stroke-dasharray="2,3"/>
+        <path d="M6,52 Q34,47 66,40" stroke="rgba(255,255,255,0.06)" stroke-width="0.7" fill="none" stroke-dasharray="2,3"/>
+        <path d="M134,54 Q106,47 74,40" stroke="rgba(255,255,255,0.06)" stroke-width="0.7" fill="none" stroke-dasharray="2,3"/>
+        <path d="M48,70 Q58,58 68,43" stroke="rgba(255,255,255,0.05)" stroke-width="0.6" fill="none" stroke-dasharray="2,3"/>
+        <path d="M92,70 Q82,58 72,43" stroke="rgba(255,255,255,0.05)" stroke-width="0.6" fill="none" stroke-dasharray="2,3"/>
+        <!-- Debris particles -->
+        <circle cx="12" cy="10" r="1.5" fill="#cfe0ff" opacity="0.65"/>
+        <circle cx="128" cy="9" r="1.5" fill="#ffb266" opacity="0.6"/>
+        <circle cx="6" cy="52" r="2" fill="#fff" opacity="0.5"/>
+        <circle cx="134" cy="54" r="1.5" fill="#e24b4a" opacity="0.55"/>
+        <circle cx="48" cy="70" r="1.5" fill="#fff" opacity="0.5"/>
+        <circle cx="92" cy="70" r="1.5" fill="#ffb266" opacity="0.6"/>
+        <circle cx="22" cy="30" r="1" fill="#cfe0ff" opacity="0.45"/>
+        <circle cx="118" cy="32" r="1" fill="#fff" opacity="0.4"/>
+        <circle cx="40" cy="62" r="1" fill="#ffb266" opacity="0.4"/>
+        <circle cx="106" cy="16" r="1" fill="#cfe0ff" opacity="0.45"/>
+        <!-- Forming core glow -->
+        <circle cx="70" cy="38" r="16" fill="url(#coreForm)"/>
+        <circle cx="70" cy="38" r="3" fill="#fff" opacity="0.3"/>
+      </svg>
+    </div>
+    <div class="t-body">
+      <p class="t-label">Transition · debris → planet birth</p>
+      <p class="t-desc">"Same particles. Different form. The star didn't die — it became something quieter."</p>
+      <p class="t-sub">Scroll-scrubbed. As you enter the About pin zone, explosion debris gravitates back inward. The planet materializes from the inside out — dense core first, outer halo settling last. The ring draws itself (stroke-dashoffset).</p>
+    </div>
+  </div>
+
+  <!-- ─────────────────────────────────────────────────────────────────────── -->
+  <!-- 2 · ABOUT · The Planet                                                  -->
+  <!-- ─────────────────────────────────────────────────────────────────────── -->
+  <div class="card">
+    <div class="stage">
+      <!-- Particle halo (absolute, relative to stage center ~90,80) -->
+      <span class="p-dot" style="width:2px;height:2px;top:18px;left:66px;opacity:0.55"></span>
+      <span class="p-dot" style="width:3px;height:3px;top:13px;left:94px;opacity:0.42"></span>
+      <span class="p-dot" style="width:2px;height:2px;top:20px;left:122px;opacity:0.5"></span>
+      <span class="p-dot" style="width:2px;height:2px;top:34px;left:36px;opacity:0.48"></span>
+      <span class="p-dot" style="width:3px;height:3px;top:50px;left:28px;opacity:0.38"></span>
+      <span class="p-dot" style="width:2px;height:2px;top:66px;left:32px;opacity:0.5"></span>
+      <span class="p-dot" style="width:2px;height:2px;top:84px;left:26px;opacity:0.42"></span>
+      <span class="p-dot" style="width:2px;height:2px;bottom:38px;left:32px;opacity:0.45"></span>
+      <span class="p-dot" style="width:3px;height:3px;bottom:24px;left:58px;opacity:0.52"></span>
+      <span class="p-dot" style="width:2px;height:2px;bottom:14px;left:90px;opacity:0.45"></span>
+      <span class="p-dot" style="width:2px;height:2px;bottom:20px;left:118px;opacity:0.42"></span>
+      <span class="p-dot" style="width:3px;height:3px;bottom:32px;right:28px;opacity:0.48"></span>
+      <span class="p-dot" style="width:2px;height:2px;top:70px;right:26px;opacity:0.5"></span>
+      <span class="p-dot" style="width:2px;height:2px;top:40px;right:30px;opacity:0.42"></span>
+      <!-- Centered planet -->
+      <div style="position:relative;width:76px;height:76px">
+        <div class="planet-ring"></div>
+        <div class="planet3d"><div class="planet-atmo"></div></div>
+      </div>
+    </div>
+    <div>
+      <p class="role">About · the planet</p>
+      <p class="sname">Beyond <span class="pk">the code</span></p>
+      <div class="ann">
+        <span class="tag t-enter">Entrance</span>
+        <p>Debris gravitates inward → sphere condenses from particles → ring draws itself (stroke-dashoffset) → atmosphere rim glows on → title + paragraphs reveal staggered.</p>
+      </div>
+      <div class="ann">
+        <span class="tag t-3d">3D</span>
+        <p><span class="badge3d">R3F</span> Particle-built sphere — same particle system as the star, now constrained to sphere geometry. Slow auto-rotation. Ring = thin torus. Fresnel atmosphere glow shell. Rotation speed nudges with scroll velocity.</p>
+      </div>
+      <div class="ann">
+        <span class="tag t-text">Text</span>
+        <p>"Beyond the code" writes in (SplitText). Two body paragraphs — "I don't fill rooms — I notice them… I build the way I drew as a kid: slowly, and for the love of it." — fade + rise staggered line by line.</p>
+      </div>
+      <div class="ann">
+        <span class="tag t-scroll">Scroll</span>
+        <p>Planet parallaxes slower than text (depth). Ring tilt angle shifts subtly with scroll velocity, suggesting the planet has weight and momentum.</p>
+      </div>
+      <div class="ann">
+        <span class="tag t-exit">Hand-off</span>
+        <p>Planet drifts back into depth. The constellation assembles ahead in the dark.</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- ─────────────────────────────────────────────────────────────────────── -->
+  <!-- 3 · SKILLS · The Constellation                                          -->
+  <!-- ─────────────────────────────────────────────────────────────────────── -->
+  <div class="card">
+    <div class="stage">
+      <svg viewBox="0 0 180 150" width="180" height="150" xmlns="http://www.w3.org/2000/svg">
+        <!-- Connection lines (baby-blue) -->
+        <!-- Creative thread: Photo → Drawing → Motion -->
+        <line x1="24" y1="38" x2="66" y2="18" stroke="#2489ff" stroke-width="0.8" opacity="0.45"/>
+        <line x1="66" y1="18" x2="112" y2="42" stroke="#2489ff" stroke-width="0.8" opacity="0.45"/>
+        <!-- Creative → Bridge (Motion → Three.js/R3F) -->
+        <line x1="112" y1="42" x2="121" y2="90" stroke="#2489ff" stroke-width="0.8" opacity="0.42"/>
+        <!-- Photo → Bridge (visual craft cross-link) -->
+        <line x1="24" y1="38" x2="121" y2="90" stroke="#2489ff" stroke-width="0.6" opacity="0.28"/>
+        <!-- Bridge → Engineering -->
+        <line x1="121" y1="90" x2="150" y2="58" stroke="#2489ff" stroke-width="0.8" opacity="0.45"/>
+        <line x1="121" y1="90" x2="147" y2="122" stroke="#2489ff" stroke-width="0.8" opacity="0.40"/>
+        <!-- Engineering thread: React → TypeScript, React → Next.js, Next.js → GSAP -->
+        <line x1="150" y1="58" x2="161" y2="25" stroke="#2489ff" stroke-width="0.8" opacity="0.45"/>
+        <line x1="150" y1="58" x2="169" y2="82" stroke="#2489ff" stroke-width="0.8" opacity="0.45"/>
+        <line x1="169" y1="82" x2="147" y2="122" stroke="#2489ff" stroke-width="0.8" opacity="0.40"/>
+        <!-- Motion → GSAP (direct creative-tool link) -->
+        <line x1="112" y1="42" x2="147" y2="122" stroke="#2489ff" stroke-width="0.5" opacity="0.22"/>
+
+        <!-- Nodes (peach dots) -->
+        <circle cx="24" cy="38" r="3.5" fill="#ffb266"/>
+        <circle cx="66" cy="18" r="3.5" fill="#ffb266"/>
+        <circle cx="112" cy="42" r="3.5" fill="#ffb266"/>
+        <!-- Bridge node — slightly larger, soft halo -->
+        <circle cx="121" cy="90" r="9" fill="#ffb266" opacity="0.1"/>
+        <circle cx="121" cy="90" r="5" fill="#ffb266" opacity="0.95"/>
+        <circle cx="150" cy="58" r="3.5" fill="#ffb266"/>
+        <circle cx="161" cy="25" r="3.5" fill="#ffb266"/>
+        <circle cx="169" cy="82" r="3.5" fill="#ffb266"/>
+        <circle cx="147" cy="122" r="3.5" fill="#ffb266"/>
+
+        <!-- Labels (light-baby-blue, 9px) -->
+        <g fill="#c5e0ff" font-size="9" text-anchor="middle" font-family="Helvetica Neue, Helvetica, Arial, sans-serif">
+          <text x="24" y="52">Photo</text>
+          <text x="66" y="32">Drawing</text>
+          <text x="112" y="56">Motion</text>
+          <text x="121" y="108">Three.js / R3F</text>
+          <text x="150" y="44">React</text>
+          <text x="161" y="15">TypeScript</text>
+          <text x="169" y="96">Next.js</text>
+          <text x="147" y="137">GSAP</text>
+        </g>
+      </svg>
+    </div>
+    <div>
+      <p class="role">Skills · the constellation</p>
+      <p class="sname">What I'm <span class="pk">drawn to</span></p>
+      <div class="ann">
+        <span class="tag t-enter">Entrance</span>
+        <p>Stars pop in one by one (scale + twinkle stagger) → connector lines draw between them (stroke-dashoffset) → labels fade in last. No recognizable shape — it forms something only you can name.</p>
+      </div>
+      <div class="ann">
+        <span class="tag t-3d">3D</span>
+        <p><span class="badge3d">CSS · SVG</span> Crisp SVG line-draw. Optional: different <code>translateZ</code> per node for depth parallax — tools at different distances from you in space.</p>
+      </div>
+      <div class="ann">
+        <span class="tag t-text">Text</span>
+        <p>Intro writes in: "The tools I reach for and the things that pull my eye — connected, because the way I see is the way I build." Skill labels fade + scale in at their star positions.</p>
+      </div>
+      <div class="ann">
+        <span class="tag t-scroll">Scroll <strong>(signature)</strong></span>
+        <p>Lines draw in time with scroll — scroll down and the web assembles; scroll up and it unravels. Two threads meet at the bridge: creative (Photo · Drawing · Motion) and engineering (React · TypeScript · Next.js · GSAP) — both connected through Three.js / R3F.</p>
+      </div>
+      <div class="ann">
+        <span class="tag t-exit">Hand-off</span>
+        <p>Web fades. Stars dissolve back into the starfield. The warm glow of the Sun begins to bleed in from the next section.</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- ─────────────────────────────────────────────────────────────────────── -->
+  <!-- 4 · PHOTOGRAPHY · Worlds in orbit                                       -->
+  <!-- ─────────────────────────────────────────────────────────────────────── -->
+  <div class="card">
+    <div class="stage">
+      <svg viewBox="0 0 180 155" width="180" height="155" xmlns="http://www.w3.org/2000/svg">
+        <defs>
+          <radialGradient id="sunGlow" cx="50%" cy="50%" r="50%">
+            <stop offset="0%" stop-color="#fff8d0" stop-opacity="0.95"/>
+            <stop offset="35%" stop-color="#ffb266" stop-opacity="0.45"/>
+            <stop offset="100%" stop-color="#ff8000" stop-opacity="0"/>
+          </radialGradient>
+          <radialGradient id="crackGlow" cx="46%" cy="52%" r="48%">
+            <stop offset="0%" stop-color="#ffe090" stop-opacity="0.95"/>
+            <stop offset="100%" stop-color="#ff5000" stop-opacity="0"/>
+          </radialGradient>
+          <filter id="gf" x="-60%" y="-60%" width="220%" height="220%">
+            <feGaussianBlur stdDeviation="1.2" result="b"/>
+            <feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge>
+          </filter>
+          <clipPath id="apClip"><circle cx="90" cy="107" r="13"/></clipPath>
+        </defs>
+
+        <!-- Orbit ellipse -->
+        <ellipse cx="90" cy="77" rx="74" ry="30" fill="none"
+                 stroke="rgba(36,137,255,0.32)" stroke-width="0.8" stroke-dasharray="3,3"/>
+
+        <!-- Far planets (upper arc — drawn first, appear behind) -->
+        <!-- θ=250° (65,49) -->
+        <circle cx="65" cy="49" r="4" fill="#4088c0"/>
+        <!-- θ=290° (115,49) -->
+        <circle cx="115" cy="49" r="4" fill="#c84030"/>
+        <!-- θ=210° (26,62) -->
+        <circle cx="26" cy="62" r="5" fill="#204090"/>
+        <!-- θ=330° (154,62) -->
+        <circle cx="154" cy="62" r="5" fill="#806030"/>
+
+        <!-- Sun (drawn after far planets, so it sits above them) -->
+        <circle cx="90" cy="77" r="20" fill="url(#sunGlow)"/>
+        <circle cx="90" cy="77" r="5.5" fill="#fff8e0" opacity="0.95"/>
+        <circle cx="90" cy="77" r="2.5" fill="#fff"/>
+        <text x="90" y="67" fill="rgba(255,240,160,0.55)" font-size="7.5"
+              text-anchor="middle" font-family="Helvetica Neue, Helvetica, Arial, sans-serif">Sun = me</text>
+
+        <!-- Mid-distance planets (sides) -->
+        <!-- θ=170° (17,82) -->
+        <circle cx="17" cy="82" r="6" fill="#5870a0"/>
+        <!-- θ=10° (163,82) -->
+        <circle cx="163" cy="82" r="6" fill="#409080"/>
+
+        <!-- Closer planets (lower sides) -->
+        <!-- θ=130° (43,100) -->
+        <circle cx="43" cy="100" r="7" fill="#b06838"/>
+        <!-- θ=50° (137,100) -->
+        <circle cx="137" cy="100" r="7" fill="#d0904a"/>
+
+        <!-- ACTIVE planet at front-bottom θ=90° (90,107) — cracked open -->
+        <!-- Planet base -->
+        <circle cx="90" cy="107" r="13" fill="#c05820"/>
+        <!-- Inner glow revealed through crack (clipped to sphere) -->
+        <rect x="77" y="94" width="26" height="26" fill="url(#crackGlow)" clip-path="url(#apClip)" opacity="0.85"/>
+        <!-- Crack line with glow -->
+        <path d="M87,95 L90,102 L87,108 L91,112 L89,119"
+              stroke="#ffe8a0" stroke-width="1.5" fill="none" filter="url(#gf)" opacity="0.95"/>
+        <!-- "cracked open" label -->
+        <text x="105" y="111" fill="rgba(255,215,100,0.75)" font-size="8"
+              text-anchor="start" font-family="Helvetica Neue, Helvetica, Arial, sans-serif">cracked open →</text>
+      </svg>
+    </div>
+    <div>
+      <p class="role">Photography · worlds in orbit</p>
+      <p class="sname">Light I've <span class="pk">caught</span></p>
+      <div class="ann">
+        <span class="tag t-enter">Entrance</span>
+        <p>Sun materializes at center (scale 0→1 + warm glow bloom) → orbit path draws → 9 planets drift in from depth, staggered, and settle into orbital positions.</p>
+      </div>
+      <div class="ann">
+        <span class="tag t-3d">3D</span>
+        <p><span class="badge3d">R3F</span> 9 textured spheres on a circular orbit path. Each planet self-spins + orbits. Central warm point light = the Sun — the settled core that survived the Hero explosion, the quiet center everything revolves around. Orbit speed nudges with scroll velocity.</p>
+      </div>
+      <div class="ann">
+        <span class="tag t-text">Text</span>
+        <p>"I photograph the sky when I'm not coding it" writes in. Body fades up: "Photography taught me patience and composition long before CSS did; it's the same instinct, pointed at the world instead of a screen."</p>
+      </div>
+      <div class="ann">
+        <span class="tag t-scroll">Scroll <strong>(signature)</strong></span>
+        <p>Scroll zooms into one planet at a time — others shrink + fade out of frame bounds. Active planet <strong>cracks open</strong>: a fracture grows across its surface, warm light bleeds through the fault line, photo texture reveals inside. Scroll again → crack seals → zoom out → next planet drifts forward. 9 planets = 9 photographs.</p>
+      </div>
+      <div class="ann">
+        <span class="tag t-exit">Hand-off</span>
+        <p>Camera pulls back to reveal all 9 worlds briefly. Then they drift away as the Lab's single orbiting dot appears in the dark.</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- ─────────────────────────────────────────────────────────────────────── -->
+  <!-- 5 · LAB · In progress                                                   -->
+  <!-- ─────────────────────────────────────────────────────────────────────── -->
+  <div class="card">
+    <div class="stage">
+      <div class="lab-wrap">
+        <div class="lab-ring"></div>
+        <div class="lab-star"></div>
+        <div class="lab-dot"></div>
+      </div>
+    </div>
+    <div>
+      <p class="role">The lab · in progress</p>
+      <p class="sname">Half-finished <span class="pk">thoughts</span></p>
+      <div class="ann">
+        <span class="tag t-enter">Entrance</span>
+        <p>Title writes in. A small dot quietly orbits a peach center point — signalling work-in-progress without feeling empty.</p>
+      </div>
+      <div class="ann">
+        <span class="tag t-3d">3D</span>
+        <p><span class="badge3d">CSS now → R3F later</span> Minimal at launch. Later, each experiment becomes its own lazy-loaded <code>&lt;Canvas&gt;</code> tile.</p>
+      </div>
+      <div class="ann">
+        <span class="tag t-text">Text</span>
+        <p>"Half-finished thoughts" writes in. Body: "This is where I tinker — small experiments in motion, shaders, and code. More will drift into orbit soon."</p>
+      </div>
+      <div class="ann">
+        <span class="tag t-scroll">Scroll</span>
+        <p>Calm — a slow drift, letting the page breathe before the finale. The orbiting dot keeps going regardless.</p>
+      </div>
+      <div class="ann">
+        <span class="tag t-exit">Hand-off</span>
+        <p>Fades toward the galaxy. The background deepens. First distant stars of the Contact section appear.</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- ─────────────────────────────────────────────────────────────────────── -->
+  <!-- 6 · CONTACT · The Galaxy                                                -->
+  <!-- ─────────────────────────────────────────────────────────────────────── -->
+  <div class="card">
+    <div class="stage">
+      <span class="star" style="width:2px;height:2px;left:22px;top:24px"></span>
+      <span class="star" style="width:2px;height:2px;right:26px;top:38px;background:#c5e0ff"></span>
+      <span class="star" style="width:1px;height:1px;left:50px;bottom:30px;background:#c5e0ff;opacity:0.6"></span>
+      <!-- Shooting star -->
+      <span style="position:absolute;width:30px;height:1.5px;background:linear-gradient(90deg,#fff,transparent);
+                   transform:rotate(-20deg);right:20px;top:54px;border-radius:0"></span>
+      <div class="galaxy-disk"></div>
+    </div>
+    <div>
+      <p class="role">Contact · the galaxy</p>
+      <p class="sname">Say <span class="pk">hello</span></p>
+      <div class="ann">
+        <span class="tag t-enter">Entrance</span>
+        <p>Galaxy fades + rotates into view, keeps slowly spinning. Shooting star streaks across on a loop (random delay). Title writes in. Form fields fade up staggered. CTA softly pulses.</p>
+      </div>
+      <div class="ann">
+        <span class="tag t-3d">3D</span>
+        <p><span class="badge3d">R3F</span> Galaxy = particle system (thousands of points on spiral arms) slowly rotating with a bloomed core. The shooting star is a single fast-moving particle trail.</p>
+      </div>
+      <div class="ann">
+        <span class="tag t-text">Text</span>
+        <p>"Say hello" writes in. "I'm warmer up close than I look from all the way down here. If something resonated — send a note." Input focus adds a soft peach glow.</p>
+      </div>
+      <div class="ann">
+        <span class="tag t-scroll">Scroll</span>
+        <p>The galaxy is the destination — scroll settles here. It keeps living (spinning) while you read and compose your message.</p>
+      </div>
+      <div class="ann">
+        <span class="tag t-exit">Micro-interaction</span>
+        <p><strong>On submit:</strong> "Send it into orbit" — the message launches as a shooting star arcing into the galaxy. A quiet, delightful ending.</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- ─────────────────────────────────────────────────────────────────────── -->
+  <!-- Bookend                                                                  -->
+  <!-- ─────────────────────────────────────────────────────────────────────── -->
+  <div class="bookend">
+    <h3>How it starts &amp; ends</h3>
+    <p><strong>Start:</strong> A black, silent screen. One star is born — your star — and ignites with light. Your name writes itself beneath it, and a quiet line invites: <em>scroll to wander ↓</em>.</p>
+    <p><strong>The explosion:</strong> The star doesn't die. It detonates at full screen, releases itself, and the same particles that built it drift inward and become something denser — your planet, your inner world. Same material. Different form.</p>
+    <p><strong>The Sun:</strong> The settled core that survived the explosion becomes the Sun at the center of your photography section. It is you — not raw and burning, but calm and gravitational. Nine worlds you caught revolve around it.</p>
+    <p><strong>End:</strong> You arrive at a whole galaxy — slowly turning — and send a message that flies off as a shooting star into the dark.</p>
+    <p><strong>The arc:</strong> From a single point of raw light to a whole cosmos. From making things alone to connection across the dark. One material, many forms. <em>That is the story.</em></p>
+  </div>
+
+</div>
+</body>
+</html>

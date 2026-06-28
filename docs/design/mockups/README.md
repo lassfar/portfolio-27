@@ -8,13 +8,15 @@ Open the `.html` files directly in a browser (no build step, no dependencies bey
 | [`01-sunrise-journey.html`](01-sunrise-journey.html) | **Sunrise Journey** | Warm, narrative, dawn→night scroll | Peach / dark-peach |
 | [`02-living-canvas.html`](02-living-canvas.html) | **Living Canvas** | Cosmic, generative, reactive | Peach + baby-blue on space-black |
 | [`03-living-canvas-personal.html`](03-living-canvas-personal.html) | **Living Canvas + voice** | Cosmic with personal copy + NASA-style nebula star | Peach + baby-blue |
-| [`04-living-canvas-3d-worlds.html`](04-living-canvas-3d-worlds.html) | **Living Canvas + 3D worlds** ⭐ current | Each section a space object: planet, camera constellation, photo-worlds, galaxy | Peach + baby-blue |
+| [`04-living-canvas-3d-worlds.html`](04-living-canvas-3d-worlds.html) | **Living Canvas + 3D worlds** | Each section a space object: planet, camera constellation, photo-worlds, galaxy | Peach + baby-blue |
 
 | [`05-content-draft.html`](05-content-draft.html) | **Content draft** ⭐ copy | Full final-quality copy for every section, in Aymane's voice | Peach + baby-blue |
 
-| [`06-motion-storyboard.html`](06-motion-storyboard.html) | **Motion storyboard** ⭐ animation | How every section enters, where 3D lives, how text/scroll behave, start→end arc | Peach + baby-blue |
+| [`06-motion-storyboard.html`](06-motion-storyboard.html) | **Motion storyboard v1** | Original animation plan (outdated — star shrinks on scroll, camera constellation) | Peach + baby-blue |
 
-⭐ **`04`** is the current visual direction; **`05`** is the written content; **`06`** is how it all moves.
+| [`07-storyboard-v2.html`](07-storyboard-v2.html) | **Motion storyboard v2** ⭐ current | Updated arc: star explodes → planet born from debris, organic living web skills, 9 photography planets orbiting the Sun | Peach + baby-blue |
+
+⭐ **`04`** is the visual direction; **`05`** is the written content; **`07`** is how it all moves.
 
 ## The two directions
 
