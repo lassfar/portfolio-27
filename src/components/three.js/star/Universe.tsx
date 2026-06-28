@@ -5,9 +5,12 @@ import { useEffect, useRef } from "react";
 import { Group } from "three";
 import Nebula from "./Nebula";
 import Starfield from "./Starfield";
-import { LAYOUT, ROTATION, SCREEN_FILL_SCALE, ZOOM } from "./config";
+import { JOURNEY, LAYOUT, ROTATION, SCREEN_FILL_SCALE, ZOOM } from "./config";
 import { damp, remap01 } from "./utils";
 import { useHeroScroll } from "#/stores/useHeroScroll";
+import { useAboutScroll } from "#/stores/useAboutScroll";
+import { useSceneRotation } from "#/stores/useSceneRotation";
+import { useSceneIntro } from "#/stores/useSceneIntro";
 
 type Props = {
   animate?: boolean;
@@ -42,6 +45,9 @@ const Universe = ({ animate = true, count }: Props) => {
   const zoomY = useRef<number>(LAYOUT.starY);
   const zoomZ = useRef(0);
 
+  // Smoothed scroll-driven rotation (glides toward the scroll target).
+  const scrollYaw = useRef(0);
+
   useEffect(() => {
     const el = gl.domElement;
     el.style.cursor = "grab";
@@ -57,8 +63,11 @@ const Universe = ({ animate = true, count }: Props) => {
       const dy = e.clientY - last.current.y;
       last.current = { x: e.clientX, y: e.clientY };
       // Accumulate freely — no clamp → unlimited rotation in any direction.
+      // Horizontal (yaw) always; vertical (pitch) only when enabled in config.
       targetRot.current.y += dx * ROTATION.sensitivity;
-      targetRot.current.x += dy * ROTATION.sensitivity;
+      if (ROTATION.allowVerticalDrag) {
+        targetRot.current.x += dy * ROTATION.sensitivity;
+      }
     };
     const onUp = () => {
       dragging.current = false;
@@ -88,14 +97,43 @@ const Universe = ({ animate = true, count }: Props) => {
       targetRot.current.y,
       ROTATION.damping
     );
+
+    // One-time intro spin (horizontal). Its progress + easing are driven by the
+    // Hero's text-intro timeline (full speed immediately, finishing together).
+    const introYaw =
+      useSceneIntro.getState().progress * JOURNEY.introTurns * Math.PI * 2;
+
+    // Scroll-driven horizontal rotation: a full turn over the star, another
+    // over the planet assembly (reuses both scroll stores). All amounts live in
+    // config.JOURNEY so they're easy to tune. Damped so it glides toward the
+    // scroll position rather than snapping to it.
+    const starP = useHeroScroll.getState().progress;
+    const aboutP = useAboutScroll.getState().progress;
+    const targetScrollYaw =
+      (starP * JOURNEY.scrollTurnsStar + aboutP * JOURNEY.scrollTurnsPlanet) *
+      Math.PI *
+      2;
+    scrollYaw.current = damp(
+      scrollYaw.current,
+      targetScrollYaw,
+      JOURNEY.scrollSpinDamping
+    );
+
+    // Total horizontal rotation = drag + idle drift (damped) + intro + scroll.
+    const yaw = currentRot.current.y + introYaw + scrollYaw.current;
+
     if (starfieldRotRef.current) {
       starfieldRotRef.current.rotation.x = currentRot.current.x;
-      starfieldRotRef.current.rotation.y = currentRot.current.y;
+      starfieldRotRef.current.rotation.y = yaw;
     }
     if (nebulaSpinRef.current) {
       nebulaSpinRef.current.rotation.x = currentRot.current.x;
-      nebulaSpinRef.current.rotation.y = currentRot.current.y;
+      nebulaSpinRef.current.rotation.y = yaw;
     }
+
+    // Publish the scene rotation so the (non-interactive) Saturn mirrors it and
+    // the whole cosmos turns together (intro + scroll + drag).
+    useSceneRotation.getState().setRotation(currentRot.current.x, yaw);
 
     // ── Scroll zoom: center → grow → fly through camera (the burst itself
     //    lives in the nebula's shader) ──

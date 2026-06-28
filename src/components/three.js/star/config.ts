@@ -77,6 +77,7 @@ export const ROTATION = {
   sensitivity: 0.003, // radians of rotation per pixel dragged
   damping: 0.03, // 0..1 follow speed (higher = snappier)
   idleDrift: 0.02, // radians/sec of gentle auto-rotation
+  allowVerticalDrag: false, // let the user tilt the scene up/down by dragging (false = horizontal only)
 } as const;
 
 // ── Scroll sequence ──────────────────────────────────────────────────────────
@@ -98,6 +99,44 @@ const EXPLOSION_START = 0.62;
 export const HERO_SCROLL = {
   pinLength: "+=220%", // total scroll the pinned hero spans
   contentExit: 0.2, // fraction of the timeline over which the content leaves
+} as const;
+
+/**
+ * The unified Hero→About "journey": one pinned ScrollTrigger drives BOTH the
+ * star (useHeroScroll) and Saturn's assembly (useAboutScroll).
+ *
+ * The star keeps its original ~220% of scroll feel: it plays over 0..starSpan
+ * of the journey. Saturn assembles over assembleStart..1, overlapping the
+ * star's burst so the explosion debris hands off into the planet.
+ */
+export const JOURNEY = {
+  // Phase thresholds are fractions of pinLength. The scroll Saturn takes to
+  // build = (assembleEnd − assembleStart) × pinLength. To give it MORE build
+  // scroll, widen that gap and bump pinLength to match (these keep the star at
+  // ≈220% of a viewport while the assembly gets ≈260%).
+  pinLength: "+=550%", // total pinned scroll for star → Saturn → reveal
+  starSpan: 0.4, // star plays over 0..starSpan (≈220% of 550%)
+  assembleStart: 0.364, // Saturn assembles over assembleStart..assembleEnd (overlaps the burst)
+  assembleEnd: 0.836, // Saturn fully built by here — ≈260% of scroll to build
+  contentExit: 0.1, // fraction of the journey over which the hero copy lifts away
+
+  // Horizontal scene rotation (whole cosmos turns together, on top of the slow
+  // auto-spin + drag). Tune these to change how much it turns.
+  scrollTurnsStar: 0.5, // full turns as the star plays (start → explosion)
+  scrollTurnsPlanet: 0.5, // full turns as Saturn assembles (→ fully visible)
+  scrollSpinDamping: 0.06, // 0..1 — lower = smoother / slower response to scroll
+
+  // One-time intro spin on first render. Full speed immediately, finishing in
+  // sync with the hero text intro (duration comes from that timeline).
+  introTurns: 1, // full horizontal turns on load
+
+  // End reveal: once Saturn is built, the cosmos blurs + dims and the About copy
+  // slides in over it — scrubbed over revealStart..1 (the tail of the journey).
+  // The gap between assembleEnd and revealStart is a stretch of scroll where the
+  // finished planet just rests before the reveal (widen the gap for more).
+  revealStart: 0.891, // journey progress where the blur + text reveal begins
+  revealBlur: 64, // px of blur on the cosmos (matches Tailwind blur-3xl)
+  revealDim: 0.6, // brightness multiplier on the cosmos (slight dim)
 } as const;
 
 /** Camera-less "zoom": centering, growing and the fly-through (Universe). */
