@@ -3,6 +3,7 @@
 import { useRef } from "react";
 import dynamic from "next/dynamic";
 import useTextsWritingMotion from "#/components/hooks/motions/texts/useTextsWritingMotion";
+import { addTextsScrollFill } from "#/components/hooks/motions/texts/textsScrollFillMotion";
 import SunriseLogo from "#/components/assets/pictures/logos/sunrise-logo";
 import Button from "#/components/UI/buttons/Button";
 import { useGSAP } from "@gsap/react";
@@ -34,6 +35,9 @@ const Hero = () => {
   const contentRef = useRef<HTMLDivElement | null>(null);
   const canvasWrapRef = useRef<HTMLDivElement | null>(null);
   const aboutRevealRef = useRef<HTMLDivElement | null>(null);
+  const aboutTitleRef = useRef<HTMLHeadingElement | null>(null);
+  const aboutPara1Ref = useRef<HTMLParagraphElement | null>(null);
+  const aboutPara2Ref = useRef<HTMLParagraphElement | null>(null);
 
   // Headline writes in, character by character.
   useTextsWritingMotion({
@@ -137,7 +141,8 @@ const Hero = () => {
       },
     });
 
-    const revealDur = 1 - JOURNEY.revealStart;
+    // Blur + slide-in run between revealStart and the start of the letter fill.
+    const revealDur = JOURNEY.fillStart - JOURNEY.revealStart;
 
     // Hero copy rises and fades out early (the star journey takes over).
     tl.to(
@@ -179,9 +184,43 @@ const Hero = () => {
         JOURNEY.revealStart
       );
 
+    // Reading reveal — added straight onto the journey timeline so it scrubs in
+    // lockstep over fillStart..1: title fills letter-by-letter to its own
+    // colours (no bounce); paragraphs fill word-by-word to white with a bounce.
+    const fillSplits = addTextsScrollFill(
+      tl,
+      [
+        {
+          ref: aboutTitleRef,
+          type: "chars",
+          fromColor: "rgba(255, 255, 255, 0.16)",
+          ease: "power1.out",
+          weight: 1,
+        },
+        {
+          ref: aboutPara1Ref,
+          type: "words",
+          fromColor: "rgba(255, 255, 255, 0.16)",
+          y: 14,
+          ease: "back.out(2)",
+          weight: 2,
+        },
+        {
+          ref: aboutPara2Ref,
+          type: "words",
+          fromColor: "rgba(255, 255, 255, 0.16)",
+          y: 14,
+          ease: "back.out(2)",
+          weight: 2,
+        },
+      ],
+      { at: JOURNEY.fillStart, duration: 1 - JOURNEY.fillStart }
+    );
+
     return () => {
       setStar(0);
       setAbout(0);
+      fillSplits.forEach((s) => s.revert());
     };
   });
 
@@ -296,6 +335,7 @@ const Hero = () => {
         )}
       >
         <h2
+          ref={aboutTitleRef}
           className={clsx(
             "home-about__title",
             "font-great-vibes text-white",
@@ -309,9 +349,10 @@ const Hero = () => {
 
         <div className="max-w-2xl space-y-5 sm:space-y-6">
           <p
+            ref={aboutPara1Ref}
             className={clsx(
               "home-about__body",
-              "text-white/80 font-light",
+              "text-white font-light",
               "text-base sm:text-lg md:text-xl leading-relaxed sm:leading-loose"
             )}
           >
@@ -322,9 +363,10 @@ const Hero = () => {
             the moment a page finally breathes.
           </p>
           <p
+            ref={aboutPara2Ref}
             className={clsx(
               "home-about__body",
-              "text-white/80 font-light",
+              "text-white font-light",
               "text-base sm:text-lg md:text-xl leading-relaxed sm:leading-loose"
             )}
           >

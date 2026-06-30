@@ -114,11 +114,11 @@ export const JOURNEY = {
   // build = (assembleEnd − assembleStart) × pinLength. To give it MORE build
   // scroll, widen that gap and bump pinLength to match (these keep the star at
   // ≈220% of a viewport while the assembly gets ≈260%).
-  pinLength: "+=550%", // total pinned scroll for star → Saturn → reveal
-  starSpan: 0.4, // star plays over 0..starSpan (≈220% of 550%)
-  assembleStart: 0.364, // Saturn assembles over assembleStart..assembleEnd (overlaps the burst)
-  assembleEnd: 0.836, // Saturn fully built by here — ≈260% of scroll to build
-  contentExit: 0.1, // fraction of the journey over which the hero copy lifts away
+  pinLength: "+=860%", // total pinned scroll for star → Saturn → reveal → text fill
+  starSpan: 0.256, // star plays over 0..starSpan (≈220% of 860%)
+  assembleStart: 0.233, // Saturn assembles over assembleStart..assembleEnd (overlaps the burst)
+  assembleEnd: 0.535, // Saturn fully built by here — ≈260% of scroll to build
+  contentExit: 0.08, // fraction of the journey over which the hero copy lifts away
 
   // Horizontal scene rotation (whole cosmos turns together, on top of the slow
   // auto-spin + drag). Tune these to change how much it turns.
@@ -134,9 +134,13 @@ export const JOURNEY = {
   // slides in over it — scrubbed over revealStart..1 (the tail of the journey).
   // The gap between assembleEnd and revealStart is a stretch of scroll where the
   // finished planet just rests before the reveal (widen the gap for more).
-  revealStart: 0.891, // journey progress where the blur + text reveal begins
+  revealStart: 0.57, // journey progress where the blur + text slide-in begins
   revealBlur: 64, // px of blur on the cosmos (matches Tailwind blur-3xl)
   revealDim: 0.6, // brightness multiplier on the cosmos (slight dim)
+
+  // After the gray text has slid in, the letters colour in (gray → white, the
+  // title to its own colours) as you keep scrolling — over fillStart..1.
+  fillStart: 0.628, // journey progress where the per-letter/word colour fill begins (≈320% of scroll → slower fill)
 } as const;
 
 /** Camera-less "zoom": centering, growing and the fly-through (Universe). */
