@@ -121,9 +121,38 @@ const Hero = () => {
     const setStar = useHeroScroll.getState().setProgress;
     const setAbout = useAboutScroll.getState().setProgress;
 
-    // Reveal starts hidden / un-blurred.
-    gsap.set(aboutRevealRef.current, { autoAlpha: 0, y: -40 });
-    gsap.set(canvasWrapRef.current, { filter: "blur(0px) brightness(1)" });
+    // The About block + cosmos are driven deterministically from the scroll
+    // progress (a pure function, set every frame), so the reveal and exit
+    // reverse perfectly on scroll-up — no tween start-value recording or
+    // autoAlpha visibility snapping (the source of the scrub-up glitches).
+    const easeIn = gsap.parseEase("power2.in");
+    const easeOut = gsap.parseEase("power2.out");
+
+    const renderAbout = (p: number) => {
+      const enterLin = remap01(p, JOURNEY.revealStart, JOURNEY.fillStart);
+      const exitLin = remap01(p, JOURNEY.exitStart, 1);
+      const enter = easeOut(enterLin);
+      const exit = easeIn(exitLin);
+
+      // Block: fades in on the reveal, out on the exit; slides -40 → 0 → -80;
+      // blurs only as it exits.
+      const block = aboutRevealRef.current;
+      if (block) {
+        block.style.opacity = String(enter * (1 - exit));
+        block.style.transform = `translateY(${-40 * (1 - enter) - 80 * exit}px)`;
+        block.style.filter = `blur(${16 * exit}px)`;
+      }
+
+      // Cosmos: blurs + dims in over the reveal, un-blurs back over the exit.
+      const cosmos = canvasWrapRef.current;
+      if (cosmos) {
+        const k = enterLin * (1 - exitLin);
+        cosmos.style.filter = `blur(${JOURNEY.revealBlur * k}px) brightness(${
+          1 - (1 - JOURNEY.revealDim) * k
+        })`;
+      }
+    };
+    renderAbout(0); // start hidden / un-blurred
 
     const tl = gsap.timeline({
       scrollTrigger: {
@@ -135,14 +164,12 @@ const Hero = () => {
         onUpdate: (self) => {
           const p = self.progress;
           setStar(clamp01(p / JOURNEY.starSpan));
-          // Saturn is fully built by assembleEnd; the rest is the reveal.
+          // Saturn is fully built by assembleEnd; the rest is the reveal/exit.
           setAbout(remap01(p, JOURNEY.assembleStart, JOURNEY.assembleEnd));
+          renderAbout(p);
         },
       },
     });
-
-    // Blur + slide-in run between revealStart and the start of the letter fill.
-    const revealDur = JOURNEY.fillStart - JOURNEY.revealStart;
 
     // Hero copy rises and fades out early (the star journey takes over).
     tl.to(
@@ -161,32 +188,11 @@ const Hero = () => {
         0
       )
       // Spacer so the pin (and the scrubbed progress) spans the whole journey.
-      .to({}, { duration: 1 - JOURNEY.contentExit })
-      // End reveal — once Saturn is built: blur + dim the cosmos…
-      .to(
-        canvasWrapRef.current,
-        {
-          filter: `blur(${JOURNEY.revealBlur}px) brightness(${JOURNEY.revealDim})`,
-          ease: "none",
-          duration: revealDur,
-        },
-        JOURNEY.revealStart
-      )
-      // …and slide the About title + description in from the top.
-      .to(
-        aboutRevealRef.current,
-        {
-          autoAlpha: 1,
-          y: 0,
-          ease: "power2.out",
-          duration: revealDur,
-        },
-        JOURNEY.revealStart
-      );
+      .to({}, { duration: 1 - JOURNEY.contentExit });
 
     // Reading reveal — added straight onto the journey timeline so it scrubs in
-    // lockstep over fillStart..1: title fills letter-by-letter to its own
-    // colours (no bounce); paragraphs fill word-by-word to white with a bounce.
+    // lockstep over fillStart..exitStart: title fills letter-by-letter to its own
+    // colours; paragraphs fill word-by-word to white with a bounce.
     const fillSplits = addTextsScrollFill(
       tl,
       [
@@ -214,7 +220,7 @@ const Hero = () => {
           weight: 2,
         },
       ],
-      { at: JOURNEY.fillStart, duration: 1 - JOURNEY.fillStart }
+      { at: JOURNEY.fillStart, duration: JOURNEY.exitStart - JOURNEY.fillStart }
     );
 
     return () => {

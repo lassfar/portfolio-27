@@ -114,10 +114,10 @@ export const JOURNEY = {
   // build = (assembleEnd − assembleStart) × pinLength. To give it MORE build
   // scroll, widen that gap and bump pinLength to match (these keep the star at
   // ≈220% of a viewport while the assembly gets ≈260%).
-  pinLength: "+=860%", // total pinned scroll for star → Saturn → reveal → text fill
-  starSpan: 0.256, // star plays over 0..starSpan (≈220% of 860%)
-  assembleStart: 0.233, // Saturn assembles over assembleStart..assembleEnd (overlaps the burst)
-  assembleEnd: 0.535, // Saturn fully built by here — ≈260% of scroll to build
+  pinLength: "+=1010%", // total pinned scroll: star → Saturn → reveal → fill → exit
+  starSpan: 0.218, // star plays over 0..starSpan (≈220% of 1010%)
+  assembleStart: 0.198, // Saturn assembles over assembleStart..assembleEnd (overlaps the burst)
+  assembleEnd: 0.455, // Saturn fully built by here — ≈260% of scroll to build
   contentExit: 0.08, // fraction of the journey over which the hero copy lifts away
 
   // Horizontal scene rotation (whole cosmos turns together, on top of the slow
@@ -134,13 +134,17 @@ export const JOURNEY = {
   // slides in over it — scrubbed over revealStart..1 (the tail of the journey).
   // The gap between assembleEnd and revealStart is a stretch of scroll where the
   // finished planet just rests before the reveal (widen the gap for more).
-  revealStart: 0.57, // journey progress where the blur + text slide-in begins
+  revealStart: 0.485, // journey progress where the blur + text slide-in begins
   revealBlur: 64, // px of blur on the cosmos (matches Tailwind blur-3xl)
   revealDim: 0.6, // brightness multiplier on the cosmos (slight dim)
 
   // After the gray text has slid in, the letters colour in (gray → white, the
   // title to its own colours) as you keep scrolling — over fillStart..1.
-  fillStart: 0.628, // journey progress where the per-letter/word colour fill begins (≈320% of scroll → slower fill)
+  fillStart: 0.535, // journey progress where the per-letter/word colour fill begins (≈320% of scroll → slower fill)
+
+  // After the fill, the About block exits (slides up + fades + blurs out) while
+  // the cosmos un-blurs back to the sharp Saturn — then the pin releases.
+  exitStart: 0.851, // journey progress where the About exit begins (fill ends here)
 } as const;
 
 /** Camera-less "zoom": centering, growing and the fly-through (Universe). */
