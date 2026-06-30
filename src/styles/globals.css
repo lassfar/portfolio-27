@@ -76,6 +76,16 @@
   }
 }
 
+@keyframes twinkle {
+  0%,
+  100% {
+    opacity: 0.2;
+  }
+  50% {
+    opacity: 0.8;
+  }
+}
+
 .krona-one-regular {
   font-family: "Krona One", sans-serif;
   font-weight: 400;
