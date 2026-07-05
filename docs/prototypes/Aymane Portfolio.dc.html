@@ -1,0 +1,644 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet data-dc-atomics>
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Great+Vibes&family=Krona+One&display=swap" rel="stylesheet" />
+<script src="https://unpkg.com/three@0.128.0/build/three.min.js"></script>
+<style>
+  html, body { margin:0; padding:0; background:#19191C; }
+  body { overflow-x:hidden; }
+  *::selection { background:rgba(255,161,74,0.3); }
+  [data-fill] {
+    color:transparent;
+    background-image:linear-gradient(90deg,#ffffff 0%, #ffffff var(--p,0%), rgba(255,255,255,0.14) calc(var(--p,0%) + 7%), rgba(255,255,255,0.14) 100%);
+    -webkit-background-clip:text; background-clip:text;
+  }
+  @keyframes tw { 0%,100%{opacity:.2} 50%{opacity:.9} }
+  @keyframes labspin { to { transform:rotate(360deg); } }
+  @keyframes shootLoop {
+    0% { transform:translate(0,0) rotate(-24deg); opacity:0; }
+    6% { opacity:1; }
+    55% { opacity:1; }
+    100% { transform:translate(-130vw,58vh) rotate(-24deg); opacity:0; }
+  }
+  @keyframes ctaPulse { 0%,100%{box-shadow:0 0 0 0 rgba(255,161,74,0);} 50%{box-shadow:0 0 22px 2px rgba(255,161,74,0.35);} }
+  .cin::-webkit-input-placeholder { color:rgba(255,255,255,0.28); }
+  .cin::placeholder { color:rgba(255,255,255,0.28); }
+</style>
+</helmet>
+<div ref="{{ rootRef }}" style="position:relative; width:100%; background:#19191C; font-family:'Helvetica Neue',Helvetica,Arial,sans-serif;">
+
+  <!-- ========= FIXED WEBGL STAGE ========= -->
+  <div style="position:fixed; inset:0; overflow:hidden; z-index:0; background:radial-gradient(130% 90% at 50% 40%, #1d1d22 0%, #19191C 45%, #0d0d10 100%);">
+    <div data-sf style="position:absolute; inset:0; z-index:1; pointer-events:none;"></div>
+    <div data-sunglow style="position:absolute; left:50%; top:52%; width:130vmax; height:130vmax; transform:translate(-50%,-50%); z-index:2; pointer-events:none; opacity:0; background:radial-gradient(circle, rgba(255,161,74,0.16) 0%, rgba(239,125,20,0.05) 26%, transparent 55%);"></div>
+    <canvas ref="{{ canvasRef }}" style="position:absolute; inset:0; width:100%; height:100%; display:block; z-index:3;"></canvas>
+    <div data-dim style="position:absolute; inset:0; z-index:4; pointer-events:none; opacity:0; background:radial-gradient(120% 90% at 50% 45%, rgba(11,13,22,0.35), rgba(5,6,10,0.82));"></div>
+
+    <!-- shooting star (contact) -->
+    <div data-shoot style="position:absolute; right:-60px; top:14%; z-index:5; width:150px; height:2px; pointer-events:none; opacity:0; background:linear-gradient(90deg, rgba(255,255,255,0.95), rgba(255,227,199,0.5) 40%, transparent); border-radius:2px; box-shadow:0 0 8px 1px rgba(255,227,199,0.6);"></div>
+
+    <!-- ===== OVERLAYS (z above canvas) ===== -->
+    <div data-ov="hero" style="position:absolute; inset:0; z-index:6; display:flex; flex-direction:column; align-items:center; justify-content:center; text-align:center; padding:0 26px; opacity:0; pointer-events:none;">
+      <p style="font-family:'Krona One',sans-serif; font-size:12px; letter-spacing:3px; text-transform:uppercase; color:#C5E0FF; margin:0 0 20px;">I&rsquo;m Aymane &mdash;</p>
+      <h1 style="font-family:'Great Vibes',cursive; font-weight:400; font-size:clamp(46px,8.4vw,108px); line-height:1.0; margin:0; color:#fff; text-shadow:0 4px 40px rgba(255,161,74,0.18);">A quiet maker of <span style="color:#FFA14A;">Small Universes</span></h1>
+      <p style="max-width:520px; font-size:15px; line-height:1.75; color:rgba(255,255,255,0.62); margin:26px 0 0;">I notice light. I&rsquo;ve been drawing since before I could write. Now I do it with code.</p>
+      <div data-hint style="margin-top:38px; font-family:'Krona One',sans-serif; font-size:11px; letter-spacing:2.5px; text-transform:uppercase; color:#FFA14A;">To wander &darr;</div>
+    </div>
+
+    <div data-ov="about" style="position:absolute; inset:0; z-index:6; display:flex; align-items:center; justify-content:center; padding:0 26px; opacity:0; pointer-events:none;">
+      <div style="max-width:660px;">
+        <p style="font-family:'Krona One',sans-serif; font-size:11px; letter-spacing:2.5px; text-transform:uppercase; color:#C5E0FF; margin:0 0 12px;">Beyond the code</p>
+        <h2 style="font-family:'Great Vibes',cursive; font-weight:400; font-size:clamp(38px,6vw,66px); line-height:1.0; margin:0 0 26px; color:#fff;">Beyond <span style="color:#FFA14A;">The Code</span></h2>
+        <p data-fill style="font-size:clamp(16px,2.1vw,21px); line-height:1.7; margin:0 0 20px;">I don&rsquo;t fill rooms &mdash; I notice them. I&rsquo;ve always been the quiet one, more at home watching than performing. That&rsquo;s where the work comes from: a love of small, patient details &mdash; the right easing curve, the soft edge of a shadow, the moment a page finally breathes.</p>
+        <p data-fill style="font-size:clamp(16px,2.1vw,21px); line-height:1.7; margin:0;">I build the way I drew as a kid: slowly, and for the love of it. Only now, other people get to live inside what I make. I care less about looking impressive than about being honest &mdash; quiet interfaces that feel considered, and a little bit alive.</p>
+      </div>
+    </div>
+
+    <div data-ov="skills" style="position:absolute; inset:0; z-index:6; display:flex; flex-direction:column; align-items:center; justify-content:center; text-align:center; padding:0 26px; opacity:0; pointer-events:none;">
+      <p style="font-family:'Krona One',sans-serif; font-size:11px; letter-spacing:2.5px; text-transform:uppercase; color:#C5E0FF; margin:0 0 12px;">The constellation</p>
+      <h2 style="font-family:'Great Vibes',cursive; font-weight:400; font-size:clamp(38px,6vw,64px); line-height:1.0; margin:0 0 8px; color:#fff;">What I&rsquo;m <span style="color:#FFA14A;">drawn to</span></h2>
+      <p style="max-width:460px; font-size:14px; line-height:1.7; color:rgba(255,255,255,0.55); margin:0 0 6px;">The tools I reach for and the things that pull my eye &mdash; connected, because the way I see is the way I build.</p>
+      <svg data-skillsvg viewBox="0 0 520 300" style="width:min(640px,92vw); height:auto; margin-top:4px; overflow:visible;">
+        <g data-slines stroke="#2489ff" stroke-width="1" fill="none" stroke-linecap="round">
+          <line pathLength="1" x1="70" y1="120" x2="150" y2="70"/>
+          <line pathLength="1" x1="150" y1="70" x2="120" y2="180"/>
+          <line pathLength="1" x1="120" y1="180" x2="70" y2="120"/>
+          <line pathLength="1" x1="150" y1="70" x2="260" y2="150"/>
+          <line pathLength="1" x1="120" y1="180" x2="260" y2="150"/>
+          <line pathLength="1" x1="260" y1="150" x2="380" y2="80"/>
+          <line pathLength="1" x1="260" y1="150" x2="400" y2="150"/>
+          <line pathLength="1" x1="260" y1="150" x2="380" y2="220"/>
+          <line pathLength="1" x1="380" y1="80" x2="460" y2="120"/>
+          <line pathLength="1" x1="380" y1="220" x2="450" y2="200"/>
+          <line pathLength="1" x1="380" y1="80" x2="400" y2="150"/>
+          <line pathLength="1" x1="400" y1="150" x2="380" y2="220"/>
+        </g>
+        <g data-snodes font-family="Helvetica Neue, Helvetica, Arial, sans-serif" font-size="11" text-anchor="middle">
+          <g><circle cx="70" cy="120" r="4" fill="#FFA14A"/><text x="70" y="108" fill="#FFE3C7">Photography</text></g>
+          <g><circle cx="150" cy="70" r="4" fill="#FFA14A"/><text x="150" y="58" fill="#FFE3C7">Drawing</text></g>
+          <g><circle cx="120" cy="180" r="4" fill="#FFA14A"/><text x="120" y="200" fill="#FFE3C7">Motion</text></g>
+          <g><circle cx="260" cy="150" r="7" fill="#FFA14A"/><circle cx="260" cy="150" r="13" fill="#FFA14A" opacity="0.14"/><text x="260" y="176" fill="#C5E0FF" font-size="12">Three.js / R3F</text></g>
+          <g><circle cx="380" cy="80" r="4" fill="#2489FF"/><text x="380" y="68" fill="#C5E0FF">React</text></g>
+          <g><circle cx="400" cy="150" r="4" fill="#2489FF"/><text x="424" y="153" fill="#C5E0FF">TypeScript</text></g>
+          <g><circle cx="380" cy="220" r="4" fill="#2489FF"/><text x="380" y="240" fill="#C5E0FF">Next.js</text></g>
+          <g><circle cx="460" cy="120" r="4" fill="#2489FF"/><text x="460" y="108" fill="#C5E0FF">GSAP</text></g>
+          <g><circle cx="450" cy="200" r="3.4" fill="#2489FF"/></g>
+        </g>
+      </svg>
+    </div>
+
+    <div data-ov="photo" style="position:absolute; inset:0; z-index:6; display:flex; flex-direction:column; align-items:center; justify-content:flex-start; text-align:center; padding:9vh 26px 0; opacity:0; pointer-events:none;">
+      <p style="font-family:'Krona One',sans-serif; font-size:11px; letter-spacing:2.5px; text-transform:uppercase; color:#C5E0FF; margin:0 0 12px;">Worlds in orbit</p>
+      <h2 style="font-family:'Great Vibes',cursive; font-weight:400; font-size:clamp(38px,6vw,64px); line-height:1.0; margin:0 0 8px; color:#fff;">Light I&rsquo;ve <span style="color:#FFA14A;">caught</span></h2>
+      <p style="max-width:500px; font-size:14px; line-height:1.7; color:rgba(255,255,255,0.55); margin:0;">I photograph the sky when I&rsquo;m not coding it. Mostly landscapes &mdash; horizons, weather, the few quiet minutes when the light turns gold and then blue.</p>
+      <div data-photo style="position:absolute; left:50%; top:54%; transform:translate(-50%,-50%) scale(0.86); width:min(340px,74vw); height:min(230px,50vw); border-radius:14px; opacity:0; overflow:hidden; box-shadow:0 30px 90px rgba(0,0,0,0.6), 0 0 0 1px rgba(255,255,255,0.08); background:#222;">
+        <div data-pimg style="position:absolute; inset:0;"></div>
+        <div style="position:absolute; inset:0; background:linear-gradient(0deg, rgba(0,0,0,0.55), transparent 45%);"></div>
+        <div data-plabel style="position:absolute; left:16px; bottom:12px; text-align:left; font-family:'Krona One',sans-serif; font-size:11px; letter-spacing:1.5px; text-transform:uppercase; color:#fff;">Golden hour</div>
+        <div data-pnum style="position:absolute; right:14px; top:12px; font-family:'Krona One',sans-serif; font-size:10px; letter-spacing:1px; color:rgba(255,255,255,0.6);">01 / 09</div>
+      </div>
+      <div data-pdrop style="position:absolute; left:50%; bottom:8%; transform:translateX(-50%); font-family:'Krona One',sans-serif; font-size:9.5px; letter-spacing:1.5px; text-transform:uppercase; color:rgba(255,255,255,0.32);">&larr; scroll &middot; drop a photo per world &rarr;</div>
+    </div>
+
+    <div data-ov="lab" style="position:absolute; inset:0; z-index:6; display:flex; flex-direction:column; align-items:center; justify-content:center; text-align:center; padding:0 26px; opacity:0; pointer-events:none;">
+      <div data-lab style="width:120px; height:120px; position:relative; margin-bottom:26px;">
+        <div style="position:absolute; left:50%; top:50%; width:9px; height:9px; border-radius:50%; transform:translate(-50%,-50%); background:#FFA14A; box-shadow:0 0 16px 5px rgba(239,125,20,0.5);"></div>
+        <div data-laborbit style="position:absolute; inset:0; border-radius:50%; border:1px dashed rgba(255,255,255,0.14);">
+          <div style="position:absolute; left:50%; top:-4px; width:8px; height:8px; border-radius:50%; transform:translateX(-50%); background:#C5E0FF; box-shadow:0 0 8px 2px rgba(36,137,255,0.6);"></div>
+        </div>
+      </div>
+      <p style="font-family:'Krona One',sans-serif; font-size:11px; letter-spacing:2.5px; text-transform:uppercase; color:#C5E0FF; margin:0 0 12px;">The lab &middot; in progress</p>
+      <h2 style="font-family:'Great Vibes',cursive; font-weight:400; font-size:clamp(38px,6vw,64px); line-height:1.0; margin:0 0 14px; color:#fff;">Half-finished <span style="color:#FFA14A;">thoughts</span></h2>
+      <p style="max-width:440px; font-size:14px; line-height:1.7; color:rgba(255,255,255,0.55); margin:0;">This is where I tinker &mdash; small experiments in motion, shaders, and code. More will drift into orbit soon.</p>
+    </div>
+
+    <div data-ov="contact" style="position:absolute; inset:0; z-index:6; display:flex; flex-direction:column; align-items:center; justify-content:center; text-align:center; padding:0 26px; opacity:0; pointer-events:none;">
+      <p style="font-family:'Krona One',sans-serif; font-size:11px; letter-spacing:2.5px; text-transform:uppercase; color:#C5E0FF; margin:0 0 12px;">The galaxy</p>
+      <h2 style="font-family:'Great Vibes',cursive; font-weight:400; font-size:clamp(42px,7vw,78px); line-height:1.0; margin:0 0 14px; color:#fff;">Say <span style="color:#FFA14A;">hello</span></h2>
+      <p style="max-width:460px; font-size:14.5px; line-height:1.7; color:rgba(255,255,255,0.6); margin:0 0 26px;">I&rsquo;m warmer up close than I look from all the way down here. If something resonated &mdash; send a note.</p>
+      <form data-form style="display:flex; flex-direction:column; gap:12px; width:min(400px,90vw); pointer-events:auto;">
+        <input class="cin" name="name" placeholder="Name" style="background:rgba(255,255,255,0.04); border:0.5px solid rgba(255,255,255,0.14); border-radius:10px; padding:13px 15px; color:#fff; font-size:14px; font-family:inherit; outline:none;" />
+        <input class="cin" name="email" type="email" placeholder="Email" style="background:rgba(255,255,255,0.04); border:0.5px solid rgba(255,255,255,0.14); border-radius:10px; padding:13px 15px; color:#fff; font-size:14px; font-family:inherit; outline:none;" />
+        <textarea class="cin" name="message" placeholder="Message" rows="3" style="background:rgba(255,255,255,0.04); border:0.5px solid rgba(255,255,255,0.14); border-radius:10px; padding:13px 15px; color:#fff; font-size:14px; font-family:inherit; outline:none; resize:none;"></textarea>
+        <button data-cta type="submit" style="margin-top:4px; background:#FFA14A; color:#241200; border:none; border-radius:10px; padding:14px; font-family:'Krona One',sans-serif; font-size:12px; letter-spacing:1.5px; text-transform:uppercase; cursor:pointer; transition:background .2s;">Send it into orbit</button>
+      </form>
+      <div style="margin-top:24px; display:flex; gap:20px; font-family:'Krona One',sans-serif; font-size:10.5px; letter-spacing:1px; text-transform:uppercase; color:rgba(255,255,255,0.5); pointer-events:auto;">
+        <a href="#" style="color:inherit; text-decoration:none;">GitHub</a>
+        <a href="#" style="color:inherit; text-decoration:none;">LinkedIn</a>
+        <span style="color:rgba(255,161,74,0.75);"><a href="/cdn-cgi/l/email-protection" class="__cf_email__" data-cfemail="e7869e8a8689828b869494818695a7808a868e8bc984888a">[email&#160;protected]</a></span>
+      </div>
+    </div>
+
+    <!-- brand mark + progress -->
+    <div style="position:absolute; left:26px; top:22px; z-index:7; font-family:'Great Vibes',cursive; font-size:26px; color:rgba(255,255,255,0.9); pointer-events:none;">Aymane</div>
+    <div data-actlabel style="position:absolute; right:26px; top:26px; z-index:7; font-family:'Krona One',sans-serif; font-size:10px; letter-spacing:2px; text-transform:uppercase; color:rgba(197,224,255,0.6); pointer-events:none;">Hero</div>
+    <div style="position:absolute; left:0; bottom:0; height:2px; z-index:8; width:100%; background:rgba(255,255,255,0.05); pointer-events:none;"><div data-prog style="height:100%; width:0%; background:linear-gradient(90deg,#EF7D14,#FFA14A); box-shadow:0 0 8px rgba(255,161,74,0.6);"></div></div>
+  </div>
+
+  <!-- ========= SCROLL DRIVER ========= -->
+  <div style="height:1080vh; pointer-events:none;"></div>
+</div>
+</x-dc>
+<script data-cfasync="false" src="/cdn-cgi/scripts/5c5dd728/cloudflare-static/email-decode.min.js"></script><script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;:{&quot;width&quot;:&quot;100%&quot;,&quot;height&quot;:&quot;100%&quot;}}">
+class Component extends DCLogic {
+  constructor(props){
+    super(props);
+    this.rootRef = React.createRef();
+    this.canvasRef = React.createRef();
+    this.sp = 0;      // smoothed scroll progress 0..1
+    this.tp = 0;      // target scroll progress
+    this.drag = { on:false, x:0, y:0, px:0, py:0, rx:0, ry:0 };
+    this.reduced = false;
+  }
+
+  renderVals(){ return { rootRef:this.rootRef, canvasRef:this.canvasRef }; }
+
+  componentDidMount(){
+    this.reduced = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    this.mobile = window.innerWidth < 760;
+    this.buildStarfield();
+    this.bindScroll();
+    this.bindForm();
+    this.waitForThree();
+  }
+  componentWillUnmount(){
+    this._dead = true;
+    if(this._onScroll) window.removeEventListener('scroll', this._onScroll);
+    if(this._onResize) window.removeEventListener('resize', this._onResize);
+    if(this.renderer) this.renderer.dispose();
+  }
+
+  q(sel){ return this.rootRef.current ? this.rootRef.current.querySelector(sel) : null; }
+  qa(sel){ return this.rootRef.current ? [...this.rootRef.current.querySelectorAll(sel)] : []; }
+
+  waitForThree(){
+    if(this._dead) return;
+    if(window.THREE){ this.initGL(); this.loop(); }
+    else setTimeout(()=>this.waitForThree(), 40);
+  }
+
+  /* ---------- CSS starfield (shared thread) ---------- */
+  buildStarfield(){
+    const sf = this.q('[data-sf]'); if(!sf) return;
+    const n = this.mobile ? 70 : 130;
+    let html = '';
+    for(let i=0;i<n;i++){
+      const x = Math.random()*100, y = Math.random()*100;
+      const s = Math.random()*1.8 + 0.4;
+      const blue = Math.random() < 0.25;
+      const dur = (Math.random()*4+3).toFixed(2);
+      const del = (Math.random()*5).toFixed(2);
+      const anim = this.reduced ? '' : `animation:tw ${dur}s ease-in-out ${del}s infinite;`;
+      html += `<span style="position:absolute; left:${x}%; top:${y}%; width:${s}px; height:${s}px; border-radius:50%; background:${blue?'#C5E0FF':'#fff'}; opacity:${(Math.random()*0.5+0.2).toFixed(2)}; ${anim}"></span>`;
+    }
+    sf.innerHTML = html;
+  }
+
+  /* ---------- scroll + inertia ---------- */
+  bindScroll(){
+    const read = ()=>{
+      const max = document.body.scrollHeight - window.innerHeight;
+      this.tp = max > 0 ? Math.min(1, Math.max(0, window.scrollY / max)) : 0;
+    };
+    this._onScroll = read; window.addEventListener('scroll', read, { passive:true });
+    this._onResize = ()=>{ read(); this.resizeGL(); };
+    window.addEventListener('resize', this._onResize);
+    read();
+  }
+
+  /* ---------- WebGL init ---------- */
+  initGL(){
+    const THREE = window.THREE;
+    const canvas = this.canvasRef.current;
+    this.scene = new THREE.Scene();
+    this.camera = new THREE.PerspectiveCamera(55, 1, 0.1, 100);
+    this.camera.position.set(0, 0, 8.6);
+    this.renderer = new THREE.WebGLRenderer({ canvas, alpha:true, antialias:true, preserveDrawingBuffer:true });
+    this.renderer.setClearColor(0x000000, 0);
+    this.sprite = this.makeSprite();
+
+    this.morph = this.buildMorphField();     // star -> explode -> saturn
+    this.sun   = this.buildSunSystem();       // sun + 9 worlds
+    this.galaxy= this.buildGalaxy();          // contact galaxy
+    this.scene.add(this.morph.group, this.sun.group, this.galaxy.group);
+    this.sun.group.visible = false;
+    this.galaxy.group.visible = false;
+
+    this.bindDrag(canvas);
+    this.resizeGL();
+    this._t0 = performance.now();
+  }
+
+  makeSprite(){
+    const THREE = window.THREE;
+    const c = document.createElement('canvas'); c.width = c.height = 64;
+    const g = c.getContext('2d');
+    const grd = g.createRadialGradient(32,32,0,32,32,32);
+    grd.addColorStop(0,'rgba(255,255,255,0.62)');
+    grd.addColorStop(0.28,'rgba(255,255,255,0.42)');
+    grd.addColorStop(0.6,'rgba(255,255,255,0.13)');
+    grd.addColorStop(1,'rgba(255,255,255,0)');
+    g.fillStyle = grd; g.fillRect(0,0,64,64);
+    const t = new THREE.CanvasTexture(c); t.needsUpdate = true; return t;
+  }
+
+  /* ===== MORPH FIELD :: star -> explosion -> Saturn (shared particles) ===== */
+  buildMorphField(){
+    const THREE = window.THREE;
+    const N = this.mobile ? 8000 : 15000;
+    const star = new Float32Array(N*3);
+    const expl = new Float32Array(N*3);
+    const sat  = new Float32Array(N*3);
+    const cA   = new Float32Array(N*3);
+    const cB   = new Float32Array(N*3);
+    const size = new Float32Array(N);
+    const hex = h => [((h>>16)&255)/255, ((h>>8)&255)/255, (h&255)/255];
+    const mix = (a,b,t)=>[a[0]+(b[0]-a[0])*t, a[1]+(b[1]-a[1])*t, a[2]+(b[2]-a[2])*t];
+    const WHITE=hex(0xffffff), GOLD=hex(0xFFF0D6), PEACH=hex(0xFFA14A), DPEACH=hex(0xEF7D14),
+          LPEACH=hex(0xFFE3C7), BB=hex(0x2489FF), LBB=hex(0xC5E0FF), RED=hex(0xE24B4A);
+    const tilt = 0.42, ct = Math.cos(tilt), st = Math.sin(tilt);
+    const RB = 1.85;
+
+    for(let i=0;i<N;i++){
+      // random unit direction
+      const u = Math.random()*2-1, th = Math.random()*Math.PI*2, sq = Math.sqrt(1-u*u);
+      let dx = sq*Math.cos(th), dy = u, dz = sq*Math.sin(th);
+
+      // ----- star layers -----
+      const layer = Math.random();
+      let r, col, sz, exBoost;
+      if(layer < 0.42){ r = Math.pow(Math.random(),0.6)*0.9; col = mix(WHITE, LBB, Math.random()*0.5); sz = 0.5+Math.random()*0.5; exBoost=0.9; }
+      else if(layer < 0.72){ r = 0.85 + Math.random()*0.75; col = mix(LBB, BB, Math.random()); sz = 0.7+Math.random()*0.7; exBoost=1.1; }
+      else { r = 1.35 + Math.random()*1.25; col = mix(DPEACH, RED, Math.random()); if(Math.random()<0.4) col = mix(col, PEACH, 0.5); sz = 1.1+Math.random()*1.4; exBoost=1.6; }
+      const rr = r*1.5;
+      star[i*3]=dx*rr; star[i*3+1]=dy*rr; star[i*3+2]=dz*rr;
+      cA[i*3]=col[0]; cA[i*3+1]=col[1]; cA[i*3+2]=col[2];
+      size[i]=sz;
+
+      // ----- explosion vector -----
+      const spd = (2.6 + Math.random()*6.5)*exBoost;
+      expl[i*3]=dx*spd + (Math.random()-0.5)*1.2;
+      expl[i*3+1]=dy*spd + (Math.random()-0.5)*1.2;
+      expl[i*3+2]=dz*spd + (Math.random()-0.5)*1.2;
+
+      // ----- saturn target -----
+      let sxx, syy, szz, scol;
+      if(i % 10 < 7){ // body (oblate, banded)
+        const u2=Math.random()*2-1, t2=Math.random()*Math.PI*2, s2=Math.sqrt(1-u2*u2);
+        let bx=s2*Math.cos(t2)*RB, by=u2*RB*0.9, bz=s2*Math.sin(t2)*RB;
+        const lat = by/RB;
+        if(Math.abs(lat) > 0.82){ scol = mix(GOLD, WHITE, Math.random()*0.6); }
+        else { const bandt = 0.5+0.5*Math.sin(lat*9 + Math.random()*0.5); scol = mix(mix(DPEACH,PEACH,bandt), LPEACH, bandt*0.4); }
+        sxx=bx; syy=by; szz=bz;
+      } else { // rings (equatorial, Cassini gap)
+        let ring; const g = Math.random();
+        if(g < 0.5) ring = RB*1.42 + Math.random()*RB*0.32;
+        else ring = RB*1.86 + Math.random()*RB*0.55;
+        const a2 = Math.random()*Math.PI*2;
+        const rx = Math.cos(a2)*ring, rz = Math.sin(a2)*ring, ry = (Math.random()-0.5)*0.04;
+        sxx=rx; syy=ry; szz=rz;
+        scol = mix(LPEACH, PEACH, Math.random()*0.7); if(Math.random()<0.3) scol = mix(scol, WHITE, 0.5);
+      }
+      // bake axial tilt (rotate about X)
+      const ty = syy*ct - szz*st, tz = syy*st + szz*ct;
+      sat[i*3]=sxx; sat[i*3+1]=ty; sat[i*3+2]=tz;
+      cB[i*3]=scol[0]; cB[i*3+1]=scol[1]; cB[i*3+2]=scol[2];
+    }
+
+    const geo = new THREE.BufferGeometry();
+    geo.setAttribute('position', new THREE.BufferAttribute(star,3));
+    geo.setAttribute('aExplode', new THREE.BufferAttribute(expl,3));
+    geo.setAttribute('aSaturn', new THREE.BufferAttribute(sat,3));
+    geo.setAttribute('aColorA', new THREE.BufferAttribute(cA,3));
+    geo.setAttribute('aColorB', new THREE.BufferAttribute(cB,3));
+    geo.setAttribute('aSize', new THREE.BufferAttribute(size,1));
+
+    const mat = new THREE.ShaderMaterial({
+      uniforms:{ uProg:{value:0}, uPix:{value:1}, uOpacity:{value:1}, uTex:{value:this.sprite} },
+      transparent:true, depthWrite:false, blending:THREE.AdditiveBlending,
+      vertexShader:`
+        uniform float uProg, uPix;
+        attribute vec3 aExplode, aSaturn, aColorA, aColorB; attribute float aSize;
+        varying vec3 vColor;
+        void main(){
+          float ex = smoothstep(0.34,0.60,uProg);
+          float rf = smoothstep(0.55,0.94,uProg);
+          vec3 exploded = position + aExplode * ex;
+          vec3 pos = mix(exploded, aSaturn, rf);
+          vColor = mix(aColorA, aColorB, rf);
+          vec4 mv = modelViewMatrix * vec4(pos,1.0);
+          gl_PointSize = aSize * uPix * (155.0 / -mv.z);
+          gl_Position = projectionMatrix * mv;
+        }`,
+      fragmentShader:`
+        uniform sampler2D uTex; uniform float uOpacity; varying vec3 vColor;
+        void main(){ vec4 t = texture2D(uTex, gl_PointCoord); if(t.a < 0.02) discard; gl_FragColor = vec4(vColor, t.a*uOpacity); }`
+    });
+    const points = new THREE.Points(geo, mat);
+    const group = new THREE.Group(); group.add(points);
+    return { group, points, mat };
+  }
+
+  /* ===== SUN + 9 WORLDS ===== */
+  buildSunSystem(){
+    const THREE = window.THREE;
+    const group = new THREE.Group();
+    const hex = h => [((h>>16)&255)/255, ((h>>8)&255)/255, (h&255)/255];
+    const mix=(a,b,t)=>[a[0]+(b[0]-a[0])*t,a[1]+(b[1]-a[1])*t,a[2]+(b[2]-a[2])*t];
+    const sunMat = (op)=> new THREE.ShaderMaterial({
+      uniforms:{ uPix:{value:1}, uOpacity:{value:op}, uTex:{value:this.sprite} },
+      transparent:true, depthWrite:false, blending:THREE.AdditiveBlending,
+      vertexShader:`uniform float uPix; attribute vec3 aColor; attribute float aSize; varying vec3 vColor;
+        void main(){ vColor=aColor; vec4 mv=modelViewMatrix*vec4(position,1.0); gl_PointSize=aSize*uPix*(155.0/-mv.z); gl_Position=projectionMatrix*mv; }`,
+      fragmentShader:`uniform sampler2D uTex; uniform float uOpacity; varying vec3 vColor;
+        void main(){ vec4 t=texture2D(uTex,gl_PointCoord); if(t.a<0.02) discard; gl_FragColor=vec4(vColor,t.a*uOpacity); }`
+    });
+    const cluster = (count, radius, colorFn, sizeFn)=>{
+      const p=new Float32Array(count*3), c=new Float32Array(count*3), s=new Float32Array(count);
+      for(let i=0;i<count;i++){
+        const u=Math.random()*2-1,t=Math.random()*Math.PI*2,sq=Math.sqrt(1-u*u);
+        const rr = radius*(0.6+Math.random()*0.4);
+        p[i*3]=sq*Math.cos(t)*rr; p[i*3+1]=u*rr; p[i*3+2]=sq*Math.sin(t)*rr;
+        const col=colorFn(); c[i*3]=col[0];c[i*3+1]=col[1];c[i*3+2]=col[2]; s[i]=sizeFn();
+      }
+      const g=new THREE.BufferGeometry();
+      g.setAttribute('position',new THREE.BufferAttribute(p,3));
+      g.setAttribute('aColor',new THREE.BufferAttribute(c,3));
+      g.setAttribute('aSize',new THREE.BufferAttribute(s,1));
+      return g;
+    };
+    const WHITE=hex(0xffffff),GOLD=hex(0xFFF0D6),PEACH=hex(0xFFA14A),DPEACH=hex(0xEF7D14);
+    const sunGeo = cluster(this.mobile?4000:9000, 1.35, ()=>{ const t=Math.random(); return t<0.4?mix(WHITE,GOLD,Math.random()):mix(PEACH,DPEACH,Math.random()); }, ()=>0.8+Math.random()*1.3);
+    const sunMatI = sunMat(0);
+    const sun = new THREE.Points(sunGeo, sunMatI); group.add(sun);
+
+    const worldTints = [0xFFC66E,0x7FB0E8,0x8FCFC8,0xD0904A,0x8FA0B8,0xE68A6A,0xDDEBFF,0x9BC08A,0xFFB27A];
+    const planets = [];
+    const mats = [sunMatI];
+    for(let i=0;i<9;i++){
+      const tint = hex(worldTints[i]);
+      const geo = cluster(this.mobile?120:240, 0.24, ()=>mix(tint, WHITE, Math.random()*0.35), ()=>0.5+Math.random()*0.7);
+      const m = sunMat(0); mats.push(m);
+      const pts = new THREE.Points(geo, m);
+      const pivot = new THREE.Object3D(); pivot.add(pts);
+      group.add(pivot);
+      planets.push({ pivot, pts, mat:m, orbit:2.1 + i*0.34, phase:Math.random()*Math.PI*2, speed:0.12 + Math.random()*0.14, tiltZ:(Math.random()-0.5)*0.5 });
+    }
+    return { group, sun, sunMat:sunMatI, planets, mats };
+  }
+
+  /* ===== GALAXY (contact) ===== */
+  buildGalaxy(){
+    const THREE = window.THREE;
+    const N = this.mobile ? 7000 : 14000;
+    const p=new Float32Array(N*3), c=new Float32Array(N*3), s=new Float32Array(N);
+    const hex=h=>[((h>>16)&255)/255,((h>>8)&255)/255,(h&255)/255];
+    const mix=(a,b,t)=>[a[0]+(b[0]-a[0])*t,a[1]+(b[1]-a[1])*t,a[2]+(b[2]-a[2])*t];
+    const GOLD=hex(0xFFF0D6),PEACH=hex(0xFFA14A),BB=hex(0x2489FF),LBB=hex(0xC5E0FF);
+    const arms=3, R=5.2;
+    for(let i=0;i<N;i++){
+      const rad = Math.pow(Math.random(),0.55)*R;
+      const arm = i%arms;
+      const spin = rad*0.9;
+      const spread = (Math.random()-0.5)*(0.5 + (1-rad/R)*0.9);
+      const ang = spin + arm*(Math.PI*2/arms) + spread;
+      p[i*3]=Math.cos(ang)*rad;
+      p[i*3+1]=(Math.random()-0.5)*0.5*(1-rad/R)+ (Math.random()-0.5)*0.08;
+      p[i*3+2]=Math.sin(ang)*rad;
+      const tt = rad/R;
+      let col = tt<0.2 ? mix(GOLD,PEACH,tt/0.2) : mix(PEACH, BB, (tt-0.2)/0.8);
+      if(Math.random()<0.15) col = mix(col, LBB, 0.5);
+      c[i*3]=col[0];c[i*3+1]=col[1];c[i*3+2]=col[2];
+      s[i] = tt<0.12 ? 1.4+Math.random()*1.4 : 0.5+Math.random()*0.9;
+    }
+    const geo=new THREE.BufferGeometry();
+    geo.setAttribute('position',new THREE.BufferAttribute(p,3));
+    geo.setAttribute('aColor',new THREE.BufferAttribute(c,3));
+    geo.setAttribute('aSize',new THREE.BufferAttribute(s,1));
+    const mat=new THREE.ShaderMaterial({
+      uniforms:{ uPix:{value:1}, uOpacity:{value:0}, uTex:{value:this.sprite} },
+      transparent:true, depthWrite:false, blending:THREE.AdditiveBlending,
+      vertexShader:`uniform float uPix; attribute vec3 aColor; attribute float aSize; varying vec3 vColor;
+        void main(){ vColor=aColor; vec4 mv=modelViewMatrix*vec4(position,1.0); gl_PointSize=aSize*uPix*(155.0/-mv.z); gl_Position=projectionMatrix*mv; }`,
+      fragmentShader:`uniform sampler2D uTex; uniform float uOpacity; varying vec3 vColor;
+        void main(){ vec4 t=texture2D(uTex,gl_PointCoord); if(t.a<0.02) discard; gl_FragColor=vec4(vColor,t.a*uOpacity); }`
+    });
+    const points=new THREE.Points(geo,mat);
+    const group=new THREE.Group(); group.rotation.x = 1.05; group.add(points);
+    return { group, points, mat };
+  }
+
+  /* ---------- drag to rotate ---------- */
+  bindDrag(canvas){
+    const d=this.drag;
+    const down=e=>{ d.on=true; d.px=(e.touches?e.touches[0].clientX:e.clientX); d.py=(e.touches?e.touches[0].clientY:e.clientY); };
+    const move=e=>{ if(!d.on) return; const x=(e.touches?e.touches[0].clientX:e.clientX), y=(e.touches?e.touches[0].clientY:e.clientY);
+      d.ry += (x-d.px)*0.005; d.rx += (y-d.py)*0.004; d.rx=Math.max(-0.6,Math.min(0.6,d.rx)); d.px=x; d.py=y; };
+    const up=()=>{ d.on=false; };
+    canvas.addEventListener('mousedown',down); window.addEventListener('mousemove',move); window.addEventListener('mouseup',up);
+    canvas.addEventListener('touchstart',down,{passive:true}); window.addEventListener('touchmove',move,{passive:true}); window.addEventListener('touchend',up);
+  }
+
+  resizeGL(){
+    if(!this.renderer) return;
+    const w=window.innerWidth, h=window.innerHeight;
+    const dpr=Math.min(window.devicePixelRatio||1, this.mobile?1.3:1.75);
+    this.renderer.setPixelRatio(dpr);
+    this.renderer.setSize(w,h,false);
+    this.camera.aspect=w/h; this.camera.updateProjectionMatrix();
+    const pix = h/900;
+    this.morph.mat.uniforms.uPix.value = pix;
+    this.sun.mats.forEach(m=>m.uniforms.uPix.value=pix);
+    this.galaxy.mat.uniforms.uPix.value = pix;
+  }
+
+  /* ---------- helpers ---------- */
+  static band(p,a,b){ return Math.min(1,Math.max(0,(p-a)/(b-a))); }
+  static inout(p,a,b,c,d){ return Math.min(Component.band(p,a,b), 1-Component.band(p,c,d)); }
+  static ease(t){ return t*t*(3-2*t); }
+
+  /* ---------- main loop ---------- */
+  loop(){
+    if(this._dead) return;
+    requestAnimationFrame(()=>this.loop());
+    // inertia
+    this.sp += (this.tp - this.sp) * 0.09;
+    const p = this.sp;
+    const now = performance.now();
+    const time = (now - this._t0)/1000;
+    const auto = this.reduced ? 0 : 1;
+    const B = Component.band, IO = Component.inout, E = Component.ease;
+
+    // ===== MORPH FIELD =====
+    const mp = B(p, 0.03, 0.285);
+    this.morph.mat.uniforms.uProg.value = mp;
+    this.morph.mat.uniforms.uOpacity.value = 1 - B(p, 0.44, 0.50);
+    // zoom before explosion
+    const zoom = 1 + 1.5*B(p,0.10,0.15)*(1 - B(p,0.15,0.205));
+    this.morph.group.scale.setScalar(zoom);
+    this.morph.group.rotation.y = this.drag.ry + time*0.05*auto;
+    this.morph.group.rotation.x = this.drag.rx;
+    this.morph.group.visible = this.morph.mat.uniforms.uOpacity.value > 0.001;
+
+    // ===== SUN SYSTEM =====
+    const sunOp = IO(p, 0.52,0.60, 0.80,0.855);
+    this.sun.group.visible = sunOp > 0.001;
+    if(this.sun.group.visible){
+      this.sun.group.rotation.y = this.drag.ry*0.6 + time*0.02*auto;
+      this.sun.group.rotation.x = this.drag.rx*0.6;
+      this.sun.sunMat.uniforms.uOpacity.value = sunOp;
+      const focusLocal = B(p, 0.635, 0.78);
+      const worldF = focusLocal * 9;
+      const idx = Math.min(8, Math.floor(worldF));
+      const frac = worldF - idx;                 // 0..1 within a world
+      const openness = Math.sin(Math.min(1,Math.max(0,frac))*Math.PI); // peak mid-world
+      const scrub = focusLocal * Math.PI * 2.2;
+      this.sun.planets.forEach((pl,i)=>{
+        const a = pl.phase + (time*pl.speed*auto) + scrub;
+        const ox = Math.cos(a)*pl.orbit, oz = Math.sin(a)*pl.orbit, oy = Math.sin(a)*pl.orbit*Math.sin(pl.tiltZ);
+        pl.pivot.position.set(ox, oy*0.5, oz);
+        const focused = (i === idx) && focusLocal > 0.001 && focusLocal < 0.999;
+        const sc = focused ? 1 + openness*0.9 : 1;
+        pl.pivot.scale.setScalar(sc);
+        pl.mat.uniforms.uOpacity.value = sunOp * (focused ? 1 : (1 - openness*0.75));
+      });
+      this.updatePhoto(idx, openness, sunOp);
+    } else {
+      this.setPhotoOpacity(0);
+    }
+
+    // ===== GALAXY =====
+    const galOp = B(p, 0.87, 0.935);
+    this.galaxy.group.visible = galOp > 0.001;
+    if(this.galaxy.group.visible){
+      this.galaxy.mat.uniforms.uOpacity.value = galOp;
+      this.galaxy.group.rotation.y = time*0.04*auto + this.drag.ry*0.4;
+    }
+
+    this.renderer.render(this.scene, this.camera);
+    this.updateDOM(p, time);
+  }
+
+  /* ---------- photo panel ---------- */
+  updatePhoto(idx, openness, base){
+    const worlds = [
+      ['Golden hour','linear-gradient(165deg,#ffe6b0,#ef7d14 52%,#3a2140)'],
+      ['Blue minute','linear-gradient(165deg,#cfe4ff,#2489ff 58%,#0a1830)'],
+      ['Sea haze','linear-gradient(165deg,#e0f3f0,#5fa8b8 55%,#173038)'],
+      ['Dune','linear-gradient(165deg,#ffe3c7,#c98a4a 55%,#472e18)'],
+      ['Storm front','linear-gradient(165deg,#bcc6d4,#5b6b82 55%,#191f2c)'],
+      ['Ember sky','linear-gradient(165deg,#ffd0a0,#e24b4a 55%,#331318)'],
+      ['First snow','linear-gradient(165deg,#f6faff,#c5d8ea 55%,#5a6b7a)'],
+      ['Pine dusk','linear-gradient(165deg,#d0e0c0,#4a7a5a 55%,#15281c)'],
+      ['Horizon','linear-gradient(165deg,#ffe0b0,#ffa14a 42%,#2489ff 100%)'],
+    ];
+    const img = this.q('[data-pimg]'), label=this.q('[data-plabel]'), num=this.q('[data-pnum]'), photo=this.q('[data-photo]');
+    if(!img||!photo) return;
+    if(this._lastIdx !== idx){
+      img.style.background = worlds[idx][1];
+      if(label) label.textContent = worlds[idx][0];
+      if(num) num.textContent = String(idx+1).padStart(2,'0') + ' / 09';
+      this._lastIdx = idx;
+    }
+    const op = base * openness;
+    photo.style.opacity = op.toFixed(3);
+    photo.style.transform = `translate(-50%,-50%) scale(${(0.86 + openness*0.16).toFixed(3)})`;
+  }
+  setPhotoOpacity(o){ const photo=this.q('[data-photo]'); if(photo) photo.style.opacity=o; }
+
+  /* ---------- DOM overlay sync ---------- */
+  updateDOM(p, time){
+    const IO = Component.inout, B = Component.band, E = Component.ease;
+    const set = (name, op, ty)=>{ const el=this.q(`[data-ov="${name}"]`); if(el){ el.style.opacity=op.toFixed(3); el.style.transform=`translateY(${ty}px)`; } };
+
+    const heroOp = 1 - B(p, 0.10, 0.135);
+    set('hero', heroOp, -(1-heroOp)*26);
+    const aboutOp = IO(p, 0.315,0.35, 0.42,0.45);
+    set('about', aboutOp, (1-aboutOp)*24);
+    const skillsOp = IO(p, 0.475,0.50, 0.565,0.585);
+    set('skills', skillsOp, (1-skillsOp)*20);
+    const photoOp = IO(p, 0.605,0.63, 0.785,0.805);
+    set('photo', photoOp, 0);
+    const labOp = IO(p, 0.815,0.835, 0.875,0.895);
+    set('lab', labOp, (1-labOp)*20);
+    const contactOp = B(p, 0.90,0.935);
+    set('contact', contactOp, (1-contactOp)*24);
+
+    // About colour-in
+    const fillP = E(B(p, 0.345, 0.42));
+    this.qa('[data-fill]').forEach((el,i)=>{ const local = Math.min(1, Math.max(0, fillP*2 - i*0.6)); el.style.setProperty('--p', (local*100).toFixed(1)+'%'); });
+
+    // Skills web draw-in
+    const drawP = E(B(p, 0.49, 0.565));
+    const lines = this.qa('[data-slines] line');
+    lines.forEach((ln,i)=>{ const t = Math.min(1, Math.max(0, drawP*1.3 - i*0.045)); ln.style.strokeDasharray='1'; ln.style.strokeDashoffset=(1-t).toFixed(3); ln.style.opacity=(0.3+0.5*t).toFixed(2); });
+    const snodes = this.q('[data-snodes]'); if(snodes) snodes.style.opacity = E(B(p,0.50,0.58)).toFixed(2);
+
+    // blur + dim over Saturn during About
+    const dimT = IO(p, 0.30,0.345, 0.415,0.44);
+    const dim = this.q('[data-dim]'); if(dim) dim.style.opacity = (dimT*0.9).toFixed(3);
+    const canvas = this.canvasRef.current; if(canvas) canvas.style.filter = dimT>0.001 ? `blur(${(dimT*7).toFixed(1)}px)` : 'none';
+
+    // warm sun glow bleed
+    const glow = this.q('[data-sunglow]'); if(glow) glow.style.opacity = IO(p, 0.55,0.62, 0.80,0.85).toFixed(3);
+
+    // lab orbit (respect reduced motion)
+    const orbit = this.q('[data-laborbit]');
+    if(orbit) orbit.style.transform = this.reduced ? 'none' : `rotate(${(time*40)%360}deg)`;
+
+    // hero scroll hint fade
+    const hint = this.q('[data-hint]'); if(hint) hint.style.opacity = (1 - B(p,0.02,0.06)).toFixed(2);
+
+    // progress bar + act label
+    const prog = this.q('[data-prog]'); if(prog) prog.style.width = (p*100).toFixed(2)+'%';
+    const act = this.q('[data-actlabel]');
+    if(act){
+      let name='Hero';
+      if(p>=0.11&&p<0.20) name='Explosion'; else if(p>=0.20&&p<0.30) name='Saturn';
+      else if(p>=0.30&&p<0.45) name='About'; else if(p>=0.45&&p<0.60) name='Skills';
+      else if(p>=0.60&&p<0.81) name='Photography'; else if(p>=0.81&&p<0.90) name='The Lab';
+      else if(p>=0.90) name='Contact';
+      if(this._act!==name){ act.textContent=name; this._act=name; }
+    }
+
+    // contact form only clickable when visible
+    const form = this.q('[data-form]');
+    if(form){ const c = this.q('[data-ov="contact"]'); if(c) c.style.pointerEvents = contactOp>0.5 ? 'auto':'none'; }
+  }
+
+  /* ---------- contact form: send into orbit ---------- */
+  bindForm(){
+    const form = this.q('[data-form]'); const cta = this.q('[data-cta]'); const shoot = this.q('[data-shoot]');
+    if(!form) return;
+    // focus glow
+    this.qa('.cin').forEach(el=>{
+      el.addEventListener('focus', ()=>{ el.style.borderColor='rgba(255,161,74,0.7)'; el.style.boxShadow='0 0 18px rgba(255,161,74,0.22)'; el.style.background='rgba(255,161,74,0.05)'; });
+      el.addEventListener('blur', ()=>{ el.style.borderColor='rgba(255,255,255,0.14)'; el.style.boxShadow='none'; el.style.background='rgba(255,255,255,0.04)'; });
+    });
+    if(cta && !this.reduced) cta.style.animation = 'ctaPulse 2.6s ease-in-out infinite';
+    form.addEventListener('submit', e=>{
+      e.preventDefault();
+      if(cta){ cta.textContent='Sent \u2726'; cta.style.background='#EF7D14'; cta.style.animation='none'; }
+      if(shoot){
+        shoot.style.animation='none'; void shoot.offsetWidth;
+        shoot.style.opacity='1';
+        shoot.style.animation = 'shootLoop 1.5s ease-in forwards';
+        setTimeout(()=>{ shoot.style.opacity='0'; }, 1500);
+      }
+      setTimeout(()=>{ if(cta){ cta.textContent='Send it into orbit'; cta.style.background='#FFA14A'; if(!this.reduced) cta.style.animation='ctaPulse 2.6s ease-in-out infinite'; } }, 2600);
+    });
+  }
+}
+</script>
+</body>
+</html>

@@ -1,0 +1,323 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Aymane Lassfar — Portfolio Story &amp; Build Brief</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Great+Vibes&family=Krona+One&display=swap" rel="stylesheet" />
+<style>
+  /* Brand tokens (from the codebase) */
+  :root {
+    --rich-black:#19191C; --dark:#27272A;
+    --peach:#FFA14A; --dark-peach:#EF7D14; --light-peach:#FFE3C7;
+    --baby-blue:#2489FF; --light-baby-blue:#C5E0FF; --gray-slate:#D9D9D9;
+  }
+  * { box-sizing:border-box; margin:0; padding:0; }
+  body { background:var(--rich-black); color:#fff; font-family:"Helvetica Neue",Helvetica,Arial,sans-serif;
+         min-height:100vh; display:flex; flex-direction:column; align-items:center; padding:34px 16px 70px; line-height:1.6; }
+  .wrap { width:100%; max-width:900px; }
+
+  .title { font-family:"Great Vibes",cursive; font-size:52px; line-height:1.05; }
+  .title .pk { color:var(--peach); }
+  .kron { font-family:"Krona One",sans-serif; }
+  .sub { color:rgba(255,255,255,0.6); font-size:14px; margin-top:8px; line-height:1.7; max-width:680px; }
+
+  .callout { border:0.5px solid rgba(255,161,74,0.35); background:rgba(255,161,74,0.06); border-radius:12px;
+             padding:14px 18px; margin:20px 0; font-size:13.5px; color:rgba(255,255,255,0.82); line-height:1.75; }
+  .callout b { color:var(--peach); }
+
+  h2.block { font-family:"Krona One",sans-serif; font-size:13px; letter-spacing:1px; text-transform:uppercase;
+             color:var(--light-baby-blue); margin:34px 0 14px; }
+
+  /* Brand panel */
+  .brand { display:grid; grid-template-columns:1fr 1fr; gap:20px; background:#0b0d16;
+           border:0.5px solid rgba(255,255,255,0.07); border-radius:14px; padding:20px; }
+  @media (max-width:640px){ .brand { grid-template-columns:1fr; } }
+  .swatches { display:flex; flex-wrap:wrap; gap:8px; margin-top:8px; }
+  .sw { border-radius:8px; padding:8px 10px; font-size:10.5px; min-width:96px; border:0.5px solid rgba(255,255,255,0.12); }
+  .sw small { display:block; opacity:0.7; font-family:monospace; margin-top:2px; }
+  .lbl { font-size:11px; letter-spacing:0.5px; text-transform:uppercase; color:rgba(255,255,255,0.5); }
+  .type-row { margin-top:6px; }
+  .type-row + .type-row { margin-top:12px; }
+
+  /* Arc strip */
+  .arc { display:flex; align-items:center; gap:6px; flex-wrap:wrap; background:#0b0d16;
+         border:0.5px solid rgba(255,255,255,0.07); border-radius:12px; padding:14px 16px; margin-bottom:8px; }
+  .arc span { font-size:12px; color:rgba(255,255,255,0.72); }
+  .arc .step { color:var(--peach); }
+  .arc .key { color:var(--light-baby-blue); font-weight:500; }
+  .arc .arr { color:rgba(255,255,255,0.28); }
+  .note { font-size:12.5px; color:rgba(255,255,255,0.5); line-height:1.75; margin:10px 2px 4px; }
+
+  /* Legend */
+  .legend { display:flex; flex-wrap:wrap; gap:8px; margin:16px 0 10px; }
+  .tag { font-size:10.5px; letter-spacing:0.5px; text-transform:uppercase; padding:3px 9px; border-radius:20px; white-space:nowrap; flex-shrink:0; }
+  .t-enter { background:rgba(255,161,74,0.16); color:var(--peach); }
+  .t-3d { background:rgba(36,137,255,0.22); color:var(--light-baby-blue); border:0.5px solid rgba(36,137,255,0.5); }
+  .t-text { background:rgba(255,227,199,0.14); color:var(--light-peach); }
+  .t-scroll { background:rgba(197,224,255,0.13); color:var(--light-baby-blue); }
+  .t-exit { background:rgba(255,255,255,0.08); color:rgba(255,255,255,0.6); }
+  .st { font-size:10px; letter-spacing:0.5px; text-transform:uppercase; padding:2px 8px; border-radius:20px; }
+  .st-built { background:rgba(74,222,128,0.16); color:#7ee6a0; border:0.5px solid rgba(74,222,128,0.4); }
+  .st-wip { background:rgba(255,161,74,0.16); color:var(--peach); border:0.5px solid rgba(255,161,74,0.4); }
+  .st-plan { background:rgba(255,255,255,0.07); color:rgba(255,255,255,0.55); border:0.5px solid rgba(255,255,255,0.18); }
+
+  /* Section cards */
+  .card { background:#0a0b12; border:0.5px solid rgba(255,255,255,0.07); border-radius:14px; padding:20px;
+          margin-bottom:18px; display:grid; grid-template-columns:180px 1fr; gap:22px; align-items:start; }
+  @media (max-width:640px){ .card { grid-template-columns:1fr; } }
+  .stage { position:relative; height:172px; border-radius:10px; background:#05060a; overflow:hidden;
+           display:flex; align-items:center; justify-content:center; }
+  .role { font-size:11px; letter-spacing:1px; text-transform:uppercase; color:var(--light-baby-blue); margin-bottom:4px; }
+  .head-row { display:flex; align-items:center; gap:10px; flex-wrap:wrap; margin-bottom:12px; }
+  .sname { font-family:"Great Vibes",cursive; font-size:30px; line-height:1.1; }
+  .sname .pk { color:var(--peach); }
+  .ann { display:flex; gap:10px; margin-bottom:10px; align-items:flex-start; }
+  .ann p { font-size:12.5px; line-height:1.7; color:rgba(255,255,255,0.74); }
+  .ann .tag { margin-top:1px; }
+  .quote { color:var(--light-peach); font-style:italic; }
+  code { font-family:monospace; font-size:11.5px; background:rgba(255,255,255,0.06); padding:1px 5px; border-radius:4px; color:var(--light-baby-blue); }
+
+  /* Visual atoms */
+  .star { position:absolute; border-radius:50%; background:#fff; }
+  .neb { position:absolute; border-radius:50%; filter:blur(4px); left:50%; top:50%; transform:translate(-50%,-50%);
+         background:radial-gradient(circle,#fff 0%,rgba(255,255,255,0.9) 5%,rgba(255,240,225,0.6) 10%,transparent 17%),
+                    radial-gradient(circle,transparent 14%,rgba(197,224,255,0.5) 21%,transparent 36%),
+                    radial-gradient(circle,transparent 32%,rgba(226,75,74,0.4) 42%,transparent 60%); }
+  .neb-core { position:absolute; border-radius:50%; background:#fff; left:50%; top:50%; transform:translate(-50%,-50%);
+              box-shadow:0 0 14px 4px #fff,0 0 32px 12px rgba(255,238,214,0.6),0 0 54px 22px rgba(239,125,20,0.22); }
+  .planet3d { position:relative; width:78px; height:78px; border-radius:50%;
+              background:radial-gradient(circle at 34% 30%,#ffe3c7,#ffa14a 38%,#ef7d14 68%,#5e2f05 100%);
+              box-shadow:inset -9px -8px 20px rgba(0,0,0,0.65),0 0 18px rgba(239,125,20,0.2); }
+  .planet-ring { position:absolute; left:50%; top:50%; width:150px; height:40px; border-radius:50%;
+                 transform:translate(-50%,-50%) rotate(-20deg); border:1.5px solid rgba(255,227,199,0.5); }
+  .galaxy-disk { width:164px; height:66px; border-radius:50%; filter:blur(3px); transform:rotate(-18deg);
+                 background:radial-gradient(ellipse 50% 100%,#fff 0%,rgba(255,238,214,0.8) 8%,rgba(255,161,74,0.35) 22%,rgba(36,137,255,0.18) 48%,transparent 72%); }
+  .lab-wrap { position:relative; width:84px; height:84px; }
+  .lab-ring { position:absolute; inset:12px; border-radius:50%; border:1px dashed rgba(255,255,255,0.14); }
+  .lab-star { position:absolute; left:50%; top:50%; width:8px; height:8px; border-radius:50%; transform:translate(-50%,-50%);
+              background:var(--peach); box-shadow:0 0 10px 4px rgba(239,125,20,0.5); }
+  .lab-dot { position:absolute; width:5px; height:5px; border-radius:50%; background:var(--light-baby-blue);
+             top:10px; right:12px; box-shadow:0 0 5px 2px rgba(36,137,255,0.5); }
+  .particles { position:absolute; }
+
+  .bookend { background:#0b0d16; border:0.5px solid rgba(255,161,74,0.25); border-radius:14px; padding:22px; margin-top:14px; }
+  .bookend h3 { font-family:"Great Vibes",cursive; font-weight:400; font-size:28px; color:var(--peach); margin-bottom:8px; }
+  .bookend p { font-size:13.5px; line-height:1.85; color:rgba(255,255,255,0.74); }
+  .bookend p + p { margin-top:10px; }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <p class="title">Aymane&rsquo;s Portfolio &mdash; <span class="pk">the story</span></p>
+  <p class="sub">A single continuous scroll-journey through space. One person, told as a cosmos: a star is born, explodes, and its particles reform into planets, an orbit, and finally a galaxy. This is the real, developed story &mdash; use it to build the prototype from scratch.</p>
+
+  <div class="callout">
+    <b>For Claude Design.</b> Build a <b>single-page, dark, scroll-driven portfolio</b> for Aymane Lassfar, a senior frontend developer &mdash; introverted, a photographer and someone who&rsquo;s drawn since childhood. The tone is <b>emotional and personal, not a CV</b>. Concept: <b>&ldquo;Living Canvas&rdquo;</b> &mdash; every section is a space object, and the whole page reads as one journey through the cosmos. Recreate the copy and the section arc below faithfully; the 3D can be approximated (particles, glows, gradients) where a full WebGL build isn&rsquo;t practical. Prioritise: the story arc, the copy, the palette/type, and the signature scroll interactions.
+  </div>
+
+  <!-- ── Brand ──────────────────────────────────────────────────────────── -->
+  <h2 class="block">Brand &amp; design language</h2>
+  <div class="brand">
+    <div>
+      <div class="lbl">Colour</div>
+      <div class="swatches">
+        <span class="sw" style="background:#19191C">Rich Black<small>#19191C · page bg</small></span>
+        <span class="sw" style="background:#27272A">Dark<small>#27272A · panels</small></span>
+        <span class="sw" style="background:#FFA14A;color:#241200">Peach<small>#FFA14A · primary</small></span>
+        <span class="sw" style="background:#EF7D14;color:#241200">Dark Peach<small>#EF7D14 · hover</small></span>
+        <span class="sw" style="background:#FFE3C7;color:#241200">Light Peach<small>#FFE3C7 · tints</small></span>
+        <span class="sw" style="background:#2489FF">Baby Blue<small>#2489FF · secondary</small></span>
+        <span class="sw" style="background:#C5E0FF;color:#0a1a2e">Lt Baby Blue<small>#C5E0FF · subtle</small></span>
+      </div>
+    </div>
+    <div>
+      <div class="lbl">Type</div>
+      <div class="type-row"><span style="font-family:'Great Vibes',cursive;font-size:30px">Great Vibes</span><br/><span style="font-size:11px;color:rgba(255,255,255,0.5)">Emotional headers &mdash; names, section titles (the &ldquo;art&rdquo; voice)</span></div>
+      <div class="type-row"><span class="kron" style="font-size:15px">Krona One</span><br/><span style="font-size:11px;color:rgba(255,255,255,0.5)">Eyebrows, labels, nav (the &ldquo;engineer&rdquo; voice)</span></div>
+      <div class="type-row"><span style="font-size:15px">Helvetica Neue</span><br/><span style="font-size:11px;color:rgba(255,255,255,0.5)">Body copy</span></div>
+      <div class="lbl" style="margin-top:14px">Light as the system</div>
+      <div style="font-size:11.5px;color:rgba(255,255,255,0.6);line-height:1.7">Glows = radial-gradient + blur + peach, never hard shapes. Elevation = how <em>lit</em> something is. Accents emit light on hover (peach&nbsp;&rarr;&nbsp;dark-peach). Everything sits on deep space-black.</div>
+    </div>
+  </div>
+
+  <!-- ── Arc ────────────────────────────────────────────────────────────── -->
+  <h2 class="block">The arc &mdash; one continuous scroll</h2>
+  <div class="arc">
+    <span class="step">Star ignites</span><span class="arr">&rarr;</span>
+    <span class="key">EXPLODES</span><span class="arr">&rarr;</span>
+    <span>Saturn forms</span><span class="arr">&rarr;</span>
+    <span>About</span><span class="arr">&rarr;</span>
+    <span>Constellation</span><span class="arr">&rarr;</span>
+    <span>Worlds in orbit</span><span class="arr">&rarr;</span>
+    <span>Lab</span><span class="arr">&rarr;</span>
+    <span class="step">Galaxy</span>
+  </div>
+  <p class="note">One material, many forms. The star is Aymane at his most raw; it detonates and the same particles reform into his planet (his inner world), then into the Sun the photography worlds orbit, and finally a whole galaxy to connect across. Smooth-scroll (inertia) drives everything; a shared starfield threads every section so it reads as one journey, not stacked pages. All autoplay respects <code>prefers-reduced-motion</code>.</p>
+
+  <div class="legend">
+    <span class="tag t-enter">Entrance</span>
+    <span class="tag t-3d">3D / R3F</span>
+    <span class="tag t-text">Text</span>
+    <span class="tag t-scroll">Scroll</span>
+    <span class="tag t-exit">Hand-off</span>
+    &nbsp;
+    <span class="st st-built">Built</span>
+    <span class="st st-wip">In progress</span>
+    <span class="st st-plan">Planned</span>
+  </div>
+
+  <h2 class="block">Sections</h2>
+
+  <!-- 1 · HERO ───────────────────────────────────────────────────────────── -->
+  <div class="card">
+    <div class="stage">
+      <span class="star" style="width:2px;height:2px;left:16px;top:20px"></span>
+      <span class="star" style="width:1px;height:1px;right:22px;top:34px;background:#c5e0ff"></span>
+      <span class="star" style="width:2px;height:2px;left:150px;top:140px"></span>
+      <div class="neb" style="width:80px;height:80px"></div>
+      <div class="neb-core" style="width:10px;height:10px"></div>
+    </div>
+    <div>
+      <p class="role">Hero &middot; the star</p>
+      <div class="head-row"><p class="sname">A quiet maker of <span class="pk">Small Universes</span></p><span class="st st-built">Built</span></div>
+      <div class="ann"><span class="tag t-enter">Entrance</span><p>Black &rarr; faint stars fade in &rarr; a particle star ignites (core blooms, nebula shells bloom out). On load the <strong>whole cosmos does one 360&deg; horizontal spin</strong>, finishing exactly as the text lands.</p></div>
+      <div class="ann"><span class="tag t-3d">3D</span><p>A <strong>50k-particle nebula-star</strong> (GLSL simplex noise, 3 layers: blue core &rarr; blue-white shell &rarr; red&ndash;peach gas) with Bloom. Drag anywhere to rotate the whole scene; it also spins slowly on its own and turns with scroll.</p></div>
+      <div class="ann"><span class="tag t-text">Text</span><p>Eyebrow <span class="quote">&ldquo;I&rsquo;m Aymane &mdash;&rdquo;</span> fades up. Headline (Great Vibes) writes in character-by-character. Sub: <span class="quote">&ldquo;I notice light. I&rsquo;ve been drawing since before I could write. Now I do it with code.&rdquo;</span> CTA: <span class="quote">To wander</span>.</p></div>
+      <div class="ann"><span class="tag t-scroll">Scroll</span><p>Pinned. Copy lifts + fades &rarr; the star <strong>zooms until it fills the screen</strong> &rarr; <strong>detonates</strong> (particles burst outward, core dissolves) &rarr; debris flies through the camera.</p></div>
+      <div class="ann"><span class="tag t-exit">Hand-off</span><p>The scattered debris drifts inward and begins to condense &mdash; the same particles becoming the planet.</p></div>
+    </div>
+  </div>
+
+  <!-- 2 · SATURN + ABOUT ─────────────────────────────────────────────────── -->
+  <div class="card">
+    <div class="stage">
+      <div style="position:relative;width:78px;height:78px"><div class="planet-ring"></div><div class="planet3d"></div></div>
+    </div>
+    <div>
+      <p class="role">About &middot; the planet (same pinned journey)</p>
+      <div class="head-row"><p class="sname">Beyond <span class="pk">The Code</span></p><span class="st st-built">Built</span></div>
+      <div class="ann"><span class="tag t-3d">3D</span><p>The debris <strong>assembles into a particle Saturn</strong> as you scroll &mdash; brand-tinted bands (peach family, white-gold poles), peach/white rings with the Cassini gap, a slight axial tilt, drag-rotatable, gently churning. Same material as the star, new form.</p></div>
+      <div class="ann"><span class="tag t-scroll">Scroll (signature)</span><p>Saturn finishes building, rests a beat, then the whole cosmos <strong>blurs + dims</strong> and the About copy <strong>slides in from the top</strong> over it. Keep scrolling and the gray text <strong>colours in</strong> &mdash; the title letter-by-letter to its own colours, the paragraphs word-by-word to white with a soft bounce.</p></div>
+      <div class="ann"><span class="tag t-text">Text</span><p><span class="quote">&ldquo;I don&rsquo;t fill rooms &mdash; I notice them. I&rsquo;ve always been the quiet one, more at home watching than performing. That&rsquo;s where the work comes from: a love of small, patient details &mdash; the right easing curve, the soft edge of a shadow, the moment a page finally breathes.&rdquo;</span><br/><br/><span class="quote">&ldquo;I build the way I drew as a kid: slowly, and for the love of it. Only now, other people get to live inside what I make. I care less about looking impressive than about being honest &mdash; quiet interfaces that feel considered, and a little bit alive.&rdquo;</span></p></div>
+      <div class="ann"><span class="tag t-exit">Hand-off</span><p>The About block slides up, fades and blurs out while the cosmos <strong>un-blurs back to the sharp Saturn</strong>; the pin releases into Skills.</p></div>
+    </div>
+  </div>
+
+  <!-- 3 · SKILLS ─────────────────────────────────────────────────────────── -->
+  <div class="card">
+    <div class="stage">
+      <svg viewBox="0 0 180 150" width="180" height="150" xmlns="http://www.w3.org/2000/svg">
+        <g stroke="#2489ff" stroke-width="0.8" opacity="0.45" fill="none">
+          <line x1="24" y1="38" x2="66" y2="18"/><line x1="66" y1="18" x2="112" y2="42"/>
+          <line x1="112" y1="42" x2="121" y2="90"/><line x1="121" y1="90" x2="150" y2="58"/>
+          <line x1="121" y1="90" x2="147" y2="122"/><line x1="150" y1="58" x2="161" y2="25"/>
+          <line x1="150" y1="58" x2="169" y2="82"/><line x1="169" y1="82" x2="147" y2="122"/>
+        </g>
+        <g fill="#ffa14a">
+          <circle cx="24" cy="38" r="3.2"/><circle cx="66" cy="18" r="3.2"/><circle cx="112" cy="42" r="3.2"/>
+          <circle cx="121" cy="90" r="5" opacity="0.95"/><circle cx="121" cy="90" r="9" opacity="0.1"/>
+          <circle cx="150" cy="58" r="3.2"/><circle cx="161" cy="25" r="3.2"/><circle cx="169" cy="82" r="3.2"/><circle cx="147" cy="122" r="3.2"/>
+        </g>
+        <g fill="#c5e0ff" font-size="8" text-anchor="middle" font-family="Helvetica Neue, Helvetica, Arial, sans-serif">
+          <text x="121" y="107">Three.js / R3F</text>
+        </g>
+      </svg>
+    </div>
+    <div>
+      <p class="role">Skills &middot; the constellation</p>
+      <div class="head-row"><p class="sname">What I&rsquo;m <span class="pk">drawn to</span></p><span class="st st-built">Built</span></div>
+      <div class="ann"><span class="tag t-scroll">Scroll (signature)</span><p>Pinned. As you scroll, an <strong>organic web assembles</strong>: nodes pop in &rarr; connector lines draw (and unravel if you scroll back up) &rarr; labels fade in. No fixed shape.</p></div>
+      <div class="ann"><span class="tag t-3d">Visual</span><p>Crisp SVG over a faint starfield. Two threads meet at a bridge: <strong>creative</strong> (Photography &middot; Drawing &middot; Motion) and <strong>engineering</strong> (React &middot; TypeScript &middot; Next.js &middot; GSAP), both wired through a larger <strong>Three.js / R3F</strong> node.</p></div>
+      <div class="ann"><span class="tag t-text">Text</span><p>Title &ldquo;What I&rsquo;m drawn to&rdquo; + <span class="quote">&ldquo;The tools I reach for and the things that pull my eye &mdash; connected, because the way I see is the way I build.&rdquo;</span></p></div>
+      <div class="ann"><span class="tag t-exit">Hand-off</span><p>Web fades; the warm glow of the Sun begins to bleed in from the next section.</p></div>
+    </div>
+  </div>
+
+  <!-- 4 · PHOTOGRAPHY ────────────────────────────────────────────────────── -->
+  <div class="card">
+    <div class="stage">
+      <svg viewBox="0 0 180 155" width="180" height="155" xmlns="http://www.w3.org/2000/svg">
+        <defs>
+          <radialGradient id="sunGlow" cx="50%" cy="50%" r="50%">
+            <stop offset="0%" stop-color="#fff3d6" stop-opacity="0.95"/>
+            <stop offset="35%" stop-color="#ffa14a" stop-opacity="0.45"/>
+            <stop offset="100%" stop-color="#ef7d14" stop-opacity="0"/>
+          </radialGradient>
+        </defs>
+        <ellipse cx="90" cy="80" rx="74" ry="26" fill="none" stroke="rgba(197,224,255,0.28)" stroke-width="0.7" stroke-dasharray="3,3"/>
+        <circle cx="60" cy="58" r="4" fill="#4088c0"/><circle cx="120" cy="58" r="4" fill="#c84030"/>
+        <circle cx="24" cy="72" r="4.5" fill="#7fb0e8"/><circle cx="156" cy="72" r="4.5" fill="#ffcf9a"/>
+        <circle cx="90" cy="80" r="18" fill="url(#sunGlow)"/><circle cx="90" cy="80" r="5" fill="#fff8e0"/><circle cx="90" cy="80" r="2.4" fill="#fff"/>
+        <text x="90" y="70" fill="rgba(255,240,160,0.55)" font-size="7" text-anchor="middle" font-family="Helvetica Neue, Helvetica, Arial, sans-serif">Sun = me</text>
+        <circle cx="46" cy="100" r="5.5" fill="#b06838"/><circle cx="134" cy="100" r="5.5" fill="#d0904a"/>
+        <circle cx="90" cy="106" r="6.5" fill="#2489ff"/>
+      </svg>
+    </div>
+    <div>
+      <p class="role">Photography &middot; worlds in orbit</p>
+      <div class="head-row"><p class="sname">Light I&rsquo;ve <span class="pk">caught</span></p><span class="st st-wip">In progress</span></div>
+      <div class="ann"><span class="tag t-3d">3D</span><p><strong>Built:</strong> a particle <strong>Sun</strong> at centre (the settled core that survived the explosion &mdash; &ldquo;the Sun is me&rdquo;) with <strong>9 particle planets</strong>, each a different tint/mood, orbiting it on a tilted ring, self-spinning. The planets are smaller than the Sun.</p></div>
+      <div class="ann"><span class="tag t-scroll">Scroll (planned)</span><p>All worlds visible &rarr; scroll <strong>zooms into one world at a time</strong> (others drift out of frame) &rarr; the focused world <strong>dissolves open to reveal a photograph</strong> &rarr; scroll again re-forms it and brings the next. 9 worlds = 9 photos (landscapes).</p></div>
+      <div class="ann"><span class="tag t-text">Text</span><p>Title &ldquo;Light I&rsquo;ve caught&rdquo; + <span class="quote">&ldquo;I photograph the sky when I&rsquo;m not coding it. Mostly landscapes &mdash; horizons, weather, the few quiet minutes when the light turns gold and then blue.&rdquo;</span></p></div>
+      <div class="ann"><span class="tag t-exit">Hand-off</span><p>Camera pulls back to all 9 worlds, then they drift away toward the Lab.</p></div>
+    </div>
+  </div>
+
+  <!-- 5 · LAB ────────────────────────────────────────────────────────────── -->
+  <div class="card">
+    <div class="stage"><div class="lab-wrap"><div class="lab-ring"></div><div class="lab-star"></div><div class="lab-dot"></div></div></div>
+    <div>
+      <p class="role">The lab &middot; in progress</p>
+      <div class="head-row"><p class="sname">Half-finished <span class="pk">thoughts</span></p><span class="st st-plan">Planned</span></div>
+      <div class="ann"><span class="tag t-enter">Entrance</span><p>Title writes in. A small dot quietly orbits a peach centre point &mdash; signalling work-in-progress without feeling empty.</p></div>
+      <div class="ann"><span class="tag t-text">Text</span><p>Title &ldquo;Half-finished thoughts&rdquo; + <span class="quote">&ldquo;This is where I tinker &mdash; small experiments in motion, shaders, and code. More will drift into orbit soon.&rdquo;</span></p></div>
+      <div class="ann"><span class="tag t-3d">3D</span><p>Minimal at launch (a lone orbiting particle). Later, each experiment becomes its own lazy-loaded canvas tile.</p></div>
+      <div class="ann"><span class="tag t-exit">Hand-off</span><p>Fades toward the galaxy; the background deepens and the first distant stars of Contact appear.</p></div>
+    </div>
+  </div>
+
+  <!-- 6 · CONTACT ────────────────────────────────────────────────────────── -->
+  <div class="card">
+    <div class="stage">
+      <span class="star" style="width:2px;height:2px;left:22px;top:24px"></span>
+      <span class="star" style="width:2px;height:2px;right:26px;top:38px;background:#c5e0ff"></span>
+      <span style="position:absolute;width:30px;height:1.5px;background:linear-gradient(90deg,#fff,transparent);transform:rotate(-20deg);right:20px;top:54px"></span>
+      <div class="galaxy-disk"></div>
+    </div>
+    <div>
+      <p class="role">Contact &middot; the galaxy</p>
+      <div class="head-row"><p class="sname">Say <span class="pk">hello</span></p><span class="st st-plan">Planned</span></div>
+      <div class="ann"><span class="tag t-enter">Entrance</span><p>A galaxy fades + rotates into view and keeps slowly spinning; a shooting star streaks across on a loop. Title writes in; form fields fade up staggered; the CTA softly pulses.</p></div>
+      <div class="ann"><span class="tag t-3d">3D</span><p>Galaxy = a particle system (thousands of points on spiral arms) slowly rotating with a bloomed core. The shooting star is a single fast-moving particle trail.</p></div>
+      <div class="ann"><span class="tag t-text">Text</span><p>Title &ldquo;Say hello&rdquo; + <span class="quote">&ldquo;I&rsquo;m warmer up close than I look from all the way down here. If something resonated &mdash; send a note.&rdquo;</span> Fields: name, email, message. Input focus adds a soft peach glow.</p></div>
+      <div class="ann"><span class="tag t-exit">Micro-interaction</span><p><strong>On submit:</strong> the CTA reads <span class="quote">&ldquo;Send it into orbit&rdquo;</span> &mdash; the message launches as a shooting star arcing into the galaxy. Footer: GitHub &middot; LinkedIn &middot; aymanelassfar@gmail.com.</p></div>
+    </div>
+  </div>
+
+  <!-- ── Bookend ────────────────────────────────────────────────────────── -->
+  <div class="bookend">
+    <h3>How it starts &amp; ends</h3>
+    <p><strong>Start:</strong> a black, silent screen. One star is born &mdash; Aymane&rsquo;s star &mdash; and ignites with light. His name writes itself beneath it, and a quiet line invites: <em>To wander</em>.</p>
+    <p><strong>The explosion:</strong> the star doesn&rsquo;t die. It detonates at full screen, releases itself, and the same particles that built it drift inward and become something denser &mdash; his planet, his inner world. Same material, different form.</p>
+    <p><strong>The Sun:</strong> the settled core that survived the explosion becomes the Sun at the centre of the photography section. It is him &mdash; not raw and burning, but calm and gravitational. Nine worlds he caught revolve around it.</p>
+    <p><strong>End:</strong> you arrive at a whole galaxy &mdash; slowly turning &mdash; and send a message that flies off as a shooting star into the dark.</p>
+    <p><strong>The arc:</strong> from a single point of raw light to a whole cosmos. From making things alone to connection across the dark. One material, many forms. <em>That is the story.</em></p>
+  </div>
+
+  <!-- ── Build notes ────────────────────────────────────────────────────── -->
+  <h2 class="block">Notes for building the prototype</h2>
+  <div class="callout">
+    &bull; <b>Structure:</b> one long single page, deep space-black throughout, generous vertical rhythm; each section is full-height and scroll-driven.<br/>
+    &bull; <b>Motion:</b> smooth (inertia) scroll; sections pin and animations scrub with scroll position (assemble on the way down, reverse on the way up). Great Vibes titles write in / colour in; body copy fades up.<br/>
+    &bull; <b>3D approximation:</b> where real WebGL isn&rsquo;t practical, approximate the star / Saturn / Sun / galaxy with dense particles, radial-gradient glows, and blur &mdash; keep everything made of &ldquo;light,&rdquo; never hard shapes.<br/>
+    &bull; <b>Signature beats to keep:</b> (1) star zoom &rarr; explosion &rarr; particles reform into Saturn; (2) About text gray&rarr;colour fill on scroll over the blurred planet; (3) Skills web drawing in; (4) photography worlds orbiting the Sun, zoom-in &rarr; dissolve to photo; (5) Contact &ldquo;send it into orbit&rdquo; shooting-star submit.<br/>
+    &bull; <b>Voice:</b> quiet, honest, personal &mdash; use the exact copy above. Photography = landscapes. No traditional &ldquo;projects&rdquo; grid; the site itself + the Lab are the showcase.
+  </div>
+
+</div>
+</body>
+</html>
