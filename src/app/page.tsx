@@ -1,5 +1,6 @@
 import Hero from "#/components/pages/home/Hero";
 import Skills from "#/components/pages/home/skills/Skills";
+import Worlds from "#/components/pages/home/worlds/Worlds";
 
 export default function Home() {
   return (
@@ -9,6 +10,8 @@ export default function Home() {
       <Hero />
       {/* Skills — the constellation of tools and creative pulls. */}
       <Skills />
+      {/* Photography — the worlds in orbit around the Sun. */}
+      <Worlds />
     </main>
   );
 }
