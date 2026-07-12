@@ -27,3 +27,10 @@ export const damp = (
   target: number,
   factor: number
 ): number => current + (target - current) * factor;
+
+/** Linear interpolation between `a` and `b` by `t` (0..1). */
+export const lerp = (a: number, b: number, t: number): number =>
+  a + (b - a) * t;
+
+/** Ease-out cubic — fast start, decelerating to a stop at t = 1. */
+export const easeOutCubic = (t: number): number => 1 - Math.pow(1 - t, 3);

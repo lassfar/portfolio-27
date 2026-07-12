@@ -6,11 +6,23 @@ import { Group } from "three";
 import Nebula from "./Nebula";
 import Starfield from "./Starfield";
 import { JOURNEY, LAYOUT, ROTATION, SCREEN_FILL_SCALE, ZOOM } from "./config";
-import { damp, remap01 } from "./utils";
+import { clamp01, damp, easeOutCubic, lerp, remap01 } from "./utils";
+import { ASSEMBLY } from "#/components/three.js/planet/config";
 import { useHeroScroll } from "#/stores/useHeroScroll";
 import { useAboutScroll } from "#/stores/useAboutScroll";
 import { useSceneRotation } from "#/stores/useSceneRotation";
 import { useSceneIntro } from "#/stores/useSceneIntro";
+
+/**
+ * The deterministic scroll/intro yaw the scene reaches by the time Saturn is
+ * fully assembled — a whole number of turns, so it presents the same face as
+ * yaw 0. The whole scene resolves toward this (+ a fine-tune offset) at build
+ * completion, landing Saturn on its canonical pose while staying in sync.
+ */
+const FLOW_END =
+  (JOURNEY.introTurns + JOURNEY.scrollTurnsStar + JOURNEY.scrollTurnsPlanet) *
+  Math.PI *
+  2;
 
 type Props = {
   animate?: boolean;
@@ -86,7 +98,11 @@ const Universe = ({ animate = true, count }: Props) => {
 
   useFrame((_, delta) => {
     // ── Rotation (drag + idle drift) → starfield and nebula spin together ──
-    if (animate) targetRot.current.y += delta * ROTATION.idleDrift;
+    // The whole scene gently auto-rotates on its own — but once Saturn is fully
+    // built the auto-rotation stops (the planet then only self-spins on its own
+    // axis). Drag still works in either state.
+    const built = useAboutScroll.getState().progress >= 1;
+    if (animate && !built) targetRot.current.y += delta * ROTATION.idleDrift;
     currentRot.current.x = damp(
       currentRot.current.x,
       targetRot.current.x,
@@ -119,8 +135,15 @@ const Universe = ({ animate = true, count }: Props) => {
       JOURNEY.scrollSpinDamping
     );
 
-    // Total horizontal rotation = drag + idle drift (damped) + intro + scroll.
-    const yaw = currentRot.current.y + introYaw + scrollYaw.current;
+    // Resolve the deterministic scroll/intro turn to Saturn's canonical pose as
+    // it assembles — spinning a little extra and decelerating into place — then
+    // add the free drag on top. Applied to the WHOLE scene (starfield + nebula +
+    // Saturn) so the 3D space and the planet turn as one and settle together.
+    const flowYaw = introYaw + scrollYaw.current;
+    const ease = easeOutCubic(clamp01(aboutP));
+    const buildSpin = ASSEMBLY.spinTurns * Math.PI * 2 * (1 - ease);
+    const resolvedFlow = lerp(flowYaw, FLOW_END + ASSEMBLY.poseYaw, ease) - buildSpin;
+    const yaw = resolvedFlow + currentRot.current.y;
 
     if (starfieldRotRef.current) {
       starfieldRotRef.current.rotation.x = currentRot.current.x;
@@ -131,8 +154,8 @@ const Universe = ({ animate = true, count }: Props) => {
       nebulaSpinRef.current.rotation.y = yaw;
     }
 
-    // Publish the scene rotation so the (non-interactive) Saturn mirrors it and
-    // the whole cosmos turns together (intro + scroll + drag).
+    // Publish the resolved scene rotation so the (non-interactive) Saturn mirrors
+    // it exactly and stays perfectly in sync with the 3D space.
     useSceneRotation.getState().setRotation(currentRot.current.x, yaw);
 
     // ── Scroll zoom: center → grow → fly through camera (the burst itself

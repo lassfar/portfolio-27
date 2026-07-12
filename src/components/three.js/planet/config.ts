@@ -118,8 +118,8 @@ export const SATURN = {
 // and the body is canted like the reference photo.
 
 export const TILT = {
-  x: 0.2, // pitch down → look onto the top of the rings (opens the ellipse)
-  z: 0.4, // axial tilt / sideways lean (smaller = more upright planet)
+  x: 0.1, // pitch down → look onto the top of the rings (opens the ellipse)
+  z: 0.25, // axial tilt / sideways lean (smaller = more upright planet)
 } as const;
 
 // ── Rotation feel (auto-spin + pointer drag) ─────────────────────────────────
@@ -128,4 +128,24 @@ export const ROTATION = {
   idleSpin: 0.06, // radians/sec of gentle self-rotation on the planet axis
   sensitivity: 0.004, // radians of view rotation per pixel dragged
   damping: 0.06, // 0..1 follow speed for the drag (higher = snappier)
+} as const;
+
+// ── Assembly resolve (land on the default pose) ──────────────────────────────
+//
+// In the shared cosmic scene the planet turns WITH the cosmos as it assembles,
+// but its rotation is resolved (as a pure function of the assembly progress) so
+// that the moment it's fully built it settles into its canonical pose. It spins
+// with a little extra turn and eases (decelerates) into place; once landed it
+// hands rotation back to the scene (drag + idle drift) as before.
+
+export const ASSEMBLY = {
+  // Fine-tune offset (radians) on the landed yaw — nudge the exact face the
+  // finished planet presents without touching the scroll turn amounts.
+  poseYaw: 0,
+  // Extra full turns spun during the build, decaying to 0 at completion (the
+  // "spin, then decelerate into place"). 0 = only the natural resolve turn.
+  spinTurns: 1,
+  // The self-spin is parked at this axis phase (radians) while building, so the
+  // planet lands on a deterministic face; the idle spin resumes once built.
+  spinPose: 0,
 } as const;

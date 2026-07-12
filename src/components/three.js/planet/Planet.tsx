@@ -3,11 +3,12 @@
 import { useFrame, useThree } from "@react-three/fiber";
 import { useEffect, useRef } from "react";
 import { Group } from "three";
-import { damp } from "#/components/three.js/star/utils";
+import { clamp01, damp } from "#/components/three.js/star/utils";
 import { useSceneRotation } from "#/stores/useSceneRotation";
+import { useAboutScroll } from "#/stores/useAboutScroll";
 import PlanetBody from "./PlanetBody";
 import Rings from "./Rings";
-import { PLANET, RING, ROTATION, TILT } from "./config";
+import { ASSEMBLY, PLANET, RING, ROTATION, TILT } from "./config";
 
 type Props = {
   animate?: boolean;
@@ -83,9 +84,21 @@ const Planet = ({
   }, [gl, interactive]);
 
   useFrame((_, delta) => {
-    // Gentle self-rotation on the planet's own (tilted) axis.
+    // Assembly progress (0 dispersed → 1 fully built). Standalone/interactive
+    // use has no assembly, so it counts as already built.
+    const built = interactive
+      ? 1
+      : clamp01(useAboutScroll.getState().progress);
+
+    // Gentle self-rotation on the planet's own (tilted) axis — but only once
+    // built. While assembling it's parked at a fixed phase so the body can land
+    // on a deterministic pose.
     if (animate && spinGroupRef.current) {
-      spinGroupRef.current.rotation.y += delta * ROTATION.idleSpin;
+      if (built >= 1) {
+        spinGroupRef.current.rotation.y += delta * ROTATION.idleSpin;
+      } else {
+        spinGroupRef.current.rotation.y = ASSEMBLY.spinPose;
+      }
     }
 
     if (interactive) {
@@ -101,11 +114,14 @@ const Planet = ({
         ROTATION.damping
       );
     } else {
-      // Shared scene: mirror the star's published rotation so the planet turns
-      // together with the starfield under one drag.
+      // Shared scene: mirror the already-resolved scene rotation exactly, so
+      // Saturn stays perfectly in sync with the 3D space. The spin + settle into
+      // the canonical pose is applied up in the scene rotation itself (Universe);
+      // here the self-spin is parked while building (above) so the body lands on
+      // a deterministic face.
       const r = useSceneRotation.getState();
-      currentRot.current.x = r.x;
-      currentRot.current.y = r.y;
+      currentRot.current.x = r.pitch;
+      currentRot.current.y = r.yaw;
     }
     if (dragGroupRef.current) {
       dragGroupRef.current.rotation.x = currentRot.current.x;
