@@ -28,9 +28,6 @@ export const GLOW_PALETTE = {
   edge: [0.15, 0.39, 1.0],
 } as const;
 
-/** Starfield point colour. */
-export const STARFIELD_COLOR = "#ffffff";
-
 // ── Camera & post-processing ─────────────────────────────────────────────────
 
 export const CAMERA = {
@@ -65,10 +62,29 @@ export const PARTICLES = {
 } as const;
 
 export const STARFIELD = {
-  count: 1800,
-  size: 0.05,
+  count: 2600,
   minRadius: 11,
   radiusSpread: 24, // particles sit between minRadius and minRadius + radiusSpread
+  size: 22, // base point size (shader px, distance-attenuated)
+  brightFraction: 0.08, // share of rare, larger "standout" stars
+  brightSize: 3.2, // extra size multiplier applied to the standouts
+  twinkleSpeed: 0.7, // gentle brightness-shimmer speed (SIZE is never twinkled → no flicker)
+  twinkleAmount: 0.3, // 0..1 depth of the shimmer (kept low)
+  // Realistic stellar tints (hot blue-white → white → gold → amber), weighted
+  // toward white so the field reads as a real night sky, not a rainbow.
+  tints: ["#cfe0ff", "#eaf1ff", "#ffffff", "#fff4e6", "#ffe6c2", "#ffd9a8"],
+  tintWeights: [0.1, 0.2, 0.3, 0.2, 0.12, 0.08],
+} as const;
+
+// ── Deep-space haze (faint nebula / dust backdrop) ───────────────────────────
+
+export const HAZE = {
+  radius: 46, // large shell enclosing the whole scene, behind the stars
+  intensity: 0.08, // very faint — subtle atmosphere, not a loud sci-fi nebula
+  scale: 2.2, // noise frequency (larger = smaller cloud patches)
+  drift: 0.01, // slow churn speed
+  colorA: "#26375e", // faint cool blue
+  colorB: "#3a2b2b", // faint warm dust
 } as const;
 
 // ── Drag rotation ────────────────────────────────────────────────────────────

@@ -5,6 +5,7 @@ import { useEffect, useRef } from "react";
 import { Group } from "three";
 import Nebula from "./Nebula";
 import Starfield from "./Starfield";
+import DeepSpaceHaze from "./DeepSpaceHaze";
 import { JOURNEY, LAYOUT, ROTATION, SCREEN_FILL_SCALE, ZOOM } from "./config";
 import { clamp01, damp, easeOutCubic, lerp, remap01 } from "./utils";
 import { ASSEMBLY } from "#/components/three.js/planet/config";
@@ -184,10 +185,12 @@ const Universe = ({ animate = true, count }: Props) => {
 
   return (
     <>
-      {/* Fixed starfield — rotates around the star center, never zooms */}
+      {/* Faint deep-space haze + starfield — rotate around the star center,
+          never zoom. The haze sits far behind the stars. */}
       <group ref={starfieldRotRef} position={[0, LAYOUT.starY, 0]}>
         <group position={[0, -LAYOUT.starY, 0]}>
-          <Starfield animate={false} />
+          <DeepSpaceHaze animate={animate} />
+          <Starfield animate={animate} />
         </group>
       </group>
 

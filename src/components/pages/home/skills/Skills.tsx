@@ -70,9 +70,15 @@ type Star = {
   left: number;
   top: number;
   size: number;
+  color: string;
+  glow: number;
   delay: number;
   dur: number;
 };
+
+// Realistic-neutral stellar tints (weighted toward white), matching the R3F
+// cosmic starfield so the whole portfolio's space feels consistent.
+const STAR_TINTS = ["#cfe0ff", "#ffffff", "#ffffff", "#fff4e6", "#ffe6c2"];
 
 const Skills = () => {
   const containerRef = useRef<HTMLElement | null>(null);
@@ -82,13 +88,19 @@ const Skills = () => {
   const [stars, setStars] = useState<Star[]>([]);
   useEffect(() => {
     setStars(
-      Array.from({ length: 44 }, () => ({
-        left: Math.random() * 100,
-        top: Math.random() * 100,
-        size: Math.random() < 0.82 ? 1 : 2,
-        delay: Math.random() * 4,
-        dur: 3 + Math.random() * 4,
-      }))
+      Array.from({ length: 60 }, () => {
+        const bright = Math.random() < 0.16;
+        const size = bright ? 2 + Math.random() * 1.5 : Math.random() < 0.7 ? 1 : 1.5;
+        return {
+          left: Math.random() * 100,
+          top: Math.random() * 100,
+          size,
+          color: STAR_TINTS[Math.floor(Math.random() * STAR_TINTS.length)],
+          glow: bright ? size * 3 : size * 1.5,
+          delay: Math.random() * 4,
+          dur: 3 + Math.random() * 4,
+        };
+      })
     );
   }, []);
 
@@ -162,12 +174,14 @@ const Skills = () => {
         {stars.map((s, i) => (
           <span
             key={i}
-            className="absolute rounded-full bg-white"
+            className="absolute rounded-full"
             style={{
               left: `${s.left}%`,
               top: `${s.top}%`,
               width: s.size,
               height: s.size,
+              background: s.color,
+              boxShadow: `0 0 ${s.glow}px ${s.color}`,
               opacity: 0.5,
               animation: `twinkle ${s.dur}s ease-in-out ${s.delay}s infinite`,
             }}
