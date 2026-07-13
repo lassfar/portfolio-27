@@ -5,6 +5,8 @@ import { useGSAP } from "@gsap/react";
 import gsap from "gsap";
 import { ScrollTrigger } from "gsap/all";
 import clsx from "clsx";
+import useTextsWritingMotion from "#/components/hooks/motions/texts/useTextsWritingMotion";
+import SectionMarker from "#/components/UI/SectionMarker";
 
 gsap.registerPlugin(useGSAP, ScrollTrigger);
 
@@ -82,6 +84,30 @@ const STAR_TINTS = ["#cfe0ff", "#ffffff", "#ffffff", "#fff4e6", "#ffe6c2"];
 
 const Skills = () => {
   const containerRef = useRef<HTMLElement | null>(null);
+  const titleRef = useRef<HTMLHeadingElement | null>(null);
+
+  // Big title writes in character-by-character (the Hero motion), played once as
+  // the section enters view.
+  useTextsWritingMotion({
+    elements: [
+      {
+        ref: titleRef,
+        vars: {
+          translateX: 0,
+          scale: 1,
+          y: 24,
+          stagger: 0.03,
+          duration: 0.6,
+          ease: "power3.out",
+        },
+      },
+    ],
+    scrollTrigger: {
+      trigger: "#skills",
+      start: "top 75%",
+      toggleActions: "play none none reverse",
+    },
+  });
 
   // Generate the faint starfield on the client only (avoids SSR hydration
   // mismatch from Math.random).
@@ -128,9 +154,11 @@ const Skills = () => {
         },
       });
 
+      // The big title writes in on its own (played once, above); here just the
+      // intro fades up as the section scrubs in.
       tl.from(
-        [".skills__title", ".skills__intro"],
-        { autoAlpha: 0, y: 24, stagger: 0.08, duration: 0.12 },
+        ".skills__intro",
+        { autoAlpha: 0, y: 24, duration: 0.12 },
         0
       )
         .from(
@@ -189,8 +217,12 @@ const Skills = () => {
         ))}
       </div>
 
+      {/* Section spine */}
+      <SectionMarker label="THE CRAFT" />
+
       {/* Title + intro */}
       <h2
+        ref={titleRef}
         className={clsx(
           "home-skills__title skills__title",
           "font-great-vibes text-white text-center",

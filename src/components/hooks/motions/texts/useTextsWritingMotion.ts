@@ -1,11 +1,12 @@
 "use client";
 
-import gsap, { SplitText } from "gsap/all";
+import gsap, { ScrollTrigger, SplitText } from "gsap/all";
 import { RefObject } from "react";
 import { useGSAP, useGSAPConfig } from "@gsap/react";
 
 gsap.registerPlugin(useGSAP);
 gsap.registerPlugin(SplitText);
+gsap.registerPlugin(ScrollTrigger);
 
 type Props<T extends HTMLElement> = {
   elements: Array<{
@@ -13,16 +14,23 @@ type Props<T extends HTMLElement> = {
     vars?: gsap.TweenVars;
     position?: gsap.Position;
   }>;
+  /** Optional ScrollTrigger — when set, the write-in plays ONCE as the trigger
+   *  enters view (instead of on mount). Use e.g. `{ trigger, start: "top 80%",
+   *  toggleActions: "play none none reverse" }`. */
+  scrollTrigger?: ScrollTrigger.Vars;
   dependecies?: useGSAPConfig;
 };
 
 const useTextsWritingMotion = <T extends HTMLElement>({
   elements,
+  scrollTrigger,
   dependecies,
 }: Props<T>) => {
   useGSAP(
     () => {
-      const timeline = gsap.timeline();
+      const timeline = gsap.timeline(
+        scrollTrigger ? { scrollTrigger } : undefined
+      );
 
       const vars: gsap.TweenVars = {
         opacity: 0,

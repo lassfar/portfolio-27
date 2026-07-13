@@ -3,12 +3,13 @@
 import { useRef } from "react";
 import dynamic from "next/dynamic";
 import useTextsWritingMotion from "#/components/hooks/motions/texts/useTextsWritingMotion";
-import { addTextsScrollFill } from "#/components/hooks/motions/texts/textsScrollFillMotion";
+import { addTextsScrollWriteIn } from "#/components/hooks/motions/texts/textsScrollWriteInMotion";
 import SunriseLogo from "#/components/assets/pictures/logos/sunrise-logo";
+import SectionMarker from "#/components/UI/SectionMarker";
 import Button from "#/components/UI/buttons/Button";
 import { useGSAP } from "@gsap/react";
 import gsap from "gsap";
-import { ScrollSmoother, ScrollTrigger } from "gsap/all";
+import { ScrollSmoother, ScrollTrigger, SplitText } from "gsap/all";
 import clsx from "clsx";
 import { useHeroScroll } from "#/stores/useHeroScroll";
 import { useAboutScroll } from "#/stores/useAboutScroll";
@@ -16,7 +17,7 @@ import { useSceneIntro } from "#/stores/useSceneIntro";
 import { JOURNEY } from "#/components/three.js/star/config";
 import { clamp01, remap01 } from "#/components/three.js/star/utils";
 
-gsap.registerPlugin(useGSAP, ScrollTrigger);
+gsap.registerPlugin(useGSAP, ScrollTrigger, SplitText);
 
 // WebGL-only — load on the client, never during SSR. The unified scene holds
 // the starfield, the star, AND the Saturn that assembles from its debris.
@@ -38,6 +39,7 @@ const Hero = () => {
   const aboutTitleRef = useRef<HTMLHeadingElement | null>(null);
   const aboutPara1Ref = useRef<HTMLParagraphElement | null>(null);
   const aboutPara2Ref = useRef<HTMLParagraphElement | null>(null);
+  const heroMarkerRef = useRef<HTMLDivElement | null>(null);
 
   // Headline writes in, character by character.
   useTextsWritingMotion({
@@ -154,6 +156,24 @@ const Hero = () => {
     };
     renderAbout(0); // start hidden / un-blurred
 
+    // About title: a one-shot per-character write-in (the Hero motion) that plays
+    // when the reveal appears — NOT scrubbed. Toggled from the journey progress
+    // below (plays past revealStart, reverses back above it).
+    const titleSplit = aboutTitleRef.current
+      ? new SplitText(aboutTitleRef.current, { type: "words,chars" })
+      : null;
+    const titleWriteIn = titleSplit
+      ? gsap.from(titleSplit.chars, {
+          opacity: 0,
+          y: 24,
+          stagger: 0.03,
+          duration: 0.6,
+          ease: "power3.out",
+          paused: true,
+        })
+      : null;
+    let titleShown = false;
+
     const tl = gsap.timeline({
       scrollTrigger: {
         trigger: containerRef.current,
@@ -167,6 +187,17 @@ const Hero = () => {
           // Saturn is fully built by assembleEnd; the rest is the reveal/exit.
           setAbout(remap01(p, JOURNEY.assembleStart, JOURNEY.assembleEnd));
           renderAbout(p);
+          // Play the title write-in once when the reveal appears; reverse it if
+          // the reader scrubs back up above the reveal.
+          if (titleWriteIn) {
+            if (p >= JOURNEY.revealStart && !titleShown) {
+              titleShown = true;
+              titleWriteIn.play();
+            } else if (p < JOURNEY.revealStart && titleShown) {
+              titleShown = false;
+              titleWriteIn.reverse();
+            }
+          }
         },
       },
     });
@@ -187,38 +218,23 @@ const Hero = () => {
         { autoAlpha: 0, ease: "power1.in", duration: JOURNEY.contentExit },
         0
       )
+      // The Hero "ORIGIN" spine fades out with the copy.
+      .to(
+        heroMarkerRef.current,
+        { autoAlpha: 0, ease: "power1.in", duration: JOURNEY.contentExit },
+        0
+      )
       // Spacer so the pin (and the scrubbed progress) spans the whole journey.
       .to({}, { duration: 1 - JOURNEY.contentExit });
 
-    // Reading reveal — added straight onto the journey timeline so it scrubs in
-    // lockstep over fillStart..exitStart: title fills letter-by-letter to its own
-    // colours; paragraphs fill word-by-word to white with a bounce.
-    const fillSplits = addTextsScrollFill(
+    // About description — scroll-scrubbed write-in (the SAME rise-in as the big
+    // titles, per word) added straight onto the journey so it scrubs in lockstep
+    // over fillStart..exitStart. The title above plays its write-in once instead.
+    const descSplits = addTextsScrollWriteIn(
       tl,
       [
-        {
-          ref: aboutTitleRef,
-          type: "chars",
-          fromColor: "rgba(255, 255, 255, 0.16)",
-          ease: "power1.out",
-          weight: 1,
-        },
-        {
-          ref: aboutPara1Ref,
-          type: "words",
-          fromColor: "rgba(255, 255, 255, 0.16)",
-          y: 14,
-          ease: "back.out(2)",
-          weight: 2,
-        },
-        {
-          ref: aboutPara2Ref,
-          type: "words",
-          fromColor: "rgba(255, 255, 255, 0.16)",
-          y: 14,
-          ease: "back.out(2)",
-          weight: 2,
-        },
+        { ref: aboutPara1Ref, type: "words", weight: 1 },
+        { ref: aboutPara2Ref, type: "words", weight: 1 },
       ],
       { at: JOURNEY.fillStart, duration: JOURNEY.exitStart - JOURNEY.fillStart }
     );
@@ -226,7 +242,9 @@ const Hero = () => {
     return () => {
       setStar(0);
       setAbout(0);
-      fillSplits.forEach((s) => s.revert());
+      descSplits.forEach((s) => s.revert());
+      titleWriteIn?.kill();
+      titleSplit?.revert();
     };
   });
 
@@ -263,6 +281,9 @@ const Hero = () => {
       >
         <SunriseLogo width={56} height={48} className="w-10 sm:w-12 h-auto" />
       </div>
+
+      {/* Section spine — fades out with the hero copy as the journey begins. */}
+      <SectionMarker ref={heroMarkerRef} label="ORIGIN" className="z-10" />
 
       {/* Content overlay — pointer-events-none so drags reach the space;
           interactive children re-enable pointer events. */}
@@ -340,6 +361,9 @@ const Hero = () => {
           "px-6"
         )}
       >
+        {/* Section spine — fades in with this block. */}
+        <SectionMarker label="THE MAKER" />
+
         <h2
           ref={aboutTitleRef}
           className={clsx(
@@ -349,8 +373,8 @@ const Hero = () => {
             "mb-8 sm:mb-10"
           )}
         >
-          <span className="text-7xl sm:text-8xl md:text-9xl">Beyond</span>{" "}
-          <span>The</span> <span className="text-peach">Code</span>
+          <span>Small,</span> <span>Patient</span>{" "}
+          <span className="text-peach">Details</span>
         </h2>
 
         <div className="max-w-2xl space-y-5 sm:space-y-6">
