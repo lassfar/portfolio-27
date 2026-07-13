@@ -5,7 +5,7 @@ import { useMemo, useRef } from "react";
 import { Color, NormalBlending, Points, ShaderMaterial } from "three";
 import { useAboutScroll } from "#/stores/useAboutScroll";
 import { remap01 } from "#/components/three.js/star/utils";
-import { LIGHT, PLANET, PLANET_PALETTE, SCATTER } from "./config";
+import { GROWTH, LIGHT, PLANET, PLANET_PALETTE, SCATTER } from "./config";
 import { SIMPLEX_NOISE } from "./shaders";
 
 type Props = {
@@ -120,6 +120,8 @@ const PlanetBody = ({ count = PLANET.count, animate = true }: Props) => {
       uForm: { value: 0 }, // 0 = dispersed, 1 = assembled into Saturn
       uScatterDrift: { value: SCATTER.drift },
       uStagger: { value: SCATTER.stagger },
+      uStartScale: { value: GROWTH.startScale },
+      uOvershoot: { value: GROWTH.overshoot },
     }),
     []
   );
@@ -221,6 +223,8 @@ uniform float uRimScatter;
 uniform float uForm;         // 0 = dispersed in space, 1 = assembled
 uniform float uScatterDrift;
 uniform float uStagger;
+uniform float uStartScale;   // planet scale at the start of construction
+uniform float uOvershoot;    // how far past full size it pops before settling
 attribute vec3 aColor;
 attribute float aScale;
 attribute float aSeed;
@@ -276,6 +280,13 @@ void main(){
   // drifting) to the home position above. Per-particle stagger so they don't
   // all snap home at once (low-seed particles arrive first).
   vec3 home = p;
+  // Grow the assembling planet from a scaled-down size to full, overshooting a
+  // little past full then settling exactly to 1.0 as the last particles land.
+  float grow = smoothstep(0.0, 0.82, uForm);
+  float wob = smoothstep(0.6, 1.0, uForm);
+  float assembleScale = mix(uStartScale, 1.0, grow) + uOvershoot * sin(3.14159265 * wob);
+  home *= assembleScale;
+
   float ds = uTime * 0.05;
   vec3 scattered = aScatter + vec3(
     snoise(aScatter * 0.5 + vec3(ds, 0.0, 0.0)),

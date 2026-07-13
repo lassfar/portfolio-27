@@ -102,6 +102,20 @@ export const SCATTER = {
   stagger: 0.4, // 0 = all assemble together; higher = more staggered arrival
 } as const;
 
+// ── Growth while constructing (scale toward full as particles land) ──────────
+//
+// While the particles fly in, the whole planet eases from `startScale` to full
+// size (1.0) as it lands — so it "resolves into place" instead of snapping to
+// full size immediately: it GROWS in if startScale < 1, or CONDENSES in from
+// oversized if startScale > 1. An optional overshoot pops just past full before
+// settling. Applied to the body AND the rings (same curve) so Saturn resolves as
+// one — a pure function of the assembly progress, so it scrubs/reverses cleanly.
+
+export const GROWTH = {
+  startScale: 2, // planet scale at the START of construction (eases to 1.0 = full)
+  overshoot: 0, // extra pop just past full before settling (0 = none)
+} as const;
+
 // ── Placement in the shared cosmic scene ─────────────────────────────────────
 //
 // Saturn lives in the Hero's unified Canvas (star camera: further back, wider

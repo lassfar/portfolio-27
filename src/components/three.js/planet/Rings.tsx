@@ -5,7 +5,7 @@ import { useMemo, useRef } from "react";
 import { Color, NormalBlending, Points, ShaderMaterial } from "three";
 import { useAboutScroll } from "#/stores/useAboutScroll";
 import { remap01 } from "#/components/three.js/star/utils";
-import { RING, RING_PALETTE, SCATTER } from "./config";
+import { GROWTH, RING, RING_PALETTE, SCATTER } from "./config";
 import { SIMPLEX_NOISE } from "./shaders";
 
 type Props = {
@@ -90,6 +90,8 @@ const Rings = ({ count = RING.count, animate = true }: Props) => {
       uForm: { value: 0 }, // 0 = dispersed, 1 = assembled into the ring
       uScatterDrift: { value: SCATTER.drift },
       uStagger: { value: SCATTER.stagger },
+      uStartScale: { value: GROWTH.startScale },
+      uOvershoot: { value: GROWTH.overshoot },
     }),
     []
   );
@@ -178,6 +180,8 @@ uniform float uFlowSpeed;
 uniform float uForm;         // 0 = dispersed in space, 1 = assembled
 uniform float uScatterDrift;
 uniform float uStagger;
+uniform float uStartScale;   // ring scale at the start of construction
+uniform float uOvershoot;    // how far past full size it pops before settling
 attribute vec3 aColor;
 attribute float aScale;
 attribute float aSeed;
@@ -200,6 +204,13 @@ void main(){
   // Scroll-driven assembly: blend from a dispersed, gently drifting point in
   // space to the ring home, staggered per particle.
   vec3 home = p;
+  // Grow the assembling ring in lockstep with the body: scaled down → full,
+  // overshooting a little then settling exactly to 1.0 as the particles land.
+  float grow = smoothstep(0.0, 0.82, uForm);
+  float wob = smoothstep(0.6, 1.0, uForm);
+  float assembleScale = mix(uStartScale, 1.0, grow) + uOvershoot * sin(3.14159265 * wob);
+  home *= assembleScale;
+
   float ds = uTime * 0.05;
   vec3 scattered = aScatter + vec3(
     snoise(aScatter * 0.5 + vec3(ds, 0.0, 0.0)),
