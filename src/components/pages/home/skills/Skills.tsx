@@ -193,7 +193,9 @@ const Skills = () => {
       ref={containerRef}
       className={clsx(
         "home-skills",
-        "relative z-10 min-h-screen overflow-hidden bg-rich-black",
+        // Pulled up 100vh so it overlaps the tail of the Hero's pin and slides UP
+        // over the still-pinned Saturn (whose pin ends exactly as this covers).
+        "-mt-[100vh] relative z-20 min-h-screen overflow-hidden bg-rich-black",
         "flex flex-col items-center justify-center px-4 py-20"
       )}
     >

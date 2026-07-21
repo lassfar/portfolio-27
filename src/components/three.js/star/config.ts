@@ -130,8 +130,14 @@ export const JOURNEY = {
   // build = (assembleEnd − assembleStart) × pinLength. To give it MORE build
   // scroll, widen that gap and bump pinLength to match (these keep the star at
   // ≈220% of a viewport while the assembly gets ≈260%).
-  pinLength: "+=1010%", // total pinned scroll: star → Saturn → reveal → fill → exit
-  starSpan: 0.218, // star plays over 0..starSpan (≈220% of 1010%)
+  pinLength: "+=1110%", // total pinned scroll: journey (0..journeyEnd) + Craft slide
+  // The star→Saturn→About journey occupies 0..journeyEnd of the pin; the final
+  // journeyEnd..1 (≈100vh) is dead scroll where the Saturn stays pinned/fixed and
+  // the Craft section scrolls up OVER it (its opaque bg covering the planet).
+  // Because the Saturn never unpins here, there's no boundary jump; and on the way
+  // back the re-pin is hidden behind the still-covering Craft.
+  journeyEnd: 0.91,
+  starSpan: 0.218, // star plays over 0..starSpan of the JOURNEY (jp), not the pin
   assembleStart: 0.198, // Saturn assembles over assembleStart..assembleEnd (overlaps the burst)
   assembleEnd: 0.455, // Saturn fully built by here — ≈260% of scroll to build
   contentExit: 0.08, // fraction of the journey over which the hero copy lifts away

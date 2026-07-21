@@ -182,18 +182,21 @@ const Hero = () => {
         pin: true,
         scrub: 1,
         onUpdate: (self) => {
-          const p = self.progress;
-          setStar(clamp01(p / JOURNEY.starSpan));
+          // Journey progress: the star→Saturn→About journey plays over
+          // 0..journeyEnd of the pin; the tail (journeyEnd..1) is the Craft
+          // slide-over, during which the Saturn just stays pinned/fixed.
+          const jp = clamp01(self.progress / JOURNEY.journeyEnd);
+          setStar(clamp01(jp / JOURNEY.starSpan));
           // Saturn is fully built by assembleEnd; the rest is the reveal/exit.
-          setAbout(remap01(p, JOURNEY.assembleStart, JOURNEY.assembleEnd));
-          renderAbout(p);
+          setAbout(remap01(jp, JOURNEY.assembleStart, JOURNEY.assembleEnd));
+          renderAbout(jp);
           // Play the title write-in once when the reveal appears; reverse it if
           // the reader scrubs back up above the reveal.
           if (titleWriteIn) {
-            if (p >= JOURNEY.revealStart && !titleShown) {
+            if (jp >= JOURNEY.revealStart && !titleShown) {
               titleShown = true;
               titleWriteIn.play();
-            } else if (p < JOURNEY.revealStart && titleShown) {
+            } else if (jp < JOURNEY.revealStart && titleShown) {
               titleShown = false;
               titleWriteIn.reverse();
             }
@@ -202,30 +205,31 @@ const Hero = () => {
       },
     });
 
+    // The timeline scrubs over the WHOLE pin (0..1), but the journey lives in
+    // 0..journeyEnd — so its tl positions are scaled by journeyEnd to stay in
+    // lockstep with the jp-driven reveal above.
+    const JE = JOURNEY.journeyEnd;
+    const contentExit = JOURNEY.contentExit * JE;
+
     // Hero copy rises and fades out early (the star journey takes over).
     tl.to(
       contentRef.current,
-      {
-        yPercent: -60,
-        autoAlpha: 0,
-        ease: "power1.in",
-        duration: JOURNEY.contentExit,
-      },
+      { yPercent: -60, autoAlpha: 0, ease: "power1.in", duration: contentExit },
       0
     )
       .to(
         logoRef.current,
-        { autoAlpha: 0, ease: "power1.in", duration: JOURNEY.contentExit },
+        { autoAlpha: 0, ease: "power1.in", duration: contentExit },
         0
       )
       // The Hero "ORIGIN" spine fades out with the copy.
       .to(
         heroMarkerRef.current,
-        { autoAlpha: 0, ease: "power1.in", duration: JOURNEY.contentExit },
+        { autoAlpha: 0, ease: "power1.in", duration: contentExit },
         0
       )
-      // Spacer so the pin (and the scrubbed progress) spans the whole journey.
-      .to({}, { duration: 1 - JOURNEY.contentExit });
+      // Spacer so the pin (and the scrubbed progress) spans the whole pin.
+      .to({}, { duration: 1 - contentExit });
 
     // About description — scroll-scrubbed write-in (the SAME rise-in as the big
     // titles, per word) added straight onto the journey so it scrubs in lockstep
@@ -236,7 +240,10 @@ const Hero = () => {
         { ref: aboutPara1Ref, type: "words", weight: 1 },
         { ref: aboutPara2Ref, type: "words", weight: 1 },
       ],
-      { at: JOURNEY.fillStart, duration: JOURNEY.exitStart - JOURNEY.fillStart }
+      {
+        at: JOURNEY.fillStart * JE,
+        duration: (JOURNEY.exitStart - JOURNEY.fillStart) * JE,
+      }
     );
 
     return () => {
