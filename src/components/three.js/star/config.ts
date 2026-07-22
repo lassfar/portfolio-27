@@ -126,17 +126,19 @@ export const HERO_SCROLL = {
  * star's burst so the explosion debris hands off into the planet.
  */
 export const JOURNEY = {
-  // Phase thresholds are fractions of pinLength. The scroll Saturn takes to
-  // build = (assembleEnd − assembleStart) × pinLength. To give it MORE build
-  // scroll, widen that gap and bump pinLength to match (these keep the star at
-  // ≈220% of a viewport while the assembly gets ≈260%).
-  pinLength: "+=1110%", // total pinned scroll: journey (0..journeyEnd) + Craft slide
-  // The star→Saturn→About journey occupies 0..journeyEnd of the pin; the final
-  // journeyEnd..1 (≈100vh) is dead scroll where the Saturn stays pinned/fixed and
-  // the Craft section scrolls up OVER it (its opaque bg covering the planet).
-  // Because the Saturn never unpins here, there's no boundary jump; and on the way
-  // back the re-pin is hidden behind the still-covering Craft.
-  journeyEnd: 0.91,
+  // ── Pin length + the two coordinate spaces ──────────────────────────────────
+  //
+  // ONE pinned ScrollTrigger holds the shared cosmos on-screen for the WHOLE
+  // story, so the Saturn can be revealed after the Craft and fly away in the same
+  // scene. Two progress spaces live on this pin:
+  //   • mp  (master progress, 0..1 over the whole pin) — the tail phases below.
+  //   • jp  (journey progress, mp / journeyEnd, 0..1) — the star→Saturn→About
+  //         block. Its internal thresholds (starSpan…exitStart) are jp-fractions,
+  //         so they DON'T change when journeyEnd / pinLength change.
+  pinLength: "+=1720%", // journey (0..journeyEnd) + Craft cover/assemble/fade + Saturn fly-away
+  // The star→Saturn→About journey occupies mp 0..journeyEnd (≈1010% of scroll,
+  // unchanged feel); the tail (journeyEnd..1) is the Craft + fly-away, below.
+  journeyEnd: 0.587,
   starSpan: 0.218, // star plays over 0..starSpan of the JOURNEY (jp), not the pin
   assembleStart: 0.198, // Saturn assembles over assembleStart..assembleEnd (overlaps the burst)
   assembleEnd: 0.455, // Saturn fully built by here — ≈260% of scroll to build
@@ -167,6 +169,19 @@ export const JOURNEY = {
   // After the fill, the About block exits (slides up + fades + blurs out) while
   // the cosmos un-blurs back to the sharp Saturn — then the pin releases.
   exitStart: 0.851, // journey progress where the About exit begins (fill ends here)
+
+  // ── Tail phases (MASTER-progress fractions, mp — NOT jp) ─────────────────────
+  //
+  // Once the About has exited (mp = journeyEnd) the Saturn rests, sharp + built.
+  // The Craft then slides up OVER it, its constellation assembles, it fades out to
+  // reveal the Saturn again, and the Saturn flies away. All within the same pin,
+  // so the cosmos never unpins → no boundary jump, and reverse mirrors exactly.
+  craftCoverEnd: 0.657, // Craft overlay slides up (translateY 100%→0) over journeyEnd..craftCoverEnd
+  constellationEnd: 0.773, // constellation assembles (scrubbed) over craftCoverEnd..constellationEnd
+  craftFadeStart: 0.797, // brief hold, then Craft fades out (opacity 1→0)…
+  craftFadeEnd: 0.849, // …fully gone here → the Saturn is revealed behind it
+  flyAwayStart: 0.849, // Saturn recedes + thins to dust over flyAwayStart..flyAwayEnd (drives useVoyageScroll 0→1)
+  flyAwayEnd: 0.965,
 } as const;
 
 /** Camera-less "zoom": centering, growing and the fly-through (Universe). */

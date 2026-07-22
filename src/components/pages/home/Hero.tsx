@@ -1,26 +1,24 @@
 "use client";
 
-import { useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import dynamic from "next/dynamic";
 import useTextsWritingMotion from "#/components/hooks/motions/texts/useTextsWritingMotion";
-import { addTextsScrollWriteIn } from "#/components/hooks/motions/texts/textsScrollWriteInMotion";
 import SunriseLogo from "#/components/assets/pictures/logos/sunrise-logo";
 import SectionMarker from "#/components/UI/SectionMarker";
 import Button from "#/components/UI/buttons/Button";
+import Skills from "#/components/pages/home/skills/Skills";
+import useCosmicJourney from "#/components/pages/home/hooks/useCosmicJourney";
 import { useGSAP } from "@gsap/react";
 import gsap from "gsap";
 import { ScrollSmoother, ScrollTrigger, SplitText } from "gsap/all";
 import clsx from "clsx";
-import { useHeroScroll } from "#/stores/useHeroScroll";
-import { useAboutScroll } from "#/stores/useAboutScroll";
 import { useSceneIntro } from "#/stores/useSceneIntro";
-import { JOURNEY } from "#/components/three.js/star/config";
-import { clamp01, remap01 } from "#/components/three.js/star/utils";
 
-gsap.registerPlugin(useGSAP, ScrollTrigger, SplitText);
+gsap.registerPlugin(useGSAP, ScrollTrigger, ScrollSmoother, SplitText);
 
 // WebGL-only — load on the client, never during SSR. The unified scene holds
-// the starfield, the star, AND the Saturn that assembles from its debris.
+// the starfield, the star, the Saturn that assembles from its debris, and (as
+// the journey continues) the Saturn's fly-away out into the wider voyage.
 const CosmicScene = dynamic(
   () => import("#/components/three.js/scene/CosmicScene"),
   { ssr: false }
@@ -34,12 +32,19 @@ const Hero = () => {
   const subRef = useRef<HTMLParagraphElement | null>(null);
   const ctaRef = useRef<HTMLDivElement | null>(null);
   const contentRef = useRef<HTMLDivElement | null>(null);
-  const canvasWrapRef = useRef<HTMLDivElement | null>(null);
   const aboutRevealRef = useRef<HTMLDivElement | null>(null);
   const aboutTitleRef = useRef<HTMLHeadingElement | null>(null);
   const aboutPara1Ref = useRef<HTMLParagraphElement | null>(null);
   const aboutPara2Ref = useRef<HTMLParagraphElement | null>(null);
   const heroMarkerRef = useRef<HTMLDivElement | null>(null);
+  const craftRef = useRef<HTMLDivElement | null>(null);
+
+  // Detect reduced motion on the client (initial false → matches SSR, no
+  // hydration mismatch). In reduced motion the overlays lay out in normal flow.
+  const [reduced, setReduced] = useState(false);
+  useEffect(() => {
+    setReduced(window.matchMedia("(prefers-reduced-motion: reduce)").matches);
+  }, []);
 
   // Headline writes in, character by character.
   useTextsWritingMotion({
@@ -86,11 +91,11 @@ const Hero = () => {
     // Intro scene spin — runs over the SAME duration as this text intro, so the
     // cosmos finishes turning exactly when the text has landed. Full speed
     // immediately (ease-out). Skipped for reduced motion.
-    const reduce =
+    const reduceMotion =
       typeof window !== "undefined" &&
       window.matchMedia("(prefers-reduced-motion: reduce)").matches;
     const setIntro = useSceneIntro.getState().setProgress;
-    if (reduce) {
+    if (reduceMotion) {
       setIntro(1);
     } else {
       const spin = { v: 0 };
@@ -104,155 +109,18 @@ const Hero = () => {
     }
   });
 
-  // One pinned sequence drives the whole journey: the star ignites → zooms →
-  // bursts, then Saturn assembles from the debris. The star reads useHeroScroll
-  // and Saturn reads useAboutScroll; both are mapped from this single pin's
-  // progress (the star keeps its original scroll feel over 0..starSpan; Saturn
-  // assembles over assembleStart..1, overlapping the burst). Reduced motion
-  // skips the pin entirely (static star, no assembly).
-  useGSAP(() => {
-    const reduce =
-      typeof window !== "undefined" &&
-      window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-    if (reduce) {
-      // No journey: just show the About copy (the planet stays hidden).
-      gsap.set(aboutRevealRef.current, { autoAlpha: 1, y: 0 });
-      return;
-    }
-
-    const setStar = useHeroScroll.getState().setProgress;
-    const setAbout = useAboutScroll.getState().setProgress;
-
-    // The About block + cosmos are driven deterministically from the scroll
-    // progress (a pure function, set every frame), so the reveal and exit
-    // reverse perfectly on scroll-up — no tween start-value recording or
-    // autoAlpha visibility snapping (the source of the scrub-up glitches).
-    const easeIn = gsap.parseEase("power2.in");
-    const easeOut = gsap.parseEase("power2.out");
-
-    const renderAbout = (p: number) => {
-      const enterLin = remap01(p, JOURNEY.revealStart, JOURNEY.fillStart);
-      const exitLin = remap01(p, JOURNEY.exitStart, 1);
-      const enter = easeOut(enterLin);
-      const exit = easeIn(exitLin);
-
-      // Block: fades in on the reveal, out on the exit; slides -40 → 0 → -80;
-      // blurs only as it exits.
-      const block = aboutRevealRef.current;
-      if (block) {
-        block.style.opacity = String(enter * (1 - exit));
-        block.style.transform = `translateY(${-40 * (1 - enter) - 80 * exit}px)`;
-        block.style.filter = `blur(${16 * exit}px)`;
-      }
-
-      // Cosmos: blurs + dims in over the reveal, un-blurs back over the exit.
-      const cosmos = canvasWrapRef.current;
-      if (cosmos) {
-        const k = enterLin * (1 - exitLin);
-        cosmos.style.filter = `blur(${JOURNEY.revealBlur * k}px) brightness(${
-          1 - (1 - JOURNEY.revealDim) * k
-        })`;
-      }
-    };
-    renderAbout(0); // start hidden / un-blurred
-
-    // About title: a one-shot per-character write-in (the Hero motion) that plays
-    // when the reveal appears — NOT scrubbed. Toggled from the journey progress
-    // below (plays past revealStart, reverses back above it).
-    const titleSplit = aboutTitleRef.current
-      ? new SplitText(aboutTitleRef.current, { type: "words,chars" })
-      : null;
-    const titleWriteIn = titleSplit
-      ? gsap.from(titleSplit.chars, {
-          opacity: 0,
-          y: 24,
-          stagger: 0.03,
-          duration: 0.6,
-          ease: "power3.out",
-          paused: true,
-        })
-      : null;
-    let titleShown = false;
-
-    const tl = gsap.timeline({
-      scrollTrigger: {
-        trigger: containerRef.current,
-        start: "top top",
-        end: JOURNEY.pinLength,
-        pin: true,
-        scrub: 1,
-        onUpdate: (self) => {
-          // Journey progress: the star→Saturn→About journey plays over
-          // 0..journeyEnd of the pin; the tail (journeyEnd..1) is the Craft
-          // slide-over, during which the Saturn just stays pinned/fixed.
-          const jp = clamp01(self.progress / JOURNEY.journeyEnd);
-          setStar(clamp01(jp / JOURNEY.starSpan));
-          // Saturn is fully built by assembleEnd; the rest is the reveal/exit.
-          setAbout(remap01(jp, JOURNEY.assembleStart, JOURNEY.assembleEnd));
-          renderAbout(jp);
-          // Play the title write-in once when the reveal appears; reverse it if
-          // the reader scrubs back up above the reveal.
-          if (titleWriteIn) {
-            if (jp >= JOURNEY.revealStart && !titleShown) {
-              titleShown = true;
-              titleWriteIn.play();
-            } else if (jp < JOURNEY.revealStart && titleShown) {
-              titleShown = false;
-              titleWriteIn.reverse();
-            }
-          }
-        },
-      },
-    });
-
-    // The timeline scrubs over the WHOLE pin (0..1), but the journey lives in
-    // 0..journeyEnd — so its tl positions are scaled by journeyEnd to stay in
-    // lockstep with the jp-driven reveal above.
-    const JE = JOURNEY.journeyEnd;
-    const contentExit = JOURNEY.contentExit * JE;
-
-    // Hero copy rises and fades out early (the star journey takes over).
-    tl.to(
-      contentRef.current,
-      { yPercent: -60, autoAlpha: 0, ease: "power1.in", duration: contentExit },
-      0
-    )
-      .to(
-        logoRef.current,
-        { autoAlpha: 0, ease: "power1.in", duration: contentExit },
-        0
-      )
-      // The Hero "ORIGIN" spine fades out with the copy.
-      .to(
-        heroMarkerRef.current,
-        { autoAlpha: 0, ease: "power1.in", duration: contentExit },
-        0
-      )
-      // Spacer so the pin (and the scrubbed progress) spans the whole pin.
-      .to({}, { duration: 1 - contentExit });
-
-    // About description — scroll-scrubbed write-in (the SAME rise-in as the big
-    // titles, per word) added straight onto the journey so it scrubs in lockstep
-    // over fillStart..exitStart. The title above plays its write-in once instead.
-    const descSplits = addTextsScrollWriteIn(
-      tl,
-      [
-        { ref: aboutPara1Ref, type: "words", weight: 1 },
-        { ref: aboutPara2Ref, type: "words", weight: 1 },
-      ],
-      {
-        at: JOURNEY.fillStart * JE,
-        duration: (JOURNEY.exitStart - JOURNEY.fillStart) * JE,
-      }
-    );
-
-    return () => {
-      setStar(0);
-      setAbout(0);
-      descSplits.forEach((s) => s.revert());
-      titleWriteIn?.kill();
-      titleSplit?.revert();
-    };
+  // The whole cosmic journey — one pinned ScrollTrigger drives the star, the
+  // Saturn assembly, the About reveal, the folded-in Craft, and the fly-away.
+  useCosmicJourney({
+    containerRef,
+    contentRef,
+    logoRef,
+    heroMarkerRef,
+    aboutRevealRef,
+    aboutTitleRef,
+    aboutPara1Ref,
+    aboutPara2Ref,
+    craftRef,
   });
 
   // Nudge the scroll to kick off the journey (the star → Saturn sequence).
@@ -277,7 +145,7 @@ const Hero = () => {
     >
       {/* Full-bleed unified cosmos (starfield + star + Saturn), behind content.
           Blurred + dimmed at the end of the journey for the About reveal. */}
-      <div className="absolute inset-0 z-0 will-change-[filter]" ref={canvasWrapRef}>
+      <div className="home-hero__canvas absolute inset-0 z-0 will-change-[filter]">
         <CosmicScene />
       </div>
 
@@ -363,7 +231,9 @@ const Hero = () => {
         ref={aboutRevealRef}
         className={clsx(
           "home-about__reveal",
-          "absolute inset-0 z-20 opacity-0 pointer-events-none",
+          reduced
+            ? "relative z-20 min-h-screen"
+            : "absolute inset-0 z-20 opacity-0 pointer-events-none",
           "flex flex-col items-center justify-center text-center",
           "px-6"
         )}
@@ -414,6 +284,12 @@ const Hero = () => {
           </p>
         </div>
       </div>
+
+      {/* The Craft — folded into the journey as an overlay: slides up over the
+          built Saturn, its constellation assembles, then it fades out to reveal
+          the Saturn for the fly-away. (Relative, in normal flow, for reduced
+          motion.) */}
+      <Skills overlayRef={craftRef} reduced={reduced} />
     </div>
   );
 };

@@ -4,8 +4,9 @@ import { useFrame } from "@react-three/fiber";
 import { useMemo, useRef } from "react";
 import { Color, NormalBlending, Points, ShaderMaterial } from "three";
 import { useAboutScroll } from "#/stores/useAboutScroll";
+import { useVoyageScroll } from "#/stores/useVoyageScroll";
 import { remap01 } from "#/components/three.js/star/utils";
-import { GROWTH, RING, RING_PALETTE, SCATTER } from "./config";
+import { FLYAWAY, GROWTH, RING, RING_PALETTE, SCATTER } from "./config";
 import { SIMPLEX_NOISE } from "./shaders";
 
 type Props = {
@@ -92,6 +93,7 @@ const Rings = ({ count = RING.count, animate = true }: Props) => {
       uStagger: { value: SCATTER.stagger },
       uStartScale: { value: GROWTH.startScale },
       uOvershoot: { value: GROWTH.overshoot },
+      uThin: { value: 0 }, // 0 = full ring, 1 = fully thinned away (fly-away)
     }),
     []
   );
@@ -105,6 +107,9 @@ const Rings = ({ count = RING.count, animate = true }: Props) => {
     const progress = useAboutScroll.getState().progress;
     m.uniforms.uForm.value = progress;
     m.uniforms.uOpacity.value = remap01(progress, 0.0, 0.15);
+    // Fly-away: thin the ring to dust in lockstep with the body.
+    const voyage = useVoyageScroll.getState().progress;
+    m.uniforms.uThin.value = FLYAWAY.thin * voyage * voyage;
   });
 
   return (
@@ -188,11 +193,13 @@ attribute float aSeed;
 attribute vec3 aScatter;     // dispersed-in-space home
 varying vec3 vColor;
 varying float vTwinkle;
+varying float vSeed;
 
 ${SIMPLEX_NOISE}
 
 void main(){
   vColor = aColor;
+  vSeed = aSeed;
 
   // In-plane shimmer (x/z only) — particles drift and sparkle within the ring
   // plane, so it stays flat and refined (no vertical waving).
@@ -234,10 +241,15 @@ void main(){
 const FRAGMENT_SHADER = /* glsl */ `
 precision highp float;
 uniform float uOpacity;
+uniform float uThin;         // 0 = full ring, 1 = fully thinned (fly-away)
 varying vec3 vColor;
 varying float vTwinkle;
+varying float vSeed;
 
 void main(){
+  // Fly-away thinning: drop a growing fraction of ring grains by seed.
+  if (vSeed < uThin) discard;
+
   float d = length(gl_PointCoord - 0.5);
   if (d > 0.5) discard;
   float a = smoothstep(0.5, 0.12, d);

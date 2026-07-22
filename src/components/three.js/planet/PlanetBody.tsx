@@ -4,8 +4,9 @@ import { useFrame } from "@react-three/fiber";
 import { useMemo, useRef } from "react";
 import { Color, NormalBlending, Points, ShaderMaterial } from "three";
 import { useAboutScroll } from "#/stores/useAboutScroll";
+import { useVoyageScroll } from "#/stores/useVoyageScroll";
 import { remap01 } from "#/components/three.js/star/utils";
-import { GROWTH, LIGHT, PLANET, PLANET_PALETTE, SCATTER } from "./config";
+import { FLYAWAY, GROWTH, LIGHT, PLANET, PLANET_PALETTE, SCATTER } from "./config";
 import { SIMPLEX_NOISE } from "./shaders";
 
 type Props = {
@@ -122,6 +123,7 @@ const PlanetBody = ({ count = PLANET.count, animate = true }: Props) => {
       uStagger: { value: SCATTER.stagger },
       uStartScale: { value: GROWTH.startScale },
       uOvershoot: { value: GROWTH.overshoot },
+      uThin: { value: 0 }, // 0 = full cloud, 1 = fully thinned away (fly-away)
     }),
     []
   );
@@ -136,6 +138,10 @@ const PlanetBody = ({ count = PLANET.count, animate = true }: Props) => {
     const progress = useAboutScroll.getState().progress;
     m.uniforms.uForm.value = progress;
     m.uniforms.uOpacity.value = remap01(progress, 0.0, 0.15);
+    // Fly-away: thin the cloud to dust as the Saturn recedes (ease-in so the
+    // thinning gathers pace as it leaves). Reverses cleanly on scroll-up.
+    const voyage = useVoyageScroll.getState().progress;
+    m.uniforms.uThin.value = FLYAWAY.thin * voyage * voyage;
   });
 
   return (
@@ -310,6 +316,7 @@ precision highp float;
 uniform float uOpacity;
 uniform float uRimStart;
 uniform float uHaloOpacity;
+uniform float uThin;         // 0 = full cloud, 1 = fully thinned (fly-away)
 varying vec3 vColor;
 varying float vBright;
 varying float vRim;
@@ -317,6 +324,10 @@ varying float vSeed;
 varying float vHalo;
 
 void main(){
+  // Fly-away thinning: drop a growing fraction of dots (by per-particle seed) so
+  // the cloud reads as fewer and fewer grains as it recedes into deep space.
+  if (vSeed < uThin) discard;
+
   float d = length(gl_PointCoord - 0.5);
   if (d > 0.5) discard;
   float a = smoothstep(0.5, 0.12, d);

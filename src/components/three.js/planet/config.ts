@@ -126,6 +126,28 @@ export const SATURN = {
   y: 0, // world Y — the star centres to 0 before it bursts, so Saturn forms here
 } as const;
 
+// ── Fly-away (the voyage begins) ─────────────────────────────────────────────
+//
+// After the Craft fades and reveals the built Saturn, the planet recedes into
+// deep space and thins to dust — the "zoom out" that opens the wider voyage.
+// Driven by `useVoyageScroll` (0 = resting in place, 1 = fully flown away): the
+// group dollies back + shrinks (SaturnRig in CosmicScene) while the body/ring
+// shaders discard a growing fraction of dots (uThin). A pure function of the
+// voyage progress, so it scrubs and reverses cleanly.
+
+export const FLYAWAY = {
+  recede: 11, // world units the Saturn dollies away from the camera (−z) at full fly-away
+  shrink: 0.28, // scale multiplier at full fly-away (of SATURN.scale) — extra shrink on top of perspective
+  thin: 0.9, // fraction of dots discarded at full fly-away (0..1) — "reduce the dots as it flies away"
+  damping: 0.1, // 0..1 follow speed for the dolly (lower = smoother/laggier)
+  ease: 1.7, // >1 biases the recede late (gentle start, accelerating away)
+  // The whole SCENE pulls back a little too (a real camera dolly): the near
+  // Saturn recedes fast, but the distant star dots barely shift — realistic
+  // parallax, a "very low amount" of zoom-out for the far-away starfield. Keep
+  // this small; the stars are meant to stay far.
+  sceneDolly: 2, // world units the camera pulls back (+z) over the fly-away
+} as const;
+
 // ── Orientation ──────────────────────────────────────────────────────────────
 //
 // Tilt the whole planet+rings group so we view the rings slightly from above

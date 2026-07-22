@@ -1,24 +1,25 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
-import { useGSAP } from "@gsap/react";
+import { RefObject, useEffect, useMemo, useState } from "react";
 import gsap from "gsap";
-import { ScrollTrigger } from "gsap/all";
 import clsx from "clsx";
-import useTextsWritingMotion from "#/components/hooks/motions/texts/useTextsWritingMotion";
 import SectionMarker from "#/components/UI/SectionMarker";
 
-gsap.registerPlugin(useGSAP, ScrollTrigger);
-
 /**
- * Skills — "the constellation."
+ * Skills — "The Craft" constellation, now an OVERLAY inside the shared cosmic
+ * journey (no longer a standalone pinned section).
  *
  * Story (07-storyboard-v2): the tools I reach for and the things that pull my
  * eye, connected into an organic web with no fixed shape. Two threads — creative
  * (Photography · Drawing · Motion) and engineering (React · TypeScript · Next.js
- * · GSAP) — meet at a bridge (Three.js / R3F). The section pins and the web
- * assembles as you scroll: nodes pop in, connector lines draw (and unravel if
- * you scroll back up), labels fade in last.
+ * · GSAP) — meet at a bridge (Three.js / R3F).
+ *
+ * It's driven entirely by the master pinned journey (`useCosmicJourney`): the
+ * overlay slides up over the built Saturn (its opaque bg covering the planet),
+ * the web assembles as you scroll (`addConstellationAssembly`, below), then the
+ * whole overlay fades out to reveal the Saturn again for its fly-away. This
+ * component is purely presentational — it renders the markup + faint starfield
+ * and exposes its root via `overlayRef`.
  */
 
 type Node = {
@@ -82,33 +83,58 @@ type Star = {
 // cosmic starfield so the whole portfolio's space feels consistent.
 const STAR_TINTS = ["#cfe0ff", "#ffffff", "#ffffff", "#fff4e6", "#ffe6c2"];
 
-const Skills = () => {
-  const containerRef = useRef<HTMLElement | null>(null);
-  const titleRef = useRef<HTMLHeadingElement | null>(null);
+/**
+ * Adds the constellation's assembly to the master journey timeline, scrubbed
+ * over the pin window [`at`, `at` + `duration`] (both in master-progress units,
+ * 0..1). Reversible: scroll down assembles, up unravels. Same tween shapes as
+ * the old standalone pin, re-timed into the window (durations/staggers scaled by
+ * `duration`) so it stays in lockstep with the rest of the journey.
+ */
+export function addConstellationAssembly(
+  tl: gsap.core.Timeline,
+  { at, duration }: { at: number; duration: number }
+): void {
+  const T = (f: number) => at + duration * f; // absolute position in the window
+  const D = (f: number) => duration * f; // a fraction of the window as a duration
 
-  // Big title writes in character-by-character (the Hero motion), played once as
-  // the section enters view.
-  useTextsWritingMotion({
-    elements: [
+  tl.from(".skills__intro", { autoAlpha: 0, y: 24, duration: D(0.16) }, T(0))
+    .from(
+      ".skill-node",
       {
-        ref: titleRef,
-        vars: {
-          translateX: 0,
-          scale: 1,
-          y: 24,
-          stagger: 0.03,
-          duration: 0.6,
-          ease: "power3.out",
-        },
+        scale: 0,
+        autoAlpha: 0,
+        transformOrigin: "center",
+        ease: "back.out(2)",
+        stagger: D(0.05),
+        duration: D(0.27),
       },
-    ],
-    scrollTrigger: {
-      trigger: "#skills",
-      start: "top 75%",
-      toggleActions: "play none none reverse",
-    },
-  });
+      T(0.1)
+    )
+    .from(
+      ".skill-line",
+      {
+        strokeDashoffset: 1,
+        ease: "none",
+        stagger: D(0.05),
+        duration: D(0.53),
+      },
+      T(0.29)
+    )
+    .from(
+      ".skill-label",
+      { autoAlpha: 0, y: 6, stagger: D(0.04), duration: D(0.27) },
+      T(0.73)
+    );
+}
 
+type Props = {
+  /** The overlay root — driven (slide up + fade out) by the master journey. */
+  overlayRef: RefObject<HTMLDivElement | null>;
+  /** Reduced motion: lay out in normal flow instead of an absolute overlay. */
+  reduced?: boolean;
+};
+
+const Skills = ({ overlayRef, reduced = false }: Props) => {
   // Generate the faint starfield on the client only (avoids SSR hydration
   // mismatch from Math.random).
   const [stars, setStars] = useState<Star[]>([]);
@@ -116,7 +142,11 @@ const Skills = () => {
     setStars(
       Array.from({ length: 60 }, () => {
         const bright = Math.random() < 0.16;
-        const size = bright ? 2 + Math.random() * 1.5 : Math.random() < 0.7 ? 1 : 1.5;
+        const size = bright
+          ? 2 + Math.random() * 1.5
+          : Math.random() < 0.7
+            ? 1
+            : 1.5;
         return {
           left: Math.random() * 100,
           top: Math.random() * 100,
@@ -136,68 +166,22 @@ const Skills = () => {
     []
   );
 
-  // Pinned, scrubbed assembly. Reversible: scroll down assembles, up unravels.
-  useGSAP(
-    () => {
-      const reduce = window.matchMedia(
-        "(prefers-reduced-motion: reduce)"
-      ).matches;
-      if (reduce) return; // leave the web assembled (CSS defaults)
-
-      const tl = gsap.timeline({
-        scrollTrigger: {
-          trigger: containerRef.current,
-          start: "top top",
-          end: "+=200%",
-          pin: true,
-          scrub: 1,
-        },
-      });
-
-      // The big title writes in on its own (played once, above); here just the
-      // intro fades up as the section scrubs in.
-      tl.from(
-        ".skills__intro",
-        { autoAlpha: 0, y: 24, duration: 0.12 },
-        0
-      )
-        .from(
-          ".skill-node",
-          {
-            scale: 0,
-            autoAlpha: 0,
-            transformOrigin: "center",
-            ease: "back.out(2)",
-            stagger: 0.05,
-            duration: 0.2,
-          },
-          0.08
-        )
-        .from(
-          ".skill-line",
-          { strokeDashoffset: 1, ease: "none", stagger: 0.05, duration: 0.4 },
-          0.22
-        )
-        .from(
-          ".skill-label",
-          { autoAlpha: 0, y: 6, stagger: 0.04, duration: 0.2 },
-          0.55
-        );
-    },
-    { scope: containerRef }
-  );
-
   return (
-    <section
+    <div
       id="skills"
-      ref={containerRef}
+      ref={overlayRef}
       className={clsx(
-        "home-skills",
-        // Pulled up 100vh so it overlaps the tail of the Hero's pin and slides UP
-        // over the still-pinned Saturn (whose pin ends exactly as this covers).
-        "-mt-[100vh] relative z-20 min-h-screen overflow-hidden bg-rich-black",
+        "home-skills home-craft",
+        // An opaque overlay that slides up OVER the built Saturn, then fades out
+        // to reveal it again — both driven by the master journey (renderCraft).
+        // Starts parked below the fold; the journey sets transform/opacity.
+        reduced
+          ? "relative z-30 min-h-screen"
+          : "absolute inset-0 z-30 pointer-events-none will-change-[transform,opacity]",
+        "overflow-hidden bg-rich-black",
         "flex flex-col items-center justify-center px-4 py-20"
       )}
+      style={reduced ? undefined : { transform: "translateY(100%)" }}
     >
       {/* Faint starfield background */}
       <div className="absolute inset-0 pointer-events-none">
@@ -224,7 +208,6 @@ const Skills = () => {
 
       {/* Title + intro */}
       <h2
-        ref={titleRef}
         className={clsx(
           "home-skills__title skills__title",
           "font-great-vibes text-white text-center",
@@ -323,7 +306,7 @@ const Skills = () => {
           ))}
         </g>
       </svg>
-    </section>
+    </div>
   );
 };
 

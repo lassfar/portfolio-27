@@ -1,14 +1,16 @@
 "use client";
 
-import { Canvas, useFrame } from "@react-three/fiber";
+import { Canvas, useFrame, useThree } from "@react-three/fiber";
 import { Bloom, EffectComposer } from "@react-three/postprocessing";
-import { RefObject, useRef } from "react";
+import { ReactNode, RefObject, useRef } from "react";
+import { Group } from "three";
 import Universe from "#/components/three.js/star/Universe";
 import { BLOOM, CAMERA, PARTICLES } from "#/components/three.js/star/config";
-import { remap01 } from "#/components/three.js/star/utils";
+import { clamp01, damp, remap01 } from "#/components/three.js/star/utils";
 import Planet from "#/components/three.js/planet/Planet";
-import { PLANET, RING, SATURN } from "#/components/three.js/planet/config";
+import { FLYAWAY, PLANET, RING, SATURN } from "#/components/three.js/planet/config";
 import { useAboutScroll } from "#/stores/useAboutScroll";
+import { useVoyageScroll } from "#/stores/useVoyageScroll";
 
 type BloomEffect = { intensity: number };
 
@@ -47,15 +49,17 @@ const CosmicScene = () => {
 
       {/* Saturn — centred where the star bursts, scaled to the star camera.
           Hidden until the burst (opacity driven by the assembly progress).
-          Drag stays with the star, so this one isn't interactive. */}
-      <group position={[0, SATURN.y, 0]} scale={SATURN.scale}>
+          Drag stays with the star, so this one isn't interactive. The rig
+          dollies it back + shrinks it during the fly-away (thinning lives in
+          the body/ring shaders). */}
+      <SaturnRig>
         <Planet
           animate={animate}
           interactive={false}
           planetCount={planetCount}
           ringCount={ringCount}
         />
-      </group>
+      </SaturnRig>
 
       <EffectComposer>
         <Bloom
@@ -69,11 +73,60 @@ const CosmicScene = () => {
       </EffectComposer>
 
       <BloomController bloomRef={bloomRef} />
+      <CameraRig />
     </Canvas>
   );
 };
 
 export default CosmicScene;
+
+/**
+ * Holds the Saturn where the star bursts (centred, star-camera scale) and, as
+ * the voyage begins, dollies it away from the camera (−z) and shrinks it — the
+ * "zoom out / fly away." A pure function of `useVoyageScroll` (damped), so it
+ * scrubs and reverses cleanly. The dot-thinning that pairs with this lives in
+ * the body/ring shaders (uThin), also driven by the voyage.
+ */
+const SaturnRig = ({ children }: { children: ReactNode }) => {
+  const groupRef = useRef<Group>(null);
+  const z = useRef(0);
+  const scale = useRef<number>(SATURN.scale);
+
+  useFrame(() => {
+    const g = groupRef.current;
+    if (!g) return;
+    const voyage = clamp01(useVoyageScroll.getState().progress);
+    const eased = Math.pow(voyage, FLYAWAY.ease);
+    const targetZ = -FLYAWAY.recede * eased;
+    const targetScale = SATURN.scale * (1 - (1 - FLYAWAY.shrink) * eased);
+    z.current = damp(z.current, targetZ, FLYAWAY.damping);
+    scale.current = damp(scale.current, targetScale, FLYAWAY.damping);
+    g.position.set(0, SATURN.y, z.current);
+    g.scale.setScalar(scale.current);
+  });
+
+  return <group ref={groupRef}>{children}</group>;
+};
+
+/**
+ * Pulls the camera back a little as the voyage begins — a real dolly, so the
+ * whole scene "zooms out" with correct parallax: the near Saturn recedes fast
+ * while the distant starfield barely shifts (it's meant to stay far). A small,
+ * damped amount driven by `useVoyageScroll`; at rest it sits exactly at the
+ * star camera distance, so the earlier journey is untouched.
+ */
+const CameraRig = () => {
+  const camera = useThree((s) => s.camera);
+  const z = useRef<number>(CAMERA.z);
+
+  useFrame(() => {
+    const voyage = clamp01(useVoyageScroll.getState().progress);
+    const eased = Math.pow(voyage, FLYAWAY.ease);
+    z.current = damp(z.current, CAMERA.z + FLYAWAY.sceneDolly * eased, FLYAWAY.damping);
+    camera.position.z = z.current;
+  });
+  return null;
+};
 
 /**
  * Eases the Bloom intensity down as Saturn assembles: full glow through the
