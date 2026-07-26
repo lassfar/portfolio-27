@@ -6,7 +6,7 @@ import { Color, NormalBlending, Points, ShaderMaterial } from "three";
 import { useAboutScroll } from "#/stores/useAboutScroll";
 import { useVoyageScroll } from "#/stores/useVoyageScroll";
 import { remap01 } from "#/components/three.js/star/utils";
-import { FLYAWAY, GROWTH, LIGHT, PLANET, PLANET_PALETTE, SCATTER } from "./config";
+import { FLYOUT, GROWTH, LIGHT, PLANET, PLANET_PALETTE, SCATTER } from "./config";
 import { SIMPLEX_NOISE } from "./shaders";
 
 type Props = {
@@ -138,10 +138,11 @@ const PlanetBody = ({ count = PLANET.count, animate = true }: Props) => {
     const progress = useAboutScroll.getState().progress;
     m.uniforms.uForm.value = progress;
     m.uniforms.uOpacity.value = remap01(progress, 0.0, 0.15);
-    // Fly-away: thin the cloud to dust as the Saturn recedes (ease-in so the
-    // thinning gathers pace as it leaves). Reverses cleanly on scroll-up.
+    // Fly-out: thin the cloud a little as the camera flies away (a proxy for
+    // distance), capped so the hero Saturn stays legible and never vanishes.
+    // Reverses cleanly on scroll-up.
     const voyage = useVoyageScroll.getState().progress;
-    m.uniforms.uThin.value = FLYAWAY.thin * voyage * voyage;
+    m.uniforms.uThin.value = FLYOUT.thinMax * voyage;
   });
 
   return (

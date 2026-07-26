@@ -126,26 +126,29 @@ export const SATURN = {
   y: 0, // world Y — the star centres to 0 before it bursts, so Saturn forms here
 } as const;
 
-// ── Fly-away (the voyage begins) ─────────────────────────────────────────────
+// ── Fly-out (the voyage begins) ──────────────────────────────────────────────
 //
-// After the Craft fades and reveals the built Saturn, the planet recedes into
-// deep space and thins to dust — the "zoom out" that opens the wider voyage.
-// Driven by `useVoyageScroll` (0 = resting in place, 1 = fully flown away): the
-// group dollies back + shrinks (SaturnRig in CosmicScene) while the body/ring
-// shaders discard a growing fraction of dots (uThin). A pure function of the
-// voyage progress, so it scrubs and reverses cleanly.
+// After the Craft fades and reveals the built Saturn, the CAMERA flies straight
+// back from it (a real dolly, like a rocket pulling away through space): the
+// Saturn stays put + intact and shrinks by perspective, and the solar system it
+// belongs to opens up behind it. Driven by `useVoyageScroll` (0 = resting at the
+// Saturn, 1 = the whole system in view). A pure function of the voyage, so it
+// scrubs and reverses cleanly. Built as a scalable camera path so a galaxy zoom
+// can nest on top later.
 
-export const FLYAWAY = {
-  recede: 11, // world units the Saturn dollies away from the camera (−z) at full fly-away
-  shrink: 0.28, // scale multiplier at full fly-away (of SATURN.scale) — extra shrink on top of perspective
-  thin: 0.9, // fraction of dots discarded at full fly-away (0..1) — "reduce the dots as it flies away"
-  damping: 0.1, // 0..1 follow speed for the dolly (lower = smoother/laggier)
-  ease: 1.7, // >1 biases the recede late (gentle start, accelerating away)
-  // The whole SCENE pulls back a little too (a real camera dolly): the near
-  // Saturn recedes fast, but the distant star dots barely shift — realistic
-  // parallax, a "very low amount" of zoom-out for the far-away starfield. Keep
-  // this small; the stars are meant to stay far.
-  sceneDolly: 2, // world units the camera pulls back (+z) over the fly-away
+export const FLYOUT = {
+  distance: 30, // world units the camera pulls back (+z) over the voyage
+  rise: 16, // world units the camera rises (+y) over the voyage — the cinematic
+  //          high angle: it then looks DOWN onto the flat orbital plane so the
+  //          orbits read as wide flattened ellipses (like a solar-system poster).
+  //          The camera also eases its look-target from the fixed Saturn (origin)
+  //          to the sun, so the view settles sun-centred with the Saturn aside.
+  ease: 1.1, // >1 = gentle start, accelerating away
+  damping: 0.09, // 0..1 follow speed for the move (lower = smoother/laggier)
+  // The Saturn is a PERSISTENT member now (it stays and flies), so it must keep
+  // its full density — no thinning. (Kept as a knob for a possible distance LOD
+  // on the sibling planets later; 0 = solid.)
+  thinMax: 0, // fraction of Saturn dots dropped at full fly-out (0 = stays solid)
 } as const;
 
 // ── Orientation ──────────────────────────────────────────────────────────────

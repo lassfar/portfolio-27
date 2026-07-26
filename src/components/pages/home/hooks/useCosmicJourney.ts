@@ -164,7 +164,9 @@ export default function useCosmicJourney(refs: CosmicJourneyRefs): void {
             const jp = clamp01(mp / JOURNEY.journeyEnd); // journey 0..1
             setStar(clamp01(jp / JOURNEY.starSpan));
             setAbout(remap01(jp, JOURNEY.assembleStart, JOURNEY.assembleEnd));
-            setVoyage(remap01(mp, JOURNEY.flyAwayStart, JOURNEY.flyAwayEnd));
+            // Voyage spans flyAwayStart..pin end (0→1); its sub-phases (fly-away,
+            // then the solar reveal) are voyage fractions in the R3F components.
+            setVoyage(remap01(mp, JOURNEY.flyAwayStart, 1));
             renderAbout(jp);
             renderCraft(mp);
             toggleTitle(aboutTitle, jp >= JOURNEY.revealStart);

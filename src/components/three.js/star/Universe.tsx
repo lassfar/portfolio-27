@@ -1,7 +1,7 @@
 "use client";
 
 import { useFrame, useThree } from "@react-three/fiber";
-import { useEffect, useRef } from "react";
+import { RefObject, useEffect, useRef } from "react";
 import { Group } from "three";
 import Nebula from "./Nebula";
 import Starfield from "./Starfield";
@@ -28,6 +28,12 @@ const FLOW_END =
 type Props = {
   animate?: boolean;
   count?: number;
+  /**
+   * The starfield group. Owned by the parent so the CameraRig can pin it to the
+   * camera in the same frame the camera moves (zero lag). Universe still rotates
+   * it. Falls back to an internal ref (e.g. Storybook) when not provided.
+   */
+  starfieldRef?: RefObject<Group | null>;
 };
 
 /**
@@ -41,8 +47,9 @@ type Props = {
  * so it flies into the lens and vanishes. Only the nebula transforms, so the
  * starfield stays fixed. All timing/feel constants live in `config.ts`.
  */
-const Universe = ({ animate = true, count }: Props) => {
-  const starfieldRotRef = useRef<Group>(null);
+const Universe = ({ animate = true, count, starfieldRef }: Props) => {
+  const internalStarfieldRef = useRef<Group>(null);
+  const starfieldRotRef = starfieldRef ?? internalStarfieldRef;
   const nebulaZoomRef = useRef<Group>(null);
   const nebulaSpinRef = useRef<Group>(null);
 
@@ -99,11 +106,16 @@ const Universe = ({ animate = true, count }: Props) => {
 
   useFrame((_, delta) => {
     // ── Rotation (drag + idle drift) → starfield and nebula spin together ──
-    // The whole scene gently auto-rotates on its own — but once Saturn is fully
-    // built the auto-rotation stops (the planet then only self-spins on its own
-    // axis). Drag still works in either state.
+    // Gentle auto-rotation of the WHOLE space runs ONLY during the star phase
+    // (not yet built). It rests once Saturn is built — while the About/Craft copy
+    // is read AND through the voyage: out there the stars are a FIXED,
+    // infinitely-distant backdrop (like real life — distant stars don't
+    // counter-rotate against the solar system); the only motion is the planets
+    // orbiting the sun on their own clocks. Drag still works in every phase.
     const built = useAboutScroll.getState().progress >= 1;
-    if (animate && !built) targetRot.current.y += delta * ROTATION.idleDrift;
+    if (animate && !built) {
+      targetRot.current.y += delta * ROTATION.idleDrift;
+    }
     currentRot.current.x = damp(
       currentRot.current.x,
       targetRot.current.x,
@@ -149,6 +161,9 @@ const Universe = ({ animate = true, count }: Props) => {
     if (starfieldRotRef.current) {
       starfieldRotRef.current.rotation.x = currentRot.current.x;
       starfieldRotRef.current.rotation.y = yaw;
+      // Its POSITION follows the camera, but that's pinned by CameraRig (which
+      // runs last) so the stars sit at a constant distance with zero lag — no
+      // size "pumping" during the fly-out.
     }
     if (nebulaSpinRef.current) {
       nebulaSpinRef.current.rotation.x = currentRot.current.x;
@@ -185,13 +200,12 @@ const Universe = ({ animate = true, count }: Props) => {
 
   return (
     <>
-      {/* Faint deep-space haze + starfield — rotate around the star center,
-          never zoom. The haze sits far behind the stars. */}
-      <group ref={starfieldRotRef} position={[0, LAYOUT.starY, 0]}>
-        <group position={[0, -LAYOUT.starY, 0]}>
-          <DeepSpaceHaze animate={animate} />
-          <Starfield animate={animate} />
-        </group>
+      {/* Faint deep-space haze + starfield — centred on the camera (its position
+          is copied each frame), rotate around it, never zoom. The haze sits far
+          behind the stars. */}
+      <group ref={starfieldRotRef}>
+        <DeepSpaceHaze animate={animate} />
+        <Starfield animate={animate} />
       </group>
 
       {/* Nebula — zoomed by scroll, spun by drag, bursts in its own shader */}

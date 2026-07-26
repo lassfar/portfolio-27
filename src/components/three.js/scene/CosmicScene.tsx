@@ -3,14 +3,25 @@
 import { Canvas, useFrame, useThree } from "@react-three/fiber";
 import { Bloom, EffectComposer } from "@react-three/postprocessing";
 import { ReactNode, RefObject, useRef } from "react";
-import { Group } from "three";
+import { Euler, Group, Vector3 } from "three";
 import Universe from "#/components/three.js/star/Universe";
 import { BLOOM, CAMERA, PARTICLES } from "#/components/three.js/star/config";
-import { clamp01, damp, remap01 } from "#/components/three.js/star/utils";
+import { clamp01, lerp, remap01 } from "#/components/three.js/star/utils";
 import Planet from "#/components/three.js/planet/Planet";
-import { FLYAWAY, PLANET, RING, SATURN } from "#/components/three.js/planet/config";
+import { FLYOUT, PLANET, RING, SATURN } from "#/components/three.js/planet/config";
+import SolarSystem from "#/components/three.js/solar/SolarSystem";
+import {
+  orbitPosition,
+  SATURN_FLY,
+  SATURN_ORBIT_PHASE0,
+  SATURN_ORBIT_RADIUS,
+  SOLAR,
+  SUNPOS,
+} from "#/components/three.js/solar/config";
 import { useAboutScroll } from "#/stores/useAboutScroll";
 import { useVoyageScroll } from "#/stores/useVoyageScroll";
+import { useSceneRotation } from "#/stores/useSceneRotation";
+import { useSaturnAnchor } from "#/stores/useSaturnAnchor";
 
 type BloomEffect = { intensity: number };
 
@@ -37,6 +48,9 @@ const CosmicScene = () => {
   const ringCount = isSmall ? RING.countMobile : RING.count;
 
   const bloomRef = useRef<BloomEffect>(null);
+  // The starfield group — CameraRig pins it to the camera each frame (see below),
+  // so it's shared between Universe (which rotates it) and CameraRig.
+  const starfieldRef = useRef<Group>(null);
 
   return (
     <Canvas
@@ -45,21 +59,24 @@ const CosmicScene = () => {
       gl={{ antialias: true, alpha: true }}
     >
       {/* Starfield + star: drag-rotates, scroll zooms + bursts the star. */}
-      <Universe animate={animate} count={starCount} />
+      <Universe animate={animate} count={starCount} starfieldRef={starfieldRef} />
 
-      {/* Saturn — centred where the star bursts, scaled to the star camera.
-          Hidden until the burst (opacity driven by the assembly progress).
-          Drag stays with the star, so this one isn't interactive. The rig
-          dollies it back + shrinks it during the fly-away (thinning lives in
-          the body/ring shaders). */}
-      <SaturnRig>
+      {/* Saturn — this system's hero planet. It's a FIXED anchor at the origin
+          while the camera zooms out from it; once the solar system is visible it
+          FLIES (orbits the sun) like the others, starting from that spot. */}
+      <SaturnMember>
         <Planet
           animate={animate}
           interactive={false}
           planetCount={planetCount}
           ringCount={ringCount}
         />
-      </SaturnRig>
+      </SaturnMember>
+
+      {/* The solar system the Saturn belongs to — the sun at centre + the
+          sibling planets on a near edge-on plane, revealed as the camera flies
+          back. */}
+      <SolarSystem animate={animate} />
 
       <EffectComposer>
         <Bloom
@@ -73,7 +90,7 @@ const CosmicScene = () => {
       </EffectComposer>
 
       <BloomController bloomRef={bloomRef} />
-      <CameraRig />
+      <CameraRig starfieldRef={starfieldRef} />
     </Canvas>
   );
 };
@@ -81,49 +98,100 @@ const CosmicScene = () => {
 export default CosmicScene;
 
 /**
- * Holds the Saturn where the star bursts (centred, star-camera scale) and, as
- * the voyage begins, dollies it away from the camera (−z) and shrinks it — the
- * "zoom out / fly away." A pure function of `useVoyageScroll` (damped), so it
- * scrubs and reverses cleanly. The dot-thinning that pairs with this lives in
- * the body/ring shaders (uThin), also driven by the voyage.
+ * The Saturn is a working member: it orbits the sun on its OWN (time-based),
+ * never moved by scroll. Its orbit passes through the world origin, so during the
+ * intro (voyage 0) the clock is held at 0 → it sits at the origin where the star
+ * bursts and assembles, and the camera is at the star distance (untouched intro).
+ * Once the voyage begins it orbits continuously; the clock resets at voyage 0
+ * (invisible — the camera tracks it, the starfield follows the camera, and the
+ * system is hidden there). Publishes its world position so the CameraRig can lock
+ * onto it. Body pose + self-spin live in Planet.
+ *
+ * Like the rest of the solar system (see SolarSystem), its orbital offset is
+ * turned by the SHARED space rotation (`useSceneRotation`) so a drag rotates the
+ * cosmos, the sibling planets AND the Saturn together — one relative control.
+ * The shared rotation is BLENDED IN over the very start of the voyage: at voyage
+ * 0 it's off, so the Saturn stays exactly on the world origin for the star→Saturn
+ * intro regardless of the accumulated scene yaw; by the time the siblings fade in
+ * it's full, so the Saturn co-rotates with them around the sun.
  */
-const SaturnRig = ({ children }: { children: ReactNode }) => {
-  const groupRef = useRef<Group>(null);
-  const z = useRef(0);
-  const scale = useRef<number>(SATURN.scale);
+const SaturnMember = ({ children }: { children: ReactNode }) => {
+  const posRef = useRef<Group>(null);
+  const clock = useRef(0);
+  const offset = useRef(new Vector3());
+  const rotated = useRef(new Vector3());
+  const euler = useRef(new Euler());
 
-  useFrame(() => {
-    const g = groupRef.current;
-    if (!g) return;
+  useFrame((_, delta) => {
+    if (!posRef.current) return;
     const voyage = clamp01(useVoyageScroll.getState().progress);
-    const eased = Math.pow(voyage, FLYAWAY.ease);
-    const targetZ = -FLYAWAY.recede * eased;
-    const targetScale = SATURN.scale * (1 - (1 - FLYAWAY.shrink) * eased);
-    z.current = damp(z.current, targetZ, FLYAWAY.damping);
-    scale.current = damp(scale.current, targetScale, FLYAWAY.damping);
-    g.position.set(0, SATURN.y, z.current);
-    g.scale.setScalar(scale.current);
+    if (voyage <= 0.001) clock.current = 0;
+    else clock.current += delta * SATURN_FLY.speed;
+
+    // Orbital offset from the sun (local to the system, exactly like a sibling).
+    const [ox, oy, oz] = orbitPosition(
+      SATURN_ORBIT_RADIUS,
+      SATURN_ORBIT_PHASE0 + clock.current
+    );
+    offset.current.set(ox, oy, oz);
+
+    // Same offset turned by the shared scene rotation (matches SolarSystem's
+    // group transform), then blended from unrotated → rotated over voyage start
+    // so the origin stays fixed during the intro.
+    const r = useSceneRotation.getState();
+    rotated.current
+      .copy(offset.current)
+      .applyEuler(euler.current.set(r.pitch, r.yaw, 0));
+    const blend = clamp01(voyage / SOLAR.revealStart);
+
+    const wx = SUNPOS[0] + lerp(ox, rotated.current.x, blend);
+    const wy = SUNPOS[1] + lerp(oy, rotated.current.y, blend);
+    const wz = SUNPOS[2] + lerp(oz, rotated.current.z, blend);
+    posRef.current.position.set(wx, wy, wz);
+    useSaturnAnchor.getState().set(wx, wy, wz);
   });
 
-  return <group ref={groupRef}>{children}</group>;
+  return (
+    <group ref={posRef}>
+      <group scale={SATURN.scale}>{children}</group>
+    </group>
+  );
 };
 
 /**
- * Pulls the camera back a little as the voyage begins — a real dolly, so the
- * whole scene "zooms out" with correct parallax: the near Saturn recedes fast
- * while the distant starfield barely shifts (it's meant to stay far). A small,
- * damped amount driven by `useVoyageScroll`; at rest it sits exactly at the
- * star camera distance, so the earlier journey is untouched.
+ * The camera does ALL the scroll work. At rest it's LOCKED ONTO the Saturn
+ * (sitting the star-camera distance behind it, looking at it) — so the intro is a
+ * close-up on the Saturn (which orbits on its own). As the voyage runs it flies
+ * OUT from the Saturn — up + back — and eases its aim to the SUN, settling on the
+ * wide sun-centred system with the Saturn just one planet orbiting off to the
+ * side. A pure (eased) function of `useVoyageScroll` + the Saturn's live position.
  */
-const CameraRig = () => {
+const CameraRig = ({
+  starfieldRef,
+}: {
+  starfieldRef: RefObject<Group | null>;
+}) => {
   const camera = useThree((s) => s.camera);
-  const z = useRef<number>(CAMERA.z);
 
   useFrame(() => {
-    const voyage = clamp01(useVoyageScroll.getState().progress);
-    const eased = Math.pow(voyage, FLYAWAY.ease);
-    z.current = damp(z.current, CAMERA.z + FLYAWAY.sceneDolly * eased, FLYAWAY.damping);
-    camera.position.z = z.current;
+    const a = useSaturnAnchor.getState();
+    const fly = Math.pow(clamp01(useVoyageScroll.getState().progress), FLYOUT.ease);
+    // position: behind the Saturn (fly 0) → high + back (fly 1)
+    camera.position.set(
+      lerp(a.x, 0, fly),
+      lerp(a.y, FLYOUT.rise, fly),
+      lerp(a.z + CAMERA.z, CAMERA.z + FLYOUT.distance, fly)
+    );
+    // aim: at the Saturn (fly 0) → at the sun (fly 1)
+    camera.lookAt(
+      lerp(a.x, SUNPOS[0], fly),
+      lerp(a.y, SUNPOS[1], fly),
+      lerp(a.z, SUNPOS[2], fly)
+    );
+    // Pin the starfield to the camera in the SAME frame the camera moves (this
+    // rig runs last), so the stars sit at a constant distance and never lag — no
+    // velocity-coupled size "pumping" as you scroll the fly-out.
+    starfieldRef.current?.position.copy(camera.position);
   });
   return null;
 };
