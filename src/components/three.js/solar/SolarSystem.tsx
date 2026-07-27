@@ -15,6 +15,7 @@ import {
   SOLAR_MOBILE_SCALE,
   SUN,
   SUNPOS,
+  VOYAGE,
 } from "./config";
 
 type Props = {
@@ -89,9 +90,10 @@ const OrbitRing = ({ radius }: { radius: number }) => {
 
   useFrame(() => {
     if (!matRef.current) return;
-    const reveal = easeOutCubic(
-      remap01(useVoyageScroll.getState().progress, SOLAR.revealStart, SOLAR.revealEnd)
-    );
+    const voyage = useVoyageScroll.getState().progress;
+    const earthFade = remap01(voyage, VOYAGE.earthFadeStart, VOYAGE.earthFadeEnd);
+    const reveal =
+      easeOutCubic(remap01(voyage, SOLAR.revealStart, SOLAR.revealEnd)) * (1 - earthFade);
     matRef.current.opacity = SOLAR.ring.opacity * reveal;
   });
 

@@ -17,11 +17,15 @@ import {
   SATURN_ORBIT_RADIUS,
   SOLAR,
   SUNPOS,
+  VOYAGE,
 } from "#/components/three.js/solar/config";
+import DottedEarth from "#/components/three.js/earth/DottedEarth";
+import { EARTH_CAM, EARTH_ORBIT } from "#/components/three.js/earth/config";
 import { useAboutScroll } from "#/stores/useAboutScroll";
 import { useVoyageScroll } from "#/stores/useVoyageScroll";
 import { useSceneRotation } from "#/stores/useSceneRotation";
 import { useSaturnAnchor } from "#/stores/useSaturnAnchor";
+import { useEarthAnchor } from "#/stores/useEarthAnchor";
 
 type BloomEffect = { intensity: number };
 
@@ -75,8 +79,15 @@ const CosmicScene = () => {
 
       {/* The solar system the Saturn belongs to — the sun at centre + the
           sibling planets on a near edge-on plane, revealed as the camera flies
-          back. */}
+          back, then faded out as we dive to Earth. */}
       <SolarSystem animate={animate} />
+
+      {/* Earth — the voyage's destination, but a NORMAL orbiting member on its
+          own place. It never grows/transitions; the camera flies to it (tracking
+          its orbit) so it fills the view by perspective. */}
+      <EarthMember>
+        <DottedEarth animate={animate} />
+      </EarthMember>
 
       <EffectComposer>
         <Bloom
@@ -159,12 +170,51 @@ const SaturnMember = ({ children }: { children: ReactNode }) => {
 };
 
 /**
- * The camera does ALL the scroll work. At rest it's LOCKED ONTO the Saturn
- * (sitting the star-camera distance behind it, looking at it) — so the intro is a
- * close-up on the Saturn (which orbits on its own). As the voyage runs it flies
- * OUT from the Saturn — up + back — and eases its aim to the SUN, settling on the
- * wide sun-centred system with the Saturn just one planet orbiting off to the
- * side. A pure (eased) function of `useVoyageScroll` + the Saturn's live position.
+ * Earth as a normal member of the solar system: it orbits the sun continuously on
+ * its own place (EARTH_ORBIT), turned by the shared scene rotation exactly like
+ * the sibling planets. It never grows or transitions — it just publishes its live
+ * world position to `useEarthAnchor` so the CameraRig can fly to it and track it.
+ * Body (dots), self-spin and drag live in DottedEarth.
+ */
+const EarthMember = ({ children }: { children: ReactNode }) => {
+  const posRef = useRef<Group>(null);
+  const offset = useRef(new Vector3());
+  const euler = useRef(new Euler());
+
+  useFrame((state) => {
+    if (!posRef.current) return;
+    const t = state.clock.getElapsedTime();
+    const [ox, oy, oz] = orbitPosition(
+      EARTH_ORBIT.radius,
+      EARTH_ORBIT.phase + t * EARTH_ORBIT.speed
+    );
+    // Turn the orbital offset by the shared scene rotation (matches the siblings),
+    // then place it relative to the sun.
+    const r = useSceneRotation.getState();
+    offset.current.set(ox, oy, oz).applyEuler(euler.current.set(r.pitch, r.yaw, 0));
+    const wx = SUNPOS[0] + offset.current.x;
+    const wy = SUNPOS[1] + offset.current.y;
+    const wz = SUNPOS[2] + offset.current.z;
+    posRef.current.position.set(wx, wy, wz);
+    useEarthAnchor.getState().set(wx, wy, wz);
+  });
+
+  return <group ref={posRef}>{children}</group>;
+};
+
+/**
+ * The camera does ALL the scroll work, in two segments over the voyage:
+ *
+ *   1. Saturn → wide  (voyage 0 … VOYAGE.flyoutEnd): starts LOCKED ONTO the
+ *      Saturn (the About close-up) and flies OUT — up + back — easing its aim to
+ *      the SUN, settling on the wide sun-centred system.
+ *   2. wide → Earth   (voyage VOYAGE.flyoutEnd … 1): dives from the wide view
+ *      onto the Earth — a normal member orbiting the sun on its own place — by
+ *      tracking its LIVE position (useEarthAnchor), so it fills the view by
+ *      perspective (never by growing) while the rest of the system fades.
+ *
+ * A pure (eased) function of `useVoyageScroll` + the Saturn's live position, so
+ * it reverses perfectly on scroll-up.
  */
 const CameraRig = ({
   starfieldRef,
@@ -175,22 +225,35 @@ const CameraRig = ({
 
   useFrame(() => {
     const a = useSaturnAnchor.getState();
-    const fly = Math.pow(clamp01(useVoyageScroll.getState().progress), FLYOUT.ease);
-    // position: behind the Saturn (fly 0) → high + back (fly 1)
-    camera.position.set(
-      lerp(a.x, 0, fly),
-      lerp(a.y, FLYOUT.rise, fly),
-      lerp(a.z + CAMERA.z, CAMERA.z + FLYOUT.distance, fly)
-    );
-    // aim: at the Saturn (fly 0) → at the sun (fly 1)
-    camera.lookAt(
-      lerp(a.x, SUNPOS[0], fly),
-      lerp(a.y, SUNPOS[1], fly),
-      lerp(a.z, SUNPOS[2], fly)
-    );
+    const voyage = clamp01(useVoyageScroll.getState().progress);
+
+    // ── Segment 1: Saturn → wide sun-centred view ──
+    const fly = Math.pow(clamp01(voyage / VOYAGE.flyoutEnd), FLYOUT.ease);
+    let px = lerp(a.x, 0, fly);
+    let py = lerp(a.y, FLYOUT.rise, fly);
+    let pz = lerp(a.z + CAMERA.z, CAMERA.z + FLYOUT.distance, fly);
+    let lx = lerp(a.x, SUNPOS[0], fly);
+    let ly = lerp(a.y, SUNPOS[1], fly);
+    let lz = lerp(a.z, SUNPOS[2], fly);
+
+    // ── Segment 2: wide → Earth dive (fly to the LIVE orbiting Earth) ──
+    const ap = remap01(voyage, VOYAGE.flyoutEnd, 1);
+    if (ap > 0) {
+      const apE = Math.pow(ap, EARTH_CAM.ease);
+      const e = useEarthAnchor.getState();
+      px = lerp(px, e.x + EARTH_CAM.offset[0], apE);
+      py = lerp(py, e.y + EARTH_CAM.offset[1], apE);
+      pz = lerp(pz, e.z + EARTH_CAM.offset[2], apE);
+      lx = lerp(lx, e.x, apE);
+      ly = lerp(ly, e.y, apE);
+      lz = lerp(lz, e.z, apE);
+    }
+
+    camera.position.set(px, py, pz);
+    camera.lookAt(lx, ly, lz);
     // Pin the starfield to the camera in the SAME frame the camera moves (this
     // rig runs last), so the stars sit at a constant distance and never lag — no
-    // velocity-coupled size "pumping" as you scroll the fly-out.
+    // velocity-coupled size "pumping" as you scroll.
     starfieldRef.current?.position.copy(camera.position);
   });
   return null;

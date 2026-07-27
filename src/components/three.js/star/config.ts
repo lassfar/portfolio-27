@@ -135,12 +135,15 @@ export const JOURNEY = {
   //   • jp  (journey progress, mp / journeyEnd, 0..1) — the star→Saturn→About
   //         block. Its internal thresholds (starSpan…exitStart) are jp-fractions,
   //         so they DON'T change when journeyEnd / pinLength change.
-  pinLength: "+=2160%", // journey + Craft + fly-away + solar-system reveal
+  pinLength: "+=2860%", // journey + Craft + voyage (fly-out + solar reveal + Earth dive)
   // The star→Saturn→About journey occupies mp 0..journeyEnd (≈1010% of scroll,
   // unchanged feel); the tail (journeyEnd..1) is the Craft, then the voyage
-  // (fly-away + solar reveal), below. Fractions shrink as the pin grows but the
-  // absolute scroll of each phase is preserved.
-  journeyEnd: 0.468,
+  // (fly-out + solar reveal + Earth dive), below. Fractions shrink as the pin
+  // grows but the ABSOLUTE scroll of each earlier phase is preserved — the tail
+  // thresholds below were scaled from the old 2160% pin (× 2160/2860) when the
+  // Earth dive (~700%) was appended, so the journey + Craft + fly-out feel is
+  // unchanged and only new scroll was added at the end.
+  journeyEnd: 0.353,
   starSpan: 0.218, // star plays over 0..starSpan of the JOURNEY (jp), not the pin
   assembleStart: 0.198, // Saturn assembles over assembleStart..assembleEnd (overlaps the burst)
   assembleEnd: 0.455, // Saturn fully built by here — ≈260% of scroll to build
@@ -178,14 +181,14 @@ export const JOURNEY = {
   // The Craft then slides up OVER it, its constellation assembles, it fades out to
   // reveal the Saturn again, and the Saturn flies away. All within the same pin,
   // so the cosmos never unpins → no boundary jump, and reverse mirrors exactly.
-  craftCoverEnd: 0.523, // Craft overlay slides up (translateY 100%→0) over journeyEnd..craftCoverEnd
-  constellationEnd: 0.616, // constellation assembles (scrubbed) over craftCoverEnd..constellationEnd
-  craftFadeStart: 0.634, // brief hold, then Craft fades out (opacity 1→0)…
-  craftFadeEnd: 0.676, // …fully gone here → the Saturn is revealed behind it
-  // The voyage occupies flyAwayStart..1 of the pin (≈700% of scroll), driving
-  // useVoyageScroll 0→1. Its sub-phases (the Saturn fly-away, then the
-  // solar-system reveal) are voyage fractions in FLYAWAY / SOLAR config.
-  flyAwayStart: 0.676, // where the Saturn is revealed and the voyage begins (voyage = 0)
+  craftCoverEnd: 0.395, // Craft overlay slides up (translateY 100%→0) over journeyEnd..craftCoverEnd
+  constellationEnd: 0.465, // constellation assembles (scrubbed) over craftCoverEnd..constellationEnd
+  craftFadeStart: 0.479, // brief hold, then Craft fades out (opacity 1→0)…
+  craftFadeEnd: 0.511, // …fully gone here → the Saturn is revealed behind it
+  // The voyage occupies flyAwayStart..1 of the pin (≈1400% of scroll), driving
+  // useVoyageScroll 0→1. Its sub-phases (fly-out → solar reveal → Earth dive)
+  // are voyage fractions in FLYOUT / SOLAR / VOYAGE config.
+  flyAwayStart: 0.511, // where the Saturn is revealed and the voyage begins (voyage = 0)
 } as const;
 
 /** Camera-less "zoom": centering, growing and the fly-through (Universe). */

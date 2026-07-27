@@ -58,6 +58,17 @@ export const SATURN_ORBIT_RADIUS = Math.hypot(SUNPOS[0], SUNPOS[2]);
 /** The orbital angle at which the Saturn sits on the origin (its fixed spot). */
 export const SATURN_ORBIT_PHASE0 = Math.atan2(-SUNPOS[2], -SUNPOS[0]);
 
+// ── Voyage sub-phases (fractions of useVoyageScroll 0..1) ────────────────────
+//
+// The voyage splits in two: the camera flies out from the Saturn to the wide
+// sun-centred view over [0, flyoutEnd], then dives onto the Earth over
+// [flyoutEnd, 1] while the rest of the system fades out.
+export const VOYAGE = {
+  flyoutEnd: 0.5, // Saturn→wide fly-out completes; the Earth dive begins
+  earthFadeStart: 0.55, // the sun + siblings + Saturn begin to fade as we dive
+  earthFadeEnd: 0.85, // system fully gone → just the Earth + the starfield
+} as const;
+
 // ── Reveal + look ────────────────────────────────────────────────────────────
 
 export const SOLAR = {
@@ -151,17 +162,9 @@ export const PLANETS: PlanetDef[] = [
     spin: 0.26,
     phase: 2.4,
   },
-  {
-    id: "earth",
-    radius: 10,
-    size: 0.55,
-    color: "#4d8ac9",
-    count: 2600,
-    orbitSpeed: 0.108,
-    spin: 0.6,
-    phase: 4.1,
-    highlight: true,
-  },
+  // NOTE: Earth is NOT a sibling here — it's the voyage's destination, rendered
+  // as the interactive dotted globe (see components/three.js/earth). It reveals
+  // and fills the view during the Earth dive (VOYAGE.flyoutEnd..1).
   {
     id: "mars",
     radius: 13,

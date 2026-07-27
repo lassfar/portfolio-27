@@ -13,7 +13,7 @@ import {
 import { useVoyageScroll } from "#/stores/useVoyageScroll";
 import { easeOutCubic, remap01 } from "#/components/three.js/star/utils";
 import { SIMPLEX_NOISE } from "#/components/three.js/planet/shaders";
-import { SOLAR, SUN } from "./config";
+import { SOLAR, SUN, VOYAGE } from "./config";
 
 type Props = {
   count?: number;
@@ -137,9 +137,11 @@ const Sun = ({ count = SUN.count, animate = true }: Props) => {
       m.uniforms.uTime.value += delta;
       if (pointsRef.current) pointsRef.current.rotation.y += delta * SUN.spin;
     }
-    const reveal = easeOutCubic(
-      remap01(useVoyageScroll.getState().progress, SOLAR.revealStart, SOLAR.revealEnd)
-    );
+    const voyage = useVoyageScroll.getState().progress;
+    // Fade in with the system, then fade OUT as we dive to Earth.
+    const earthFade = remap01(voyage, VOYAGE.earthFadeStart, VOYAGE.earthFadeEnd);
+    const reveal =
+      easeOutCubic(remap01(voyage, SOLAR.revealStart, SOLAR.revealEnd)) * (1 - earthFade);
     m.uniforms.uReveal.value = reveal;
     if (glowRef.current) glowRef.current.opacity = reveal;
   });

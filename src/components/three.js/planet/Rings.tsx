@@ -7,6 +7,7 @@ import { useAboutScroll } from "#/stores/useAboutScroll";
 import { useVoyageScroll } from "#/stores/useVoyageScroll";
 import { remap01 } from "#/components/three.js/star/utils";
 import { FLYOUT, GROWTH, RING, RING_PALETTE, SCATTER } from "./config";
+import { VOYAGE } from "#/components/three.js/solar/config";
 import { SIMPLEX_NOISE } from "./shaders";
 
 type Props = {
@@ -106,9 +107,11 @@ const Rings = ({ count = RING.count, animate = true }: Props) => {
     // phase, fades in as the star bursts, then assembles into the ring).
     const progress = useAboutScroll.getState().progress;
     m.uniforms.uForm.value = progress;
-    m.uniforms.uOpacity.value = remap01(progress, 0.0, 0.15);
-    // Fly-out: thin the ring a little with distance, in lockstep with the body.
     const voyage = useVoyageScroll.getState().progress;
+    // Fade the rings out with the body as we dive to Earth (opacity, not scale).
+    const earthFade = remap01(voyage, VOYAGE.earthFadeStart, VOYAGE.earthFadeEnd);
+    m.uniforms.uOpacity.value = remap01(progress, 0.0, 0.15) * (1.0 - earthFade);
+    // Fly-out: thin the ring a little with distance, in lockstep with the body.
     m.uniforms.uThin.value = FLYOUT.thinMax * voyage;
   });
 
