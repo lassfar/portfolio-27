@@ -8,6 +8,7 @@ import { useSceneRotation } from "#/stores/useSceneRotation";
 import { easeOutCubic, remap01 } from "#/components/three.js/star/utils";
 import Sun from "./Sun";
 import OrbitingPlanet from "./OrbitingPlanet";
+import { EARTH_ORBIT } from "#/components/three.js/earth/config";
 import {
   orbitPosition,
   PLANETS,
@@ -53,6 +54,8 @@ const SolarSystem = ({ animate = true }: Props) => {
         {PLANETS.map((def) => (
           <OrbitRing key={`ring-${def.id}`} radius={def.radius} />
         ))}
+        {/* Earth's own orbit line (Earth itself is the EarthMember, not a sibling). */}
+        <OrbitRing radius={EARTH_ORBIT.radius} />
 
         {PLANETS.map((def) => (
           <OrbitingPlanet

@@ -2,12 +2,21 @@
 
 import { useFrame, useThree } from "@react-three/fiber";
 import { useEffect, useMemo, useRef, useState } from "react";
-import { Color, Group, NormalBlending, Points, ShaderMaterial } from "three";
+import {
+  Color,
+  Group,
+  NormalBlending,
+  Points,
+  ShaderMaterial,
+  Vector3,
+} from "three";
 import { clamp01, damp, easeOutCubic, remap01 } from "#/components/three.js/star/utils";
 import { useVoyageScroll } from "#/stores/useVoyageScroll";
-import { SOLAR, VOYAGE } from "#/components/three.js/solar/config";
+import { useEarthAnchor } from "#/stores/useEarthAnchor";
+import { SOLAR, SUNPOS, VOYAGE } from "#/components/three.js/solar/config";
 import { EARTH } from "./config";
 import { directionToUV } from "./utils";
+import EarthPins from "./EarthPins";
 
 type Props = {
   animate?: boolean;
@@ -40,6 +49,8 @@ const DottedEarth = ({ animate = true, interactive = true }: Props) => {
   const dotMatRef = useRef<ShaderMaterial>(null);
 
   const gl = useThree((s) => s.gl);
+  const camera = useThree((s) => s.camera);
+  const sunDir = useRef(new Vector3());
   const isSmall = typeof window !== "undefined" && window.innerWidth < 768;
   const count = isSmall ? EARTH.dotCountMobile : EARTH.dotCount;
 
@@ -130,16 +141,18 @@ const DottedEarth = ({ animate = true, interactive = true }: Props) => {
         value: typeof window !== "undefined" ? Math.min(window.devicePixelRatio, 2) : 1.5,
       },
       uReveal: { value: 0 },
-      uLightDir: { value: EARTH.light.dir },
+      // The sun's direction in VIEW space — recomputed each frame from the sun's
+      // and Earth's world positions, so lighting comes from the real sun.
+      uLightDir: { value: new Vector3(0, 0, 1) },
       uAmbient: { value: EARTH.light.ambient },
     }),
     []
   );
 
   // ── Drag-rotate ────────────────────────────────────────────────────────────
-  const targetYaw = useRef(0);
+  const targetYaw = useRef<number>(EARTH.initialYaw);
   const targetPitch = useRef(0);
-  const yaw = useRef(0);
+  const yaw = useRef<number>(EARTH.initialYaw);
   const pitch = useRef(0);
   const dragging = useRef(false);
   const last = useRef({ x: 0, y: 0 });
@@ -185,6 +198,12 @@ const DottedEarth = ({ animate = true, interactive = true }: Props) => {
     if (dotMatRef.current) {
       dotMatRef.current.uniforms.uReveal.value = r;
       if (animate) dotMatRef.current.uniforms.uTime.value += delta; // twinkle
+      // Light from the ACTUAL sun: direction Earth → sun, in view space.
+      const a = useEarthAnchor.getState();
+      sunDir.current
+        .set(SUNPOS[0] - a.x, SUNPOS[1] - a.y, SUNPOS[2] - a.z)
+        .transformDirection(camera.matrixWorldInverse);
+      dotMatRef.current.uniforms.uLightDir.value.copy(sunDir.current);
     }
     if (tiltRef.current) tiltRef.current.visible = r > 0.001;
 
@@ -258,6 +277,9 @@ const DottedEarth = ({ animate = true, interactive = true }: Props) => {
               />
             </points>
           )}
+
+          {/* Geo photo-pins — stick to the surface as the globe spins. */}
+          <EarthPins />
         </group>
       </group>
     </>
