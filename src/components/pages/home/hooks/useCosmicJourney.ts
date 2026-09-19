@@ -108,7 +108,7 @@ export default function useCosmicJourney(refs: CosmicJourneyRefs): void {
       const renderCraft = (mp: number) => {
         const craft = craftRef.current;
         if (!craft) return;
-        const cover = easeOut(remap01(mp, JOURNEY.journeyEnd, JOURNEY.craftCoverEnd));
+        const cover = easeOut(remap01(mp, JOURNEY.craftCoverStart, JOURNEY.craftCoverEnd));
         const fade = easeInOut(remap01(mp, JOURNEY.craftFadeStart, JOURNEY.craftFadeEnd));
         craft.style.transform = `translateY(${(1 - cover) * 100}%)`;
         craft.style.opacity = String(1 - fade);

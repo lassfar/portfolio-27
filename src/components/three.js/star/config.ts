@@ -177,11 +177,13 @@ export const JOURNEY = {
 
   // ── Tail phases (MASTER-progress fractions, mp — NOT jp) ─────────────────────
   //
-  // Once the About has exited (mp = journeyEnd) the Saturn rests, sharp + built.
-  // The Craft then slides up OVER it, its constellation assembles, it fades out to
-  // reveal the Saturn again, and the Saturn flies away. All within the same pin,
-  // so the cosmos never unpins → no boundary jump, and reverse mirrors exactly.
-  craftCoverEnd: 0.395, // Craft overlay slides up (translateY 100%→0) over journeyEnd..craftCoverEnd
+  // The Craft slides up to COVER the Saturn AS the Maker (About) exits — the two
+  // sections hand straight over with no bare-Saturn beat between them. Its
+  // constellation then assembles, it fades out to reveal the Saturn again, and the
+  // Saturn flies away. All within the same pin, so the cosmos never unpins → no
+  // boundary jump, and reverse mirrors exactly.
+  craftCoverStart: 0.3, // Craft begins sliding up AS the Maker exits (≈ About exitStart in mp)
+  craftCoverEnd: 0.353, // …fully covering by the time the Maker has exited (= journeyEnd) → no Saturn shown between
   constellationEnd: 0.465, // constellation assembles (scrubbed) over craftCoverEnd..constellationEnd
   craftFadeStart: 0.479, // brief hold, then Craft fades out (opacity 1→0)…
   craftFadeEnd: 0.511, // …fully gone here → the Saturn is revealed behind it
