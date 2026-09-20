@@ -47,6 +47,7 @@ export const EARTH = {
 
   // A dark inner sphere just under the dots hides the back-facing dots, so the
   // front continents read cleanly instead of showing through.
+  showCore: false, // toggle the dark inner occluder sphere on/off (hides back-facing dots when true)
   coreColor: "#19191C", // --color-rich-black → the globe body sits in the same dark as the cosmos
   coreScale: 0.985, // fraction of radius
 
@@ -57,6 +58,9 @@ export const EARTH = {
   dragSensitivity: 0.005, // rad per pixel dragged
   dragDamping: 0.1, // 0..1 follow speed
   spinResumeDelay: 0.8, // seconds after release before idle spin resumes
+
+  // Photo-pins.
+  pinLabelsAt: 0.85, // approach (0..1) at/after which every visible pin's label stays shown ("full view")
 } as const;
 
 /**

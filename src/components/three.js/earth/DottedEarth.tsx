@@ -10,7 +10,12 @@ import {
   ShaderMaterial,
   Vector3,
 } from "three";
-import { clamp01, damp, easeOutCubic, remap01 } from "#/components/three.js/star/utils";
+import {
+  clamp01,
+  damp,
+  easeOutCubic,
+  remap01,
+} from "#/components/three.js/star/utils";
 import { useVoyageScroll } from "#/stores/useVoyageScroll";
 import { useEarthAnchor } from "#/stores/useEarthAnchor";
 import { SOLAR, SUNPOS, VOYAGE } from "#/components/three.js/solar/config";
@@ -96,15 +101,23 @@ const DottedEarth = ({ animate = true, interactive = true }: Props) => {
         const z = s * Math.sin(theta);
 
         const [u, v] = directionToUV(x, y, z);
-        const px = Math.min(cv.width - 1, Math.max(0, Math.round(u * cv.width)));
-        const py = Math.min(cv.height - 1, Math.max(0, Math.round(v * cv.height)));
-        const isLand = data[(py * cv.width + px) * 4] / 255 < EARTH.landThreshold; // dark = land
+        const px = Math.min(
+          cv.width - 1,
+          Math.max(0, Math.round(u * cv.width))
+        );
+        const py = Math.min(
+          cv.height - 1,
+          Math.max(0, Math.round(v * cv.height))
+        );
+        const isLand =
+          data[(py * cv.width + px) * 4] / 255 < EARTH.landThreshold; // dark = land
 
         // Bias toward land: keep every land dot, drop most ocean dots.
         if (!isLand && Math.random() > EARTH.oceanDensity) continue;
 
         // Tiny radial shell jitter → grainy, dotty surface (like the Saturn shell).
-        const rr = EARTH.radius * (1 + (Math.random() - 0.5) * EARTH.shellJitter);
+        const rr =
+          EARTH.radius * (1 + (Math.random() - 0.5) * EARTH.shellJitter);
         positions[i * 3] = x * rr;
         positions[i * 3 + 1] = y * rr;
         positions[i * 3 + 2] = z * rr;
@@ -138,7 +151,10 @@ const DottedEarth = ({ animate = true, interactive = true }: Props) => {
       uSize: { value: EARTH.dotSize },
       uMaxSize: { value: EARTH.dotMaxSize },
       uPixelRatio: {
-        value: typeof window !== "undefined" ? Math.min(window.devicePixelRatio, 2) : 1.5,
+        value:
+          typeof window !== "undefined"
+            ? Math.min(window.devicePixelRatio, 2)
+            : 1.5,
       },
       uReveal: { value: 0 },
       // The sun's direction in VIEW space — recomputed each frame from the sun's
@@ -219,7 +235,8 @@ const DottedEarth = ({ animate = true, interactive = true }: Props) => {
     }
     yaw.current = damp(yaw.current, targetYaw.current, EARTH.dragDamping);
     pitch.current = damp(pitch.current, targetPitch.current, EARTH.dragDamping);
-    if (spinRef.current) spinRef.current.rotation.set(pitch.current, yaw.current, 0);
+    if (spinRef.current)
+      spinRef.current.rotation.set(pitch.current, yaw.current, 0);
   });
 
   return (
@@ -227,8 +244,8 @@ const DottedEarth = ({ animate = true, interactive = true }: Props) => {
       {/* Axial tilt, then drag/idle spin. */}
       <group ref={tiltRef} rotation={[0, 0, EARTH.tilt]} visible={false}>
         <group ref={spinRef}>
-          {/* Dark inner sphere hides the back-facing dots. */}
-          <mesh scale={EARTH.coreScale} renderOrder={1}>
+          {/* Dark inner sphere hides the back-facing dots (config: EARTH.showCore). */}
+          <mesh scale={EARTH.coreScale} renderOrder={1} visible={EARTH.showCore}>
             <sphereGeometry args={[EARTH.radius, 48, 48]} />
             <meshBasicMaterial color={EARTH.coreColor} />
           </mesh>

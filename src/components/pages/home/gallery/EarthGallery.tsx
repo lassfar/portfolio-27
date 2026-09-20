@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { createPortal } from "react-dom";
 import GalleryPanel from "./GalleryPanel";
 import Lightbox from "./Lightbox";
-import PinLabel from "./PinLabel";
+import PinLabels from "./PinLabels";
 
 /**
  * Mounts the DOM gallery overlays (hover label + side panel + lightbox) that the
@@ -23,7 +23,7 @@ const EarthGallery = () => {
 
   return createPortal(
     <>
-      <PinLabel />
+      <PinLabels />
       <GalleryPanel />
       <Lightbox />
     </>,

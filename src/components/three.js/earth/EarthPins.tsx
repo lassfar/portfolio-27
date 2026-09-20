@@ -18,6 +18,7 @@ import { VOYAGE } from "#/components/three.js/solar/config";
 import { EARTH } from "./config";
 import { PHOTO_LOCATIONS, type PhotoLocation } from "./data";
 import { latLngToVector3 } from "./utils";
+import { pinScreen } from "./pinScreen";
 
 const UP = new Vector3(0, 1, 0);
 
@@ -82,6 +83,7 @@ const Pin = ({
   const worldPos = useRef(new Vector3());
   const normal = useRef(new Vector3());
   const viewDir = useRef(new Vector3());
+  const screen = useRef(new Vector3());
 
   // Base on the surface, oriented so the stem points radially OUTWARD.
   const { pos, quat } = useMemo(() => {
@@ -107,6 +109,19 @@ const Pin = ({
     const front = normal.current.dot(viewDir.current) > 0.05;
 
     groupRef.current.visible = approach > 0.55 && front;
+
+    // Publish the head's screen position for the DOM label overlay. The label
+    // shows only once the Earth is in full view (EARTH.pinLabelsAt) and the pin
+    // is on the near hemisphere and in front of the camera.
+    if (headRef.current && typeof window !== "undefined") {
+      headRef.current.getWorldPosition(screen.current);
+      screen.current.project(camera);
+      pinScreen[loc.id] = {
+        x: (screen.current.x * 0.5 + 0.5) * window.innerWidth,
+        y: (-screen.current.y * 0.5 + 0.5) * window.innerHeight,
+        shown: front && screen.current.z < 1 && approach >= EARTH.pinLabelsAt,
+      };
+    }
 
     const target = hovered ? 1.35 : 1;
     scale.current = damp(scale.current, target, 0.2);

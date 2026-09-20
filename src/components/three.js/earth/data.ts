@@ -32,6 +32,10 @@ export type PhotoLocation = {
   lng: number; // degrees, +E
   blurb?: string; // a sentence of story about the place / the trip
   media: MediaItem[]; // the gallery for this pin
+  /** Which side of the pin the always-on label sits (default "top-left"). Use
+   *  this to fan out clustered places — e.g. London top-right, Brockenhurst
+   *  top-left — so their labels don't collide. */
+  labelAnchor?: "top-left" | "top-right";
 };
 
 /**
@@ -45,6 +49,7 @@ export const PHOTO_LOCATIONS: PhotoLocation[] = [
     country: "United Kingdom",
     lat: 51.5074,
     lng: -0.1278,
+    labelAnchor: "top-right", // fan out from nearby Brockenhurst (top-left)
     blurb: "The city I keep coming back to — grey light, warm corners.",
     media: [
       { type: "image", src: "/photos/london/01.jpg", caption: "Placeholder — London 01" },
@@ -75,6 +80,25 @@ export const PHOTO_LOCATIONS: PhotoLocation[] = [
         src: "/videos/brockenhurst/01.mp4",
         poster: "/photos/brockenhurst/01-poster.jpg",
         caption: "Placeholder — Brockenhurst clip",
+      },
+    ],
+  },
+  {
+    id: "morocco",
+    place: "Morocco",
+    country: "Morocco",
+    lat: 31.6295, // Marrakesh — a central, recognizable spot on the map
+    lng: -7.9811,
+    blurb: "Home — warm light, warmer people.",
+    media: [
+      { type: "image", src: "/photos/morocco/01.jpg", caption: "Placeholder — Morocco 01" },
+      { type: "image", src: "/photos/morocco/02.jpg", caption: "Placeholder — Morocco 02" },
+      { type: "image", src: "/photos/morocco/03.jpg", caption: "Placeholder — Morocco 03" },
+      {
+        type: "video",
+        src: "/videos/morocco/01.mp4",
+        poster: "/photos/morocco/01-poster.jpg",
+        caption: "Placeholder — Morocco clip",
       },
     ],
   },
