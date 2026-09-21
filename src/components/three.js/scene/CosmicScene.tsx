@@ -2,11 +2,16 @@
 
 import { Canvas, useFrame, useThree } from "@react-three/fiber";
 import { Bloom, EffectComposer } from "@react-three/postprocessing";
-import { ReactNode, RefObject, useRef } from "react";
+import { ReactNode, RefObject, useEffect, useRef } from "react";
 import { Euler, Group, Vector3 } from "three";
 import Universe from "#/components/three.js/star/Universe";
 import { BLOOM, CAMERA, PARTICLES } from "#/components/three.js/star/config";
-import { clamp01, easeOutCubic, lerp, remap01 } from "#/components/three.js/star/utils";
+import {
+  clamp01,
+  easeInOutCubic,
+  lerp,
+  remap01,
+} from "#/components/three.js/star/utils";
 import Planet from "#/components/three.js/planet/Planet";
 import { FLYOUT, PLANET, RING, SATURN } from "#/components/three.js/planet/config";
 import SolarSystem from "#/components/three.js/solar/SolarSystem";
@@ -32,6 +37,9 @@ import { useSceneRotation } from "#/stores/useSceneRotation";
 import { useSaturnAnchor } from "#/stores/useSaturnAnchor";
 import { useEarthAnchor } from "#/stores/useEarthAnchor";
 import { useVoyagerAnchor } from "#/stores/useVoyagerAnchor";
+import { useGalleryStore } from "#/stores/useGalleryStore";
+import { useLabStore } from "#/stores/useLabStore";
+import { setScrollLock } from "#/stores/scrollLock";
 
 type BloomEffect = { intensity: number };
 
@@ -123,6 +131,7 @@ const CosmicScene = () => {
 
       <BloomController bloomRef={bloomRef} />
       <CameraRig starfieldRef={starfieldRef} />
+      <InteractionLock />
     </Canvas>
   );
 };
@@ -273,9 +282,12 @@ const CameraRig = ({
     let lz = lerp(a.z, SUNPOS[2], fly);
 
     // ── Segment 2: wide → Earth dive (fly to the LIVE orbiting Earth) ──
+    // easeInOutCubic → the camera eases out of the wide view and GLIDES TO REST
+    // as the Earth fills the frame (velocity → 0 at arrival), so it settles
+    // smoothly into the dwell instead of slamming to a stop.
     const ap = remap01(voyage, VOYAGE.flyoutEnd, 1);
     if (ap > 0) {
-      const apE = Math.pow(ap, EARTH_CAM.ease);
+      const apE = easeInOutCubic(ap);
       const e = useEarthAnchor.getState();
       px = lerp(px, e.x + EARTH_CAM.offset[0], apE);
       py = lerp(py, e.y + EARTH_CAM.offset[1], apE);
@@ -285,14 +297,15 @@ const CameraRig = ({
       lz = lerp(lz, e.z, apE);
     }
 
-    // ── Segment 3: one decelerating fly from Earth straight to the readable
-    // Voyager pose. voyage is clamped at 1 here (Earth-close pose from segment 2);
-    // ease-OUT front-loads the speed (fast the instant you leave Earth → the dust
-    // rush) and decelerates so Voyager resolves — directly at readable size — with
-    // no snap and no separate zoom-in.
+    // ── Segment 3: one smooth fly from Earth straight to the readable Voyager
+    // pose. voyage is clamped at 1 here (Earth-close pose from segment 2).
+    // easeInOutCubic mirrors the Earth ARRIVAL: velocity is 0 at BOTH ends, so the
+    // camera eases GENTLY out of the resting dwell (a soft leave, no abrupt launch)
+    // and still glides to REST at the Voyager. Peak speed is unchanged — it just
+    // sits mid-flight, so the dust rush still crests between the two, not at t=0.
     const lab = clamp01(useLabScroll.getState().progress);
     if (lab > 0) {
-      const t = easeOutCubic(lab);
+      const t = easeInOutCubic(lab);
       const v = useVoyagerAnchor.getState();
       px = lerp(px, v.x + LAB_CAM.offset[0], t);
       py = lerp(py, v.y + LAB_CAM.offset[1], t);
@@ -309,6 +322,37 @@ const CameraRig = ({
     // velocity-coupled size "pumping" as you scroll.
     starfieldRef.current?.position.copy(camera.position);
   });
+  return null;
+};
+
+/**
+ * While an overlay panel is open (Earth gallery or Lab experiments), lock the
+ * journey to the panel: pause ScrollSmoother so the wheel/touch can't advance the
+ * story, and disable pointer events on the canvas so drags/clicks don't fire
+ * "space events" behind the panel. The panel (portalled outside #smooth-content)
+ * keeps its own scroll + clicks. Everything restores when the panel closes.
+ */
+const InteractionLock = () => {
+  const gl = useThree((s) => s.gl);
+  useEffect(() => {
+    const apply = () => {
+      const locked =
+        useGalleryStore.getState().openId !== null || useLabStore.getState().open;
+      gl.domElement.style.pointerEvents = locked ? "none" : "auto";
+      // Freeze the journey via the shared lock registry (stores/scrollLock) so
+      // any lock source coordinates without clobbering ScrollSmoother.paused().
+      setScrollLock("panel", locked);
+    };
+    apply();
+    const unsubGallery = useGalleryStore.subscribe(apply);
+    const unsubLab = useLabStore.subscribe(apply);
+    return () => {
+      unsubGallery();
+      unsubLab();
+      gl.domElement.style.pointerEvents = "auto";
+      setScrollLock("panel", false);
+    };
+  }, [gl]);
   return null;
 };
 

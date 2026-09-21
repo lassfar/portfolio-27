@@ -168,10 +168,11 @@ export default function useCosmicJourney(refs: CosmicJourneyRefs): void {
             setAbout(remap01(jp, JOURNEY.assembleStart, JOURNEY.assembleEnd));
             // Voyage spans flyAwayStart..voyageEnd (0→1); its sub-phases (fly-away,
             // solar reveal, Earth dive) are voyage fractions in the R3F components.
-            // It clamps at 1 through the Lab, so the Earth holds at full view.
+            // It clamps at 1 through the Earth dwell + the Lab, so the Earth holds.
             setVoyage(remap01(mp, JOURNEY.flyAwayStart, JOURNEY.voyageEnd));
-            // The Lab (Voyager) beat — the appended scroll past the voyage.
-            setLab(remap01(mp, JOURNEY.voyageEnd, 1));
+            // The Lab (Earth→Voyager) beat runs AFTER the dwell: earthDwellEnd..1.
+            // Over [voyageEnd, earthDwellEnd] this stays 0, so the Earth just holds.
+            setLab(remap01(mp, JOURNEY.earthDwellEnd, 1));
             renderAbout(jp);
             renderCraft(mp);
             toggleTitle(aboutTitle, jp >= JOURNEY.revealStart);

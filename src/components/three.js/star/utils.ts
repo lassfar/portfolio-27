@@ -34,3 +34,12 @@ export const lerp = (a: number, b: number, t: number): number =>
 
 /** Ease-out cubic — fast start, decelerating to a stop at t = 1. */
 export const easeOutCubic = (t: number): number => 1 - Math.pow(1 - t, 3);
+
+/**
+ * Ease-in-out cubic — velocity is 0 at BOTH ends, so a scroll-driven move eases
+ * gently out of its start pose and glides to REST at its destination (no abrupt
+ * arrival, and no velocity jump when it then holds). Used for the Earth dive so
+ * the planet settles smoothly into its dwell.
+ */
+export const easeInOutCubic = (t: number): number =>
+  t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2;

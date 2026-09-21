@@ -84,5 +84,7 @@ export const EARTH_ORBIT = {
  */
 export const EARTH_CAM = {
   offset: [0, 0.5, 3.0] as [number, number, number],
-  ease: 1.2, // easing exponent on the dive
+  // The dive's easing is easeInOutCubic (see CameraRig segment 2) — it glides to
+  // REST as the Earth fills the frame, so the planet settles smoothly into its
+  // dwell instead of arriving abruptly.
 } as const;
