@@ -13,6 +13,7 @@ import { useHeroScroll } from "#/stores/useHeroScroll";
 import { useAboutScroll } from "#/stores/useAboutScroll";
 import { useSceneRotation } from "#/stores/useSceneRotation";
 import { useSceneIntro } from "#/stores/useSceneIntro";
+import { dragMode } from "#/components/three.js/earth/interaction";
 
 /**
  * The deterministic scroll/intro yaw the scene reaches by the time Saturn is
@@ -79,6 +80,14 @@ const Universe = ({ animate = true, count, starfieldRef }: Props) => {
     };
     const onMove = (e: PointerEvent) => {
       if (!dragging.current) return;
+      // Stand down when THIS drag grabbed the globe (DottedEarth's hit-test set
+      // dragMode on pointer-down) — that drag spins the Earth only, so the space
+      // must stay put. A drag on empty space keeps dragMode "scene" and rotates
+      // the whole cosmos here (the Earth is carried with it, like Saturn).
+      if (dragMode.current === "globe") {
+        last.current = { x: e.clientX, y: e.clientY };
+        return;
+      }
       const dx = e.clientX - last.current.x;
       const dy = e.clientY - last.current.y;
       last.current = { x: e.clientX, y: e.clientY };

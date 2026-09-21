@@ -7,7 +7,10 @@ import {
   Group,
   NormalBlending,
   Points,
+  Raycaster,
   ShaderMaterial,
+  Sphere,
+  Vector2,
   Vector3,
 } from "three";
 import {
@@ -19,10 +22,12 @@ import {
 import { useVoyageScroll } from "#/stores/useVoyageScroll";
 import { useLabScroll } from "#/stores/useLabScroll";
 import { useEarthAnchor } from "#/stores/useEarthAnchor";
-import { SOLAR, SUNPOS, VOYAGE } from "#/components/three.js/solar/config";
+import { useSceneRotation } from "#/stores/useSceneRotation";
+import { SOLAR, SUNPOS } from "#/components/three.js/solar/config";
 import { LAB } from "#/components/three.js/voyager/config";
 import { EARTH } from "./config";
 import { directionToUV } from "./utils";
+import { earthOwnsDrag, dragMode } from "./interaction";
 import EarthPins from "./EarthPins";
 
 type Props = {
@@ -30,10 +35,6 @@ type Props = {
   /** Master enable for pointer-drag (drag is additionally gated to the Earth phase). */
   interactive?: boolean;
 };
-
-/** Earth-approach progress (0..1) — the globe reveals + becomes draggable here. */
-const earthApproach = () =>
-  remap01(clamp01(useVoyageScroll.getState().progress), VOYAGE.flyoutEnd, 1);
 
 type DotBuffers = {
   positions: Float32Array;
@@ -50,6 +51,7 @@ type DotBuffers = {
  * photo-pins hang off it in M3.
  */
 const DottedEarth = ({ animate = true, interactive = true }: Props) => {
+  const sceneMirrorRef = useRef<Group>(null);
   const tiltRef = useRef<Group>(null);
   const spinRef = useRef<Group>(null);
   const pointsRef = useRef<Points>(null);
@@ -167,7 +169,7 @@ const DottedEarth = ({ animate = true, interactive = true }: Props) => {
     []
   );
 
-  // ── Drag-rotate ────────────────────────────────────────────────────────────
+  // ── Drag-rotate (globe spin) ────────────────────────────────────────────────
   const targetYaw = useRef<number>(EARTH.initialYaw);
   const targetPitch = useRef(0);
   const yaw = useRef<number>(EARTH.initialYaw);
@@ -175,6 +177,14 @@ const DottedEarth = ({ animate = true, interactive = true }: Props) => {
   const dragging = useRef(false);
   const last = useRef({ x: 0, y: 0 });
   const sinceRelease = useRef<number>(EARTH.spinResumeDelay);
+  // Scene rotation captured when the Earth became the focus — the scene-mirror
+  // subtracts it so only later space-drags turn the Earth (no arrival-pose offset).
+  const sceneBaseline = useRef<{ pitch: number; yaw: number } | null>(null);
+  // Scratch for the pointer-down hit-test (globe vs. empty space).
+  const hit = useMemo(
+    () => ({ rc: new Raycaster(), sphere: new Sphere(), point: new Vector3(), ndc: new Vector2() }),
+    []
+  );
 
   useEffect(() => {
     if (!interactive) return;
@@ -182,10 +192,27 @@ const DottedEarth = ({ animate = true, interactive = true }: Props) => {
     const onDown = (e: PointerEvent) => {
       dragging.current = true;
       last.current = { x: e.clientX, y: e.clientY };
+      // Decide what THIS drag controls: a ray through the pointer that hits the
+      // globe (while the Earth is the focus) grabs the GLOBE; anything else grabs
+      // the SCENE (empty space → the whole cosmos turns, Earth carried with it).
+      const w = el.clientWidth || 1;
+      const h = el.clientHeight || 1;
+      hit.ndc.set((e.offsetX / w) * 2 - 1, -(e.offsetY / h) * 2 + 1);
+      hit.rc.setFromCamera(hit.ndc, camera);
+      const a = useEarthAnchor.getState();
+      hit.sphere.center.set(a.x, a.y, a.z);
+      hit.sphere.radius = EARTH.radius;
+      const onGlobe = hit.rc.ray.intersectSphere(hit.sphere, hit.point) !== null;
+      dragMode.current = earthOwnsDrag() && onGlobe ? "globe" : "scene";
     };
     const onMove = (e: PointerEvent) => {
       if (!dragging.current) return;
-      if (earthApproach() < 0.4) return; // only once the globe is present
+      // Spin the globe only when THIS drag grabbed it. Keep `last` fresh while
+      // stood down (a scene drag) so nothing snaps if it ever changes hands.
+      if (dragMode.current !== "globe") {
+        last.current = { x: e.clientX, y: e.clientY };
+        return;
+      }
       const dx = e.clientX - last.current.x;
       const dy = e.clientY - last.current.y;
       last.current = { x: e.clientX, y: e.clientY };
@@ -195,8 +222,9 @@ const DottedEarth = ({ animate = true, interactive = true }: Props) => {
       targetPitch.current = Math.max(-1.2, Math.min(1.2, targetPitch.current));
     };
     const onUp = () => {
+      // Only a GLOBE drag pauses the idle spin, so only it re-arms the resume timer.
+      if (dragMode.current === "globe") sinceRelease.current = 0;
       dragging.current = false;
-      sinceRelease.current = 0;
     };
     el.addEventListener("pointerdown", onDown);
     window.addEventListener("pointermove", onMove);
@@ -206,7 +234,7 @@ const DottedEarth = ({ animate = true, interactive = true }: Props) => {
       window.removeEventListener("pointermove", onMove);
       window.removeEventListener("pointerup", onUp);
     };
-  }, [gl, interactive]);
+  }, [gl, interactive, camera, hit]);
 
   useFrame((_, delta) => {
     // Earth appears WITH the system (like a sibling) and stays — it's a member,
@@ -229,9 +257,11 @@ const DottedEarth = ({ animate = true, interactive = true }: Props) => {
     if (tiltRef.current) tiltRef.current.visible = r > 0.001;
 
     // Idle self-spin (a planet's day) whenever the Earth is visible; it pauses
-    // during a drag and resumes a beat after release.
+    // ONLY while the globe itself is being dragged (a scene drag leaves the auto-
+    // rotation playing), and resumes a beat after a globe drag is released.
     if (animate && r > 0.001) {
-      if (!dragging.current) {
+      const globeDragging = dragging.current && dragMode.current === "globe";
+      if (!globeDragging) {
         sinceRelease.current += delta;
         if (sinceRelease.current > EARTH.spinResumeDelay) {
           targetYaw.current += delta * EARTH.spin;
@@ -242,66 +272,89 @@ const DottedEarth = ({ animate = true, interactive = true }: Props) => {
     pitch.current = damp(pitch.current, targetPitch.current, EARTH.dragDamping);
     if (spinRef.current)
       spinRef.current.rotation.set(pitch.current, yaw.current, 0);
+
+    // Scene-mirror: when the SPACE is dragged the Earth turns WITH the whole cosmos
+    // (like Saturn). This outer group mirrors the scene-rotation DELTA since the
+    // Earth became the focus, so it never offsets the arrival pose — only a space
+    // drag (which moves useSceneRotation) turns it, by the same angle as the stars.
+    const owns = earthOwnsDrag();
+    const sr = useSceneRotation.getState();
+    if (owns) {
+      if (!sceneBaseline.current) sceneBaseline.current = { pitch: sr.pitch, yaw: sr.yaw };
+    } else {
+      sceneBaseline.current = null;
+    }
+    if (sceneMirrorRef.current) {
+      const b = sceneBaseline.current;
+      sceneMirrorRef.current.rotation.set(
+        b ? sr.pitch - b.pitch : 0,
+        b ? sr.yaw - b.yaw : 0,
+        0
+      );
+    }
   });
 
   return (
     <>
-      {/* Axial tilt, then drag/idle spin. */}
-      <group ref={tiltRef} rotation={[0, 0, EARTH.tilt]} visible={false}>
-        <group ref={spinRef}>
-          {/* Dark inner sphere hides the back-facing dots (config: EARTH.showCore). */}
-          <mesh scale={EARTH.coreScale} renderOrder={1} visible={EARTH.showCore}>
-            <sphereGeometry args={[EARTH.radius, 48, 48]} />
-            <meshBasicMaterial color={EARTH.coreColor} />
-          </mesh>
+      {/* Scene-mirror (space drag → Earth turns with the cosmos), then axial tilt,
+          then the globe's own drag/idle spin. */}
+      <group ref={sceneMirrorRef}>
+        <group ref={tiltRef} rotation={[0, 0, EARTH.tilt]} visible={false}>
+          <group ref={spinRef}>
+            {/* Dark inner sphere hides the back-facing dots (config: EARTH.showCore). */}
+            <mesh scale={EARTH.coreScale} renderOrder={1} visible={EARTH.showCore}>
+              <sphereGeometry args={[EARTH.radius, 48, 48]} />
+              <meshBasicMaterial color={EARTH.coreColor} />
+            </mesh>
 
-          {buffers && (
-            <points ref={pointsRef} renderOrder={2}>
-              <bufferGeometry>
-                <bufferAttribute
-                  attach="attributes-position"
-                  count={count}
-                  array={buffers.positions}
-                  itemSize={3}
-                  args={[buffers.positions, 3]}
+            {buffers && (
+              <points ref={pointsRef} renderOrder={2}>
+                <bufferGeometry>
+                  <bufferAttribute
+                    attach="attributes-position"
+                    count={count}
+                    array={buffers.positions}
+                    itemSize={3}
+                    args={[buffers.positions, 3]}
+                  />
+                  <bufferAttribute
+                    attach="attributes-aColor"
+                    count={count}
+                    array={buffers.colors}
+                    itemSize={3}
+                    args={[buffers.colors, 3]}
+                  />
+                  <bufferAttribute
+                    attach="attributes-aScale"
+                    count={count}
+                    array={buffers.scales}
+                    itemSize={1}
+                    args={[buffers.scales, 1]}
+                  />
+                  <bufferAttribute
+                    attach="attributes-aSeed"
+                    count={count}
+                    array={buffers.seeds}
+                    itemSize={1}
+                    args={[buffers.seeds, 1]}
+                  />
+                </bufferGeometry>
+                <shaderMaterial
+                  ref={dotMatRef}
+                  transparent
+                  depthTest
+                  depthWrite={false}
+                  blending={NormalBlending}
+                  uniforms={uniforms}
+                  vertexShader={VERTEX_SHADER}
+                  fragmentShader={FRAGMENT_SHADER}
                 />
-                <bufferAttribute
-                  attach="attributes-aColor"
-                  count={count}
-                  array={buffers.colors}
-                  itemSize={3}
-                  args={[buffers.colors, 3]}
-                />
-                <bufferAttribute
-                  attach="attributes-aScale"
-                  count={count}
-                  array={buffers.scales}
-                  itemSize={1}
-                  args={[buffers.scales, 1]}
-                />
-                <bufferAttribute
-                  attach="attributes-aSeed"
-                  count={count}
-                  array={buffers.seeds}
-                  itemSize={1}
-                  args={[buffers.seeds, 1]}
-                />
-              </bufferGeometry>
-              <shaderMaterial
-                ref={dotMatRef}
-                transparent
-                depthTest
-                depthWrite={false}
-                blending={NormalBlending}
-                uniforms={uniforms}
-                vertexShader={VERTEX_SHADER}
-                fragmentShader={FRAGMENT_SHADER}
-              />
-            </points>
-          )}
+              </points>
+            )}
 
-          {/* Geo photo-pins — stick to the surface as the globe spins. */}
-          <EarthPins />
+            {/* Geo photo-pins — stick to the surface as the globe spins. */}
+            <EarthPins />
+          </group>
         </group>
       </group>
     </>
