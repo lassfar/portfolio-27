@@ -243,6 +243,10 @@ const Skills = ({ overlayRef, reduced = false }: Props) => {
             return (
               <line
                 key={i}
+                // Colour-changing extensions (Dark Reader, …) rewrite stroke/fill
+                // into inline styles pre-hydration → per-element mismatch. This is
+                // React's escape hatch for that; it does not mask real mismatches.
+                suppressHydrationWarning
                 className="skill-line"
                 x1={A.x}
                 y1={A.y}
@@ -264,6 +268,7 @@ const Skills = ({ overlayRef, reduced = false }: Props) => {
             <g key={n.id}>
               {n.bridge && (
                 <circle
+                  suppressHydrationWarning
                   className="skill-node"
                   cx={n.x}
                   cy={n.y}
@@ -277,6 +282,7 @@ const Skills = ({ overlayRef, reduced = false }: Props) => {
                 />
               )}
               <circle
+                suppressHydrationWarning
                 className="skill-node"
                 cx={n.x}
                 cy={n.y}
@@ -293,6 +299,7 @@ const Skills = ({ overlayRef, reduced = false }: Props) => {
           {NODES.map((n) => (
             <text
               key={n.id}
+              suppressHydrationWarning
               className="skill-label"
               x={n.x}
               y={n.y + n.labelDy}

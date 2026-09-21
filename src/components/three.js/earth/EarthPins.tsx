@@ -12,9 +12,11 @@ import {
 } from "three";
 import { clamp01, damp, remap01 } from "#/components/three.js/star/utils";
 import { useVoyageScroll } from "#/stores/useVoyageScroll";
+import { useLabScroll } from "#/stores/useLabScroll";
 import { useEarthAnchor } from "#/stores/useEarthAnchor";
 import { useGalleryStore } from "#/stores/useGalleryStore";
 import { VOYAGE } from "#/components/three.js/solar/config";
+import { LAB } from "#/components/three.js/voyager/config";
 import { EARTH } from "./config";
 import { PHOTO_LOCATIONS, type PhotoLocation } from "./data";
 import { latLngToVector3 } from "./utils";
@@ -108,7 +110,9 @@ const Pin = ({
     viewDir.current.copy(camera.position).sub(worldPos.current).normalize();
     const front = normal.current.dot(viewDir.current) > 0.05;
 
-    groupRef.current.visible = approach > 0.55 && front;
+    // Hide the pins as the Earth fades out into the Lab beat.
+    const labFade = remap01(clamp01(useLabScroll.getState().progress), 0, LAB.earthFadeEnd);
+    groupRef.current.visible = approach > 0.55 && front && labFade < 0.999;
 
     // Publish the head's screen position for the DOM label overlay. The label
     // shows only once the Earth is in full view (EARTH.pinLabelsAt) and the pin
@@ -119,7 +123,11 @@ const Pin = ({
       pinScreen[loc.id] = {
         x: (screen.current.x * 0.5 + 0.5) * window.innerWidth,
         y: (-screen.current.y * 0.5 + 0.5) * window.innerHeight,
-        shown: front && screen.current.z < 1 && approach >= EARTH.pinLabelsAt,
+        shown:
+          front &&
+          screen.current.z < 1 &&
+          approach >= EARTH.pinLabelsAt &&
+          labFade < 0.5,
       };
     }
 

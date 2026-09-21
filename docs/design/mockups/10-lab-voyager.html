@@ -1,0 +1,413 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>The Lab — Voyager 1 · design sketch</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Great+Vibes&family=Krona+One&display=swap" rel="stylesheet" />
+<style>
+  /* Brand tokens (from the codebase) */
+  :root {
+    --rich-black:#19191C; --dark:#27272A;
+    --peach:#FFA14A; --dark-peach:#EF7D14; --light-peach:#FFE3C7;
+    --baby-blue:#2489FF; --light-baby-blue:#C5E0FF; --gray-slate:#D9D9D9;
+    --gold:#ffcf6a;
+  }
+  * { box-sizing:border-box; margin:0; padding:0; }
+  body { background:var(--rich-black); color:#fff; font-family:"Helvetica Neue",Helvetica,Arial,sans-serif;
+         min-height:100vh; display:flex; flex-direction:column; align-items:center; padding:34px 16px 70px; line-height:1.6; }
+  .wrap { width:100%; max-width:900px; }
+
+  .eyebrow { font-family:"Krona One",sans-serif; font-size:11px; letter-spacing:2px; text-transform:uppercase; color:var(--light-baby-blue); }
+  .title { font-family:"Great Vibes",cursive; font-size:54px; line-height:1.05; margin-top:6px; }
+  .title .pk { color:var(--peach); }
+  .sub { color:rgba(255,255,255,0.6); font-size:14px; margin-top:8px; line-height:1.7; max-width:700px; }
+
+  .status { display:inline-block; font-size:10px; letter-spacing:0.5px; text-transform:uppercase; padding:3px 10px; border-radius:20px;
+            background:rgba(255,161,74,0.16); color:var(--peach); border:0.5px solid rgba(255,161,74,0.4); margin-top:14px; }
+
+  .callout { border:0.5px solid rgba(255,161,74,0.35); background:rgba(255,161,74,0.06); border-radius:12px;
+             padding:14px 18px; margin:20px 0; font-size:13.5px; color:rgba(255,255,255,0.82); line-height:1.75; }
+  .callout b { color:var(--peach); }
+  .callout .rec { color:var(--gold); }
+
+  h2.block { font-family:"Krona One",sans-serif; font-size:13px; letter-spacing:1px; text-transform:uppercase;
+             color:var(--light-baby-blue); margin:36px 0 14px; }
+
+  /* Hero stage — the dotted Voyager */
+  .hero { position:relative; border-radius:16px; overflow:hidden; background:radial-gradient(120% 120% at 60% 40%, #0c0e17 0%, #05060a 70%);
+          border:0.5px solid rgba(255,255,255,0.08); }
+  .hero svg { display:block; width:100%; height:auto; }
+  .hero .hint { position:absolute; left:18px; bottom:14px; font-size:11px; color:rgba(255,255,255,0.4); letter-spacing:0.5px; }
+  .recordLabel { position:absolute; padding:6px 12px; border-radius:20px; font-size:11px; letter-spacing:0.5px;
+                 background:rgba(25,25,28,0.85); color:var(--gold); border:0.5px solid rgba(255,207,106,0.45);
+                 backdrop-filter:blur(6px); transform:translate(-50%,-140%); cursor:pointer; white-space:nowrap;
+                 transition:color .25s, border-color .25s, box-shadow .25s; }
+  .recordLabel:hover { color:#fff; border-color:var(--gold); box-shadow:0 0 18px rgba(255,207,106,0.35); }
+  .recordLabel small { display:block; font-size:9px; letter-spacing:0.5px; color:rgba(255,255,255,0.45); text-transform:uppercase; margin-top:1px; }
+
+  /* Experiment tiles overlay (mock) */
+  .tiles { display:none; margin-top:14px; }
+  .tiles.open { display:block; animation:fade .35s ease; }
+  @keyframes fade { from{opacity:0; transform:translateY(6px);} to{opacity:1; transform:none;} }
+  .tiles-head { display:flex; align-items:center; justify-content:space-between; margin-bottom:10px; }
+  .tiles-head .t { font-family:"Great Vibes",cursive; font-size:26px; color:var(--gold); }
+  .tiles-head .x { font-size:11px; letter-spacing:0.5px; text-transform:uppercase; color:rgba(255,255,255,0.5); cursor:pointer; border:0.5px solid rgba(255,255,255,0.18); border-radius:20px; padding:4px 12px; }
+  .tile-grid { display:grid; grid-template-columns:repeat(4,1fr); gap:12px; }
+  @media (max-width:640px){ .tile-grid { grid-template-columns:repeat(2,1fr); } }
+  .tile { aspect-ratio:4/3; border-radius:12px; background:#0a0b12; border:0.5px solid rgba(255,255,255,0.08);
+          display:flex; flex-direction:column; align-items:center; justify-content:center; gap:8px; position:relative; overflow:hidden; }
+  .tile.live { border-color:rgba(255,161,74,0.4); box-shadow:inset 0 0 40px rgba(239,125,20,0.08); cursor:pointer; }
+  .tile.live:hover { box-shadow:inset 0 0 50px rgba(239,125,20,0.18); }
+  .tile .cap { font-size:11px; color:rgba(255,255,255,0.7); text-align:center; padding:0 10px; }
+  .tile .st { font-size:9px; letter-spacing:0.5px; text-transform:uppercase; }
+  .tile.live .st { color:var(--peach); }
+  .tile.soon { color:rgba(255,255,255,0.32); }
+  .tile.soon .st { color:rgba(255,255,255,0.3); }
+  .mini-orbit { position:relative; width:46px; height:46px; }
+  .mini-orbit .c { position:absolute; left:50%; top:50%; width:8px; height:8px; border-radius:50%; transform:translate(-50%,-50%);
+                   background:var(--peach); box-shadow:0 0 10px 3px rgba(239,125,20,0.5); }
+  .mini-orbit .r { position:absolute; inset:4px; border-radius:50%; border:1px dashed rgba(255,255,255,0.16); }
+  .mini-orbit .d { position:absolute; width:5px; height:5px; border-radius:50%; background:var(--light-baby-blue); top:6px; left:50%;
+                   box-shadow:0 0 5px 2px rgba(36,137,255,0.5); animation:spin 6s linear infinite; transform-origin:0 17px; }
+  @keyframes spin { to { transform:rotate(360deg); } }
+
+  /* Arc strip */
+  .arc { display:flex; align-items:center; gap:6px; flex-wrap:wrap; background:#0b0d16;
+         border:0.5px solid rgba(255,255,255,0.07); border-radius:12px; padding:14px 16px; }
+  .arc span { font-size:12px; color:rgba(255,255,255,0.72); }
+  .arc .step { color:var(--peach); }
+  .arc .lab { color:var(--gold); font-weight:500; }
+  .arc .arr { color:rgba(255,255,255,0.28); }
+  .note { font-size:12.5px; color:rgba(255,255,255,0.5); line-height:1.75; margin:10px 2px 4px; }
+
+  /* Timeline table */
+  table.tl { width:100%; border-collapse:collapse; font-size:12.5px; margin-top:6px; }
+  table.tl th, table.tl td { text-align:left; padding:9px 12px; border-bottom:0.5px solid rgba(255,255,255,0.08); vertical-align:top; }
+  table.tl th { font-family:"Krona One",sans-serif; font-size:10px; letter-spacing:0.5px; text-transform:uppercase; color:rgba(255,255,255,0.5); }
+  table.tl td code { font-family:monospace; font-size:11.5px; color:var(--light-baby-blue); }
+  table.tl tr.lab td { background:rgba(255,207,106,0.05); }
+  table.tl .beat { color:#fff; }
+
+  /* Legend + annotations */
+  .legend { display:flex; flex-wrap:wrap; gap:8px; margin:16px 0 12px; }
+  .tag { font-size:10.5px; letter-spacing:0.5px; text-transform:uppercase; padding:3px 9px; border-radius:20px; white-space:nowrap; }
+  .t-enter { background:rgba(255,161,74,0.16); color:var(--peach); }
+  .t-3d { background:rgba(36,137,255,0.22); color:var(--light-baby-blue); border:0.5px solid rgba(36,137,255,0.5); }
+  .t-text { background:rgba(255,227,199,0.14); color:var(--light-peach); }
+  .t-scroll { background:rgba(197,224,255,0.13); color:var(--light-baby-blue); }
+  .t-int { background:rgba(255,207,106,0.16); color:var(--gold); border:0.5px solid rgba(255,207,106,0.4); }
+  .t-exit { background:rgba(255,255,255,0.08); color:rgba(255,255,255,0.6); }
+
+  .card { background:#0a0b12; border:0.5px solid rgba(255,255,255,0.07); border-radius:14px; padding:20px; }
+  .ann { display:flex; gap:10px; margin-bottom:12px; align-items:flex-start; }
+  .ann:last-child { margin-bottom:0; }
+  .ann p { font-size:12.5px; line-height:1.7; color:rgba(255,255,255,0.74); }
+  .ann .tag { margin-top:1px; flex-shrink:0; }
+  .quote { color:var(--light-peach); font-style:italic; }
+  code.k { font-family:monospace; font-size:11.5px; background:rgba(255,255,255,0.06); padding:1px 5px; border-radius:4px; color:var(--light-baby-blue); }
+
+  .cols { display:grid; grid-template-columns:1fr 1fr; gap:14px; }
+  @media (max-width:640px){ .cols { grid-template-columns:1fr; } }
+  .reuse { background:#0b0d16; border:0.5px solid rgba(255,255,255,0.07); border-radius:12px; padding:16px 18px; font-size:12.5px; color:rgba(255,255,255,0.74); }
+  .reuse b { color:var(--light-baby-blue); font-weight:500; }
+  .reuse ul { list-style:none; margin-top:6px; }
+  .reuse li { padding:5px 0; border-bottom:0.5px dashed rgba(255,255,255,0.08); }
+  .reuse li:last-child { border-bottom:0; }
+
+  .bookend { background:#0b0d16; border:0.5px solid rgba(255,161,74,0.25); border-radius:14px; padding:22px; margin-top:16px; }
+  .bookend h3 { font-family:"Great Vibes",cursive; font-weight:400; font-size:28px; color:var(--peach); margin-bottom:8px; }
+  .bookend p { font-size:13.5px; line-height:1.85; color:rgba(255,255,255,0.74); }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <p class="eyebrow">Portfolio-27 · Section 5 · The Lab</p>
+  <p class="title">Half-finished <span class="pk">thoughts</span></p>
+  <p class="sub">Design sketch for <b>The Lab</b> — the post-Earth beat of the voyage. The maker's work, sent into the dark: the camera flies out to <b>Voyager&nbsp;1</b> — a solid, human-made craft, the one built object among the particle worlds. Its <span style="color:var(--gold)">Golden&nbsp;Record</span> is the door to the experiments.</p>
+  <span class="status">Planned · P27-60 · validate before building</span>
+
+  <div class="callout">
+    <b>The idea.</b> After exploring Earth's photo-pins, you keep scrolling and the camera <b>pulls back from Earth</b> and flies out to <b>Voyager&nbsp;1</b> — a real spacecraft carrying humanity's message to the stars. Here it's the maker's own probe of <b>half-finished experiments</b>. The <span class="rec">Golden Record</span> glows; open it to browse the experiments (first: the parked worlds solar-system). Then Voyager drifts onward — and the message it carries becomes the <b>Contact</b> galaxy (“send it into orbit”). Same material, one more form.
+  </div>
+
+  <!-- ── The dotted Voyager ─────────────────────────────────────────── -->
+  <h2 class="block">The craft — a solid 3D model (the one human-made object among the particle worlds)</h2>
+  <div class="hero" id="hero">
+    <svg id="voyager" viewBox="0 0 560 380" xmlns="http://www.w3.org/2000/svg" aria-label="3D Voyager 1">
+      <defs>
+        <radialGradient id="dishGlow" cx="42%" cy="40%" r="60%">
+          <stop offset="0%" stop-color="#ffe3c7" stop-opacity="0.16"/>
+          <stop offset="60%" stop-color="#ffa14a" stop-opacity="0.05"/>
+          <stop offset="100%" stop-color="#ffa14a" stop-opacity="0"/>
+        </radialGradient>
+        <radialGradient id="recGlow" cx="50%" cy="50%" r="50%">
+          <stop offset="0%" stop-color="#ffe6a8" stop-opacity="0.9"/>
+          <stop offset="45%" stop-color="#ffcf6a" stop-opacity="0.4"/>
+          <stop offset="100%" stop-color="#ffcf6a" stop-opacity="0"/>
+        </radialGradient>
+        <!-- metallic shading (light from upper-left) -->
+        <linearGradient id="dishRim" x1="0" y1="0" x2="1" y2="1">
+          <stop offset="0" stop-color="#F6E7D2"/><stop offset="1" stop-color="#6E5B48"/>
+        </linearGradient>
+        <radialGradient id="dishFace" cx="37%" cy="33%" r="75%">
+          <stop offset="0" stop-color="#FBEFDD"/><stop offset="52%" stop-color="#CBB295"/><stop offset="100%" stop-color="#77644F"/>
+        </radialGradient>
+        <linearGradient id="busGrad" x1="0" y1="0" x2="1" y2="0">
+          <stop offset="0" stop-color="#F0E2CE"/><stop offset="45%" stop-color="#B29A80"/><stop offset="100%" stop-color="#3F352B"/>
+        </linearGradient>
+        <linearGradient id="busTop" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0" stop-color="#F5EADA"/><stop offset="1" stop-color="#BFAB93"/>
+        </linearGradient>
+        <linearGradient id="boomGrad" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0" stop-color="#F0E1CE"/><stop offset="0.5" stop-color="#B09B81"/><stop offset="1" stop-color="#584A3C"/>
+        </linearGradient>
+        <linearGradient id="rtgGrad" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0" stop-color="#EAD9C3"/><stop offset="0.5" stop-color="#9E8870"/><stop offset="1" stop-color="#463A2E"/>
+        </linearGradient>
+        <radialGradient id="goldGrad" cx="40%" cy="34%" r="72%">
+          <stop offset="0" stop-color="#FFF0C0"/><stop offset="54%" stop-color="#F2C24E"/><stop offset="100%" stop-color="#A9741F"/>
+        </radialGradient>
+      </defs>
+
+      <g id="stars"></g>
+      <circle cx="200" cy="140" r="185" fill="url(#dishGlow)"/>
+
+      <g id="tumble" style="transform-origin:240px 205px">
+
+        <!-- ══ BOOMS (behind the body) ══ -->
+        <!-- Magnetometer boom — very long + thin -->
+        <g transform="rotate(-12 214 246)">
+          <rect x="214" y="243.6" width="330" height="4.8" rx="2.4" fill="url(#boomGrad)"/>
+          <rect x="214" y="243.6" width="330" height="1.5" fill="#fff" opacity="0.28"/>
+          <rect x="536" y="238" width="14" height="16" rx="2.5" fill="url(#rtgGrad)" stroke="#2b241c" stroke-width="0.5"/>
+        </g>
+        <!-- Science / scan-platform boom — lower-left, cameras at the tip -->
+        <g transform="rotate(142 156 250)">
+          <rect x="156" y="246.8" width="132" height="6.4" rx="3" fill="url(#boomGrad)"/>
+          <rect x="156" y="246.8" width="132" height="1.8" fill="#fff" opacity="0.24"/>
+          <rect x="272" y="237" width="30" height="26" rx="3.5" fill="url(#busGrad)" stroke="#2b241c" stroke-width="0.6"/>
+          <rect x="276" y="241" width="10" height="9" rx="1.5" fill="url(#rtgGrad)"/>
+          <circle cx="293" cy="250" r="6.5" fill="url(#goldGrad)" stroke="#7a5410" stroke-width="0.6"/>
+          <circle cx="291" cy="248" r="2" fill="#fff8e0" opacity="0.85"/>
+        </g>
+        <!-- RTG boom — lower-right, three cylindrical generators -->
+        <g transform="rotate(20 200 262)">
+          <rect x="200" y="259" width="150" height="6" rx="3" fill="url(#boomGrad)"/>
+          <g stroke="#2b241c" stroke-width="0.5">
+            <rect x="90"  y="252" width="24" height="19" rx="7" fill="url(#rtgGrad)"/>
+            <rect x="116" y="252" width="24" height="19" rx="7" fill="url(#rtgGrad)"/>
+            <rect x="142" y="252" width="24" height="19" rx="7" fill="url(#rtgGrad)"/>
+          </g>
+          <g stroke="#3a2f24" stroke-width="0.7" opacity="0.5">
+            <line x1="98" y1="252" x2="98" y2="271"/><line x1="106" y1="252" x2="106" y2="271"/>
+            <line x1="124" y1="252" x2="124" y2="271"/><line x1="132" y1="252" x2="132" y2="271"/>
+            <line x1="150" y1="252" x2="150" y2="271"/><line x1="158" y1="252" x2="158" y2="271"/>
+          </g>
+        </g>
+
+        <!-- short mast dish→bus (behind) -->
+        <rect x="191" y="196" width="18" height="44" rx="3" fill="url(#busGrad)" stroke="#2b241c" stroke-width="0.5"/>
+
+        <!-- ══ HIGH-GAIN ANTENNA DISH ══ -->
+        <ellipse cx="200" cy="140" rx="109" ry="101" fill="none" stroke="#241d15" stroke-width="1"/>
+        <ellipse cx="200" cy="140" rx="106" ry="98" fill="none" stroke="url(#dishRim)" stroke-width="7"/>
+        <ellipse cx="200" cy="140" rx="100" ry="92" fill="url(#dishFace)"/>
+        <!-- parabolic contours -->
+        <g fill="none" stroke="#5b4a39" stroke-width="1" opacity="0.45">
+          <ellipse cx="200" cy="140" rx="72" ry="66"/>
+          <ellipse cx="200" cy="140" rx="46" ry="42"/>
+          <ellipse cx="200" cy="140" rx="22" ry="20"/>
+        </g>
+        <!-- radial support ribs -->
+        <g id="ribs" stroke="#8a7358" stroke-width="0.9" opacity="0.4"></g>
+        <!-- hub -->
+        <circle cx="200" cy="140" r="9" fill="url(#busTop)" stroke="#2b241c" stroke-width="0.6"/>
+
+        <!-- feed tripod + horn (in front of the dish, at the focus) -->
+        <g stroke-linecap="round">
+          <line x1="170" y1="55"  x2="300" y2="214" stroke="#3a2f24" stroke-width="3.4"/>
+          <line x1="107" y1="171" x2="300" y2="214" stroke="#3a2f24" stroke-width="3.4"/>
+          <line x1="295" y1="150" x2="300" y2="214" stroke="#3a2f24" stroke-width="3.4"/>
+          <line x1="170" y1="55"  x2="300" y2="214" stroke="#d9c4a8" stroke-width="1.4"/>
+          <line x1="107" y1="171" x2="300" y2="214" stroke="#d9c4a8" stroke-width="1.4"/>
+          <line x1="295" y1="150" x2="300" y2="214" stroke="#d9c4a8" stroke-width="1.4"/>
+        </g>
+        <ellipse cx="300" cy="214" rx="11" ry="9" fill="url(#busGrad)" stroke="#2b241c" stroke-width="0.6"/>
+        <circle cx="300" cy="211" r="4.5" fill="url(#busTop)"/>
+
+        <!-- ══ BUS (ten-sided drum) ══ -->
+        <rect x="146" y="230" width="76" height="30" fill="url(#busGrad)"/>
+        <ellipse cx="184" cy="260" rx="38" ry="14" fill="#3d3229"/>
+        <ellipse cx="184" cy="230" rx="38" ry="14" fill="url(#busTop)" stroke="#2b241c" stroke-width="0.6"/>
+        <g stroke="#2b241c" stroke-width="0.6" opacity="0.45">
+          <line x1="160" y1="231" x2="160" y2="258"/><line x1="176" y1="233" x2="176" y2="261"/>
+          <line x1="192" y1="233" x2="192" y2="261"/><line x1="208" y1="231" x2="208" y2="258"/>
+        </g>
+
+        <!-- ══ GOLDEN RECORD (on the bus, facing out) ══ -->
+        <circle id="recglow" cx="214" cy="249" r="28" fill="url(#recGlow)">
+          <animate attributeName="r" values="24;33;24" dur="3.4s" repeatCount="indefinite"/>
+          <animate attributeName="opacity" values="0.7;1;0.7" dur="3.4s" repeatCount="indefinite"/>
+        </circle>
+        <g id="record" style="cursor:pointer">
+          <ellipse cx="214" cy="249" rx="17" ry="15" fill="url(#goldGrad)" stroke="#7a5410" stroke-width="0.8"/>
+          <g fill="none" stroke="#b9862c" stroke-width="0.8" opacity="0.7">
+            <ellipse cx="214" cy="249" rx="12.5" ry="11"/>
+            <ellipse cx="214" cy="249" rx="8" ry="7"/>
+          </g>
+          <ellipse cx="214" cy="249" rx="2.4" ry="2.1" fill="#3a2c10"/>
+          <ellipse cx="209" cy="244" rx="4" ry="2.4" fill="#fff5d8" opacity="0.5"/>
+        </g>
+      </g>
+    </svg>
+    <div class="recordLabel" id="recordLabel" style="left:40%; top:66%;">Golden Record · open the Lab<small>click to browse experiments</small></div>
+    <div class="hint">idle tumble + drag-to-rotate · flies in on approach (reversible)</div>
+  </div>
+
+  <!-- Experiment tiles (revealed by the record) -->
+  <div class="tiles" id="tiles">
+    <div class="tiles-head">
+      <span class="t">On the Record</span>
+      <span class="x" id="closeTiles">✕ close</span>
+    </div>
+    <div class="tile-grid">
+      <div class="tile live">
+        <div class="mini-orbit"><div class="r"></div><div class="c"></div><div class="d"></div></div>
+        <div class="cap">Worlds — a little solar system</div>
+        <div class="st">Live · open</div>
+      </div>
+      <div class="tile soon"><div class="st">Drifting in soon</div><div class="cap">Shader study</div></div>
+      <div class="tile soon"><div class="st">Drifting in soon</div><div class="cap">Motion sketch</div></div>
+      <div class="tile soon"><div class="st">Drifting in soon</div><div class="cap">?</div></div>
+    </div>
+    <p class="note">The first tile lazy-loads the parked <code class="k">experiment/worlds-solar-system</code> scene (P27-47). Opens in the same overlay/portal the Earth gallery uses.</p>
+  </div>
+
+  <!-- ── Scroll arc ─────────────────────────────────────────────────── -->
+  <h2 class="block">Where it sits in the journey</h2>
+  <div class="arc">
+    <span>Earth pins</span><span class="arr">→</span>
+    <span class="step">pull back</span><span class="arr">→</span>
+    <span class="lab">fly to Voyager</span><span class="arr">→</span>
+    <span class="lab">Golden Record → experiments</span><span class="arr">→</span>
+    <span>Contact (galaxy)</span>
+  </div>
+  <p class="note">Reuses the exact “enter mode” the Saturn and Earth beats use: the shared <code class="k">CameraRig</code> lerps the camera to a body's live anchor + offset over a scroll sub-range. Voyager just becomes the third anchor.</p>
+
+  <table class="tl">
+    <tr><th>Voyage</th><th>Beat</th><th>Camera / state</th></tr>
+    <tr><td><code>0.00–0.22</code></td><td class="beat">Saturn → wide</td><td>fly out (existing FLYOUT)</td></tr>
+    <tr><td><code>0.22–0.38</code></td><td class="beat">wide → Earth dive</td><td>dive to Earth anchor</td></tr>
+    <tr><td><code>0.38–0.55</code></td><td class="beat">Earth plateau</td><td>camera holds — pins + labels + gallery interactive</td></tr>
+    <tr class="lab"><td><code>0.55–0.68</code></td><td class="beat">pull back from Earth</td><td>Earth recedes / shrinks</td></tr>
+    <tr class="lab"><td><code>0.68–0.88</code></td><td class="beat">fly to Voyager</td><td>approach Voyager anchor; craft assembles in</td></tr>
+    <tr class="lab"><td><code>0.88–1.00</code></td><td class="beat">Voyager dwell</td><td>Golden Record interactive → hand-off to Contact</td></tr>
+  </table>
+
+  <!-- ── The beat, annotated ────────────────────────────────────────── -->
+  <h2 class="block">The beat</h2>
+  <div class="legend">
+    <span class="tag t-enter">Entrance</span>
+    <span class="tag t-3d">3D / R3F</span>
+    <span class="tag t-text">Text</span>
+    <span class="tag t-scroll">Scroll</span>
+    <span class="tag t-int">Interaction</span>
+    <span class="tag t-exit">Hand-off</span>
+  </div>
+  <div class="card">
+    <div class="ann"><span class="tag t-scroll">Scroll</span><p>Continued scroll after the Earth gallery <strong>pulls the camera back</strong> — Earth shrinks and recedes — then flies out to Voyager drifting in the dark. Fully reversible on scroll-up.</p></div>
+    <div class="ann"><span class="tag t-3d">3D</span><p>Voyager is a <strong>solid, lit 3D model</strong> — the big <strong>high-gain dish</strong> (hero shape) with its feed tripod, the ten-sided <strong>bus</strong>, the long thin <strong>magnetometer boom</strong>, a <strong>scan-platform</strong> of cameras, and three cylindrical <strong>RTGs</strong>. Deliberately the <strong>one built, human-made object</strong> among the particle-formed worlds. Slow idle <strong>tumble</strong> + <strong>drag-to-rotate</strong> (same interaction as the Saturn / Earth).</p></div>
+    <div class="ann"><span class="tag t-text">Text</span><p>Title <span class="quote">“Half-finished thoughts”</span> writes in (Great Vibes). Copy: <span class="quote">“This is where I tinker — small experiments in motion, shaders, and code. More will drift into orbit soon.”</span></p></div>
+    <div class="ann"><span class="tag t-int">Interaction</span><p>The <strong style="color:var(--gold)">Golden Record</strong> glows and shows a label (reuses the pin-label overlay from P27-59). Click it → the <strong>experiment tiles</strong> open in the same overlay the Earth gallery uses; the first tile lazy-loads the parked worlds scene.</p></div>
+    <div class="ann"><span class="tag t-exit">Hand-off</span><p>Voyager drifts onward, the background deepens and the first distant stars of <strong>Contact</strong> appear. The message it carries seeds the galaxy — <span class="quote">“send it into orbit.”</span></p></div>
+  </div>
+
+  <!-- ── Reuse + risk ───────────────────────────────────────────────── -->
+  <h2 class="block">Why it's mostly wiring</h2>
+  <div class="cols">
+    <div class="reuse">
+      <b>Reused from what's already built</b>
+      <ul>
+        <li>Fly-to camera → <code class="k">CameraRig</code> + a <code class="k">useVoyagerAnchor</code></li>
+        <li>Drag / idle spin → Earth / Saturn logic</li>
+        <li>Record label → <code class="k">pinScreen</code> + <code class="k">PinLabels</code></li>
+        <li>Experiment overlay → <code class="k">EarthGallery</code> portal + store</li>
+        <li>First tile → parked worlds scene (P27-47)</li>
+      </ul>
+    </div>
+    <div class="reuse">
+      <b>New, and the main risk</b>
+      <ul>
+        <li><b style="color:var(--peach)">Solid Voyager model</b> — glTF or built R3F geometry + a lit material (a new render style; breaks the particle vocabulary on purpose)</li>
+        <li><code class="k">useVoyagerAnchor</code>, <code class="k">useLabStore</code></li>
+        <li><b style="color:var(--peach)">Scroll re-timing</b> — lengthen the master pin, re-scope fractions, add an Earth plateau, re-base Earth's full-view gates to an Earth window</li>
+        <li>Lazy-loaded experiment tiles (dynamic import)</li>
+        <li>Poly / texture budget on mobile (Voyager + Earth on screen during pull-back)</li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="bookend">
+    <h3>The through-line</h3>
+    <p>The star exploded and its particles kept reforming — Saturn, the Sun, the Earth: worlds made of light. Voyager is the one thing that <em>isn't</em> star-stuff — a solid, human-made craft, the object the maker built and sent out. Its Golden Record holds the experiments and carries the message onward into the galaxy where you're finally invited to say hello. <em>Worlds of light, and the one small thing we made to travel between them.</em></p>
+  </div>
+
+</div>
+
+<script>
+(function () {
+  var svgNS = "http://www.w3.org/2000/svg";
+  var stars = document.getElementById("stars");
+  function rnd(a, b) { return a + Math.random() * (b - a); }
+
+  // Starfield (the only dots — the craft itself is solid geometry)
+  for (var i = 0; i < 120; i++) {
+    var c = document.createElementNS(svgNS, "circle");
+    c.setAttribute("cx", rnd(0, 560).toFixed(1));
+    c.setAttribute("cy", rnd(0, 380).toFixed(1));
+    c.setAttribute("r", rnd(0.3, 1.1).toFixed(2));
+    c.setAttribute("fill", Math.random() > 0.82 ? "#C5E0FF" : "#ffffff");
+    c.setAttribute("opacity", rnd(0.15, 0.7).toFixed(2));
+    stars.appendChild(c);
+  }
+
+  // Radial support ribs across the dish face
+  var ribs = document.getElementById("ribs");
+  for (var k = 0; k < 14; k++) {
+    var a = (k / 14) * Math.PI * 2;
+    var l = document.createElementNS(svgNS, "line");
+    l.setAttribute("x1", "200"); l.setAttribute("y1", "140");
+    l.setAttribute("x2", (200 + Math.cos(a) * 99).toFixed(1));
+    l.setAttribute("y2", (140 + Math.sin(a) * 91).toFixed(1));
+    ribs.appendChild(l);
+  }
+
+  // Gentle tumble (oscillating yaw + bob) — keeps the craft feeling alive
+  var tumble = document.getElementById("tumble");
+  var t0 = performance.now();
+  function frame(now) {
+    var s = (now - t0) / 1000;
+    var yaw = Math.sin(s * 0.30) * 4.5;   // degrees
+    var bob = Math.sin(s * 0.55) * 3;     // px
+    tumble.setAttribute("transform", "translate(0," + bob.toFixed(2) + ") rotate(" + yaw.toFixed(2) + " 240 205)");
+    requestAnimationFrame(frame);
+  }
+  requestAnimationFrame(frame);
+
+  // Golden Record → experiment tiles (mock interaction)
+  var tiles = document.getElementById("tiles");
+  var label = document.getElementById("recordLabel");
+  function open() { tiles.classList.add("open"); tiles.scrollIntoView({ behavior: "smooth", block: "nearest" }); }
+  function close() { tiles.classList.remove("open"); }
+  label.addEventListener("click", open);
+  document.getElementById("record").addEventListener("click", open);
+  document.getElementById("recglow").addEventListener("click", open);
+  document.getElementById("closeTiles").addEventListener("click", close);
+})();
+</script>
+</body>
+</html>

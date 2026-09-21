@@ -6,7 +6,7 @@ import { ReactNode, RefObject, useRef } from "react";
 import { Euler, Group, Vector3 } from "three";
 import Universe from "#/components/three.js/star/Universe";
 import { BLOOM, CAMERA, PARTICLES } from "#/components/three.js/star/config";
-import { clamp01, lerp, remap01 } from "#/components/three.js/star/utils";
+import { clamp01, easeOutCubic, lerp, remap01 } from "#/components/three.js/star/utils";
 import Planet from "#/components/three.js/planet/Planet";
 import { FLYOUT, PLANET, RING, SATURN } from "#/components/three.js/planet/config";
 import SolarSystem from "#/components/three.js/solar/SolarSystem";
@@ -21,11 +21,17 @@ import {
 } from "#/components/three.js/solar/config";
 import DottedEarth from "#/components/three.js/earth/DottedEarth";
 import { EARTH_CAM, EARTH_ORBIT } from "#/components/three.js/earth/config";
+import Voyager from "#/components/three.js/voyager/Voyager";
+import TravelDust from "#/components/three.js/voyager/TravelDust";
+import PaleBlueDot from "#/components/three.js/voyager/PaleBlueDot";
+import { LAB_CAM, VOYAGER_POS } from "#/components/three.js/voyager/config";
 import { useAboutScroll } from "#/stores/useAboutScroll";
 import { useVoyageScroll } from "#/stores/useVoyageScroll";
+import { useLabScroll } from "#/stores/useLabScroll";
 import { useSceneRotation } from "#/stores/useSceneRotation";
 import { useSaturnAnchor } from "#/stores/useSaturnAnchor";
 import { useEarthAnchor } from "#/stores/useEarthAnchor";
+import { useVoyagerAnchor } from "#/stores/useVoyagerAnchor";
 
 type BloomEffect = { intensity: number };
 
@@ -88,6 +94,21 @@ const CosmicScene = () => {
       <EarthMember>
         <DottedEarth animate={animate} />
       </EarthMember>
+
+      {/* The Lab — Voyager 1. A SOLID, lit craft (the one man-made object among
+          the particle worlds), so it needs the scene's only real lights. The
+          camera pulls back from Earth and flies to it (CameraRig segment 3). */}
+      <ambientLight intensity={0.6} color="#50505a" />
+      <directionalLight position={[-4, 5, 6]} intensity={1.6} color="#fff0dd" />
+      <directionalLight position={[5, -2, -4]} intensity={0.4} color="#9ec2ff" />
+      <VoyagerMember>
+        <Voyager />
+      </VoyagerMember>
+
+      {/* The dust rush past the camera on the Earth→Voyager trip, and the lonely
+          pale-blue Earth left far behind (Voyager's real "Pale Blue Dot"). */}
+      <TravelDust />
+      <PaleBlueDot />
 
       <EffectComposer>
         <Bloom
@@ -203,6 +224,21 @@ const EarthMember = ({ children }: { children: ReactNode }) => {
 };
 
 /**
+ * Voyager sits at a FIXED world position (VOYAGER_POS) — the empty origin — and
+ * publishes it to `useVoyagerAnchor` so the CameraRig can fly to it in the Lab
+ * beat. Unlike the orbiting Saturn/Earth it doesn't move; only the camera does.
+ */
+const VoyagerMember = ({ children }: { children: ReactNode }) => {
+  const posRef = useRef<Group>(null);
+  useFrame(() => {
+    if (!posRef.current) return;
+    posRef.current.position.set(VOYAGER_POS[0], VOYAGER_POS[1], VOYAGER_POS[2]);
+    useVoyagerAnchor.getState().set(VOYAGER_POS[0], VOYAGER_POS[1], VOYAGER_POS[2]);
+  });
+  return <group ref={posRef}>{children}</group>;
+};
+
+/**
  * The camera does ALL the scroll work, in two segments over the voyage:
  *
  *   1. Saturn → wide  (voyage 0 … VOYAGE.flyoutEnd): starts LOCKED ONTO the
@@ -247,6 +283,23 @@ const CameraRig = ({
       lx = lerp(lx, e.x, apE);
       ly = lerp(ly, e.y, apE);
       lz = lerp(lz, e.z, apE);
+    }
+
+    // ── Segment 3: one decelerating fly from Earth straight to the readable
+    // Voyager pose. voyage is clamped at 1 here (Earth-close pose from segment 2);
+    // ease-OUT front-loads the speed (fast the instant you leave Earth → the dust
+    // rush) and decelerates so Voyager resolves — directly at readable size — with
+    // no snap and no separate zoom-in.
+    const lab = clamp01(useLabScroll.getState().progress);
+    if (lab > 0) {
+      const t = easeOutCubic(lab);
+      const v = useVoyagerAnchor.getState();
+      px = lerp(px, v.x + LAB_CAM.offset[0], t);
+      py = lerp(py, v.y + LAB_CAM.offset[1], t);
+      pz = lerp(pz, v.z + LAB_CAM.offset[2], t);
+      lx = lerp(lx, v.x + LAB_CAM.look[0], t);
+      ly = lerp(ly, v.y + LAB_CAM.look[1], t);
+      lz = lerp(lz, v.z + LAB_CAM.look[2], t);
     }
 
     camera.position.set(px, py, pz);

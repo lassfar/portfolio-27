@@ -1,9 +1,6 @@
 import Hero from "#/components/pages/home/Hero";
 import EarthGallery from "#/components/pages/home/gallery/EarthGallery";
-
-// TODO: Cache Components adoption. Refactor this route so this opt-out can be removed.
-// See: https://nextjs.org/docs/app/guides/migrating-to-cache-components
-export const instant = false;
+import LabExperiments from "#/components/pages/home/lab/LabExperiments";
 
 export default function Home() {
   return (
@@ -16,6 +13,9 @@ export default function Home() {
 
       {/* Fixed DOM overlays (crisp media) opened by the Earth photo-pins. */}
       <EarthGallery />
+
+      {/* Fixed DOM overlays for The Lab — opened by Voyager's Golden Record. */}
+      <LabExperiments />
     </main>
   );
 }

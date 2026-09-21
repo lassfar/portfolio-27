@@ -16,7 +16,11 @@ Open the `.html` files directly in a browser (no build step, no dependencies bey
 
 | [`07-storyboard-v2.html`](07-storyboard-v2.html) | **Motion storyboard v2** ⭐ current | Updated arc: star explodes → planet born from debris, organic living web skills, 9 photography planets orbiting the Sun | Peach + baby-blue |
 
-⭐ **`04`** is the visual direction; **`05`** is the written content; **`07`** is how it all moves.
+| [`08-portfolio-story.html`](08-portfolio-story.html) | **Portfolio story & build brief** ⭐ canonical | The full section arc + copy as one continuous cosmic scroll (Hero → Saturn → Skills → Photography → Lab → Contact) | Peach + baby-blue |
+| [`09-planet-styles.html`](09-planet-styles.html) | **Planet styles** | Visual style studies for the dotted planets/bodies | Peach + baby-blue |
+| [`10-lab-voyager.html`](10-lab-voyager.html) | **The Lab — Voyager 1** 🛰️ section design | The post-Earth Lab beat: dotted Voyager 1 + Golden Record → experiment tiles. Plan: [`10-lab-voyager-plan.md`](10-lab-voyager-plan.md) (P27-60) | Peach + gold |
+
+⭐ **`04`** is the visual direction; **`05`** is the written content; **`07`** is how it all moves; **`08`** is the canonical story + copy.
 
 ## The two directions
 

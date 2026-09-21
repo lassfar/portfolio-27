@@ -3,10 +3,6 @@ import { Geist, Geist_Mono } from "next/font/google";
 import SmoothScrollProvider from "#/components/providers/SmoothScrollProvider";
 import "#/styles/globals.css";
 
-// TODO: Cache Components adoption. Refactor this route so this opt-out can be removed.
-// See: https://nextjs.org/docs/app/guides/migrating-to-cache-components
-export const instant = false;
-
 const geistSans = Geist({
   variable: "--font-geist-sans",
   subsets: ["latin"],
@@ -29,8 +25,13 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en">
+    // suppressHydrationWarning: browser extensions (Dark Reader, Grammarly, …)
+    // inject attributes on <html>/<body> before React hydrates, which would
+    // otherwise trip a hydration mismatch. This suppresses ONLY these root
+    // elements' own attribute diffs — it does not mask real app mismatches.
+    <html lang="en" suppressHydrationWarning>
       <body
+        suppressHydrationWarning
         className={`${geistSans.variable} ${geistMono.variable} antialiased dark`}
       >
         <SmoothScrollProvider>{children}</SmoothScrollProvider>

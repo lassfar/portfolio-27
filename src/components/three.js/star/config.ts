@@ -135,15 +135,16 @@ export const JOURNEY = {
   //   • jp  (journey progress, mp / journeyEnd, 0..1) — the star→Saturn→About
   //         block. Its internal thresholds (starSpan…exitStart) are jp-fractions,
   //         so they DON'T change when journeyEnd / pinLength change.
-  pinLength: "+=2860%", // journey + Craft + voyage (fly-out + solar reveal + Earth dive)
+  pinLength: "+=3560%", // journey + Craft + voyage (fly-out + solar reveal + Earth dive) + the Lab (Voyager)
   // The star→Saturn→About journey occupies mp 0..journeyEnd (≈1010% of scroll,
   // unchanged feel); the tail (journeyEnd..1) is the Craft, then the voyage
-  // (fly-out + solar reveal + Earth dive), below. Fractions shrink as the pin
-  // grows but the ABSOLUTE scroll of each earlier phase is preserved — the tail
-  // thresholds below were scaled from the old 2160% pin (× 2160/2860) when the
-  // Earth dive (~700%) was appended, so the journey + Craft + fly-out feel is
-  // unchanged and only new scroll was added at the end.
-  journeyEnd: 0.353,
+  // (fly-out + solar reveal + Earth dive), then the Lab (Voyager). Fractions
+  // shrink as the pin grows but the ABSOLUTE scroll of each earlier phase is
+  // preserved — the mp tail thresholds below were rescaled by the old/new pin
+  // ratio each time new scroll was appended at the end: × 2160/2860 (Earth dive),
+  // then × 2860/3560 (the Lab, ~700%). So the journey + Craft + voyage feel is
+  // unchanged and only new Lab scroll was added at the end.
+  journeyEnd: 0.2836, // 0.353 × 2860/3560
   starSpan: 0.218, // star plays over 0..starSpan of the JOURNEY (jp), not the pin
   assembleStart: 0.198, // Saturn assembles over assembleStart..assembleEnd (overlaps the burst)
   assembleEnd: 0.455, // Saturn fully built by here — ≈260% of scroll to build
@@ -182,15 +183,21 @@ export const JOURNEY = {
   // constellation then assembles, it fades out to reveal the Saturn again, and the
   // Saturn flies away. All within the same pin, so the cosmos never unpins → no
   // boundary jump, and reverse mirrors exactly.
-  craftCoverStart: 0.3, // Craft begins sliding up AS the Maker exits (≈ About exitStart in mp)
-  craftCoverEnd: 0.353, // …fully covering by the time the Maker has exited (= journeyEnd) → no Saturn shown between
-  constellationEnd: 0.465, // constellation assembles (scrubbed) over craftCoverEnd..constellationEnd
-  craftFadeStart: 0.479, // brief hold, then Craft fades out (opacity 1→0)…
-  craftFadeEnd: 0.511, // …fully gone here → the Saturn is revealed behind it
-  // The voyage occupies flyAwayStart..1 of the pin (≈1400% of scroll), driving
-  // useVoyageScroll 0→1. Its sub-phases (fly-out → solar reveal → Earth dive)
-  // are voyage fractions in FLYOUT / SOLAR / VOYAGE config.
-  flyAwayStart: 0.511, // where the Saturn is revealed and the voyage begins (voyage = 0)
+  craftCoverStart: 0.241, // 0.3 × 2860/3560 — Craft begins sliding up AS the Maker exits
+  craftCoverEnd: 0.2836, // …fully covering by the time the Maker has exited (= journeyEnd) → no Saturn shown between
+  constellationEnd: 0.3736, // 0.465 × 2860/3560 — constellation assembles over craftCoverEnd..constellationEnd
+  craftFadeStart: 0.3848, // 0.479 × 2860/3560 — brief hold, then Craft fades out (opacity 1→0)…
+  craftFadeEnd: 0.4105, // 0.511 × 2860/3560 — …fully gone here → the Saturn is revealed behind it
+  // The voyage occupies flyAwayStart..voyageEnd of the pin, driving useVoyageScroll
+  // 0→1. Its sub-phases (fly-out → solar reveal → Earth dive) are voyage fractions
+  // in FLYOUT / SOLAR / VOYAGE config. It ends at voyageEnd (the OLD pin end), after
+  // which voyage clamps at 1 (Earth holds at full view) and the Lab beat runs.
+  flyAwayStart: 0.4105, // where the Saturn is revealed and the voyage begins (voyage = 0)
+  // ── The Lab (Voyager) — appended scroll, mp voyageEnd..1 (~700%) ─────────────
+  // useVoyageScroll = remap01(mp, flyAwayStart, voyageEnd) → reaches 1 at the old
+  // pin end and clamps through the Lab. useLabScroll = remap01(mp, voyageEnd, 1)
+  // drives the pull-back-from-Earth → fly-to-Voyager beat (see LAB in voyager config).
+  voyageEnd: 0.8034, // = 2860/3560 (the old pin end) — voyage 1.0 lands here; Lab runs voyageEnd..1
 } as const;
 
 /** Camera-less "zoom": centering, growing and the fly-through (Universe). */

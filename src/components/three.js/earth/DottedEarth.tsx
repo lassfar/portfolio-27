@@ -17,8 +17,10 @@ import {
   remap01,
 } from "#/components/three.js/star/utils";
 import { useVoyageScroll } from "#/stores/useVoyageScroll";
+import { useLabScroll } from "#/stores/useLabScroll";
 import { useEarthAnchor } from "#/stores/useEarthAnchor";
 import { SOLAR, SUNPOS, VOYAGE } from "#/components/three.js/solar/config";
+import { LAB } from "#/components/three.js/voyager/config";
 import { EARTH } from "./config";
 import { directionToUV } from "./utils";
 import EarthPins from "./EarthPins";
@@ -210,7 +212,10 @@ const DottedEarth = ({ animate = true, interactive = true }: Props) => {
     // Earth appears WITH the system (like a sibling) and stays — it's a member,
     // not a grow-in. No scale transition; the camera does all the approaching.
     const voyage = clamp01(useVoyageScroll.getState().progress);
-    const r = easeOutCubic(remap01(voyage, SOLAR.revealStart, SOLAR.revealEnd));
+    // Fade the Earth out as the Lab begins (the camera pulls away to the Voyager).
+    const labFade = remap01(clamp01(useLabScroll.getState().progress), 0, LAB.earthFadeEnd);
+    const r =
+      easeOutCubic(remap01(voyage, SOLAR.revealStart, SOLAR.revealEnd)) * (1 - labFade);
     if (dotMatRef.current) {
       dotMatRef.current.uniforms.uReveal.value = r;
       if (animate) dotMatRef.current.uniforms.uTime.value += delta; // twinkle

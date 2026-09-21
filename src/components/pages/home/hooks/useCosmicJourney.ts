@@ -7,6 +7,7 @@ import { ScrollTrigger, SplitText } from "gsap/all";
 import { useHeroScroll } from "#/stores/useHeroScroll";
 import { useAboutScroll } from "#/stores/useAboutScroll";
 import { useVoyageScroll } from "#/stores/useVoyageScroll";
+import { useLabScroll } from "#/stores/useLabScroll";
 import { JOURNEY } from "#/components/three.js/star/config";
 import { clamp01, remap01 } from "#/components/three.js/star/utils";
 import { addTextsScrollWriteIn } from "#/components/hooks/motions/texts/textsScrollWriteInMotion";
@@ -72,6 +73,7 @@ export default function useCosmicJourney(refs: CosmicJourneyRefs): void {
       const setStar = useHeroScroll.getState().setProgress;
       const setAbout = useAboutScroll.getState().setProgress;
       const setVoyage = useVoyageScroll.getState().setProgress;
+      const setLab = useLabScroll.getState().setProgress;
 
       const easeIn = gsap.parseEase("power2.in");
       const easeOut = gsap.parseEase("power2.out");
@@ -164,9 +166,12 @@ export default function useCosmicJourney(refs: CosmicJourneyRefs): void {
             const jp = clamp01(mp / JOURNEY.journeyEnd); // journey 0..1
             setStar(clamp01(jp / JOURNEY.starSpan));
             setAbout(remap01(jp, JOURNEY.assembleStart, JOURNEY.assembleEnd));
-            // Voyage spans flyAwayStart..pin end (0→1); its sub-phases (fly-away,
-            // then the solar reveal) are voyage fractions in the R3F components.
-            setVoyage(remap01(mp, JOURNEY.flyAwayStart, 1));
+            // Voyage spans flyAwayStart..voyageEnd (0→1); its sub-phases (fly-away,
+            // solar reveal, Earth dive) are voyage fractions in the R3F components.
+            // It clamps at 1 through the Lab, so the Earth holds at full view.
+            setVoyage(remap01(mp, JOURNEY.flyAwayStart, JOURNEY.voyageEnd));
+            // The Lab (Voyager) beat — the appended scroll past the voyage.
+            setLab(remap01(mp, JOURNEY.voyageEnd, 1));
             renderAbout(jp);
             renderCraft(mp);
             toggleTitle(aboutTitle, jp >= JOURNEY.revealStart);
@@ -222,6 +227,7 @@ export default function useCosmicJourney(refs: CosmicJourneyRefs): void {
         setStar(0);
         setAbout(0);
         setVoyage(0);
+        setLab(0);
         descSplits.forEach((s) => s.revert());
         aboutTitle?.tween.kill();
         aboutTitle?.split.revert();
