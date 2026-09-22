@@ -1,0 +1,197 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Galaxy zoom-out — motion study</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Great+Vibes&family=Krona+One&display=swap" rel="stylesheet" />
+<script src="https://unpkg.com/three@0.128.0/build/three.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/lil-gui@0.19/dist/lil-gui.umd.min.js"></script>
+<style>
+  :root { --rich-black:#19191C; --peach:#FFA14A; --baby-blue:#2489FF; }
+  * { box-sizing:border-box; margin:0; padding:0; }
+  html, body { height:100%; }
+  body { background:#19191C; color:#fff; font-family:"Helvetica Neue",Helvetica,Arial,sans-serif; }
+  #stage { position:fixed; inset:0; z-index:0; }
+  canvas { display:block; }
+  #scroll { height:600vh; } /* scroll distance drives the zoom */
+  #badge { position:fixed; left:22px; top:20px; z-index:5; font-family:"Krona One",sans-serif;
+        font-size:9.5px; letter-spacing:2px; text-transform:uppercase; color:rgba(255,255,255,.42); }
+  #badge b { color:var(--peach); font-weight:400; }
+  #stageLbl { position:fixed; left:22px; bottom:56px; z-index:5; font-family:"Great Vibes",cursive; font-size:34px; color:#fff; opacity:.9; }
+  #hint { position:fixed; left:22px; bottom:22px; z-index:5; font-family:"Krona One",sans-serif; font-size:9px; letter-spacing:3px; text-transform:uppercase; color:rgba(255,255,255,.4); }
+  #prog { position:fixed; right:20px; bottom:22px; z-index:5; font-family:"Krona One",sans-serif; font-size:10px; color:rgba(255,255,255,.5); }
+</style>
+</head>
+<body>
+  <div id="stage"></div>
+  <div id="badge"><b>Galaxy zoom-out</b> · motion study — one exponential pull-out: Voyager → solar system → inside the galaxy → whole galaxy</div>
+  <div id="stageLbl">The solar system</div>
+  <div id="hint">scroll ↓ to fly out</div>
+  <div id="prog">0%</div>
+  <div id="scroll"></div>
+<script>
+(function () {
+  var THREE = window.THREE;
+  var stage = document.getElementById("stage");
+  var W = window.innerWidth, H = window.innerHeight, DPR = Math.min(window.devicePixelRatio, 2);
+
+  var renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true, logarithmicDepthBuffer: true });
+  renderer.setPixelRatio(DPR); renderer.setSize(W, H); renderer.setClearColor(0x19191c, 1);
+  stage.appendChild(renderer.domElement);
+  var scene = new THREE.Scene();
+  var camera = new THREE.PerspectiveCamera(55, W / H, 0.002, 400);
+
+  var P = { peach:0xffa14a, lpeach:0xffe3c7, dpeach:0xef7d14, babyBlue:0x2489ff, lbabyBlue:0xc5e0ff, nebulaBlue:0x2563ff, coral:0xe24b4a, coreWhite:0xcfe0ff };
+  var C = {}; Object.keys(P).forEach(function(k){ C[k]=new THREE.Color(P[k]); });
+
+  // ── tunables (lil-gui) ──
+  var CFG = {
+    // the locked galaxy look
+    seed:2922, count:90000, RMAX:10.5, H:3.2, thick:0.30, bulge:2.5, bulgeFlat:0.6,
+    armCount:3, pitchDeg:18, armWidth:1.0, ridge:0.6, dustAt:0.14, dustW:0.06, dustDepth:0.45,
+    tWarm:0.14, tBlue:0.55, knots:55, dotsPerKnot:40, standout:0.03,
+    uSize:1.0, uMaxSize:75, twinkle:0.49, coreOpacity:0.22, coreScale:3.6, spin:0.03,
+    // the solar system placed inside the galaxy (radius fraction out in an arm), tiny
+    solarR:0.62, solarSize:0.06,
+    // the zoom camera (exponential): distance from near the solar speck → far past the galaxy
+    dStart:0.09, dEnd:24, endY:18, endX:3, endZ:11, curve:1.0
+  };
+
+  // ── seeded rng + helpers ──
+  function mul(a){ return function(){ a|=0; a=a+0x6D2B79F5|0; var t=Math.imul(a^a>>>15,1|a); t=t+Math.imul(t^t>>>7,61|t)^t; return((t^t>>>14)>>>0)/4294967296; }; }
+  var TAU=Math.PI*2, rnd;
+  function gauss(s){ var u=1-rnd(),v=rnd(); return s*Math.sqrt(-2*Math.log(u))*Math.cos(TAU*v); }
+  function sm(a,b,x){ var t=Math.min(1,Math.max(0,(x-a)/(b-a))); return t*t*(3-2*t); }
+  function udir(){ var u=rnd()*2-1,th=rnd()*TAU,s=Math.sqrt(1-u*u); return [s*Math.cos(th),u,s*Math.sin(th)]; }
+  var _c=new THREE.Color();
+
+  // ── shared point shader (site dot language) ──
+  function pointMat(uReveal, fixed){
+    // fixed = constant screen size (dots never balloon when the camera is close);
+    // otherwise perspective-attenuated (dots shrink with distance — for the solar
+    // system, which must recede to a speck).
+    var sizeExpr = fixed
+      ? "gl_PointSize=uSize*aScale*uPixelRatio;"
+      : "gl_PointSize=min(uSize*aScale*uPixelRatio/-mv.z,uMaxSize*uPixelRatio);";
+    return new THREE.ShaderMaterial({
+      uniforms:{ uTime:{value:0}, uSize:{value:CFG.uSize}, uMaxSize:{value:CFG.uMaxSize}, uPixelRatio:{value:DPR}, uTwinkleAmt:{value:CFG.twinkle}, uReveal:{value:uReveal===undefined?1:uReveal} },
+      transparent:true, depthWrite:false, depthTest:false, blending:THREE.AdditiveBlending,
+      vertexShader:["uniform float uTime,uSize,uMaxSize,uPixelRatio;","attribute vec3 aColor;attribute float aScale,aBright,aSeed;","varying vec3 vC;varying float vT;","void main(){ vC=aColor*aBright; vec4 mv=modelViewMatrix*vec4(position,1.0); vT=0.5+0.5*sin(uTime*1.5+aSeed*6.2831); "+sizeExpr+" gl_Position=projectionMatrix*mv; }"].join("\n"),
+      fragmentShader:["precision highp float;uniform float uTwinkleAmt,uReveal;varying vec3 vC;varying float vT;","void main(){ float d=length(gl_PointCoord-0.5); if(d>0.5)discard; float a=pow(smoothstep(0.5,0.12,d),1.6); float b=(1.0-uTwinkleAmt)+uTwinkleAmt*vT; gl_FragColor=vec4(vC*b,a*uReveal); }"].join("\n")
+    });
+  }
+  function geomFrom(pos,col,scl,bri,sed){ var g=new THREE.BufferGeometry(); g.setAttribute("position",new THREE.Float32BufferAttribute(pos,3)); g.setAttribute("aColor",new THREE.Float32BufferAttribute(col,3)); g.setAttribute("aScale",new THREE.Float32BufferAttribute(scl,1)); g.setAttribute("aBright",new THREE.Float32BufferAttribute(bri,1)); g.setAttribute("aSeed",new THREE.Float32BufferAttribute(sed,1)); return g; }
+
+  // ── the galaxy (locked look) ──
+  function buildGalaxy(){
+    rnd=mul(CFG.seed);
+    var RMAX=CFG.RMAX,H0=CFG.H,R0=1.1,RNORM=1-Math.exp(-RMAX/H0),B=1/Math.tan(CFG.pitchDeg*Math.PI/180);
+    var sampleR=function(){ return -H0*Math.log(1-rnd()*RNORM); };
+    var hz=function(r){ return CFG.thick*(0.6+0.4*Math.exp(-r/(RMAX*0.5))); };
+    var arm=function(r,k){ return k*(TAU/CFG.armCount)+B*Math.log(Math.max(r,R0)/R0); };
+    var armColor=function(rr){ var t=Math.min(1,rr/RMAX),ts=Math.min(1,Math.max(0,t+(rnd()-0.5)*0.12));
+      if(ts<CFG.tWarm) return _c.copy(C.lpeach).lerp(C.peach,sm(0,CFG.tWarm,ts));
+      if(ts<CFG.tBlue) return _c.copy(C.peach).lerp(C.babyBlue,sm(CFG.tWarm,CFG.tBlue,ts));
+      _c.copy(C.babyBlue).lerp(C.lbabyBlue,(ts-CFG.tBlue)/(1-CFG.tBlue)); if(rnd()<0.25)_c.lerp(C.nebulaBlue,0.4); return _c; };
+    var pos=[],col=[],scl=[],bri=[],sed=[];
+    function push(x,y,z,c,s,b){ pos.push(x,y,z);col.push(c.r,c.g,c.b);scl.push(s);bri.push(b);sed.push(rnd()); }
+    var jit=function(){return 0.6+rnd()*0.8;}, bb=function(){return 0.82+rnd()*0.32;};
+    var so=function(s,b){ return rnd()<CFG.standout?[s*1.8,b*1.5]:[s,b]; };
+    var N=CFG.count, nB=Math.round(N*0.15);
+    for(var i=0;i<nB;i++){ var r=CFG.bulge*Math.pow(rnd(),1.8),d=udir(); push(d[0]*r,d[1]*r*CFG.bulgeFlat,d[2]*r,_c.copy(C.lpeach).lerp(C.peach,r/CFG.bulge),0.5+rnd()*0.5,(1.0+0.6*(1-r/CFG.bulge))*bb()); }
+    var nD=Math.round(N*0.20);
+    for(i=0;i<nD;i++){ var r2=sampleR(),phi=rnd()*TAU,s2=so(0.6+rnd()*0.4,bb()*0.6); push(Math.cos(phi)*r2,gauss(hz(r2)),Math.sin(phi)*r2,armColor(r2),s2[0],s2[1]); }
+    var nA=Math.round(N*0.50),got=0,tr=0;
+    while(got<nA&&tr<nA*3){ tr++; var r3=sampleR(),k=Math.floor(rnd()*CFG.armCount),sig=CFG.armWidth/Math.max(r3,R0),dp=gauss(sig);
+      if(dp>-CFG.dustAt-CFG.dustW&&dp<-CFG.dustAt+CFG.dustW&&rnd()<CFG.dustDepth)continue;
+      var ph=arm(r3,k)+dp,rr=Math.max(0,r3+gauss(0.12*r3)),rg=Math.exp(-(dp*dp)/(2*Math.pow(0.45*sig,2))),c3=_c.copy(armColor(rr)),s3=so(jit()*(1+0.4*rg),bb()*(1+CFG.ridge*rg));
+      push(Math.cos(ph)*rr,gauss(hz(rr)),Math.sin(ph)*rr,c3,s3[0],s3[1]); got++; }
+    for(var kk=0;kk<CFG.knots;kk++){ var rk=(0.4+rnd()*0.5)*RMAX,kk2=Math.floor(rnd()*CFG.armCount),pk=arm(rk,kk2),cx=Math.cos(pk)*rk,cz=Math.sin(pk)*rk,cy=gauss(hz(rk));
+      for(var j=0;j<CFG.dotsPerKnot;j++){ var ck=_c.copy(C.coral).lerp(C.lpeach,rnd()*0.6),bk=bb()*1.5,sk=jit()*1.7; if(rnd()<0.12){ck.copy(C.coreWhite);bk*=1.3;} push(cx+gauss(0.28),cy+gauss(0.12),cz+gauss(0.28),ck,sk,bk); } }
+    var nH=Math.round(N*0.06);
+    for(i=0;i<nH;i++){ var rh=RMAX*(0.6+0.7*Math.pow(rnd(),2)),dh=udir(); push(dh[0]*rh,dh[1]*rh*0.85,dh[2]*rh,_c.copy(C.coreWhite).lerp(C.lbabyBlue,rnd()),0.4+rnd()*0.4,bb()*0.4); }
+    var nU=Math.round(N*0.05);
+    for(i=0;i<nU;i++){ var ru=sampleR(),pu=rnd()*TAU; push(Math.cos(pu)*ru,gauss(hz(ru)*1.4),Math.sin(pu)*ru,_c.copy(C.nebulaBlue).lerp(C.peach,ru/RMAX),1.5+rnd()*1.2,bb()*0.25); }
+    return geomFrom(pos,col,scl,bri,sed);
+  }
+
+  // ── the tiny solar system (a sun + a few planets), placed inside the galaxy ──
+  function buildSolar(){
+    var srnd=mul(11); var pos=[],col=[],scl=[],bri=[],sed=[]; var c=new THREE.Color();
+    function push(x,y,z,cc,s,b){ pos.push(x,y,z);col.push(cc.r,cc.g,cc.b);scl.push(s);bri.push(b);sed.push(srnd()); }
+    var S=CFG.solarSize;
+    // sun
+    for(var i=0;i<900;i++){ var d=[srnd()*2-1,0,0],u=srnd()*2-1,th=srnd()*TAU,ss=Math.sqrt(1-u*u); var r=0.18*S*Math.pow(srnd(),1.6); c.copy(C.lpeach).lerp(C.peach,srnd()); push(ss*Math.cos(th)*r,u*r,ss*Math.sin(th)*r,c,0.5+srnd()*0.5,(1.2+srnd()*0.5)); }
+    // planets on rings
+    var cols=[0x2489ff,0xffa14a,0xc5e0ff,0xef7d14,0x2f6bd0];
+    for(var pI=0;pI<5;pI++){ var rad=(0.35+pI*0.28)*S, ang0=srnd()*TAU; for(var k=0;k<140;k++){ var a=ang0+(srnd()-0.5)*0.5, rr=rad*(1+(srnd()-0.5)*0.04); var pr=0.02*S*Math.sqrt(srnd()); var pa=srnd()*TAU; c.set(cols[pI]); push(Math.cos(a)*rr+Math.cos(pa)*pr, (srnd()-0.5)*0.01*S, Math.sin(a)*rr+Math.sin(pa)*pr, c, 0.6+srnd()*0.5, 0.9+srnd()*0.4); } }
+    return geomFrom(pos,col,scl,bri,sed);
+  }
+
+  var galaxyMat=pointMat(1, true), solarMat=pointMat(1, false);
+  // The solar system is TINY (a speck inside the galaxy), so its dots need a much
+  // smaller point size or they blow up into blobs at the closest zoom.
+  solarMat.uniforms.uSize.value = 1.4; solarMat.uniforms.uMaxSize.value = 18;
+  var galaxy=new THREE.Points(buildGalaxy(), galaxyMat);
+  var galaxySpin=new THREE.Group(); galaxySpin.add(galaxy); scene.add(galaxySpin);
+  var solar=new THREE.Points(buildSolar(), solarMat);
+  var solarPos=new THREE.Vector3();
+  scene.add(solar);
+  function placeSolar(){ solarPos.set(CFG.RMAX*CFG.solarR, 0, 0); solar.position.copy(solarPos); }
+  placeSolar();
+
+  // ── the exponential zoom camera (scroll 0→1) ──
+  var GC=new THREE.Vector3(0,0,0); // galaxy centre
+  var startDir=new THREE.Vector3(), endDir=new THREE.Vector3(), lookAt=new THREE.Vector3(), dir=new THREE.Vector3();
+  function updateCamera(z){
+    var e=sm(0,1,z); e=Math.pow(e,CFG.curve);
+    // look from the solar system (start) toward the galaxy centre (end)
+    lookAt.copy(solarPos).lerp(GC, e);
+    startDir.set(0.1, 0.35, 1).normalize();                              // near the speck, slightly above
+    endDir.set(CFG.endX, CFG.endY, CFG.endZ).normalize();               // far out, above → inclined galaxy view
+    dir.copy(startDir).lerp(endDir, e).normalize();
+    var dist = CFG.dStart * Math.pow(CFG.dEnd / CFG.dStart, z);          // EXPONENTIAL zoom-out (accelerating)
+    camera.position.copy(lookAt).addScaledVector(dir, dist);
+    camera.lookAt(lookAt);
+  }
+
+  // ── scroll → progress ──
+  var prog=0;
+  var lblEl=document.getElementById("stageLbl"), progEl=document.getElementById("prog");
+  function stageLabel(z){ if(z<0.18)return "The solar system"; if(z<0.45)return "Drifting out…"; if(z<0.72)return "Inside the galaxy"; return "The galaxy"; }
+  function onScroll(){ var max=document.documentElement.scrollHeight-window.innerHeight; prog=max>0?window.scrollY/max:0; lblEl.textContent=stageLabel(prog); progEl.textContent=Math.round(prog*100)+"%"; }
+  window.addEventListener("scroll", onScroll, {passive:true}); onScroll();
+
+  // ── lil-gui ──
+  var gui=new lil.GUI({title:"Zoom"});
+  var f1=gui.addFolder("Zoom camera");
+  f1.add(CFG,"dStart",0.02,0.5,0.01).name("start dist (solar)");
+  f1.add(CFG,"dEnd",8,40,0.5).name("end dist (galaxy)");
+  f1.add(CFG,"curve",0.4,2.5,0.05).name("accel curve");
+  f1.add(CFG,"endX",-10,10,0.5).name("end view X");
+  f1.add(CFG,"endY",2,40,0.5).name("end view Y (height)");
+  f1.add(CFG,"endZ",2,30,0.5).name("end view Z");
+  var f2=gui.addFolder("Placement");
+  f2.add(CFG,"solarR",0.2,0.95,0.02).name("solar radius in galaxy").onChange(placeSolar);
+  f2.add(CFG,"solarSize",0.02,0.3,0.01).name("solar size").onChange(function(){ solar.geometry.dispose(); solar.geometry=buildSolar(); });
+  var f3=gui.addFolder("Galaxy look");
+  f3.add(CFG,"spin",0,0.15,0.005);
+  f3.add(CFG,"uSize",0.3,4,0.05).name("galaxy dot size (px)").onChange(function(){ galaxyMat.uniforms.uSize.value=CFG.uSize; });
+  var SOL={ solarDotSize:1.4 };
+  f2.add(SOL,"solarDotSize",0.4,6,0.1).name("solar dot size").onChange(function(){ solarMat.uniforms.uSize.value=SOL.solarDotSize; });
+  f3.add(CFG,"count",30000,150000,10000).onFinishChange(function(){ galaxy.geometry.dispose(); galaxy.geometry=buildGalaxy(); });
+
+  // ── loop ──
+  var clock=new THREE.Clock();
+  window.addEventListener("resize", function(){ W=window.innerWidth;H=window.innerHeight; camera.aspect=W/H; camera.updateProjectionMatrix(); renderer.setSize(W,H); });
+  (function render(){ requestAnimationFrame(render); var dt=clock.getDelta(), t=clock.getElapsedTime();
+    galaxySpin.rotation.y += CFG.spin*dt; galaxyMat.uniforms.uTime.value=t; solarMat.uniforms.uTime.value=t;
+    updateCamera(prog); renderer.render(scene,camera);
+  })();
+})();
+</script>
+</body>
+</html>
