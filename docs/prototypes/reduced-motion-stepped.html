@@ -1,0 +1,364 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Reduced-motion — stepped cross-fade</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Great+Vibes&family=Krona+One&display=swap" rel="stylesheet" />
+<script src="https://unpkg.com/three@0.128.0/build/three.min.js"></script>
+<style>
+  :root {
+    --rich-black:#19191C; --dark:#27272A; --peach:#FFA14A; --dark-peach:#EF7D14;
+    --light-peach:#FFE3C7; --baby-blue:#2489FF; --light-baby-blue:#C5E0FF; --slate:#D9D9D9;
+  }
+  * { box-sizing:border-box; margin:0; padding:0; }
+  html { scroll-behavior:auto; }
+  body { background:var(--rich-black); color:#fff;
+         font-family:"Helvetica Neue",Helvetica,Arial,sans-serif; }
+  /* Fixed cosmos — the camera never moves; beats cross-fade in place. */
+  #stage { position:fixed; inset:0; z-index:0; }
+  canvas { display:block; }
+  /* Tall spacer purely to create scroll distance. */
+  #scroll { height:700vh; }
+
+  /* ---- overlays (pointer-events only where interactive) ---- */
+  #ui { position:fixed; inset:0; z-index:2; pointer-events:none; }
+  .beat { position:absolute; inset:0; opacity:0; transition:none; }
+  .copy { position:absolute; left:50%; transform:translateX(-50%); text-align:center; width:min(90vw,720px); }
+  .copy.low { bottom:16vh; }
+  .eyebrow { font-family:"Krona One",sans-serif; font-size:11px; letter-spacing:4px;
+             text-transform:uppercase; color:var(--baby-blue); }
+  .title { font-family:"Great Vibes",cursive; font-size:clamp(40px,7vw,76px); line-height:1.04; color:#fff; margin-top:6px; }
+  .title .pk { color:var(--peach); }
+  .sub { margin-top:14px; font-weight:300; font-size:clamp(14px,1.8vw,17px); color:rgba(255,255,255,.62); font-style:italic; }
+  .vlabel { position:absolute; right:22px; top:50%; transform:translateY(-50%);
+            writing-mode:vertical-rl; font-family:"Krona One",sans-serif; font-size:10px;
+            letter-spacing:5px; text-transform:uppercase; color:rgba(255,255,255,.4); }
+
+  /* constellation (beat 3) */
+  #constellation { position:absolute; left:50%; top:54%; transform:translate(-50%,-50%); width:min(92vw,640px); }
+  #constellation text { font-family:"Helvetica Neue",sans-serif; font-size:12px; fill:rgba(255,255,255,.72); }
+  #constellation line { stroke:var(--baby-blue); stroke-opacity:.45; stroke-width:1; }
+  #constellation circle.node { fill:var(--peach); }
+  #constellation circle.hub { fill:var(--peach); }
+
+  /* pins + record (clickable while at rest) */
+  .pin, .record-btn { pointer-events:auto; position:absolute; transform:translate(-50%,-50%);
+        font-family:"Krona One",sans-serif; letter-spacing:2px; text-transform:uppercase; cursor:pointer; }
+  .pin { font-size:10px; color:#fff; }
+  .pin .dot { display:block; width:11px; height:11px; margin:0 auto 7px; border-radius:50%;
+        background:var(--peach); box-shadow:0 0 0 4px rgba(255,161,74,.18), 0 0 14px 2px rgba(255,161,74,.7); }
+  .pin .cap { display:inline-block; padding:5px 10px; border:1px solid rgba(217,217,217,.28);
+        border-radius:999px; background:rgba(25,25,28,.55); backdrop-filter:blur(4px); }
+  .record-btn { font-size:11px; color:var(--rich-black); background:linear-gradient(180deg,#ffd98a,#e8a23c);
+        padding:11px 18px; border-radius:999px; border:none; box-shadow:0 6px 24px rgba(232,162,60,.4);
+        display:flex; align-items:center; gap:9px; }
+  .record-btn .disc { width:14px; height:14px; border-radius:50%;
+        background:radial-gradient(circle at 50% 50%, #6b4a12 0 18%, #d9a441 22% 100%); box-shadow:inset 0 0 0 1px #7a5514; }
+
+  /* slide-in panels (mirror the real Earth gallery / Lab) */
+  .panel { pointer-events:auto; position:fixed; top:0; right:0; z-index:20; height:100dvh;
+        width:min(100vw,440px); background:var(--dark); border-left:1px solid rgba(217,217,217,.14);
+        transform:translateX(100%); transition:transform .5s cubic-bezier(.22,1,.36,1); display:flex; flex-direction:column; }
+  .panel.open { transform:translateX(0); }
+  .panel header { padding:46px 30px 10px; }
+  .panel .peyebrow { font-family:"Krona One",sans-serif; font-size:10px; letter-spacing:4px; text-transform:uppercase; color:var(--peach); }
+  .panel h2 { font-family:"Great Vibes",cursive; font-size:40px; font-weight:400; margin-top:4px; }
+  .panel .psub { margin-top:8px; font-size:14px; font-weight:300; font-style:italic; color:rgba(255,255,255,.55); max-width:34ch; }
+  .panel .body { margin-top:22px; padding:0 30px 40px; overflow-y:auto; }
+  .grid { display:grid; grid-template-columns:1fr 1fr; gap:12px; }
+  .card { aspect-ratio:4/3; border-radius:10px; border:1px solid rgba(217,217,217,.12);
+        background:linear-gradient(150deg,#2f2f34,#242428); display:flex; align-items:flex-end; padding:10px;
+        font-size:9px; letter-spacing:2px; text-transform:uppercase; color:rgba(255,255,255,.6); font-family:"Krona One",sans-serif; }
+  .close { position:absolute; right:20px; top:26px; width:38px; height:38px; border-radius:50%;
+        border:1px solid rgba(217,217,217,.25); background:transparent; color:#fff; font-size:18px; cursor:pointer; }
+  #scrim { pointer-events:none; position:fixed; inset:0; z-index:15; background:rgba(13,13,16,.55); opacity:0; transition:opacity .4s; }
+  #scrim.on { opacity:1; pointer-events:auto; }
+
+  /* chrome */
+  #badge { position:fixed; left:22px; top:20px; z-index:5; font-family:"Krona One",sans-serif;
+        font-size:9.5px; letter-spacing:2px; text-transform:uppercase; color:rgba(255,255,255,.4); }
+  #badge b { color:var(--peach); font-weight:400; }
+  #hint { position:fixed; left:50%; bottom:22px; transform:translateX(-50%); z-index:5;
+        font-family:"Krona One",sans-serif; font-size:9px; letter-spacing:3px; text-transform:uppercase;
+        color:rgba(255,255,255,.35); animation:bob 2.4s ease-in-out infinite; }
+  @keyframes bob { 0%,100%{transform:translateX(-50%) translateY(0)} 50%{transform:translateX(-50%) translateY(5px)} }
+  #dots { position:fixed; right:20px; bottom:24px; z-index:5; display:flex; flex-direction:column; gap:9px; }
+  #dots i { width:7px; height:7px; border-radius:50%; background:rgba(255,255,255,.22); transition:background .3s, transform .3s; }
+  #dots i.on { background:var(--peach); transform:scale(1.35); }
+</style>
+</head>
+<body>
+  <div id="stage"></div>
+
+  <div id="ui">
+    <!-- beat 1 · Origin -->
+    <div class="beat" data-beat="0">
+      <div class="vlabel">Origin</div>
+      <div class="copy low">
+        <div class="eyebrow">I'm Aymane —</div>
+        <div class="title">A quiet <span class="pk">maker</span></div>
+        <div class="sub">of small, patient details.</div>
+      </div>
+    </div>
+    <!-- beat 2 · The Maker -->
+    <div class="beat" data-beat="1">
+      <div class="vlabel">The Maker</div>
+      <div class="copy low">
+        <div class="title">Born from <span class="pk">debris</span></div>
+        <div class="sub">the star settles into a world.</div>
+      </div>
+    </div>
+    <!-- beat 3 · The Craft (DOM constellation) -->
+    <div class="beat" data-beat="2">
+      <div class="vlabel">The Craft</div>
+      <div class="copy" style="top:12vh"><div class="title">What I'm <span class="pk">drawn to</span></div></div>
+      <svg id="constellation" viewBox="0 0 600 380"></svg>
+    </div>
+    <!-- beat 4 · The Voyage -->
+    <div class="beat" data-beat="3">
+      <div class="vlabel">The Voyage</div>
+      <div class="copy low"><div class="title">Out past <span class="pk">the sun</span></div>
+        <div class="sub">a small system, drifting.</div></div>
+    </div>
+    <!-- beat 5 · Earth · Photography (clickable pins) -->
+    <div class="beat" data-beat="4">
+      <div class="vlabel">Photography</div>
+      <button class="pin" data-open="gallery" style="left:44%; top:40%">
+        <span class="dot"></span><span class="cap">London</span></button>
+      <button class="pin" data-open="gallery" style="left:57%; top:56%">
+        <span class="dot"></span><span class="cap">Morocco</span></button>
+    </div>
+    <!-- beat 6 · The Lab (clickable record) -->
+    <div class="beat" data-beat="5">
+      <div class="vlabel">The Lab</div>
+      <div class="copy" style="top:14vh"><div class="title">Voyager <span class="pk">1</span></div></div>
+      <button class="record-btn" data-open="lab" style="left:50%; top:58%">
+        <span class="disc"></span> On the Record</button>
+    </div>
+  </div>
+
+  <!-- reachable-at-rest: the two content panels -->
+  <div id="scrim"></div>
+  <aside class="panel" id="gallery">
+    <button class="close" data-close>×</button>
+    <header><div class="peyebrow">Earth · geo-pins</div><h2>Photographs</h2>
+      <div class="psub">Places I've pointed a camera — reachable while the globe sits still.</div></header>
+    <div class="body"><div class="grid">
+      <div class="card">Brockenhurst</div><div class="card">London</div>
+      <div class="card">Marrakech</div><div class="card">Chefchaouen</div>
+      <div class="card">Fès</div><div class="card">The Downs</div>
+    </div></div>
+  </aside>
+  <aside class="panel" id="lab">
+    <button class="close" data-close>×</button>
+    <header><div class="peyebrow">Golden Record</div><h2>The Lab</h2>
+      <div class="psub">Experiments carried on Voyager's record — openable at rest.</div></header>
+    <div class="body"><div class="grid">
+      <div class="card">Worlds</div><div class="card">Nebula</div>
+      <div class="card">Signals</div><div class="card">Fluid</div>
+    </div></div>
+  </aside>
+
+  <div id="badge"><b>Reduced-motion prototype</b> · stepped cross-fade — no camera motion</div>
+  <div id="hint">scroll ↓</div>
+  <div id="dots"></div>
+
+  <!-- normal-flow spacer: the ONLY thing that creates scroll distance -->
+  <div id="scroll"></div>
+
+<script>
+(function () {
+  var THREE = window.THREE;
+  var stage = document.getElementById("stage");
+  var W = window.innerWidth, H = window.innerHeight;
+  var NBEATS = 6, HOLD = 0.62;
+
+  var scene = new THREE.Scene();
+  var camera = new THREE.PerspectiveCamera(50, W / H, 0.1, 100);
+  camera.position.set(0, 0, 9);          // FIXED forever — the whole point.
+  var renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+  renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+  renderer.setSize(W, H);
+  stage.appendChild(renderer.domElement);
+
+  var C = { white:"#eaf1ff", peach:"#FFA14A", dpeach:"#EF7D14", lpeach:"#FFE3C7",
+            blue:"#2489FF", lblue:"#C5E0FF", gold:"#e8b45a", ocean:"#2f6bd0" };
+
+  // ---- point-cloud helper ----
+  function cloud(count, size, blending, fn) {
+    var pos = new Float32Array(count * 3), col = new Float32Array(count * 3), c = new THREE.Color();
+    for (var i = 0; i < count; i++) {
+      var p = fn(i, c);
+      pos[i*3] = p[0]; pos[i*3+1] = p[1]; pos[i*3+2] = p[2];
+      col[i*3] = c.r; col[i*3+1] = c.g; col[i*3+2] = c.b;
+    }
+    var g = new THREE.BufferGeometry();
+    g.setAttribute("position", new THREE.BufferAttribute(pos, 3));
+    g.setAttribute("color", new THREE.BufferAttribute(col, 3));
+    var m = new THREE.PointsMaterial({ size:size, vertexColors:true, transparent:true, opacity:0,
+      blending:blending, depthWrite:false, sizeAttenuation:true });
+    return new THREE.Points(g, m);
+  }
+  function dir() { var u = Math.random()*2-1, th = Math.random()*Math.PI*2, s = Math.sqrt(1-u*u);
+    return [s*Math.cos(th), u, s*Math.sin(th)]; }
+  var mix = function(a, b, t) { return a.clone().lerp(b, t); };
+
+  // ---- beats: each = { obj:[Points...], base:[opacity...] } ----
+  var beats = [];
+  function add(obj, base) { obj.forEach(function(o){ scene.add(o); }); beats.push({ obj:obj, base:base }); }
+
+  // beat 0 — Star (additive gaussian nebula, bright core)
+  var cw = new THREE.Color(C.white), cp = new THREE.Color(C.peach), cb = new THREE.Color(C.blue);
+  var star = cloud(4200, 0.05, THREE.AdditiveBlending, function(i, c) {
+    var d = dir(), r = 2.6 * Math.pow(Math.random(), 1.7);
+    var t = Math.min(1, r/2.6);
+    c.copy(t < 0.5 ? mix(cw, cp, t*2) : mix(cp, cb, (t-0.5)*2));
+    return [d[0]*r, d[1]*r, d[2]*r];
+  });
+  add([star], [1]);
+
+  // beat 1 — Saturn (dotted body + tilted ring)
+  var body = cloud(3200, 0.045, THREE.NormalBlending, function(i, c) {
+    var d = dir(), r = 1.7 * (1 + (Math.random()-0.5)*0.04);
+    c.copy(cp).multiplyScalar(0.7 + Math.random()*0.5);
+    return [d[0]*r, d[1]*r, d[2]*r];
+  });
+  var clp = new THREE.Color(C.lpeach);
+  var ring = cloud(2000, 0.04, THREE.NormalBlending, function(i, c) {
+    var a = Math.random()*Math.PI*2, r = 2.2 + Math.random()*1.1;
+    c.copy(clp).multiplyScalar(0.6 + Math.random()*0.5);
+    var x = Math.cos(a)*r, z = Math.sin(a)*r, y = (Math.random()-0.5)*0.05;
+    // tilt ~24deg around X
+    var ty = y*Math.cos(0.42) - z*Math.sin(0.42), tz = y*Math.sin(0.42) + z*Math.cos(0.42);
+    return [x, ty, tz];
+  });
+  add([body, ring], [1, 1]);
+
+  // beat 2 — Craft: faint field only (DOM constellation carries it)
+  var field = cloud(700, 0.03, THREE.AdditiveBlending, function(i, c) {
+    var d = dir(), r = 3.2 + Math.random()*2.2; c.setStyle(C.lblue).multiplyScalar(0.5);
+    return [d[0]*r, d[1]*r, d[2]*r];
+  });
+  add([field], [0.5]);
+
+  // beat 3 — Voyage: sun blob + wide planet clusters
+  var cg = new THREE.Color(C.gold);
+  var sun = cloud(1400, 0.06, THREE.AdditiveBlending, function(i, c) {
+    var d = dir(), r = 0.7*Math.pow(Math.random(),1.6); c.copy(cg).lerp(cw, 1-Math.min(1,r/0.7));
+    return [d[0]*r, d[1]*r, d[2]*r];
+  });
+  var planetCols = [C.blue, C.peach, C.lblue, C.lpeach, C.dpeach];
+  var planets = cloud(1600, 0.05, THREE.NormalBlending, function(i, c) {
+    var k = i % 5, ang = (k/5)*Math.PI*2 + 0.4, rad = 2.1 + k*0.55;
+    var cx = Math.cos(ang)*rad, cy = Math.sin(ang)*rad*0.42, cz = Math.sin(ang)*0.6;
+    var d = dir(), rr = 0.16 + (k*0.02);
+    c.setStyle(planetCols[k]).multiplyScalar(0.7 + Math.random()*0.5);
+    return [cx + d[0]*rr, cy + d[1]*rr, cz + d[2]*rr];
+  });
+  add([sun, planets], [1, 1]);
+
+  // beat 4 — Earth (dotted globe, peach land / blue ocean)
+  var co = new THREE.Color(C.ocean);
+  var earth = cloud(3600, 0.05, THREE.NormalBlending, function(i, c) {
+    var d = dir(), r = 1.9 * (1 + (Math.random()-0.5)*0.04);
+    var land = Math.random() < 0.42;
+    c.copy(land ? cp : co).multiplyScalar((land?1:0.7) * (0.7 + Math.random()*0.4));
+    return [d[0]*r, d[1]*r, d[2]*r];
+  });
+  add([earth], [1]);
+
+  // beat 5 — Voyager: dish + body + golden record disc
+  var cs = new THREE.Color(C.slate);
+  var craft = cloud(1500, 0.045, THREE.NormalBlending, function(i, c) {
+    c.copy(cs).multiplyScalar(0.55 + Math.random()*0.5);
+    if (i % 3 === 0) { // dish (a shallow disc facing camera)
+      var a = Math.random()*Math.PI*2, r = 1.2*Math.sqrt(Math.random());
+      return [Math.cos(a)*r, Math.sin(a)*r + 0.3, -0.2*(r/1.2)];
+    } else if (i % 3 === 1) { // body box
+      return [(Math.random()-0.5)*0.5, (Math.random()-0.5)*0.5 - 0.6, (Math.random()-0.5)*0.5];
+    } // booms
+    return [(Math.random()-0.5)*3.4, -0.5 + (Math.random()-0.5)*0.06, (Math.random()-0.5)*0.06];
+  });
+  var record = cloud(900, 0.05, THREE.AdditiveBlending, function(i, c) {
+    var a = Math.random()*Math.PI*2, r = 0.55*Math.sqrt(Math.random());
+    c.copy(cg).multiplyScalar(0.7 + (r/0.55)*0.5);
+    return [Math.cos(a)*r + 0.15, Math.sin(a)*r*0.5 - 0.05, 0.9];
+  });
+  add([craft, record], [1, 1]);
+
+  // ---- DOM constellation (beat 2) ----
+  (function () {
+    var svg = document.getElementById("constellation");
+    var N = { hub:[300,190], drawing:[300,60], photo:[110,95], motion:[490,95],
+      react:[110,300], ts:[250,330], next:[400,320], gsap:[510,270] };
+    var links = [["hub","drawing"],["hub","photo"],["hub","motion"],["hub","react"],
+      ["hub","ts"],["hub","next"],["motion","gsap"],["next","gsap"],["react","ts"],["photo","drawing"]];
+    var ns = "http://www.w3.org/2000/svg", frag = document.createDocumentFragment();
+    links.forEach(function (l) { var ln = document.createElementNS(ns,"line");
+      ln.setAttribute("x1",N[l[0]][0]); ln.setAttribute("y1",N[l[0]][1]);
+      ln.setAttribute("x2",N[l[1]][0]); ln.setAttribute("y2",N[l[1]][1]); frag.appendChild(ln); });
+    var names = { hub:"Three.js / R3F", drawing:"Drawing", photo:"Photography", motion:"Motion",
+      react:"React", ts:"TypeScript", next:"Next.js", gsap:"GSAP" };
+    Object.keys(N).forEach(function (k) { var p = N[k];
+      var c = document.createElementNS(ns,"circle"); c.setAttribute("cx",p[0]); c.setAttribute("cy",p[1]);
+      c.setAttribute("r", k==="hub"?7:5); c.setAttribute("class", k==="hub"?"hub":"node"); frag.appendChild(c);
+      var t = document.createElementNS(ns,"text"); t.setAttribute("x",p[0]); t.setAttribute("y",p[1]-12);
+      t.setAttribute("text-anchor","middle"); t.textContent = names[k]; frag.appendChild(t); });
+    svg.appendChild(frag);
+  })();
+
+  // ---- dots indicator ----
+  var dotsEl = document.getElementById("dots");
+  for (var d = 0; d < NBEATS; d++) { var el = document.createElement("i"); dotsEl.appendChild(el); }
+  var dotEls = dotsEl.querySelectorAll("i");
+  var beatEls = document.querySelectorAll(".beat");
+
+  // ---- stepped cross-fade weights ----
+  function weights(t) {
+    var w = new Array(NBEATS).fill(0);
+    var i = Math.max(0, Math.min(NBEATS - 1, Math.floor(t)));
+    var frac = (i === NBEATS - 1) ? 0 : (t - i);
+    if (frac <= HOLD) { w[i] = 1; }
+    else { var f = (frac - HOLD) / (1 - HOLD); var s = f*f*(3-2*f); w[i] = 1 - s; if (i+1 < NBEATS) w[i+1] = s; }
+    return w;
+  }
+  function apply() {
+    var t = window.scrollY / window.innerHeight;
+    var w = weights(t);
+    for (var i = 0; i < NBEATS; i++) {
+      var b = beats[i];
+      for (var j = 0; j < b.obj.length; j++) { b.obj[j].material.opacity = b.base[j] * w[i]; b.obj[j].visible = w[i] > 0.002; }
+      if (beatEls[i]) { beatEls[i].style.opacity = w[i]; }
+      dotEls[i].classList.toggle("on", w[i] >= 0.5);
+    }
+    // pins / record accept clicks only while their beat is essentially at rest
+    document.querySelectorAll(".pin,.record-btn").forEach(function (btn) {
+      var bi = +btn.closest(".beat").dataset.beat;
+      btn.style.pointerEvents = w[bi] > 0.6 ? "auto" : "none";
+    });
+  }
+
+  // ---- panels ----
+  var scrim = document.getElementById("scrim");
+  function openPanel(id) { document.getElementById(id).classList.add("open"); scrim.classList.add("on"); }
+  function closePanels() { document.querySelectorAll(".panel").forEach(function(p){ p.classList.remove("open"); }); scrim.classList.remove("on"); }
+  document.querySelectorAll("[data-open]").forEach(function (b) { b.addEventListener("click", function(){ openPanel(b.dataset.open); }); });
+  document.querySelectorAll("[data-close]").forEach(function (b) { b.addEventListener("click", closePanels); });
+  scrim.addEventListener("click", closePanels);
+  window.addEventListener("keydown", function(e){ if (e.key === "Escape") closePanels(); });
+
+  // ---- loop + events (render static frames; nothing animates) ----
+  window.addEventListener("scroll", apply, { passive: true });
+  window.addEventListener("resize", function () {
+    W = window.innerWidth; H = window.innerHeight;
+    camera.aspect = W / H; camera.updateProjectionMatrix(); renderer.setSize(W, H); apply();
+  });
+  apply();
+  (function render() { requestAnimationFrame(render); renderer.render(scene, camera); })();
+})();
+</script>
+</body>
+</html>
