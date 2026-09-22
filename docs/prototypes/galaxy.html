@@ -1,0 +1,365 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Galaxy — dotted spiral look study</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Great+Vibes&family=Krona+One&display=swap" rel="stylesheet" />
+<script src="https://unpkg.com/three@0.128.0/build/three.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/lil-gui@0.19/dist/lil-gui.umd.min.js"></script>
+<style>
+  :root { --rich-black:#19191C; --peach:#FFA14A; --baby-blue:#2489FF; }
+  * { box-sizing:border-box; margin:0; padding:0; }
+  html, body { height:100%; }
+  body { background:#19191C; color:#fff; font-family:"Helvetica Neue",Helvetica,Arial,sans-serif; overflow:hidden; }
+  #stage { position:fixed; inset:0; }
+  canvas { display:block; }
+  #badge { position:fixed; left:22px; top:20px; z-index:5; font-family:"Krona One",sans-serif;
+        font-size:9.5px; letter-spacing:2px; text-transform:uppercase; color:rgba(255,255,255,.42); }
+  #badge b { color:var(--peach); font-weight:400; }
+  #hint { position:fixed; left:22px; bottom:18px; z-index:5; font-size:12px; color:rgba(255,255,255,.4); max-width:520px; line-height:1.6; }
+  #hint b { color:var(--peach); font-weight:400; }
+  .lil-gui { --width:300px; }
+</style>
+</head>
+<body>
+  <div id="stage"></div>
+  <div id="badge"><b>Galaxy look study</b> · P27-66 Phase 1 — dial the look, then we lock it</div>
+  <div id="hint">A dotted, brand-tinted spiral — peach core → baby-blue arms. It auto-spins; the star background stays fixed. Use the panel (top-right) to dial <b>tilt, arm shape, blue/peach balance</b>, etc.</div>
+
+<script>
+(function () {
+  var THREE = window.THREE;
+  var stage = document.getElementById("stage");
+  var W = window.innerWidth, H = window.innerHeight;
+  var DPR = Math.min(window.devicePixelRatio, 2);
+
+  // ── renderer / scene / fixed camera ──────────────────────────────────────────
+  var renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+  renderer.setPixelRatio(DPR);
+  renderer.setSize(W, H);
+  renderer.setClearColor(0x19191c, 1);
+  stage.appendChild(renderer.domElement);
+
+  var scene = new THREE.Scene();
+  var camera = new THREE.PerspectiveCamera(55, W / H, 0.1, 300);
+  camera.position.set(0, 3.2, 19);
+  camera.lookAt(0, 0, 0);
+
+  // ── config (also the lil-gui target) ─────────────────────────────────────────
+  // ── Locked look (dialed + signed off by the user, Phase 1) ───────────────────
+  var GAL = {
+    seed: 2922,
+    count: 70000, mobileScale: 0.35,
+    discRadius: 10.5, discScaleLength: 3.2, discThickness: 0.30,
+    bulgeRadius: 2.5, bulgeFlatten: 0.6,
+    armCount: 3, pitchDeg: 18, armPhase: 0, armWidth: 1.0, ridgeGain: 0.6,
+    dustAt: 0.14, dustWidth: 0.06, dustDepth: 0.45,
+    tWarm: 0.14, tBlue: 0.55,
+    knotCount: 55, dotsPerKnot: 40, standoutFraction: 0.03,
+    inclination: 74, roll: -23, spinSpeed: 0.21, differential: 0.001,
+    uSize: 22, uMaxSize: 75, twinkleAmount: 0.49,
+    coreOpacity: 0.22, coreScale: 3.6,
+    paused: false
+  };
+  if (W < 768) GAL.count = Math.round(GAL.count * GAL.mobileScale);
+
+  var TAU = Math.PI * 2;
+  var P = {
+    peach:0xffa14a, lpeach:0xffe3c7, dpeach:0xef7d14, babyBlue:0x2489ff,
+    lbabyBlue:0xc5e0ff, nebulaBlue:0x2563ff, coral:0xe24b4a, coreWhite:0xcfe0ff
+  };
+  var C = {};
+  Object.keys(P).forEach(function (k) { C[k] = new THREE.Color(P[k]); });
+
+  // ── seeded RNG + helpers ─────────────────────────────────────────────────────
+  var rnd;
+  function mulberry32(a){ return function(){ a|=0; a=a+0x6D2B79F5|0; var t=Math.imul(a^a>>>15,1|a); t=t+Math.imul(t^t>>>7,61|t)^t; return ((t^t>>>14)>>>0)/4294967296; }; }
+  function gauss(sigma){ var u=1-rnd(), v=rnd(); return sigma*Math.sqrt(-2*Math.log(u))*Math.cos(TAU*v); }
+  function smoothstep(a,b,x){ var t=Math.min(1,Math.max(0,(x-a)/(b-a))); return t*t*(3-2*t); }
+  function unitDir(){ var u=rnd()*2-1, th=rnd()*TAU, s=Math.sqrt(1-u*u); return [s*Math.cos(th), u, s*Math.sin(th)]; }
+  var _c = new THREE.Color();
+
+  // ── galaxy geometry builder ──────────────────────────────────────────────────
+  function armColor(rr, RMAX){
+    var t = Math.min(1, rr/RMAX);
+    var ts = Math.min(1, Math.max(0, t + (rnd()-0.5)*0.12));
+    if (ts < GAL.tWarm) return _c.copy(C.lpeach).lerp(C.peach, smoothstep(0, GAL.tWarm, ts));
+    if (ts < GAL.tBlue) return _c.copy(C.peach).lerp(C.babyBlue, smoothstep(GAL.tWarm, GAL.tBlue, ts));
+    _c.copy(C.babyBlue).lerp(C.lbabyBlue, (ts-GAL.tBlue)/(1-GAL.tBlue));
+    if (rnd() < 0.25) _c.lerp(C.nebulaBlue, 0.4);
+    return _c;
+  }
+
+  function buildGalaxy(){
+    rnd = mulberry32(GAL.seed);
+    var N = GAL.count;
+    var RMAX = GAL.discRadius, H0 = GAL.discScaleLength, R0 = 1.1;
+    var RNORM = 1 - Math.exp(-RMAX/H0);
+    var B = 1/Math.tan(GAL.pitchDeg*Math.PI/180);
+    var sampleRadius = function(){ return -H0*Math.log(1 - rnd()*RNORM); };
+    var hz = function(r){ return GAL.discThickness * (0.6 + 0.4*Math.exp(-r/(RMAX*0.5))); };
+    var armAngle = function(r,k){ return k*(TAU/GAL.armCount) + B*Math.log(Math.max(r,R0)/R0) + GAL.armPhase; };
+
+    var pos=[], col=[], scl=[], bri=[], sed=[], rn=[];
+    function push(x,y,z, c, s, b, rNorm){
+      pos.push(x,y,z); col.push(c.r,c.g,c.b); scl.push(s); bri.push(b); sed.push(rnd()); rn.push(Math.min(1,rNorm));
+    }
+    function jitter(){ return 0.6 + rnd()*0.8; }
+    function baseBright(){ return 0.82 + rnd()*0.32; }
+    function maybeStandout(s, b){ if (rnd() < GAL.standoutFraction) return [s*1.8, b*1.5]; return [s,b]; }
+
+    // 1 — central bulge (15%)
+    var nBulge = Math.round(N*0.15);
+    for (var i=0;i<nBulge;i++){
+      var r = GAL.bulgeRadius * Math.pow(rnd(), 1.8);
+      var d = unitDir();
+      var y = d[1]*r*GAL.bulgeFlatten;
+      var c = _c.copy(C.lpeach).lerp(C.peach, r/GAL.bulgeRadius);
+      var b = (1.0 + 0.6*(1 - r/GAL.bulgeRadius)) * baseBright();
+      push(d[0]*r, y, d[2]*r, c, 0.5+rnd()*0.5, b, r/RMAX);
+    }
+    // 2 — inter-arm disc (20%) — uniform angle fills the gaps
+    var nDisc = Math.round(N*0.20);
+    for (var i=0;i<nDisc;i++){
+      var r = sampleRadius(); var phi = rnd()*TAU; var y = gauss(hz(r));
+      var c = armColor(r, RMAX);
+      var so = maybeStandout(0.6+rnd()*0.4, baseBright()*0.6);
+      push(Math.cos(phi)*r, y, Math.sin(phi)*r, c, so[0], so[1], r/RMAX);
+    }
+    // 3 — spiral arms (50%) — log-spiral + fuzz + ridge + dust-lane
+    var nArm = Math.round(N*0.50), got=0, tries=0, maxTries=nArm*3;
+    while (got<nArm && tries<maxTries){
+      tries++;
+      var r = sampleRadius(); var k = Math.floor(rnd()*GAL.armCount);
+      var sigmaPhi = GAL.armWidth / Math.max(r, R0);
+      var dPhi = gauss(sigmaPhi);
+      // dust lane: reject dots hugging the trailing edge → dark notch
+      if (dPhi > -GAL.dustAt-GAL.dustWidth && dPhi < -GAL.dustAt+GAL.dustWidth && rnd() < GAL.dustDepth) continue;
+      var phi = armAngle(r,k) + dPhi;
+      var rr = Math.max(0, r + gauss(0.12*r));
+      var ridge = Math.exp(-(dPhi*dPhi)/(2*Math.pow(0.45*sigmaPhi,2)));
+      var y = gauss(hz(rr));
+      var c = _c.copy(armColor(rr, RMAX));
+      var b = baseBright() * (1 + GAL.ridgeGain*ridge);
+      var s = jitter() * (1 + 0.4*ridge);
+      var so = maybeStandout(s, b);
+      push(Math.cos(phi)*rr, y, Math.sin(phi)*rr, c, so[0], so[1], rr/RMAX);
+      got++;
+    }
+    // 4 — star-forming knots (coral clusters strung on the arms)
+    for (var kk=0; kk<GAL.knotCount; kk++){
+      var r = (0.4 + rnd()*0.5) * RMAX; var k = Math.floor(rnd()*GAL.armCount);
+      var phi = armAngle(r,k);
+      var cx = Math.cos(phi)*r, cz = Math.sin(phi)*r, cy = gauss(hz(r));
+      for (var j=0;j<GAL.dotsPerKnot;j++){
+        var c = _c.copy(C.coral).lerp(C.lpeach, rnd()*0.6);
+        var b = baseBright()*1.5; var s = jitter()*1.7;
+        if (rnd() < 0.12) { c.copy(C.coreWhite); b*=1.3; } // bright H-II cores
+        push(cx+gauss(0.28), cy+gauss(0.12), cz+gauss(0.28), c, s, b, r/RMAX);
+      }
+    }
+    // 5 — outer halo (round, dim) — gives 3-D volume
+    var nHalo = Math.round(N*0.06);
+    for (var i=0;i<nHalo;i++){
+      var r = RMAX*(0.6 + 0.7*Math.pow(rnd(),2)); var d = unitDir();
+      var c = _c.copy(C.coreWhite).lerp(C.lbabyBlue, rnd());
+      push(d[0]*r, d[1]*r*0.85, d[2]*r, c, 0.4+rnd()*0.4, baseBright()*0.4, r/RMAX);
+    }
+    // 6 — faint disc dust (soft glow bed under the arms)
+    var nDust = Math.round(N*0.05);
+    for (var i=0;i<nDust;i++){
+      var r = sampleRadius(); var phi = rnd()*TAU; var y = gauss(hz(r)*1.4);
+      var c = _c.copy(C.nebulaBlue).lerp(C.peach, r/RMAX);
+      push(Math.cos(phi)*r, y, Math.sin(phi)*r, c, 1.5+rnd()*1.2, baseBright()*0.25, r/RMAX);
+    }
+
+    var g = new THREE.BufferGeometry();
+    g.setAttribute("position", new THREE.Float32BufferAttribute(pos, 3));
+    g.setAttribute("aColor", new THREE.Float32BufferAttribute(col, 3));
+    g.setAttribute("aScale", new THREE.Float32BufferAttribute(scl, 1));
+    g.setAttribute("aBright", new THREE.Float32BufferAttribute(bri, 1));
+    g.setAttribute("aSeed", new THREE.Float32BufferAttribute(sed, 1));
+    g.setAttribute("aRadiusNorm", new THREE.Float32BufferAttribute(rn, 1));
+    return g;
+  }
+
+  // ── galaxy material (the site's dot recipe) ──────────────────────────────────
+  var galUniforms = {
+    uTime:{value:0}, uSize:{value:GAL.uSize}, uMaxSize:{value:GAL.uMaxSize},
+    uPixelRatio:{value:DPR}, uTwinkleAmt:{value:GAL.twinkleAmount}, uDiff:{value:GAL.differential}
+  };
+  var galMat = new THREE.ShaderMaterial({
+    uniforms: galUniforms, transparent:true, depthWrite:false, depthTest:false,
+    blending: THREE.AdditiveBlending,
+    vertexShader: [
+      "uniform float uTime,uSize,uMaxSize,uPixelRatio,uDiff;",
+      "attribute vec3 aColor; attribute float aScale,aBright,aSeed,aRadiusNorm;",
+      "varying vec3 vColor; varying float vTw;",
+      "void main(){",
+      "  vColor = aColor * aBright;",
+      "  vec3 p = position;",
+      "  float ang = uDiff*uTime*(1.0/(aRadiusNorm+0.15) - 1.0);",
+      "  float cs=cos(ang), sn=sin(ang);",
+      "  p = vec3(cs*p.x + sn*p.z, p.y, -sn*p.x + cs*p.z);",
+      "  vec4 mv = modelViewMatrix * vec4(p,1.0);",
+      "  vTw = 0.5 + 0.5*sin(uTime*1.5 + aSeed*6.2831);",
+      "  gl_PointSize = min(uSize*aScale*uPixelRatio / -mv.z, uMaxSize*uPixelRatio);",
+      "  gl_Position = projectionMatrix * mv;",
+      "}"
+    ].join("\n"),
+    fragmentShader: [
+      "uniform float uTwinkleAmt; varying vec3 vColor; varying float vTw;",
+      "void main(){",
+      "  float d = length(gl_PointCoord-0.5); if(d>0.5) discard;",
+      "  float a = pow(smoothstep(0.5,0.12,d), 1.6);",
+      "  float b = (1.0-uTwinkleAmt) + uTwinkleAmt*vTw;",
+      "  gl_FragColor = vec4(vColor*b, a);",
+      "}"
+    ].join("\n")
+  });
+
+  // ── rig: fixed starGroup + tilted, spinning galaxy ───────────────────────────
+  var galaxyTilt = new THREE.Group();
+  var galaxySpin = new THREE.Group();
+  galaxyTilt.add(galaxySpin);
+  scene.add(galaxyTilt);
+  var points = new THREE.Points(buildGalaxy(), galMat);
+  galaxySpin.add(points);
+
+  // core-glow billboard (warm radial gradient, always faces camera)
+  var coreUniforms = { uOpacity:{value:GAL.coreOpacity} };
+  var coreMat = new THREE.ShaderMaterial({
+    uniforms: coreUniforms, transparent:true, depthWrite:false, depthTest:false,
+    blending: THREE.AdditiveBlending,
+    vertexShader: "varying vec2 vUv; void main(){ vUv=uv; gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.0); }",
+    fragmentShader: [
+      "varying vec2 vUv; uniform float uOpacity;",
+      "void main(){",
+      "  float dist = length(vUv-0.5)*2.0;",
+      "  float grad = pow(smoothstep(1.0,0.0,dist),1.7);",
+      "  vec3 col = mix(vec3(1.0,0.94,0.85), vec3(0.94,0.55,0.20), pow(dist,0.7));",
+      "  gl_FragColor = vec4(col, grad*uOpacity);",
+      "}"
+    ].join("\n")
+  });
+  var coreGlow = new THREE.Mesh(new THREE.PlaneGeometry(1,1), coreMat);
+  scene.add(coreGlow); // at origin (galaxy centre); billboarded each frame
+
+  // ── fixed background starfield (site recipe) ─────────────────────────────────
+  var starGroup = new THREE.Group();
+  scene.add(starGroup);
+  (function buildStars(){
+    var n = W < 768 ? 1500 : 2600;
+    var tints = ["#cfe0ff","#eaf1ff","#ffffff","#fff4e6","#ffe6c2","#ffd9a8"];
+    var tw = [0.1,0.2,0.3,0.2,0.12,0.08], cum=[]; var acc=0; tw.forEach(function(w){acc+=w;cum.push(acc);});
+    var srnd = mulberry32(99); var c=new THREE.Color();
+    var pos=[],col=[],scl=[],bri=[],sed=[];
+    for (var i=0;i<n;i++){
+      var r = 40 + srnd()*40, th = srnd()*TAU, ph = Math.acos(2*srnd()-1);
+      pos.push(r*Math.sin(ph)*Math.cos(th), r*Math.sin(ph)*Math.sin(th), r*Math.cos(ph));
+      var u=srnd(), ti=0; for (var j=0;j<cum.length;j++){ if(u<=cum[j]){ti=j;break;} }
+      c.set(tints[ti]); col.push(c.r,c.g,c.b);
+      var standout = srnd() < 0.08;
+      scl.push(standout ? 1.4+srnd()*3.2 : 0.5+srnd()*0.7);
+      bri.push(standout ? 1.1+srnd()*0.5 : 0.3+srnd()*0.6);
+      sed.push(srnd());
+    }
+    var g = new THREE.BufferGeometry();
+    g.setAttribute("position", new THREE.Float32BufferAttribute(pos,3));
+    g.setAttribute("aColor", new THREE.Float32BufferAttribute(col,3));
+    g.setAttribute("aScale", new THREE.Float32BufferAttribute(scl,1));
+    g.setAttribute("aBright", new THREE.Float32BufferAttribute(bri,1));
+    g.setAttribute("aSeed", new THREE.Float32BufferAttribute(sed,1));
+    var m = new THREE.ShaderMaterial({
+      uniforms:{ uTime:{value:0}, uSize:{value:22}, uPixelRatio:{value:DPR}, uTwinkleSpeed:{value:0.7}, uTwinkleAmount:{value:0.3} },
+      transparent:true, depthWrite:false, blending:THREE.AdditiveBlending,
+      vertexShader:[
+        "uniform float uTime,uSize,uPixelRatio,uTwinkleSpeed,uTwinkleAmount;",
+        "attribute vec3 aColor; attribute float aScale,aBright,aSeed;",
+        "varying vec3 vColor; varying float vBright;",
+        "void main(){ vColor=aColor;",
+        "  float tw=0.5+0.5*sin(uTime*uTwinkleSpeed+aSeed*6.2831);",
+        "  vBright=aBright*(1.0-uTwinkleAmount+uTwinkleAmount*tw);",
+        "  vec4 mv=modelViewMatrix*vec4(position,1.0);",
+        "  gl_PointSize=max(uSize*aScale*uPixelRatio/-mv.z,1.0);",
+        "  gl_Position=projectionMatrix*mv; }"
+      ].join("\n"),
+      fragmentShader:[
+        "varying vec3 vColor; varying float vBright;",
+        "void main(){ float d=length(gl_PointCoord-0.5); if(d>0.5) discard;",
+        "  float a=pow(smoothstep(0.5,0.0,d),1.6); gl_FragColor=vec4(vColor*vBright, a*vBright); }"
+      ].join("\n")
+    });
+    starGroup.add(new THREE.Points(g, m));
+    starGroup.userData.mat = m;
+  })();
+
+  // ── apply live params ────────────────────────────────────────────────────────
+  function applyLive(){
+    galUniforms.uSize.value = GAL.uSize;
+    galUniforms.uMaxSize.value = GAL.uMaxSize;
+    galUniforms.uTwinkleAmt.value = GAL.twinkleAmount;
+    galUniforms.uDiff.value = GAL.differential;
+    coreUniforms.uOpacity.value = GAL.coreOpacity;
+    coreGlow.scale.setScalar(GAL.coreScale * GAL.bulgeRadius);
+    galaxyTilt.rotation.x = THREE.MathUtils.degToRad(90 - GAL.inclination);
+    galaxyTilt.rotation.z = THREE.MathUtils.degToRad(GAL.roll);
+  }
+  applyLive();
+
+  function rebuild(){
+    var old = points.geometry;
+    points.geometry = buildGalaxy();
+    old.dispose();
+  }
+
+  // ── lil-gui ──────────────────────────────────────────────────────────────────
+  var gui = new lil.GUI({ title: "Galaxy" });
+  var fPose = gui.addFolder("Pose & motion");
+  fPose.add(GAL,"inclination",0,90,1).onChange(applyLive);
+  fPose.add(GAL,"roll",-90,90,1).onChange(applyLive);
+  fPose.add(GAL,"spinSpeed",0,0.3,0.005);
+  fPose.add(GAL,"differential",0,0.012,0.001).onChange(applyLive);
+  fPose.add(GAL,"paused");
+  var fDot = gui.addFolder("Dots & glow");
+  fDot.add(GAL,"uSize",8,48,1).onChange(applyLive);
+  fDot.add(GAL,"uMaxSize",20,120,1).onChange(applyLive);
+  fDot.add(GAL,"twinkleAmount",0,0.6,0.01).onChange(applyLive);
+  fDot.add(GAL,"coreOpacity",0,1.4,0.02).onChange(applyLive);
+  fDot.add(GAL,"coreScale",1,6,0.1).onChange(applyLive);
+  var fShape = gui.addFolder("Shape (rebuilds)");
+  fShape.add(GAL,"count",10000,120000,5000).onFinishChange(rebuild);
+  fShape.add(GAL,"armCount",1,5,1).onFinishChange(rebuild);
+  fShape.add(GAL,"pitchDeg",8,35,1).name("armTightness").onFinishChange(rebuild);
+  fShape.add(GAL,"armWidth",0.4,2.0,0.05).onFinishChange(rebuild);
+  fShape.add(GAL,"tBlue",0.25,0.75,0.01).name("blue/peach balance").onFinishChange(rebuild);
+  fShape.add(GAL,"bulgeRadius",0.8,3.5,0.1).onFinishChange(rebuild);
+  fShape.add(GAL,"discRadius",6,14,0.5).name("Rmax").onFinishChange(rebuild);
+  fShape.add(GAL,"dustDepth",0,1,0.05).onFinishChange(rebuild);
+  fShape.add(GAL,"knotCount",0,120,5).onFinishChange(rebuild);
+  fShape.add(GAL,"seed",1,9999,1).onFinishChange(rebuild);
+  fShape.add({ regenerate: function(){ GAL.seed = Math.floor(Math.random()*9999)+1; gui.controllersRecursive().forEach(function(c){c.updateDisplay();}); rebuild(); } }, "regenerate");
+
+  // ── loop ─────────────────────────────────────────────────────────────────────
+  var clock = new THREE.Clock();
+  (function render(){
+    requestAnimationFrame(render);
+    var dt = clock.getDelta(), t = clock.getElapsedTime();
+    if (!GAL.paused) galaxySpin.rotation.y += GAL.spinSpeed * dt;
+    galUniforms.uTime.value = t;
+    starGroup.userData.mat.uniforms.uTime.value = t;
+    coreGlow.quaternion.copy(camera.quaternion); // billboard
+    renderer.render(scene, camera);
+  })();
+
+  window.addEventListener("resize", function(){
+    W = window.innerWidth; H = window.innerHeight;
+    camera.aspect = W/H; camera.updateProjectionMatrix(); renderer.setSize(W,H);
+  });
+})();
+</script>
+</body>
+</html>
