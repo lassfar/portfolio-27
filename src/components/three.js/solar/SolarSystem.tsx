@@ -18,6 +18,8 @@ import {
   SUNPOS,
   VOYAGE,
 } from "./config";
+import { finaleReturn } from "./reveal";
+import { flyingSunPos } from "#/components/three.js/galaxy/spin";
 
 type Props = {
   animate?: boolean;
@@ -39,15 +41,23 @@ const SolarSystem = ({ animate = true }: Props) => {
     isSmall ? Math.round(n * SOLAR_MOBILE_SCALE) : n;
   const sunCount = isSmall ? SUN.countMobile : SUN.count;
 
+  const sysRef = useRef<Group>(null);
   const rotRef = useRef<Group>(null);
   useFrame(() => {
-    if (!rotRef.current) return;
-    const r = useSceneRotation.getState();
-    rotRef.current.rotation.set(r.pitch, r.yaw, 0);
+    if (rotRef.current) {
+      const r = useSceneRotation.getState();
+      rotRef.current.rotation.set(r.pitch, r.yaw, 0);
+    }
+    // The Sun's live position — SUNPOS normally, revolving about the galactic centre
+    // for the finale so the whole system flies through the galaxy in its arm.
+    if (sysRef.current) {
+      const sun = flyingSunPos();
+      sysRef.current.position.set(sun[0], sun[1], sun[2]);
+    }
   });
 
   return (
-    <group position={SUNPOS}>
+    <group ref={sysRef} position={SUNPOS}>
       <group ref={rotRef}>
         <Sun count={sunCount} animate={animate} />
 
@@ -96,7 +106,8 @@ const OrbitRing = ({ radius }: { radius: number }) => {
     const voyage = useVoyageScroll.getState().progress;
     const earthFade = remap01(voyage, VOYAGE.earthFadeStart, VOYAGE.earthFadeEnd);
     const reveal =
-      easeOutCubic(remap01(voyage, SOLAR.revealStart, SOLAR.revealEnd)) * (1 - earthFade);
+      easeOutCubic(remap01(voyage, SOLAR.revealStart, SOLAR.revealEnd)) *
+      (1 - earthFade * (1 - finaleReturn()));
     matRef.current.opacity = SOLAR.ring.opacity * reveal;
   });
 

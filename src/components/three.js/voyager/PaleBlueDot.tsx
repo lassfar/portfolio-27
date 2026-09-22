@@ -5,6 +5,7 @@ import { useMemo, useRef } from "react";
 import { AdditiveBlending, CanvasTexture, Sprite, SpriteMaterial } from "three";
 import { clamp01, remap01 } from "#/components/three.js/star/utils";
 import { useLabScroll } from "#/stores/useLabScroll";
+import { useGalaxyScroll } from "#/stores/useGalaxyScroll";
 import { PALE_BLUE_DOT as PBD } from "./config";
 
 /** Soft round blue glow for the dot. */
@@ -45,7 +46,9 @@ const PaleBlueDot = () => {
 
   useFrame(() => {
     const lab = clamp01(useLabScroll.getState().progress);
-    const op = remap01(lab, PBD.fade[0], PBD.fade[1]);
+    // Fade in with the Lab, then back out as the galaxy finale pulls away.
+    const galaxyFade = remap01(useGalaxyScroll.getState().progress, 0, 0.12);
+    const op = remap01(lab, PBD.fade[0], PBD.fade[1]) * (1 - galaxyFade);
     if (ref.current) {
       ref.current.visible = op > 0.001;
       mat.opacity = op;

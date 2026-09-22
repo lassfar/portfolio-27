@@ -6,6 +6,7 @@ import { Color, NormalBlending, ShaderMaterial, Group } from "three";
 import { useVoyageScroll } from "#/stores/useVoyageScroll";
 import { easeOutCubic, remap01 } from "#/components/three.js/star/utils";
 import { orbitPosition, PlanetDef, SOLAR, VOYAGE } from "./config";
+import { finaleReturn } from "./reveal";
 
 type Props = {
   def: PlanetDef;
@@ -96,10 +97,11 @@ const OrbitingPlanet = ({ def, count, animate = true }: Props) => {
       orbitRef.current.position.set(x, y, z);
     }
     const voyage = useVoyageScroll.getState().progress;
-    // Fade in with the system, then fade OUT as we dive to Earth.
+    // Fade in with the system, out for the Earth dive, then BACK in for the finale.
     const earthFade = remap01(voyage, VOYAGE.earthFadeStart, VOYAGE.earthFadeEnd);
     m.uniforms.uReveal.value =
-      easeOutCubic(remap01(voyage, SOLAR.revealStart, SOLAR.revealEnd)) * (1 - earthFade);
+      easeOutCubic(remap01(voyage, SOLAR.revealStart, SOLAR.revealEnd)) *
+      (1 - earthFade * (1 - finaleReturn()));
     // Mild dot-thinning as the camera pulls away (these siblings are small + far).
     m.uniforms.uThin.value = SOLAR.planetThinMax * voyage;
   });

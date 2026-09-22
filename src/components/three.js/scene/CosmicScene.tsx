@@ -30,9 +30,13 @@ import Voyager from "#/components/three.js/voyager/Voyager";
 import TravelDust from "#/components/three.js/voyager/TravelDust";
 import PaleBlueDot from "#/components/three.js/voyager/PaleBlueDot";
 import { LAB_CAM, VOYAGER_POS } from "#/components/three.js/voyager/config";
+import Galaxy from "#/components/three.js/galaxy/Galaxy";
+import { GALAXY_CENTER, GALAXY_ZOOM } from "#/components/three.js/galaxy/config";
+import { flyingSunPos } from "#/components/three.js/galaxy/spin";
 import { useAboutScroll } from "#/stores/useAboutScroll";
 import { useVoyageScroll } from "#/stores/useVoyageScroll";
 import { useLabScroll } from "#/stores/useLabScroll";
+import { useGalaxyScroll } from "#/stores/useGalaxyScroll";
 import { useSceneRotation } from "#/stores/useSceneRotation";
 import { useSaturnAnchor } from "#/stores/useSaturnAnchor";
 import { useEarthAnchor } from "#/stores/useEarthAnchor";
@@ -72,7 +76,10 @@ const CosmicScene = () => {
 
   return (
     <Canvas
-      camera={{ position: [0, 0, CAMERA.z], fov: CAMERA.fov }}
+      // far is large enough for the galaxy finale, where the camera pulls out to
+      // ~1300 world units to frame the whole (scaled-up) spiral. near stays close
+      // so the readable near-field beats (Voyager, Earth) keep their depth detail.
+      camera={{ position: [0, 0, CAMERA.z], fov: CAMERA.fov, near: 0.1, far: 2800 }}
       dpr={[1, 1.5]}
       gl={{ antialias: true, alpha: true }}
     >
@@ -117,6 +124,14 @@ const CosmicScene = () => {
           pale-blue Earth left far behind (Voyager's real "Pale Blue Dot"). */}
       <TravelDust />
       <PaleBlueDot />
+
+      {/* The Galaxy finale — ONE exponential pull-out (CameraRig segment 4). The
+          camera backs off the Voyager; the REAL solar system (Sun + planets, above)
+          fades back in and frames up "fully visible", then shrinks as we keep flying
+          out through the galaxy's own (fixed-size) stars until the whole brand-tinted
+          spiral resolves around it. The galaxy is huge + world-fixed and centred so
+          the real Sun sits in one of its arms — our "You are here". */}
+      <Galaxy animate={animate} />
 
       <EffectComposer>
         <Bloom
@@ -185,9 +200,12 @@ const SaturnMember = ({ children }: { children: ReactNode }) => {
       .applyEuler(euler.current.set(r.pitch, r.yaw, 0));
     const blend = clamp01(voyage / SOLAR.revealStart);
 
-    const wx = SUNPOS[0] + lerp(ox, rotated.current.x, blend);
-    const wy = SUNPOS[1] + lerp(oy, rotated.current.y, blend);
-    const wz = SUNPOS[2] + lerp(oz, rotated.current.z, blend);
+    // Base off the Sun's LIVE position (SUNPOS normally; revolving with the galaxy at
+    // the finale), so the Saturn flies WITH the system through the galaxy.
+    const sun = flyingSunPos();
+    const wx = sun[0] + lerp(ox, rotated.current.x, blend);
+    const wy = sun[1] + lerp(oy, rotated.current.y, blend);
+    const wz = sun[2] + lerp(oz, rotated.current.z, blend);
     posRef.current.position.set(wx, wy, wz);
     useSaturnAnchor.getState().set(wx, wy, wz);
   });
@@ -222,9 +240,11 @@ const EarthMember = ({ children }: { children: ReactNode }) => {
     // then place it relative to the sun.
     const r = useSceneRotation.getState();
     offset.current.set(ox, oy, oz).applyEuler(euler.current.set(r.pitch, r.yaw, 0));
-    const wx = SUNPOS[0] + offset.current.x;
-    const wy = SUNPOS[1] + offset.current.y;
-    const wz = SUNPOS[2] + offset.current.z;
+    // Base off the Sun's LIVE position so the Earth flies WITH the system at the finale.
+    const sun = flyingSunPos();
+    const wx = sun[0] + offset.current.x;
+    const wy = sun[1] + offset.current.y;
+    const wz = sun[2] + offset.current.z;
     posRef.current.position.set(wx, wy, wz);
     useEarthAnchor.getState().set(wx, wy, wz);
   });
@@ -248,19 +268,58 @@ const VoyagerMember = ({ children }: { children: ReactNode }) => {
 };
 
 /**
- * The camera does ALL the scroll work, in two segments over the voyage:
+ * The camera does ALL the scroll work, in FOUR chained segments, each a pure
+ * (eased) function of one scroll store + live anchors, so the whole path reverses
+ * perfectly on scroll-up:
  *
- *   1. Saturn → wide  (voyage 0 … VOYAGE.flyoutEnd): starts LOCKED ONTO the
- *      Saturn (the About close-up) and flies OUT — up + back — easing its aim to
- *      the SUN, settling on the wide sun-centred system.
- *   2. wide → Earth   (voyage VOYAGE.flyoutEnd … 1): dives from the wide view
- *      onto the Earth — a normal member orbiting the sun on its own place — by
- *      tracking its LIVE position (useEarthAnchor), so it fills the view by
- *      perspective (never by growing) while the rest of the system fades.
- *
- * A pure (eased) function of `useVoyageScroll` + the Saturn's live position, so
- * it reverses perfectly on scroll-up.
+ *   1. Saturn → wide   (useVoyageScroll 0 … VOYAGE.flyoutEnd): from the Saturn
+ *      close-up, flies OUT — up + back — easing its aim to the SUN.
+ *   2. wide → Earth    (useVoyageScroll flyoutEnd … 1): dives onto the live Earth,
+ *      filling the view by perspective while the system fades.
+ *   3. Earth → Voyager (useLabScroll): one smooth fly to the readable Voyager pose.
+ *   4. Voyager → Galaxy (useGalaxyScroll): ONE exponential pull-out — the finale.
+ *      Distance grows exponentially from the Voyager framing out to `dEnd`. The aim
+ *      pans in two legs — Voyager → the Sun (framing the whole REAL solar system,
+ *      which fades back in), then Sun → the galaxy centre while the view climbs above
+ *      the disc — so the solar system shrinks to a speck as the whole galaxy resolves
+ *      around it. Derived to start EXACTLY on the segment-3 Voyager pose.
  */
+
+// ── Segment-4 exponential-zoom constants (derived so the beat opens on the Voyager
+// rest pose, then flies out to frame the galaxy). Computed once, at module load. ──
+const G_LOOK_START: [number, number, number] = [
+  VOYAGER_POS[0] + LAB_CAM.look[0],
+  VOYAGER_POS[1] + LAB_CAM.look[1],
+  VOYAGER_POS[2] + LAB_CAM.look[2],
+];
+const _gCamStart = [
+  VOYAGER_POS[0] + LAB_CAM.offset[0],
+  VOYAGER_POS[1] + LAB_CAM.offset[1],
+  VOYAGER_POS[2] + LAB_CAM.offset[2],
+];
+const _gStartVec = [
+  _gCamStart[0] - G_LOOK_START[0],
+  _gCamStart[1] - G_LOOK_START[1],
+  _gCamStart[2] - G_LOOK_START[2],
+];
+const G_D_START = Math.hypot(_gStartVec[0], _gStartVec[1], _gStartVec[2]);
+const G_START_DIR: [number, number, number] = [
+  _gStartVec[0] / G_D_START,
+  _gStartVec[1] / G_D_START,
+  _gStartVec[2] / G_D_START,
+];
+const _gEndLen = Math.hypot(
+  GALAXY_ZOOM.endDir[0],
+  GALAXY_ZOOM.endDir[1],
+  GALAXY_ZOOM.endDir[2]
+);
+const G_END_DIR: [number, number, number] = [
+  GALAXY_ZOOM.endDir[0] / _gEndLen,
+  GALAXY_ZOOM.endDir[1] / _gEndLen,
+  GALAXY_ZOOM.endDir[2] / _gEndLen,
+];
+const G_Z_RATIO = GALAXY_ZOOM.dEnd / G_D_START;
+
 const CameraRig = ({
   starfieldRef,
 }: {
@@ -313,6 +372,53 @@ const CameraRig = ({
       lx = lerp(lx, v.x + LAB_CAM.look[0], t);
       ly = lerp(ly, v.y + LAB_CAM.look[1], t);
       lz = lerp(lz, v.z + LAB_CAM.look[2], t);
+    }
+
+    // ── Segment 4: the finale — ONE exponential pull-out. At galaxy = 0 this
+    // reproduces the segment-3 Voyager pose exactly (constants derived from LAB_CAM),
+    // so it takes over seamlessly, then flies OUT: distance grows exponentially while
+    // the aim pans Voyager → the (flying) Sun → the galaxy centre. Anchored on the
+    // LIVE Sun position (`flyingSunPos`), so scrolling BACK zooms into the solar
+    // system wherever it has flown to in the galaxy — not back to a fixed home.
+    // A pure function of useGalaxyScroll (+ the live Sun) → reverses on scroll-up.
+    const galaxy = clamp01(useGalaxyScroll.getState().progress);
+    if (galaxy > 0) {
+      const z = galaxy;
+      const ps = GALAXY_ZOOM.panSunEnd;
+      const sun = flyingSunPos();
+      // Distance grows exponentially with raw z the whole beat (the prototype feel).
+      const dist = G_D_START * Math.pow(G_Z_RATIO, z);
+      if (z <= ps) {
+        // Leg 1: aim pans Voyager → the (flying) Sun, framing the whole real system.
+        // View dir holds the Voyager ¾ (smoothstep so it eases out of the rest pose).
+        const e = z / ps;
+        const s = e * e * (3 - 2 * e);
+        lx = lerp(G_LOOK_START[0], sun[0], s);
+        ly = lerp(G_LOOK_START[1], sun[1], s);
+        lz = lerp(G_LOOK_START[2], sun[2], s);
+        px = lx + G_START_DIR[0] * dist;
+        py = ly + G_START_DIR[1] * dist;
+        pz = lz + G_START_DIR[2] * dist;
+      } else {
+        // Leg 2: aim pans the (flying) Sun → galaxy centre while the view swings to the
+        // study pose, so the solar system shrinks and the whole spiral frames up.
+        const e = (z - ps) / (1 - ps);
+        let s = e * e * (3 - 2 * e);
+        if (GALAXY_ZOOM.curve !== 1) s = Math.pow(s, GALAXY_ZOOM.curve);
+        lx = lerp(sun[0], GALAXY_CENTER[0], s);
+        ly = lerp(sun[1], GALAXY_CENTER[1], s);
+        lz = lerp(sun[2], GALAXY_CENTER[2], s);
+        let dx = lerp(G_START_DIR[0], G_END_DIR[0], s);
+        let dy = lerp(G_START_DIR[1], G_END_DIR[1], s);
+        let dz = lerp(G_START_DIR[2], G_END_DIR[2], s);
+        const dl = Math.hypot(dx, dy, dz) || 1;
+        dx /= dl;
+        dy /= dl;
+        dz /= dl;
+        px = lx + dx * dist;
+        py = ly + dy * dist;
+        pz = lz + dz * dist;
+      }
     }
 
     camera.position.set(px, py, pz);

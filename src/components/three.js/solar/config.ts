@@ -75,6 +75,12 @@ export const SOLAR = {
   revealStart: 0.05, // voyage progress where the system begins to fade in
   revealEnd: 0.5, // fully faded in here (the camera keeps pulling back after)
 
+  // The galaxy FINALE re-reveals the whole system: after it faded out for the Earth
+  // dive, it fades BACK in over this window (in `useGalaxyScroll` progress) as the
+  // camera pulls back from the Voyager, so the real solar system is what we see
+  // "fully visible" before it shrinks into the galaxy. See solar/reveal.ts.
+  finaleReturn: [0.03, 0.22] as [number, number],
+
   // A single directional light in VIEW space (like the Saturn) so each planet
   // keeps a lit + a shadowed side.
   light: {

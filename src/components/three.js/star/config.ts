@@ -135,18 +135,17 @@ export const JOURNEY = {
   //   • jp  (journey progress, mp / journeyEnd, 0..1) — the star→Saturn→About
   //         block. Its internal thresholds (starSpan…exitStart) are jp-fractions,
   //         so they DON'T change when journeyEnd / pinLength change.
-  pinLength: "+=3710%", // journey + Craft + voyage + Earth dwell + the Lab (Voyager)
+  pinLength: "+=4410%", // journey + Craft + voyage + Earth dwell + Lab + Galaxy finale
   // The star→Saturn→About journey occupies mp 0..journeyEnd (≈1010% of scroll,
-  // unchanged feel); the tail (journeyEnd..1) is the Craft, then the voyage
-  // (fly-out + solar reveal + Earth dive), then a DWELL where the Earth holds
-  // fully in view, then the Lab (Voyager). Fractions shrink as the pin grows but
-  // the ABSOLUTE scroll of each earlier phase is preserved — the mp tail
-  // thresholds below were rescaled by the old/new pin ratio each time new scroll
-  // was appended: × 2160/2860 (Earth dive), × 2860/3560 (the Lab), then × 3560/3710
-  // (the ~150% Earth dwell). The Earth "hold" is a real scroll dwell (a flat
-  // stretch where the camera rests at the Earth, not a scroll-stop); a fast flick
-  // glides through it. To lengthen/shorten it, change D=150 below and re-derive.
-  journeyEnd: 0.2721, // 0.2836 × 3560/3710
+  // unchanged feel); the tail (journeyEnd..1) is the Craft, the voyage (fly-out +
+  // solar reveal + Earth dive), the Earth DWELL, the Lab (Voyager), then the GALAXY
+  // finale (pull back from Voyager → fly through stars → the galaxy resolves).
+  // Fractions shrink as the pin grows but the ABSOLUTE scroll of each earlier phase
+  // is preserved — the mp tail thresholds below were rescaled by the old/new pin
+  // ratio each time new scroll was appended: × 2160/2860 (Earth dive), × 2860/3560
+  // (the Lab), × 3560/3710 (the ~150% Earth dwell), then × 3710/4410 (the ~700%
+  // Galaxy finale, G below). Every mp threshold keeps its absolute scroll position.
+  journeyEnd: 0.2289, // 0.2836 × 3560/4410
   starSpan: 0.218, // star plays over 0..starSpan of the JOURNEY (jp), not the pin
   assembleStart: 0.198, // Saturn assembles over assembleStart..assembleEnd (overlaps the burst)
   assembleEnd: 0.455, // Saturn fully built by here — ≈260% of scroll to build
@@ -185,21 +184,26 @@ export const JOURNEY = {
   // constellation then assembles, it fades out to reveal the Saturn again, and the
   // Saturn flies away. All within the same pin, so the cosmos never unpins → no
   // boundary jump, and reverse mirrors exactly.
-  craftCoverStart: 0.2313, // Craft begins sliding up AS the Maker exits
-  craftCoverEnd: 0.2721, // …fully covering by the time the Maker has exited (= journeyEnd) → no Saturn shown between
-  constellationEnd: 0.3585, // constellation assembles over craftCoverEnd..constellationEnd
-  craftFadeStart: 0.3692, // brief hold, then Craft fades out (opacity 1→0)…
-  craftFadeEnd: 0.3939, // …fully gone here → the Saturn is revealed behind it
-  flyAwayStart: 0.3939, // where the Saturn is revealed and the voyage begins (voyage = 0)
+  craftCoverStart: 0.1946, // Craft begins sliding up AS the Maker exits
+  craftCoverEnd: 0.2289, // …fully covering by the time the Maker has exited (= journeyEnd) → no Saturn shown between
+  constellationEnd: 0.3016, // constellation assembles over craftCoverEnd..constellationEnd
+  craftFadeStart: 0.3106, // brief hold, then Craft fades out (opacity 1→0)…
+  craftFadeEnd: 0.3314, // …fully gone here → the Saturn is revealed behind it
+  flyAwayStart: 0.3314, // where the Saturn is revealed and the voyage begins (voyage = 0)
   // ── The voyage → the Earth DWELL → the Lab ───────────────────────────────────
   // useVoyageScroll = remap01(mp, flyAwayStart, voyageEnd) → reaches 1 as the Earth
   // arrives (the camera glides to REST — see the Earth dive in CosmicScene) and
   // clamps at 1 through the dwell AND the Lab, so the Earth stays put behind Voyager.
   // The dwell [voyageEnd, earthDwellEnd] is a flat ~150% stretch (D above) where the
   // Earth simply holds fully in view (still idly self-spinning) before the Lab.
-  // useLabScroll = remap01(mp, earthDwellEnd, 1): the Lab (Earth→Voyager) beat.
-  voyageEnd: 0.7709, // 0.8034 × 3560/3710 — Earth fully arrived (voyage = 1) at the SAME absolute scroll
-  earthDwellEnd: 0.8114, // voyageEnd + D(150%)/3710 — Earth holds fully in view over voyageEnd..here, then the Lab begins
+  // useLabScroll = remap01(mp, earthDwellEnd, galaxyStart): the Lab (Earth→Voyager) beat.
+  voyageEnd: 0.6485, // 0.8034 × 3560/4410 — Earth fully arrived (voyage = 1) at the SAME absolute scroll
+  earthDwellEnd: 0.6826, // voyageEnd + D(150%)/4410 — Earth holds fully in view over voyageEnd..here, then the Lab begins
+  // ── The Galaxy finale ────────────────────────────────────────────────────────
+  // The Lab ends at galaxyStart (Voyager fully framed); from there the camera pulls
+  // BACK and useGalaxyScroll = remap01(mp, galaxyStart, 1) drives the pull-back, the
+  // star-field fly-through, the galaxy's reveal, and the "You are here" marker.
+  galaxyStart: 0.8413, // = 3710/4410 (the old pin end) — Lab ends / galaxy pull-back begins; ~700% (G) to the pin end
 } as const;
 
 /** Camera-less "zoom": centering, growing and the fly-through (Universe). */

@@ -4,6 +4,14 @@ import { useFrame } from "@react-three/fiber";
 import { useMemo, useRef } from "react";
 import { AdditiveBlending, Color, ShaderMaterial } from "three";
 import { STARFIELD } from "./config";
+import { clamp01, remap01 } from "./utils";
+import { useGalaxyScroll } from "#/stores/useGalaxyScroll";
+
+/** Galaxy-beat window over which this near, camera-pinned field fades out, leaving
+ *  only the galaxy's own (world-fixed) stars as the space around you. It lingers
+ *  through the "solar system fully visible" beat, then hands off to the galaxy as it
+ *  resolves (overlaps GALAXY.revealStart..revealEnd). */
+const GALAXY_FADE: [number, number] = [0.2, 0.55];
 
 type Props = {
   count?: number;
@@ -73,6 +81,7 @@ const Starfield = ({ count = STARFIELD.count, animate = true }: Props) => {
       uSize: { value: STARFIELD.size },
       uTwinkleSpeed: { value: STARFIELD.twinkleSpeed },
       uTwinkleAmount: { value: STARFIELD.twinkleAmount },
+      uReveal: { value: 1 },
       uPixelRatio: {
         value:
           typeof window !== "undefined"
@@ -86,9 +95,13 @@ const Starfield = ({ count = STARFIELD.count, animate = true }: Props) => {
   // Only the twinkle animates here; the parent (Universe) owns the rotation so
   // the whole cosmos turns together.
   useFrame((_, delta) => {
-    if (animate && materialRef.current) {
-      materialRef.current.uniforms.uTime.value += delta;
-    }
+    if (!materialRef.current) return;
+    if (animate) materialRef.current.uniforms.uTime.value += delta;
+    // Fade this near field out as the galaxy finale flies the camera out — the
+    // galaxy's own stars become the space around you (no doubled starfield).
+    const galaxy = clamp01(useGalaxyScroll.getState().progress);
+    materialRef.current.uniforms.uReveal.value =
+      1 - remap01(galaxy, GALAXY_FADE[0], GALAXY_FADE[1]);
   });
 
   return (
@@ -177,6 +190,7 @@ void main(){
 
 const FRAGMENT_SHADER = /* glsl */ `
 precision highp float;
+uniform float uReveal;
 varying vec3 vColor;
 varying float vBright;
 
@@ -186,6 +200,6 @@ void main(){
   if (d > 0.5) discard;
   float a = smoothstep(0.5, 0.0, d);
   a = pow(a, 1.6);
-  gl_FragColor = vec4(vColor * vBright, a * vBright);
+  gl_FragColor = vec4(vColor * vBright, a * vBright * uReveal);
 }
 `;

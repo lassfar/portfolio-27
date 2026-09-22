@@ -8,6 +8,7 @@ import { useHeroScroll } from "#/stores/useHeroScroll";
 import { useAboutScroll } from "#/stores/useAboutScroll";
 import { useVoyageScroll } from "#/stores/useVoyageScroll";
 import { useLabScroll } from "#/stores/useLabScroll";
+import { useGalaxyScroll } from "#/stores/useGalaxyScroll";
 import { JOURNEY } from "#/components/three.js/star/config";
 import { clamp01, remap01 } from "#/components/three.js/star/utils";
 import { addTextsScrollWriteIn } from "#/components/hooks/motions/texts/textsScrollWriteInMotion";
@@ -74,6 +75,7 @@ export default function useCosmicJourney(refs: CosmicJourneyRefs): void {
       const setAbout = useAboutScroll.getState().setProgress;
       const setVoyage = useVoyageScroll.getState().setProgress;
       const setLab = useLabScroll.getState().setProgress;
+      const setGalaxy = useGalaxyScroll.getState().setProgress;
 
       const easeIn = gsap.parseEase("power2.in");
       const easeOut = gsap.parseEase("power2.out");
@@ -170,9 +172,12 @@ export default function useCosmicJourney(refs: CosmicJourneyRefs): void {
             // solar reveal, Earth dive) are voyage fractions in the R3F components.
             // It clamps at 1 through the Earth dwell + the Lab, so the Earth holds.
             setVoyage(remap01(mp, JOURNEY.flyAwayStart, JOURNEY.voyageEnd));
-            // The Lab (Earth→Voyager) beat runs AFTER the dwell: earthDwellEnd..1.
+            // The Lab (Earth→Voyager) beat runs AFTER the dwell: earthDwellEnd..galaxyStart.
             // Over [voyageEnd, earthDwellEnd] this stays 0, so the Earth just holds.
-            setLab(remap01(mp, JOURNEY.earthDwellEnd, 1));
+            setLab(remap01(mp, JOURNEY.earthDwellEnd, JOURNEY.galaxyStart));
+            // The Galaxy finale runs over galaxyStart..1: the camera pulls back from
+            // the Voyager, flies through stars, and the galaxy resolves.
+            setGalaxy(remap01(mp, JOURNEY.galaxyStart, 1));
             renderAbout(jp);
             renderCraft(mp);
             toggleTitle(aboutTitle, jp >= JOURNEY.revealStart);
@@ -229,6 +234,7 @@ export default function useCosmicJourney(refs: CosmicJourneyRefs): void {
         setAbout(0);
         setVoyage(0);
         setLab(0);
+        setGalaxy(0);
         descSplits.forEach((s) => s.revert());
         aboutTitle?.tween.kill();
         aboutTitle?.split.revert();

@@ -5,6 +5,7 @@ import { useRef } from "react";
 import { DoubleSide, Group, Material, Mesh, Quaternion, Vector3 } from "three";
 import { clamp01, easeOutCubic, remap01 } from "#/components/three.js/star/utils";
 import { useLabScroll } from "#/stores/useLabScroll";
+import { useGalaxyScroll } from "#/stores/useGalaxyScroll";
 import { useSceneRotation } from "#/stores/useSceneRotation";
 import { LAB, VOYAGER } from "./config";
 import { recordScreen } from "./recordScreen";
@@ -69,7 +70,12 @@ const Voyager = () => {
     const lab = clamp01(useLabScroll.getState().progress);
     // Hidden through the dust rush, then fades in over the last stretch so it
     // resolves directly at a readable size (never a tiny speck that zooms).
-    const reveal = easeOutCubic(remap01(lab, LAB.revealStart, LAB.revealEnd));
+    // Then fades back OUT fast as the galaxy finale pulls the camera away (lab
+    // clamps at 1 through the galaxy beat, so this fade is what hides the craft
+    // + its Record label). visible=false also stops its per-frame work (perf).
+    const galaxyFade = remap01(useGalaxyScroll.getState().progress, 0, 0.12);
+    const reveal =
+      easeOutCubic(remap01(lab, LAB.revealStart, LAB.revealEnd)) * (1 - galaxyFade);
     const visible = reveal > 0.001;
 
     if (rootRef.current) {

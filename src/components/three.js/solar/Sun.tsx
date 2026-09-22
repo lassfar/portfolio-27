@@ -14,6 +14,7 @@ import { useVoyageScroll } from "#/stores/useVoyageScroll";
 import { easeOutCubic, remap01 } from "#/components/three.js/star/utils";
 import { SIMPLEX_NOISE } from "#/components/three.js/planet/shaders";
 import { SOLAR, SUN, VOYAGE } from "./config";
+import { finaleReturn } from "./reveal";
 
 type Props = {
   count?: number;
@@ -138,10 +139,12 @@ const Sun = ({ count = SUN.count, animate = true }: Props) => {
       if (pointsRef.current) pointsRef.current.rotation.y += delta * SUN.spin;
     }
     const voyage = useVoyageScroll.getState().progress;
-    // Fade in with the system, then fade OUT as we dive to Earth.
+    // Fade in with the system, then fade OUT as we dive to Earth — then fade BACK
+    // in for the galaxy finale (the pull-out re-reveals the whole real system).
     const earthFade = remap01(voyage, VOYAGE.earthFadeStart, VOYAGE.earthFadeEnd);
     const reveal =
-      easeOutCubic(remap01(voyage, SOLAR.revealStart, SOLAR.revealEnd)) * (1 - earthFade);
+      easeOutCubic(remap01(voyage, SOLAR.revealStart, SOLAR.revealEnd)) *
+      (1 - earthFade * (1 - finaleReturn()));
     m.uniforms.uReveal.value = reveal;
     if (glowRef.current) glowRef.current.opacity = reveal;
   });
