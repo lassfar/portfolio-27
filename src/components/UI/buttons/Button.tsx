@@ -7,6 +7,7 @@ const Button = ({
   size = "medium",
   state = "default",
   variant = "primary",
+  type = "button",
   onClick = () => {},
   ...props
 }: ButtonProps) => {
@@ -54,7 +55,7 @@ const Button = ({
         getSize(),
         props.className ? props.className : ""
       )}
-      type="button"
+      type={type}
     >
       {label}
     </button>
