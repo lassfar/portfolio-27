@@ -7,6 +7,7 @@ import SunriseLogo from "#/components/assets/pictures/logos/sunrise-logo";
 import SectionMarker from "#/components/UI/SectionMarker";
 import Button from "#/components/UI/buttons/Button";
 import Skills from "#/components/pages/home/skills/Skills";
+import Contact from "#/components/pages/home/contact/Contact";
 import useCosmicJourney from "#/components/pages/home/hooks/useCosmicJourney";
 import { useGSAP } from "@gsap/react";
 import gsap from "gsap";
@@ -38,6 +39,7 @@ const Hero = () => {
   const aboutPara2Ref = useRef<HTMLParagraphElement | null>(null);
   const heroMarkerRef = useRef<HTMLDivElement | null>(null);
   const craftRef = useRef<HTMLDivElement | null>(null);
+  const contactRef = useRef<HTMLDivElement | null>(null);
 
   // Detect reduced motion on the client (initial false → matches SSR, no
   // hydration mismatch). In reduced motion the overlays lay out in normal flow.
@@ -110,7 +112,8 @@ const Hero = () => {
   });
 
   // The whole cosmic journey — one pinned ScrollTrigger drives the star, the
-  // Saturn assembly, the About reveal, the folded-in Craft, and the fly-away.
+  // Saturn assembly, the About reveal, the folded-in Craft, the fly-away, and (at
+  // the very end, over the galaxy) the Contact form.
   useCosmicJourney({
     containerRef,
     contentRef,
@@ -121,6 +124,7 @@ const Hero = () => {
     aboutPara1Ref,
     aboutPara2Ref,
     craftRef,
+    contactRef,
   });
 
   // Nudge the scroll to kick off the journey (the star → Saturn sequence).
@@ -290,6 +294,10 @@ const Hero = () => {
           the Saturn for the fly-away. (Relative, in normal flow, for reduced
           motion.) */}
       <Skills overlayRef={craftRef} reduced={reduced} />
+
+      {/* Contact — the last beat: fades in over the blurred, dimmed galaxy once it
+          has fully resolved (and a short pause on it). */}
+      <Contact overlayRef={contactRef} reduced={reduced} />
     </div>
   );
 };

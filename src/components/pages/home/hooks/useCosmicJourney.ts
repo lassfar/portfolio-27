@@ -28,6 +28,8 @@ export type CosmicJourneyRefs = {
   aboutPara2Ref: RefObject<HTMLParagraphElement | null>;
   /** The Craft overlay root (slid up + faded by the journey). */
   craftRef: RefObject<HTMLDivElement | null>;
+  /** The Contact overlay root (faded in over the blurred galaxy at the end). */
+  contactRef: RefObject<HTMLDivElement | null>;
 };
 
 /**
@@ -42,9 +44,9 @@ export type CosmicJourneyRefs = {
  *     internal thresholds are jp fractions, unchanged by the tail.
  *
  * Everything visual is a deterministic function of progress (set every frame),
- * so the reveal, the Craft, and the fly-away all reverse perfectly on scroll-up.
- * Reduced motion skips the pin: the About + Craft are shown statically (the host
- * lays them out in normal flow) and the planet stays hidden.
+ * so the reveal, the Craft, the fly-away and the Contact form all reverse perfectly
+ * on scroll-up. Reduced motion skips the pin: the About, Craft + Contact are shown
+ * statically (the host lays them out in normal flow) and the planet stays hidden.
  */
 export default function useCosmicJourney(refs: CosmicJourneyRefs): void {
   const {
@@ -57,6 +59,7 @@ export default function useCosmicJourney(refs: CosmicJourneyRefs): void {
     aboutPara1Ref,
     aboutPara2Ref,
     craftRef,
+    contactRef,
   } = refs;
 
   useGSAP(
@@ -65,10 +68,11 @@ export default function useCosmicJourney(refs: CosmicJourneyRefs): void {
         typeof window !== "undefined" &&
         window.matchMedia("(prefers-reduced-motion: reduce)").matches;
       if (reduce) {
-        // No journey: show the About copy and the Craft statically (the host
-        // flips the overlays to normal flow); the planet stays hidden.
+        // No journey: show the About copy, the Craft and the Contact statically
+        // (the host flips the overlays to normal flow); the planet stays hidden.
         gsap.set(aboutRevealRef.current, { autoAlpha: 1, y: 0 });
         gsap.set(craftRef.current, { autoAlpha: 1, y: 0, clearProps: "transform" });
+        gsap.set(contactRef.current, { autoAlpha: 1, y: 0 });
         return;
       }
 
@@ -86,8 +90,30 @@ export default function useCosmicJourney(refs: CosmicJourneyRefs): void {
       const cosmos = containerRef.current?.querySelector<HTMLElement>(
         ".home-hero__canvas"
       );
+      const contactInner = contactRef.current?.querySelector<HTMLElement>(
+        ".home-contact__inner"
+      );
+      const contactPieces = Array.from(
+        contactRef.current?.querySelectorAll<HTMLElement>(".home-contact__piece") ?? []
+      );
 
-      // ── About reveal/exit (deterministic, reversible) ──────────────────────
+      // ── The cosmos behind the overlays: blurred + dimmed under the About and
+      //    the Contact (each passes its own 0..1 veil; they never overlap) ─────────
+      const renderCosmos = (aboutVeil: number, contactVeil: number) => {
+        if (!cosmos) return;
+        const blur = Math.max(
+          JOURNEY.revealBlur * aboutVeil,
+          JOURNEY.contactBlur * contactVeil
+        );
+        const dim = Math.min(
+          1 - (1 - JOURNEY.revealDim) * aboutVeil,
+          1 - (1 - JOURNEY.contactDim) * contactVeil
+        );
+        cosmos.style.filter =
+          blur > 0 || dim < 1 ? `blur(${blur}px) brightness(${dim})` : "none";
+      };
+
+      // ── About reveal/exit (deterministic, reversible) — returns its veil ──────
       const renderAbout = (p: number) => {
         const enterLin = remap01(p, JOURNEY.revealStart, JOURNEY.fillStart);
         const exitLin = remap01(p, JOURNEY.exitStart, 1);
@@ -101,12 +127,7 @@ export default function useCosmicJourney(refs: CosmicJourneyRefs): void {
           block.style.filter = `blur(${16 * exit}px)`;
         }
 
-        if (cosmos) {
-          const k = enterLin * (1 - exitLin);
-          cosmos.style.filter = `blur(${JOURNEY.revealBlur * k}px) brightness(${
-            1 - (1 - JOURNEY.revealDim) * k
-          })`;
-        }
+        return enterLin * (1 - exitLin);
       };
 
       // ── Craft overlay: slides up over the Saturn, then fades to reveal it ───
@@ -120,7 +141,31 @@ export default function useCosmicJourney(refs: CosmicJourneyRefs): void {
         craft.style.visibility = cover > 0.001 && fade < 0.999 ? "visible" : "hidden";
       };
 
-      renderAbout(0);
+      // ── Contact: after a pause on the full galaxy, the block fades + slides in
+      //    over it (like the About), then the fields → button → links rise in one
+      //    after another. Returns its veil for the cosmos. ─────────────────────────
+      const renderContact = (mp: number) => {
+        const c = remap01(mp, JOURNEY.contactStart, JOURNEY.contactEnd);
+        const enterLin = remap01(c, 0, 0.45);
+        const enter = easeOut(enterLin);
+        const block = contactRef.current;
+        if (block) {
+          block.style.opacity = String(enter);
+          block.style.transform = `translateY(${-40 * (1 - enter)}px)`;
+          block.style.visibility = enter > 0.001 ? "visible" : "hidden";
+        }
+        contactPieces.forEach((piece, i) => {
+          const t = easeOut(remap01(c, 0.5 + i * 0.06, 0.75 + i * 0.06));
+          piece.style.opacity = String(t);
+          piece.style.transform = `translateY(${16 * (1 - t)}px)`;
+          piece.style.visibility = t > 0.001 ? "visible" : "hidden"; // not tabbable while hidden
+        });
+        // The form only takes the pointer once it's in (drags reach space till then).
+        if (contactInner) contactInner.style.pointerEvents = c >= 0.6 ? "auto" : "none";
+        return enterLin;
+      };
+
+      renderCosmos(renderAbout(0), renderContact(0));
       renderCraft(0);
 
       // Paused, one-shot per-character write-ins for the two big overlay titles
@@ -141,6 +186,9 @@ export default function useCosmicJourney(refs: CosmicJourneyRefs): void {
       const aboutTitle = makeTitleWriteIn(aboutTitleRef.current);
       const craftTitle = makeTitleWriteIn(
         craftRef.current?.querySelector<HTMLElement>(".skills__title") ?? null
+      );
+      const contactTitle = makeTitleWriteIn(
+        contactRef.current?.querySelector<HTMLElement>(".home-contact__title") ?? null
       );
 
       const toggleTitle = (
@@ -176,14 +224,16 @@ export default function useCosmicJourney(refs: CosmicJourneyRefs): void {
             // The Lab (Earth→Voyager) beat runs AFTER the dwell: earthDwellEnd..galaxyStart.
             // Over [voyageEnd, earthDwellEnd] this stays 0, so the Earth just holds.
             setLab(remap01(mp, JOURNEY.earthDwellEnd, JOURNEY.galaxyStart));
-            // The Galaxy finale runs over galaxyStart..1: the camera pulls back from
-            // the Voyager, flies through stars, and the galaxy resolves.
-            setGalaxy(remap01(mp, JOURNEY.galaxyStart, 1));
-            renderAbout(jp);
+            // The Galaxy finale runs over galaxyStart..galaxyEnd: the camera pulls back
+            // from the Voyager, flies through stars, and the galaxy resolves.
+            setGalaxy(remap01(mp, JOURNEY.galaxyStart, JOURNEY.galaxyEnd));
+            renderCosmos(renderAbout(jp), renderContact(mp));
             renderCraft(mp);
             toggleTitle(aboutTitle, jp >= JOURNEY.revealStart);
             // The Craft title writes in once the overlay has fully covered.
             toggleTitle(craftTitle, mp >= JOURNEY.craftCoverEnd);
+            // The Contact title writes in as its block starts to appear.
+            toggleTitle(contactTitle, mp > JOURNEY.contactStart);
           },
         },
       });
@@ -232,6 +282,23 @@ export default function useCosmicJourney(refs: CosmicJourneyRefs): void {
         duration: JOURNEY.constellationEnd - JOURNEY.craftCoverEnd,
       });
 
+      // Contact intro line — scroll-scrubbed per-word write-in, after the title.
+      const contactSpan = JOURNEY.contactEnd - JOURNEY.contactStart;
+      const contactIntroSplits = addTextsScrollWriteIn(
+        tl,
+        [
+          {
+            ref: {
+              current:
+                contactRef.current?.querySelector<HTMLElement>(".home-contact__intro") ??
+                null,
+            },
+            type: "words",
+          },
+        ],
+        { at: JOURNEY.contactStart + 0.2 * contactSpan, duration: 0.3 * contactSpan }
+      );
+
       return () => {
         journeyTrigger.current = null;
         setStar(0);
@@ -240,10 +307,13 @@ export default function useCosmicJourney(refs: CosmicJourneyRefs): void {
         setLab(0);
         setGalaxy(0);
         descSplits.forEach((s) => s.revert());
+        contactIntroSplits.forEach((s) => s.revert());
         aboutTitle?.tween.kill();
         aboutTitle?.split.revert();
         craftTitle?.tween.kill();
         craftTitle?.split.revert();
+        contactTitle?.tween.kill();
+        contactTitle?.split.revert();
       };
     },
     { scope: containerRef }

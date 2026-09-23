@@ -13,7 +13,7 @@ import { galaxyTuningSnapshot, rebuildGalaxy, resetGalaxyTuning } from "./tuning
  * as `docs/prototypes/galaxy-realistic.html` and `galaxy-zoom-realistic.html`, driving
  * the REAL scene live. It mutates `GALAXY` / `GALAXY_FX` in place: look values apply
  * instantly, shape values rebuild the galaxy, pose values re-place it (the Sun stays in
- * its arm). Plus "jump to" buttons (the finale is ~84% down the page), the scroll
+ * its arm). Plus "jump to" buttons (the finale is ~78% down the page), the scroll
  * timing windows, "copy values" (to bake them into config.ts) and "reset".
  *
  * Visibility: with `SHOW_GALAXY_GUI` on, it shows in development (`?gui=0` hides it);
@@ -52,9 +52,13 @@ export default GalaxyGui;
 
 /** Scroll to a point of the galaxy finale (0 = leaving the Voyager, 1 = full galaxy). */
 function jumpToGalaxy(progress: number) {
+  jumpToJourney(JOURNEY.galaxyStart + progress * (JOURNEY.galaxyEnd - JOURNEY.galaxyStart));
+}
+
+/** Scroll to a point of the pinned journey (master progress 0..1). */
+function jumpToJourney(mp: number) {
   const trigger = journeyTrigger.current;
   if (!trigger) return;
-  const mp = JOURNEY.galaxyStart + progress * (1 - JOURNEY.galaxyStart);
   const y = trigger.start + mp * (trigger.end - trigger.start);
   const smoother = ScrollSmoother.get();
   if (smoother) smoother.scrollTo(y, false);
@@ -75,11 +79,13 @@ function buildPanel(gui: GUI) {
     solar: () => jumpToGalaxy(0.44),
     inside: () => jumpToGalaxy(0.68),
     galaxy: () => jumpToGalaxy(1),
+    contact: () => jumpToJourney(1),
   };
   fJump.add(jumps, "voyager").name("leaving the Voyager (0%)");
   fJump.add(jumps, "solar").name("the solar system (44%)");
   fJump.add(jumps, "inside").name("inside the galaxy (68%)");
   fJump.add(jumps, "galaxy").name("the full galaxy (100%)");
+  fJump.add(jumps, "contact").name("the contact form");
 
   const fCmp = gui.addFolder("Compare (switch layers on/off)");
   fCmp.add(FX, "showGlow").name("soft glow");
