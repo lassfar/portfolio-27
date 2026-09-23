@@ -24,7 +24,7 @@ import { useLabScroll } from "#/stores/useLabScroll";
 import { useEarthAnchor } from "#/stores/useEarthAnchor";
 import { useSceneRotation } from "#/stores/useSceneRotation";
 import { SOLAR, SUNPOS } from "#/components/three.js/solar/config";
-import { finaleReturn } from "#/components/three.js/solar/reveal";
+import { finaleFarFade, finaleReturn } from "#/components/three.js/solar/reveal";
 import { LAB } from "#/components/three.js/voyager/config";
 import { EARTH } from "./config";
 import { directionToUV } from "./utils";
@@ -246,7 +246,8 @@ const DottedEarth = ({ animate = true, interactive = true }: Props) => {
     const labFade = remap01(clamp01(useLabScroll.getState().progress), 0, LAB.earthFadeEnd);
     const r =
       easeOutCubic(remap01(voyage, SOLAR.revealStart, SOLAR.revealEnd)) *
-      (1 - labFade * (1 - finaleReturn()));
+      (1 - labFade * (1 - finaleReturn())) *
+      finaleFarFade(); // gone once the system is a speck
     if (dotMatRef.current) {
       dotMatRef.current.uniforms.uReveal.value = r;
       if (animate) dotMatRef.current.uniforms.uTime.value += delta; // twinkle

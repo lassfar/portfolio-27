@@ -18,7 +18,7 @@ import {
   SUNPOS,
   VOYAGE,
 } from "./config";
-import { finaleReturn } from "./reveal";
+import { finaleFarFade, finaleReturn } from "./reveal";
 import { flyingSunPos } from "#/components/three.js/galaxy/spin";
 
 type Props = {
@@ -108,7 +108,7 @@ const OrbitRing = ({ radius }: { radius: number }) => {
     const reveal =
       easeOutCubic(remap01(voyage, SOLAR.revealStart, SOLAR.revealEnd)) *
       (1 - earthFade * (1 - finaleReturn()));
-    matRef.current.opacity = SOLAR.ring.opacity * reveal;
+    matRef.current.opacity = SOLAR.ring.opacity * reveal * finaleFarFade();
   });
 
   return (

@@ -6,6 +6,7 @@ import { AdditiveBlending, CanvasTexture, Sprite, SpriteMaterial } from "three";
 import { clamp01, remap01 } from "#/components/three.js/star/utils";
 import { useLabScroll } from "#/stores/useLabScroll";
 import { useGalaxyScroll } from "#/stores/useGalaxyScroll";
+import { flyOffset } from "#/components/three.js/galaxy/spin";
 import { PALE_BLUE_DOT as PBD } from "./config";
 
 /** Soft round blue glow for the dot. */
@@ -27,7 +28,8 @@ function makeGlow(color: string) {
 /**
  * The Pale Blue Dot — Earth as a single lonely blue speck lingering far behind
  * Voyager, echoing the photo Voyager 1 took of Earth from ~6 billion km. Fades in
- * (LAB → PALE_BLUE_DOT.fade) as the craft settles into the near view.
+ * (LAB → PALE_BLUE_DOT.fade) as the craft settles into the near view. Travels with
+ * the Voyager as the solar system flies through the galaxy (`flyOffset`).
  */
 const PaleBlueDot = () => {
   const ref = useRef<Sprite>(null);
@@ -52,6 +54,8 @@ const PaleBlueDot = () => {
     if (ref.current) {
       ref.current.visible = op > 0.001;
       mat.opacity = op;
+      const [ox, oy, oz] = flyOffset();
+      ref.current.position.set(PBD.pos[0] + ox, PBD.pos[1] + oy, PBD.pos[2] + oz);
     }
   });
 

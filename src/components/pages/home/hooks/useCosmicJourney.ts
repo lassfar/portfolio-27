@@ -9,6 +9,7 @@ import { useAboutScroll } from "#/stores/useAboutScroll";
 import { useVoyageScroll } from "#/stores/useVoyageScroll";
 import { useLabScroll } from "#/stores/useLabScroll";
 import { useGalaxyScroll } from "#/stores/useGalaxyScroll";
+import { journeyTrigger } from "#/stores/journeyTrigger";
 import { JOURNEY } from "#/components/three.js/star/config";
 import { clamp01, remap01 } from "#/components/three.js/star/utils";
 import { addTextsScrollWriteIn } from "#/components/hooks/motions/texts/textsScrollWriteInMotion";
@@ -187,6 +188,8 @@ export default function useCosmicJourney(refs: CosmicJourneyRefs): void {
         },
       });
 
+      journeyTrigger.current = tl.scrollTrigger ?? null; // for dev "jump to" tools
+
       // Timeline positions live in mp (0..1). The journey block is scaled by
       // journeyEnd so its jp-fraction thresholds land at the right mp.
       const JE = JOURNEY.journeyEnd;
@@ -230,6 +233,7 @@ export default function useCosmicJourney(refs: CosmicJourneyRefs): void {
       });
 
       return () => {
+        journeyTrigger.current = null;
         setStar(0);
         setAbout(0);
         setVoyage(0);

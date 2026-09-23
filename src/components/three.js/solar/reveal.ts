@@ -18,3 +18,13 @@ export function finaleReturn(): number {
     remap01(galaxy, SOLAR.finaleReturn[0], SOLAR.finaleReturn[1])
   );
 }
+
+/**
+ * 1 while the planets + orbit lines are readable in the finale, fading to 0 once the
+ * camera is far out and they're only a few pixels wide (their dark shaded dots would
+ * otherwise smudge the galaxy). The Sun doesn't use this — it stays as the speck.
+ */
+export function finaleFarFade(): number {
+  const galaxy = clamp01(useGalaxyScroll.getState().progress);
+  return 1 - remap01(galaxy, SOLAR.finaleFarFade[0], SOLAR.finaleFarFade[1]);
+}

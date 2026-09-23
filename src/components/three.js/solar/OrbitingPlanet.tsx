@@ -6,7 +6,7 @@ import { Color, NormalBlending, ShaderMaterial, Group } from "three";
 import { useVoyageScroll } from "#/stores/useVoyageScroll";
 import { easeOutCubic, remap01 } from "#/components/three.js/star/utils";
 import { orbitPosition, PlanetDef, SOLAR, VOYAGE } from "./config";
-import { finaleReturn } from "./reveal";
+import { finaleFarFade, finaleReturn } from "./reveal";
 
 type Props = {
   def: PlanetDef;
@@ -101,7 +101,8 @@ const OrbitingPlanet = ({ def, count, animate = true }: Props) => {
     const earthFade = remap01(voyage, VOYAGE.earthFadeStart, VOYAGE.earthFadeEnd);
     m.uniforms.uReveal.value =
       easeOutCubic(remap01(voyage, SOLAR.revealStart, SOLAR.revealEnd)) *
-      (1 - earthFade * (1 - finaleReturn()));
+      (1 - earthFade * (1 - finaleReturn())) *
+      finaleFarFade(); // gone once the system is a speck
     // Mild dot-thinning as the camera pulls away (these siblings are small + far).
     m.uniforms.uThin.value = SOLAR.planetThinMax * voyage;
   });

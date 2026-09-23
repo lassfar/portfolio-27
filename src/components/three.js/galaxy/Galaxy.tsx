@@ -1,349 +1,409 @@
 "use client";
 
-import { useFrame, useThree } from "@react-three/fiber";
-import { useMemo, useRef } from "react";
+import { createPortal, useFrame, useThree } from "@react-three/fiber";
+import { RefObject, useEffect, useMemo, useRef } from "react";
 import {
+  AddEquation,
   AdditiveBlending,
-  BufferGeometry,
   Color,
-  Float32BufferAttribute,
+  CustomBlending,
   Group,
+  HalfFloatType,
+  LinearSRGBColorSpace,
   Mesh,
+  MultiplyBlending,
+  OneFactor,
+  Points,
+  Quaternion,
+  Scene,
   ShaderMaterial,
+  Vector2,
+  WebGLRenderTarget,
 } from "three";
 import { clamp01, easeOutCubic, remap01 } from "#/components/three.js/star/utils";
 import { useGalaxyScroll } from "#/stores/useGalaxyScroll";
+import { GALAXY, GALAXY_CENTER, GALAXY_FX, GALAXY_SCALE, GALAXY_SPACE, GALAXY_TILT } from "./config";
+import { buildGalaxyLayers, GalaxyLayers } from "./buildGalaxy";
+import { galaxyTuning } from "./tuning";
+import { advanceSolarFly, galaxyCenterPos, galaxyDrag, updateGalaxyDrag } from "./spin";
+import { SKY_END_VIEW } from "./sky";
+import GalaxySparkles from "./GalaxySparkles";
+import SpaceStars from "./SpaceStars";
+import DistantGalaxies from "./DistantGalaxies";
+import { GalaxyBloom } from "./GalaxyBloom";
 import {
-  GALAXY,
-  GALAXY_CENTER,
-  GALAXY_SCALE,
-  GALAXY_TILT,
-  GALAXY_PALETTE as PAL,
-} from "./config";
-import { advanceSolarFly } from "./spin";
+  COMPOSITE_FRAG,
+  COMPOSITE_VERT,
+  CORE_FRAG,
+  CORE_VERT,
+  DOT_FRAG,
+  DOT_VERT,
+  DUST_FRAG,
+  DUST_VERT,
+  GLOW_FRAG,
+  GLOW_VERT,
+} from "./shaders";
 
 /**
- * The dotted, brand-tinted spiral galaxy — the finale. A single merged point cloud
- * (bulge, inter-arm disc, spiral arms with ridges + dust lanes, coral knots, halo,
- * faint dust) rendered in the site's "dot language" (additive, soft-round,
- * brightness-twinkle), plus a warm core-glow billboard.
+ * The realistic, brand-tinted spiral galaxy — the finale. Four point-cloud layers
+ * built from ONE arm model (`buildGalaxyLayers`), plus a warm core glow:
  *
- * Built FLAT (in its own XZ plane): the inclined view comes from the camera
- * climbing above the disc during the pull-out (see CameraRig / GALAXY_ZOOM.endDir),
- * NOT from tilting the geometry — this matches the approved motion prototype. The
- * disc sits at `GALAXY_CENTER`, scaled by `GALAXY_SCALE` so the world origin (the
- * solar speck, "You are here") lands ~⅔ out in one arm. It turns gently on its own
- * axis; the CameraRig pulls the camera back to frame it. Reveal (and the subtree's
- * visibility, for perf) is driven by `useGalaxyScroll`.
+ *   glow  → soft milky starlight (additive, real size in space)
+ *   stars → the dots (additive, FIXED on-screen size — never balloon up close)
+ *   dust  → dark-peach brown lanes on the arms' inner edge (multiplied: pure
+ *           absorption, so it only shows where there's light behind it)
+ *   knots → coral-pink star-forming regions + young blue clusters (above the dust)
  *
- * Dots are FIXED screen size (no `/-mv.z` term), so they stay crisp at every zoom
- * distance instead of ballooning when the camera is inside the disc.
+ * Glow and dust fade out near the camera, so from inside the galaxy they only show
+ * in the distance — a Milky-Way band with dust — and never turn into blobs.
+ *
+ * ── Its own display-space layer ──
+ * The look was tuned in `docs/prototypes/galaxy-zoom-realistic.html`, where light
+ * adds up in SCREEN colours. The site mixes light in linear space, which lifts faint
+ * values (hazy "bubbles", faint rings) and weakens the dust. So the galaxy (+ its
+ * sparkles) lives in its own scene, rendered each frame — after the camera has moved
+ * — into a half-float target with the prototype's exact maths, then added to the
+ * main scene ONCE, converted to linear (`COMPOSITE_FRAG`). It gets its own bloom in
+ * the same screen values (`GalaxyBloom`), like the prototype's. It matches the
+ * prototype, the rest of the site is untouched, and the dust can never darken the
+ * solar system flying through it.
+ *
+ * Built in its own plane, tilted to the locked look-study pose (inclination + roll)
+ * and centred at `GALAXY_CENTER` (scaled by `GALAXY_SCALE`), so the real Sun sits ~⅔
+ * out in one arm. It turns gently on its own axis; the CameraRig pulls back to frame
+ * it. Reveal is driven by `useGalaxyScroll`; while hidden, nothing is rendered.
+ *
+ * ── Part of space ──
+ * It sits IN the universe, not on a backdrop: the sky frame (`sky.ts`) around it holds
+ * a deep field of far stars, a few distant galaxies and the sparkles (all under the
+ * dust, which darkens what's behind the lanes); its rim melts into that space (soft
+ * edges); and a drag turns the galaxy and its sky together with the rest of the
+ * cosmos, about the Sun (`galaxyDrag`, see galaxy/spin.ts).
  */
-
-// ── seeded RNG + helpers (ported from the prototype so the look is identical) ──
-function mulberry32(a: number) {
-  return function () {
-    a |= 0;
-    a = (a + 0x6d2b79f5) | 0;
-    let t = Math.imul(a ^ (a >>> 15), 1 | a);
-    t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
-    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
-  };
-}
-
-/** Build the merged galaxy geometry (deterministic for a given seed + count). */
-function buildGalaxy(count: number): BufferGeometry {
-  const rnd = mulberry32(GALAXY.seed);
-  const TAU = Math.PI * 2;
-  const gauss = (sigma: number) => {
-    const u = 1 - rnd();
-    const v = rnd();
-    return sigma * Math.sqrt(-2 * Math.log(u)) * Math.cos(TAU * v);
-  };
-  const smoothstep = (a: number, b: number, x: number) => {
-    const t = Math.min(1, Math.max(0, (x - a) / (b - a)));
-    return t * t * (3 - 2 * t);
-  };
-  const dir = (): [number, number, number] => {
-    const u = rnd() * 2 - 1;
-    const th = rnd() * TAU;
-    const s = Math.sqrt(1 - u * u);
-    return [s * Math.cos(th), u, s * Math.sin(th)];
-  };
-
-  const C = {
-    peach: new Color(PAL.peach),
-    lpeach: new Color(PAL.lpeach),
-    babyBlue: new Color(PAL.babyBlue),
-    lbabyBlue: new Color(PAL.lbabyBlue),
-    nebulaBlue: new Color(PAL.nebulaBlue),
-    coral: new Color(PAL.coral),
-    coreWhite: new Color(PAL.coreWhite),
-  };
-  const _c = new Color();
-
-  const RMAX = GALAXY.discRadius;
-  const H0 = GALAXY.discScaleLength;
-  const R0 = 1.1;
-  const RNORM = 1 - Math.exp(-RMAX / H0);
-  const B = 1 / Math.tan((GALAXY.pitchDeg * Math.PI) / 180);
-  const sampleRadius = () => -H0 * Math.log(1 - rnd() * RNORM);
-  const hz = (r: number) =>
-    GALAXY.discThickness * (0.6 + 0.4 * Math.exp(-r / (RMAX * 0.5)));
-  const armAngle = (r: number, k: number) =>
-    k * (TAU / GALAXY.armCount) + B * Math.log(Math.max(r, R0) / R0) + GALAXY.armPhase;
-  const armColor = (rr: number): Color => {
-    const t = Math.min(1, rr / RMAX);
-    const ts = Math.min(1, Math.max(0, t + (rnd() - 0.5) * 0.12));
-    if (ts < GALAXY.tWarm)
-      return _c.copy(C.lpeach).lerp(C.peach, smoothstep(0, GALAXY.tWarm, ts));
-    if (ts < GALAXY.tBlue)
-      return _c.copy(C.peach).lerp(C.babyBlue, smoothstep(GALAXY.tWarm, GALAXY.tBlue, ts));
-    _c.copy(C.babyBlue).lerp(C.lbabyBlue, (ts - GALAXY.tBlue) / (1 - GALAXY.tBlue));
-    if (rnd() < 0.25) _c.lerp(C.nebulaBlue, 0.4);
-    return _c;
-  };
-
-  const pos: number[] = [];
-  const col: number[] = [];
-  const scl: number[] = [];
-  const bri: number[] = [];
-  const sed: number[] = [];
-  const push = (x: number, y: number, z: number, c: Color, s: number, b: number) => {
-    pos.push(x, y, z);
-    col.push(c.r, c.g, c.b);
-    scl.push(s);
-    bri.push(b);
-    sed.push(rnd());
-  };
-  const jitter = () => 0.6 + rnd() * 0.8;
-  const baseBright = () => 0.82 + rnd() * 0.32;
-  const standout = (s: number, b: number): [number, number] =>
-    rnd() < GALAXY.standoutFraction ? [s * 1.8, b * 1.5] : [s, b];
-
-  // 1 — central bulge
-  const nBulge = Math.round(count * 0.15);
-  for (let i = 0; i < nBulge; i++) {
-    const r = GALAXY.bulgeRadius * Math.pow(rnd(), 1.8);
-    const d = dir();
-    const c = _c.copy(C.lpeach).lerp(C.peach, r / GALAXY.bulgeRadius);
-    const b = (1.0 + 0.6 * (1 - r / GALAXY.bulgeRadius)) * baseBright();
-    push(d[0] * r, d[1] * r * GALAXY.bulgeFlatten, d[2] * r, c, 0.5 + rnd() * 0.5, b);
-  }
-  // 2 — inter-arm disc (uniform angle fills the gaps)
-  const nDisc = Math.round(count * 0.2);
-  for (let i = 0; i < nDisc; i++) {
-    const r = sampleRadius();
-    const phi = rnd() * TAU;
-    const c = armColor(r);
-    const so = standout(0.6 + rnd() * 0.4, baseBright() * 0.6);
-    push(Math.cos(phi) * r, gauss(hz(r)), Math.sin(phi) * r, c, so[0], so[1]);
-  }
-  // 3 — spiral arms (log-spiral + fuzz + ridge + dust-lane)
-  const nArm = Math.round(count * 0.5);
-  let got = 0;
-  let tries = 0;
-  const maxTries = nArm * 3;
-  while (got < nArm && tries < maxTries) {
-    tries++;
-    const r = sampleRadius();
-    const k = Math.floor(rnd() * GALAXY.armCount);
-    const sigmaPhi = GALAXY.armWidth / Math.max(r, R0);
-    const dPhi = gauss(sigmaPhi);
-    if (
-      dPhi > -GALAXY.dustAt - GALAXY.dustWidth &&
-      dPhi < -GALAXY.dustAt + GALAXY.dustWidth &&
-      rnd() < GALAXY.dustDepth
-    )
-      continue; // dust lane — reject
-    const phi = armAngle(r, k) + dPhi;
-    const rr = Math.max(0, r + gauss(0.12 * r));
-    const ridge = Math.exp(-(dPhi * dPhi) / (2 * Math.pow(0.45 * sigmaPhi, 2)));
-    const c = _c.copy(armColor(rr));
-    const so = standout(jitter() * (1 + 0.4 * ridge), baseBright() * (1 + GALAXY.ridgeGain * ridge));
-    push(Math.cos(phi) * rr, gauss(hz(rr)), Math.sin(phi) * rr, c, so[0], so[1]);
-    got++;
-  }
-  // 4 — star-forming knots (coral clusters on the arms)
-  for (let kk = 0; kk < GALAXY.knotCount; kk++) {
-    const r = (0.4 + rnd() * 0.5) * RMAX;
-    const k = Math.floor(rnd() * GALAXY.armCount);
-    const phi = armAngle(r, k);
-    const cx = Math.cos(phi) * r;
-    const cz = Math.sin(phi) * r;
-    const cy = gauss(hz(r));
-    for (let j = 0; j < GALAXY.dotsPerKnot; j++) {
-      const c = _c.copy(C.coral).lerp(C.lpeach, rnd() * 0.6);
-      let b = baseBright() * 1.5;
-      const s = jitter() * 1.7;
-      if (rnd() < 0.12) {
-        c.copy(C.coreWhite);
-        b *= 1.3;
-      }
-      push(cx + gauss(0.28), cy + gauss(0.12), cz + gauss(0.28), c, s, b);
-    }
-  }
-  // 5 — outer halo (round, dim → volume)
-  const nHalo = Math.round(count * 0.06);
-  for (let i = 0; i < nHalo; i++) {
-    const r = RMAX * (0.6 + 0.7 * Math.pow(rnd(), 2));
-    const d = dir();
-    const c = _c.copy(C.coreWhite).lerp(C.lbabyBlue, rnd());
-    push(d[0] * r, d[1] * r * 0.85, d[2] * r, c, 0.4 + rnd() * 0.4, baseBright() * 0.4);
-  }
-  // 6 — faint disc dust (soft glow bed under the arms)
-  const nDust = Math.round(count * 0.05);
-  for (let i = 0; i < nDust; i++) {
-    const r = sampleRadius();
-    const phi = rnd() * TAU;
-    const c = _c.copy(C.nebulaBlue).lerp(C.peach, r / RMAX);
-    push(Math.cos(phi) * r, gauss(hz(r) * 1.4), Math.sin(phi) * r, c, 1.5 + rnd() * 1.2, baseBright() * 0.25);
-  }
-
-  const g = new BufferGeometry();
-  g.setAttribute("position", new Float32BufferAttribute(pos, 3));
-  g.setAttribute("aColor", new Float32BufferAttribute(col, 3));
-  g.setAttribute("aScale", new Float32BufferAttribute(scl, 1));
-  g.setAttribute("aBright", new Float32BufferAttribute(bri, 1));
-  g.setAttribute("aSeed", new Float32BufferAttribute(sed, 1));
-  return g;
-}
-
 const Galaxy = ({ animate = true }: { animate?: boolean }) => {
   const rootRef = useRef<Group>(null);
   const spinRef = useRef<Group>(null);
-  const matRef = useRef<ShaderMaterial>(null);
   const coreRef = useRef<Mesh>(null);
-  const coreMatRef = useRef<ShaderMaterial>(null);
+  const skyRef = useRef<Group>(null);
+  const compositeRef = useRef<Mesh>(null);
+  const gl = useThree((s) => s.gl);
   const camera = useThree((s) => s.camera);
+  const dpr = useThree((s) => s.viewport.dpr);
 
   const isSmall = typeof window !== "undefined" && window.innerWidth < 768;
-  const count = isSmall ? GALAXY.countMobile : GALAXY.count;
-  const pixelRatio =
-    typeof window !== "undefined" ? Math.min(window.devicePixelRatio, 2) : 1.5;
+  const aux = isSmall ? GALAXY.auxMobile : 1;
 
-  const geometry = useMemo(() => buildGalaxy(count), [count]);
-  const uniforms = useMemo(
+  // The four point layers are built (and REbuilt, when a shape value is tuned — see
+  // galaxy/tuning.ts) imperatively in the frame loop and swapped onto these points, so
+  // a React re-render can never reattach a stale geometry.
+  const tiltRef = useRef<Group>(null);
+  const glowPts = useRef<Points>(null);
+  const starPts = useRef<Points>(null);
+  const dustPts = useRef<Points>(null);
+  const knotPts = useRef<Points>(null);
+  const layersRef = useRef<GalaxyLayers | null>(null);
+  const builtVersion = useRef(-1);
+  useEffect(
+    () => () => {
+      const L = layersRef.current;
+      if (L) [L.stars, L.knots, L.glow, L.dust].forEach((g) => g.dispose());
+    },
+    []
+  );
+
+  // Uniforms shared by every layer (one reveal, one clock, one shear, one near fade).
+  const shared = useMemo(
     () => ({
       uTime: { value: 0 },
-      uSize: { value: GALAXY.uSize },
-      uPixelRatio: { value: pixelRatio },
-      uTwinkleAmt: { value: GALAXY.twinkleAmount },
+      uDiff: { value: GALAXY.differential },
+      uPixelRatio: { value: 1 },
       uReveal: { value: 0 },
+      uNearA: { value: GALAXY.nearFadeStart * GALAXY_SCALE },
+      uNearB: { value: GALAXY.nearFadeEnd * GALAXY_SCALE },
     }),
-    [pixelRatio]
+    []
   );
-  const coreUniforms = useMemo(() => ({ uOpacity: { value: 0 } }), []);
+  useEffect(() => {
+    shared.uPixelRatio.value = dpr; // the canvas's real pixel ratio → sizes match the prototype
+  }, [dpr, shared]);
 
+  const materials = useMemo(() => {
+    const base = { transparent: true, depthWrite: false, depthTest: false };
+    const dots = (boost: number) =>
+      new ShaderMaterial({
+        ...base,
+        blending: AdditiveBlending,
+        uniforms: {
+          ...shared,
+          uSize: { value: GALAXY.uSize },
+          uTwinkleAmt: { value: GALAXY.twinkleAmount },
+          uBoost: { value: boost },
+        },
+        vertexShader: DOT_VERT,
+        fragmentShader: DOT_FRAG,
+      });
+    return {
+      stars: dots(1),
+      knots: dots(GALAXY.knotBrightness),
+      glow: new ShaderMaterial({
+        ...base,
+        blending: AdditiveBlending,
+        uniforms: {
+          ...shared,
+          uGlowSize: { value: GALAXY.glowSize * GALAXY_SCALE },
+          uGlowAmt: { value: GALAXY.glowAmount },
+          uEdgeSoft: { value: GALAXY.edgeSoftness },
+        },
+        vertexShader: GLOW_VERT,
+        fragmentShader: GLOW_FRAG,
+      }),
+      dust: new ShaderMaterial({
+        ...base,
+        blending: MultiplyBlending,
+        premultipliedAlpha: true, // required by three's MultiplyBlending (see DUST_FRAG)
+        uniforms: {
+          ...shared,
+          uDustSize: { value: GALAXY.dustSize * GALAXY_SCALE },
+          uDustOpacity: { value: GALAXY.dustOpacity },
+        },
+        vertexShader: DUST_VERT,
+        fragmentShader: DUST_FRAG,
+      }),
+      core: new ShaderMaterial({
+        ...base,
+        blending: AdditiveBlending,
+        uniforms: { uOpacity: { value: 0 } },
+        vertexShader: CORE_VERT,
+        fragmentShader: CORE_FRAG,
+      }),
+    };
+  }, [shared]);
+  useEffect(
+    () => () => Object.values(materials).forEach((m) => m.dispose()),
+    [materials]
+  );
+
+  // ── the galaxy's own layer ──
+  const galaxyScene = useMemo(() => new Scene(), []);
+  const target = useMemo(
+    () =>
+      new WebGLRenderTarget(1, 1, {
+        type: HalfFloatType, // headroom above 1 for the dense core (rolled off later)
+        depthBuffer: false,
+        stencilBuffer: false,
+      }),
+    []
+  );
+  useEffect(() => () => target.dispose(), [target]);
+  const bloom = useMemo(
+    () =>
+      new GalaxyBloom(gl, {
+        threshold: GALAXY_FX.bloomThreshold,
+        radius: GALAXY_FX.bloomRadius,
+      }),
+    [gl]
+  );
+  useEffect(() => () => bloom.dispose(), [bloom]);
+  const composite = useMemo(
+    () =>
+      new ShaderMaterial({
+        transparent: true,
+        depthWrite: false,
+        depthTest: false,
+        // Add the light (rgb) and its coverage (alpha) on top of the scene.
+        blending: CustomBlending,
+        blendEquation: AddEquation,
+        blendSrc: OneFactor,
+        blendDst: OneFactor,
+        blendEquationAlpha: AddEquation,
+        blendSrcAlpha: OneFactor,
+        blendDstAlpha: OneFactor,
+        uniforms: {
+          tGalaxy: { value: target.texture },
+          tBloom: { value: bloom.texture },
+          uBloom: { value: GALAXY_FX.bloomStrength },
+          // the page colour as raw screen values (no colour-management conversion)
+          uBg: { value: new Color().setStyle(GALAXY_FX.pageBackground, LinearSRGBColorSpace) },
+          uFill: { value: 0 },
+        },
+        vertexShader: COMPOSITE_VERT,
+        fragmentShader: COMPOSITE_FRAG,
+      }),
+    [target, bloom]
+  );
+  useEffect(() => () => composite.dispose(), [composite]);
+
+  // The solar system's flight through the arm (galaxy/spin.ts) — BEFORE every other
+  // frame callback, so everything flying with it (planets, Voyager, camera) reads the
+  // same position this frame.
+  useFrame((_, delta) => advanceSolarFly(delta, animate), -1);
+
+  // Scroll-driven state + live-tunable values (normal priority).
   useFrame((_, delta) => {
+    // The drag turn (after the Universe has published this frame's scene rotation);
+    // the CameraRig reads the same value.
+    updateGalaxyDrag();
+
+    // (Re)build the layers on first frame, and whenever a shape value was tuned.
+    if (builtVersion.current !== galaxyTuning.shapeVersion) {
+      const old = layersRef.current;
+      const next = buildGalaxyLayers(isSmall ? GALAXY.countMobile : GALAXY.count, aux);
+      const pairs: [RefObject<Points | null>, GalaxyLayers[keyof GalaxyLayers]][] = [
+        [glowPts, next.glow],
+        [starPts, next.stars],
+        [dustPts, next.dust],
+        [knotPts, next.knots],
+      ];
+      for (const [ref, geometry] of pairs) {
+        if (!ref.current) continue;
+        if (!old) ref.current.geometry.dispose(); // R3F's empty placeholder
+        ref.current.geometry = geometry;
+      }
+      if (old) [old.stars, old.knots, old.glow, old.dust].forEach((g) => g.dispose());
+      layersRef.current = next;
+      builtVersion.current = galaxyTuning.shapeVersion;
+    }
+
+    // Live values — GALAXY / GALAXY_FX can be tuned at runtime (GalaxyGui).
+    shared.uDiff.value = GALAXY.differential;
+    shared.uNearA.value = GALAXY.nearFadeStart * GALAXY_SCALE;
+    shared.uNearB.value = Math.max(GALAXY.nearFadeEnd, GALAXY.nearFadeStart + 0.1) * GALAXY_SCALE;
+    for (const m of [materials.stars, materials.knots]) {
+      m.uniforms.uSize.value = GALAXY.uSize;
+      m.uniforms.uTwinkleAmt.value = GALAXY.twinkleAmount;
+    }
+    materials.knots.uniforms.uBoost.value = GALAXY.knotBrightness;
+    materials.glow.uniforms.uGlowAmt.value = GALAXY.glowAmount;
+    materials.glow.uniforms.uGlowSize.value = GALAXY.glowSize * GALAXY_SCALE;
+    materials.glow.uniforms.uEdgeSoft.value = GALAXY.edgeSoftness;
+    materials.dust.uniforms.uDustOpacity.value = GALAXY.dustOpacity;
+    materials.dust.uniforms.uDustSize.value = GALAXY.dustSize * GALAXY_SCALE;
+    bloom.threshold = GALAXY_FX.bloomThreshold;
+    bloom.radius = GALAXY_FX.bloomRadius;
+    if (glowPts.current) glowPts.current.visible = GALAXY_FX.showGlow;
+    if (dustPts.current) dustPts.current.visible = GALAXY_FX.showDust;
+    if (coreRef.current) coreRef.current.scale.setScalar(GALAXY.coreScale * GALAXY.bulgeRadius);
+    // Live placement: the centre + the drag turn about the Sun (pose / size tuning also
+    // re-places the galaxy, so the Sun stays in its arm).
+    if (rootRef.current) {
+      const c = galaxyCenterPos();
+      rootRef.current.position.set(c[0], c[1], c[2]);
+      rootRef.current.quaternion.copy(galaxyDrag);
+    }
+    if (tiltRef.current) tiltRef.current.rotation.set(GALAXY_TILT[0], GALAXY_TILT[1], GALAXY_TILT[2]);
+
     const p = clamp01(useGalaxyScroll.getState().progress);
     const reveal = easeOutCubic(remap01(p, GALAXY.revealStart, GALAXY.revealEnd));
-    if (rootRef.current) rootRef.current.visible = reveal > 0.001; // perf: no vertex work when hidden
-    if (matRef.current) {
-      matRef.current.uniforms.uReveal.value = reveal;
-      if (animate) matRef.current.uniforms.uTime.value += delta;
+    if (rootRef.current) rootRef.current.visible = reveal > 0.001;
+    shared.uReveal.value = reveal;
+    // Bake in the page background quickly as the galaxy starts to appear (see
+    // COMPOSITE_FRAG), so it's in place long before the galaxy is noticeable.
+    composite.uniforms.uFill.value = remap01(p, GALAXY.revealStart, GALAXY.revealStart + 0.06);
+    if (animate) shared.uTime.value += delta;
+    // The core glows in LATER (while we look at the Sun it stays quiet).
+    materials.core.uniforms.uOpacity.value =
+      GALAXY.coreOpacity * remap01(p, GALAXY.coreGlowIn[0], GALAXY.coreGlowIn[1]);
+    if (animate && !GALAXY.paused && spinRef.current) {
+      spinRef.current.rotation.y += GALAXY.spinSpeed * delta;
     }
-    // Core-glow blooms in LATER (while we look at the speck it stays quiet).
-    if (coreMatRef.current) {
-      const glow = remap01(p, GALAXY.coreGlowIn[0], GALAXY.coreGlowIn[1]);
-      coreMatRef.current.uniforms.uOpacity.value = GALAXY.coreOpacity * glow;
-    }
-    if (animate && spinRef.current) spinRef.current.rotation.y += GALAXY.spinSpeed * delta;
-    // Once fully framed, revolve the whole real solar system with the galaxy (it
-    // flies through its arm — see galaxy/spin.ts + SolarSystem / Saturn / Earth).
-    advanceSolarFly(delta, animate);
-    if (coreRef.current) coreRef.current.quaternion.copy(camera.quaternion); // billboard the core-glow
+    // The deep stars come in earlier than the galaxy itself (they take over from the
+    // near starfield), so the layer is drawn from then on.
+    const starsOn =
+      GALAXY_SPACE.showStars && remap01(p, GALAXY_SPACE.starsIn[0], GALAXY_SPACE.starsIn[1]) > 0.001;
+    layerOn.current = (rootRef.current?.visible ?? false) || starsOn;
   });
 
-  return (
-    <group
-      ref={rootRef}
-      position={GALAXY_CENTER}
-      scale={GALAXY_SCALE}
-      visible={false}
-    >
-      {/* Warm core-glow — a camera-facing additive plane at the galaxy centre. */}
-      <mesh ref={coreRef} scale={GALAXY.coreScale * GALAXY.bulgeRadius}>
-        <planeGeometry args={[1, 1]} />
-        <shaderMaterial
-          ref={coreMatRef}
-          transparent
-          depthWrite={false}
-          depthTest={false}
-          blending={AdditiveBlending}
-          uniforms={coreUniforms}
-          vertexShader={CORE_VERT}
-          fragmentShader={CORE_FRAG}
-        />
-      </mesh>
+  // Draw the galaxy layer — priority 0.5: after every normal frame callback (so the
+  // CameraRig has already moved the camera), before the composer renders (priority 1).
+  const layerOn = useRef(false);
+  const bufferSize = useMemo(() => new Vector2(), []);
+  const savedClear = useMemo(() => new Color(), []);
+  const inverseDrag = useMemo(() => new Quaternion(), []);
+  useFrame(() => {
+    const on = layerOn.current;
+    if (compositeRef.current) compositeRef.current.visible = on;
+    if (!on) return;
+    const galaxyOn = !!rootRef.current?.visible;
+    // Billboard the core (undoing the drag turn its parent carries).
+    if (coreRef.current) {
+      coreRef.current.quaternion.copy(inverseDrag.copy(galaxyDrag).invert()).multiply(camera.quaternion);
+    }
+    // The sky: pinned to the camera (infinitely far), oriented like the end view,
+    // turned by the drag with the galaxy.
+    if (skyRef.current) {
+      skyRef.current.position.copy(camera.position);
+      skyRef.current.quaternion.copy(galaxyDrag).multiply(SKY_END_VIEW);
+    }
+    gl.getDrawingBufferSize(bufferSize);
+    if (target.width !== bufferSize.x || target.height !== bufferSize.y) {
+      target.setSize(bufferSize.x, bufferSize.y);
+    }
+    const prevTarget = gl.getRenderTarget();
+    const prevAlpha = gl.getClearAlpha();
+    const prevAutoClear = gl.autoClear;
+    gl.getClearColor(savedClear);
+    gl.setRenderTarget(target);
+    gl.setClearColor(0x000000, 0);
+    gl.autoClear = false;
+    gl.clear(true, false, false);
+    gl.render(galaxyScene, camera);
+    // The galaxy's own bloom (the faint sky alone never reaches the threshold).
+    const bloomOn = GALAXY_FX.showBloom && galaxyOn;
+    if (bloomOn) bloom.render(gl, target);
+    composite.uniforms.uBloom.value = bloomOn ? GALAXY_FX.bloomStrength : 0;
+    gl.setRenderTarget(prevTarget);
+    gl.setClearColor(savedClear, prevAlpha);
+    gl.autoClear = prevAutoClear;
+  }, 0.5);
 
-      {/* The disc, tilted to the locked look-study pose (inclination + roll baked in),
-          turning gently on its own axis inside the tilt. */}
-      <group rotation={GALAXY_TILT}>
-        <group ref={spinRef}>
-          <points geometry={geometry}>
-            <shaderMaterial
-              ref={matRef}
-              transparent
-              depthWrite={false}
-              depthTest={false}
-              blending={AdditiveBlending}
-              uniforms={uniforms}
-              vertexShader={GAL_VERT}
-              fragmentShader={GAL_FRAG}
-            />
-          </points>
-        </group>
-      </group>
-    </group>
+  return (
+    <>
+      {createPortal(
+        <>
+          <group ref={rootRef} position={GALAXY_CENTER} scale={GALAXY_SCALE} visible={false}>
+            {/* Warm core glow — a camera-facing plane at the galaxy centre. */}
+            <mesh
+              ref={coreRef}
+              scale={GALAXY.coreScale * GALAXY.bulgeRadius}
+              material={materials.core}
+              renderOrder={2}
+              frustumCulled={false}
+            >
+              <planeGeometry args={[1, 1]} />
+            </mesh>
+
+            {/* The disc, tilted to the locked look-study pose (inclination + roll baked
+                in), turning gently on its own axis inside the tilt. Draw order: glow →
+                core → stars → dust → pink regions (→ sparkles). */}
+            <group ref={tiltRef} rotation={GALAXY_TILT}>
+              <group ref={spinRef}>
+                <points ref={glowPts} material={materials.glow} renderOrder={1} frustumCulled={false} />
+                <points ref={starPts} material={materials.stars} renderOrder={3} frustumCulled={false} />
+                <points ref={dustPts} material={materials.dust} renderOrder={4} frustumCulled={false} />
+                <points ref={knotPts} material={materials.knots} renderOrder={5} frustumCulled={false} />
+              </group>
+            </group>
+          </group>
+
+          {/* The sky around it (pinned to the camera — see sky.ts), drawn FIRST so
+              the galaxy's dust darkens the far stars behind the lanes. */}
+          <group ref={skyRef}>
+            <SpaceStars />
+            <DistantGalaxies />
+            <GalaxySparkles animate={animate} />
+          </group>
+        </>,
+        galaxyScene
+      )}
+
+      {/* The galaxy layer, added to the scene LAST: it's pure additive light, so order
+          doesn't change its look — but drawn last, nothing dark (the planets' shaded
+          sides, orbit lines) can paint holes in it once the system is a speck. */}
+      <mesh ref={compositeRef} material={composite} renderOrder={100} frustumCulled={false} visible={false}>
+        <planeGeometry args={[2, 2]} />
+      </mesh>
+    </>
   );
 };
 
 export default Galaxy;
-
-const GAL_VERT = /* glsl */ `
-uniform float uTime, uSize, uPixelRatio;
-attribute vec3 aColor;
-attribute float aScale, aBright, aSeed;
-varying vec3 vColor;
-varying float vTw;
-void main(){
-  vColor = aColor * aBright;
-  vec4 mv = modelViewMatrix * vec4(position, 1.0);
-  vTw = 0.5 + 0.5 * sin(uTime * 1.5 + aSeed * 6.2831);
-  // FIXED screen size — constant px at every distance (crisp stars, never blobs).
-  gl_PointSize = uSize * aScale * uPixelRatio;
-  gl_Position = projectionMatrix * mv;
-}
-`;
-
-const GAL_FRAG = /* glsl */ `
-precision highp float;
-uniform float uTwinkleAmt, uReveal;
-varying vec3 vColor;
-varying float vTw;
-void main(){
-  float d = length(gl_PointCoord - 0.5);
-  if (d > 0.5) discard;
-  float a = pow(smoothstep(0.5, 0.12, d), 1.6);
-  float b = (1.0 - uTwinkleAmt) + uTwinkleAmt * vTw;
-  gl_FragColor = vec4(vColor * b, a * uReveal);
-}
-`;
-
-const CORE_VERT = /* glsl */ `
-varying vec2 vUv;
-void main(){ vUv = uv; gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0); }
-`;
-
-const CORE_FRAG = /* glsl */ `
-precision highp float;
-varying vec2 vUv;
-uniform float uOpacity;
-void main(){
-  float dist = length(vUv - 0.5) * 2.0;
-  float grad = pow(smoothstep(1.0, 0.0, dist), 1.7);
-  vec3 col = mix(vec3(1.0, 0.94, 0.85), vec3(0.94, 0.55, 0.20), pow(dist, 0.7));
-  gl_FragColor = vec4(col, grad * uOpacity);
-}
-`;

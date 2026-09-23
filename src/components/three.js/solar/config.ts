@@ -80,6 +80,10 @@ export const SOLAR = {
   // camera pulls back from the Voyager, so the real solar system is what we see
   // "fully visible" before it shrinks into the galaxy. See solar/reveal.ts.
   finaleReturn: [0.03, 0.22] as [number, number],
+  // …and once the camera is far out (the system is only a few pixels wide), the
+  // planets + orbit lines fade away over this window so their dark shaded dots don't
+  // smudge the galaxy; the Sun stays as the "You are here" speck. Reverses on scroll-up.
+  finaleFarFade: [0.72, 0.9] as [number, number],
 
   // A single directional light in VIEW space (like the Saturn) so each planet
   // keeps a lit + a shadowed side.
