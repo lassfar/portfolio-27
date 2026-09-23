@@ -1,0 +1,852 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Galaxy — realistic look study</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Great+Vibes&family=Krona+One&display=swap" rel="stylesheet" />
+<script src="https://unpkg.com/three@0.128.0/build/three.min.js"></script>
+<script src="https://unpkg.com/three@0.128.0/examples/js/shaders/CopyShader.js"></script>
+<script src="https://unpkg.com/three@0.128.0/examples/js/shaders/LuminosityHighPassShader.js"></script>
+<script src="https://unpkg.com/three@0.128.0/examples/js/postprocessing/EffectComposer.js"></script>
+<script src="https://unpkg.com/three@0.128.0/examples/js/postprocessing/RenderPass.js"></script>
+<script src="https://unpkg.com/three@0.128.0/examples/js/postprocessing/ShaderPass.js"></script>
+<script src="https://unpkg.com/three@0.128.0/examples/js/postprocessing/UnrealBloomPass.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/lil-gui@0.19/dist/lil-gui.umd.min.js"></script>
+<style>
+  :root { --rich-black:#19191C; --peach:#FFA14A; --baby-blue:#2489FF; }
+  * { box-sizing:border-box; margin:0; padding:0; }
+  html, body { height:100%; }
+  body { background:#19191C; color:#fff; font-family:"Helvetica Neue",Helvetica,Arial,sans-serif; overflow:hidden; }
+  #stage { position:fixed; inset:0; }
+  canvas { display:block; }
+  #badge { position:fixed; left:22px; top:20px; z-index:5; font-family:"Krona One",sans-serif;
+        font-size:9.5px; letter-spacing:2px; text-transform:uppercase; color:rgba(255,255,255,.42); }
+  #badge b { color:var(--peach); font-weight:400; }
+  #hint { position:fixed; left:22px; bottom:18px; z-index:5; font-size:12px; color:rgba(255,255,255,.4); max-width:560px; line-height:1.6; }
+  #hint b { color:var(--peach); font-weight:400; }
+  .lil-gui { --width:300px; }
+</style>
+</head>
+<body>
+  <div id="stage"></div>
+  <div id="badge"><b>Galaxy — realistic study</b> · P27-66 look v2 — our dots + soft glow + dust, brand colours, part of space</div>
+  <div id="hint">A more realistic take on the locked spiral (reference: the Whirlpool Galaxy). Our dots are still the stars, now with a <b>soft starlight glow</b>, <b>dark dust lanes</b> on the inner edge of each arm, <b>coral-pink star-forming regions</b> and a few <b>sparkly foreground stars</b> — sitting in space: <b>far stars</b> and <b>distant galaxies</b> all around, with soft edges. <b>Drag</b> to turn the galaxy and its space. Use <b>Compare</b> (top-right) to switch each layer on or off.</div>
+
+<script>
+(function () {
+  var THREE = window.THREE;
+  var stage = document.getElementById("stage");
+  var W = window.innerWidth, H = window.innerHeight;
+  var DPR = Math.min(window.devicePixelRatio, 2);
+
+  // ── renderer / scene / fixed camera (same framing as the v1 study) ───────────
+  var renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+  renderer.setPixelRatio(DPR);
+  renderer.setSize(W, H);
+  renderer.setClearColor(0x19191c, 1);
+  stage.appendChild(renderer.domElement);
+
+  var scene = new THREE.Scene();
+  var camera = new THREE.PerspectiveCamera(55, W / H, 0.1, 300);
+  camera.position.set(0, 3.2, 19);
+  camera.lookAt(0, 0, 0);
+
+  // ── config (also the lil-gui target) ─────────────────────────────────────────
+  // Shape + pose start from the locked v1 look; the new realism layers have their
+  // own knobs.
+  var GAL = {
+    seed: 9264,
+    count: 90000, mobileScale: 0.35,
+    discRadius: 10.5, discScaleLength: 3.2, discThickness: 0.30,
+    bulgeRadius: 2.5, bulgeFlatten: 0.6,
+    armCount: 4, pitchDeg: 18, armPhase: 0, armWidth: 2, ridgeGain: 0.6,
+    clumpiness: 0.55, clumpFreq: 1.3,       // knotty arms: 0 = smooth bands
+    tWarm: 0.14, tBlue: 0.5,
+    interArmDim: 0.45,                      // space between the arms is dimmer
+    // star-forming regions (outer edge of the arms) + young blue clusters (on the arms)
+    hiiCount: 170, hiiOffset: 0.35, blueClusters: 120,
+    // dust (inner edge of the arms)
+    dustOffset: 0.36, dustWidth: 0.11, dustBreak: 0.55, featherRate: 0.09, dustPatches: 2600,
+    // pose + motion (the real scene's 74° / −23° pose)
+    inclination: 74, roll: -23, spinSpeed: 0.015, differential: 0.001,
+    // look
+    uSize: 22, uMaxSize: 75, twinkleAmount: 0, // uSize 22 here ≈ the site's fixed 1px dot at this camera
+    glowAmount: 0.235, glowSize: 245,
+    dustOpacity: 0.9, dustSize: 190,
+    knotBrightness: 1.0,
+    coreOpacity: 0.2, coreScale: 3.2,
+    bloomStrength: 0.55, bloomRadius: 0.5, bloomThreshold: 0.66,
+    sparkleCount: 16, sparkleSize: 62, sparkleSpikes: 1.15,
+    // soft edges (the disc melts into space) + the space around it (like the site)
+    outerStars: 0.04, envelope: 1, edgeSoftness: 0.7,
+    showFarStars: true, farStarCount: 20000, farStarCountMobile: 8000, farStarSize: 1.0, farStarBrightness: 1.0,
+    showFarGalaxies: true, farGalaxySize: 1.5, farGalaxyBrightness: 1.0,
+    dragTurns: true,
+    // compare toggles
+    showGlow: true, showDust: true, showBloom: true, showSparkles: true,
+    paused: false
+  };
+  if (W < 768) GAL.count = Math.round(GAL.count * GAL.mobileScale);
+  var QS = new URLSearchParams(location.search);
+  if (QS.has("incl")) GAL.inclination = +QS.get("incl"); // e.g. ?incl=0 → face-on
+
+  var TAU = Math.PI * 2;
+  var P = {
+    peach:0xffa14a, lpeach:0xffe3c7, dpeach:0xef7d14, babyBlue:0x2489ff,
+    lbabyBlue:0xc5e0ff, nebulaBlue:0x2563ff, coral:0xe24b4a, coreWhite:0xcfe0ff
+  };
+  var C = {};
+  Object.keys(P).forEach(function (k) { C[k] = new THREE.Color(P[k]); });
+  // Derived tones (all from the brand palette):
+  var CREAM    = C.lpeach.clone().lerp(new THREE.Color(0xffffff), 0.35); // creamy core
+  var PINK     = C.coral.clone().lerp(C.lpeach, 0.35);                  // coral-pink star-forming regions
+  // Dust tints are TRANSMISSION colours (multiplied onto the light behind): a
+  // dark-peach brown, and a redder variant.
+  var DUST     = C.dpeach.clone().multiplyScalar(0.35).lerp(new THREE.Color(0.2, 0.15, 0.13), 0.5);
+  var DUST_RED = C.coral.clone().multiplyScalar(0.4).lerp(new THREE.Color(0.2, 0.13, 0.12), 0.5);
+  var NEUTRAL  = new THREE.Color(0.62, 0.63, 0.66);                     // old, dim inter-arm stars
+  var STEEL    = new THREE.Color(0.55, 0.66, 0.85);                     // arm haze
+
+  // ── seeded RNG + noise helpers ───────────────────────────────────────────────
+  var rnd;
+  function mulberry32(a){ return function(){ a|=0; a=a+0x6D2B79F5|0; var t=Math.imul(a^a>>>15,1|a); t=t+Math.imul(t^t>>>7,61|t)^t; return ((t^t>>>14)>>>0)/4294967296; }; }
+  function gauss(sigma){ var u=1-rnd(), v=rnd(); return sigma*Math.sqrt(-2*Math.log(u))*Math.cos(TAU*v); }
+  function smoothstep(a,b,x){ var t=Math.min(1,Math.max(0,(x-a)/(b-a))); return t*t*(3-2*t); }
+  function unitDir(){ var u=rnd()*2-1, th=rnd()*TAU, s=Math.sqrt(1-u*u); return [s*Math.cos(th), u, s*Math.sin(th)]; }
+  function hash2(ix, iy){
+    var h = (Math.imul(ix, 374761393) + Math.imul(iy, 668265263) + Math.imul(GAL.seed, 1442695041)) | 0;
+    h = Math.imul(h ^ (h >>> 13), 1274126177); h = h ^ (h >>> 16);
+    return (h >>> 0) / 4294967296;
+  }
+  function vnoise(x, y){
+    var ix=Math.floor(x), iy=Math.floor(y), fx=x-ix, fy=y-iy;
+    var ux=fx*fx*(3-2*fx), uy=fy*fy*(3-2*fy);
+    var a=hash2(ix,iy), b=hash2(ix+1,iy), c=hash2(ix,iy+1), d=hash2(ix+1,iy+1);
+    return a + (b-a)*ux + (c-a)*uy + (a-b-c+d)*ux*uy;
+  }
+  function fbm(x, y){ return 0.65*vnoise(x,y) + 0.35*vnoise(x*2.1+5.3, y*2.1+1.7); }
+  var _c = new THREE.Color();
+
+  // One geometry "layer": the same attributes for every point cloud.
+  function layer(){
+    var L = { pos:[], col:[], scl:[], bri:[], sed:[], rn:[] };
+    L.push = function(x,y,z, c, s, b, rNorm){
+      L.pos.push(x,y,z); L.col.push(c.r,c.g,c.b); L.scl.push(s); L.bri.push(b);
+      L.sed.push(rnd()); L.rn.push(Math.min(1, Math.max(0, rNorm)));
+    };
+    L.geom = function(){
+      var g = new THREE.BufferGeometry();
+      g.setAttribute("position", new THREE.Float32BufferAttribute(L.pos, 3));
+      g.setAttribute("aColor", new THREE.Float32BufferAttribute(L.col, 3));
+      g.setAttribute("aScale", new THREE.Float32BufferAttribute(L.scl, 1));
+      g.setAttribute("aBright", new THREE.Float32BufferAttribute(L.bri, 1));
+      g.setAttribute("aSeed", new THREE.Float32BufferAttribute(L.sed, 1));
+      g.setAttribute("aRadiusNorm", new THREE.Float32BufferAttribute(L.rn, 1));
+      return g;
+    };
+    return L;
+  }
+
+  // Young arm stars: warm near the core → baby-blue outward (as in v1).
+  function armColor(rr, RMAX){
+    var t = Math.min(1, rr/RMAX);
+    var ts = Math.min(1, Math.max(0, t + (rnd()-0.5)*0.12));
+    if (ts < GAL.tWarm) return _c.copy(C.lpeach).lerp(C.peach, smoothstep(0, GAL.tWarm, ts));
+    if (ts < GAL.tBlue) return _c.copy(C.peach).lerp(C.babyBlue, smoothstep(GAL.tWarm, GAL.tBlue, ts));
+    _c.copy(C.babyBlue).lerp(C.lbabyBlue, (ts-GAL.tBlue)/(1-GAL.tBlue));
+    if (rnd() < 0.25) _c.lerp(C.nebulaBlue, 0.4);
+    return _c;
+  }
+
+  // ── build every layer from ONE arm model, so dust, glow and pink regions sit on
+  //    the same arms as the stars. Convention: +across = the arm's INNER edge (dust),
+  //    −across = its OUTER edge (star-forming regions), like the reference photo. ──
+  function buildAll(){
+    rnd = mulberry32(GAL.seed);
+    var N = GAL.count;
+    var RMAX = GAL.discRadius, H0 = GAL.discScaleLength, R0 = 1.1;
+    var RNORM = 1 - Math.exp(-RMAX/H0);
+    var B = 1/Math.tan(GAL.pitchDeg*Math.PI/180);
+    var sampleRadius = function(){ return -H0*Math.log(1 - rnd()*RNORM); };
+    var hz = function(r){ return GAL.discThickness * (0.6 + 0.4*Math.exp(-r/(RMAX*0.5))); };
+    var armAngle = function(r,k){ return k*(TAU/GAL.armCount) + B*Math.log(Math.max(r,R0)/R0) + GAL.armPhase; };
+    // Knotty arms: noise along (and across) each arm → dense clumps + gaps.
+    var clumpAccept = function(r, k, across){
+      var n = fbm(r*GAL.clumpFreq + k*13.7, across*2.0 + k*7.1);
+      return (1-GAL.clumpiness) + GAL.clumpiness*Math.min(1.4, smoothstep(0.28, 0.72, n)*1.4);
+    };
+    function base(){ return 0.82 + rnd()*0.32; }
+    function jitter(){ return 0.6 + rnd()*0.8; }
+
+    var S = layer(), K = layer(), G = layer(), D = layer();
+    var i, r, k, d, phi, y, rr, c, b, s;
+
+    // ── STARS ──
+    // 1 — bulge: old, creamy, smooth, dense toward the centre
+    var nBulge = Math.round(N*0.11);
+    for (i=0;i<nBulge;i++){
+      r = GAL.bulgeRadius * Math.pow(rnd(), 1.8); d = unitDir();
+      c = _c.copy(CREAM).lerp(C.peach, Math.pow(r/GAL.bulgeRadius, 0.8)*0.7);
+      b = (0.22 + 0.35*(1 - r/GAL.bulgeRadius)) * base();
+      S.push(d[0]*r, d[1]*r*GAL.bulgeFlatten, d[2]*r, c, 0.35+rnd()*0.4, b, r/RMAX);
+    }
+    // 2 — between the arms: old, dim, neutral (NOT blue — that's the young arms)
+    var nDisc = Math.round(N*0.22);
+    for (i=0;i<nDisc;i++){
+      r = sampleRadius(); phi = rnd()*TAU; y = gauss(hz(r));
+      c = _c.copy(C.peach).lerp(C.lbabyBlue, smoothstep(0.15, 0.85, r/RMAX)).lerp(NEUTRAL, 0.35);
+      b = base() * GAL.interArmDim; s = 0.45 + rnd()*0.4;
+      if (rnd() < 0.02) { s *= 1.8; b *= 1.8; }
+      S.push(Math.cos(phi)*r, y, Math.sin(phi)*r, c, s, b, r/RMAX);
+    }
+    // 3 — spiral arms: young + bright, clumpy, thinned where the dust lane sits
+    var nArm = Math.round(N*0.50), got = 0, tries = 0, maxTries = nArm*4;
+    while (got < nArm && tries < maxTries){
+      tries++;
+      r = sampleRadius(); k = Math.floor(rnd()*GAL.armCount);
+      var sigmaPhi = GAL.armWidth / Math.max(r, R0);
+      var dPhi = gauss(sigmaPhi), across = dPhi*r;
+      if (rnd() > clumpAccept(r, k, across)) continue;
+      if (across > GAL.dustOffset*0.7 && across < GAL.dustOffset*1.3 && rnd() < 0.35) continue;
+      phi = armAngle(r,k) + dPhi;
+      rr = Math.max(0, r + gauss(0.12*r));
+      var ridge = Math.exp(-(dPhi*dPhi)/(2*Math.pow(0.45*sigmaPhi,2)));
+      y = gauss(hz(rr));
+      c = _c.copy(armColor(rr, RMAX));
+      b = base() * (1 + GAL.ridgeGain*ridge) * (0.45 + 0.55*smoothstep(0.8, 3.2, rr)); // dimmer in the core
+      s = jitter() * (1 + 0.4*ridge);
+      if (rnd() < 0.08) { c.copy(C.coreWhite); b *= 1.25; }           // hot young stars
+      if (rnd() < 0.03) { s *= 1.8; b *= 1.5; }                         // resolved standouts
+      S.push(Math.cos(phi)*rr, y, Math.sin(phi)*rr, c, s, b, rr/RMAX);
+      got++;
+    }
+    // 4 — faint round halo (depth)
+    var nHalo = Math.round(N*0.05);
+    for (i=0;i<nHalo;i++){
+      r = RMAX*(0.6 + 0.7*Math.pow(rnd(),2)); d = unitDir();
+      c = _c.copy(C.coreWhite).lerp(C.lbabyBlue, rnd()).lerp(NEUTRAL, 0.3);
+      S.push(d[0]*r, d[1]*r*0.85, d[2]*r, c, 0.4+rnd()*0.35, base()*0.3, r/RMAX);
+    }
+
+    // ── STAR-FORMING REGIONS (their own layer, drawn ABOVE the dust) ──
+    // Many small coral-pink regions on the arms' OUTER edge, each made of a few
+    // sub-clumps, with a soft pink glow.
+    for (i=0;i<GAL.hiiCount;i++){
+      r = RMAX*(0.28 + 0.67*Math.pow(rnd(), 0.8)); k = Math.floor(rnd()*GAL.armCount);
+      phi = armAngle(r,k) - (GAL.hiiOffset + gauss(0.12))/r;
+      var cx = Math.cos(phi)*r, cz = Math.sin(phi)*r, cy = gauss(hz(r)*0.5);
+      var regionB = 0.6 + rnd()*0.8;
+      var subs = 2 + Math.floor(rnd()*3);
+      for (var sc=0; sc<subs; sc++){
+        var sx = cx + gauss(0.12), sz = cz + gauss(0.12);
+        var dots = 5 + Math.floor(rnd()*9);
+        for (var j=0;j<dots;j++){
+          c = _c.copy(PINK).lerp(C.coral, rnd()*0.5);
+          b = base()*1.6*regionB;
+          if (rnd() < 0.15) { c.copy(C.coreWhite).lerp(PINK, 0.3); b *= 1.3; } // white-hot cores
+          K.push(sx+gauss(0.045), cy+gauss(0.03), sz+gauss(0.045), c, jitter()*1.4, b, r/RMAX);
+        }
+      }
+      G.push(cx, cy, cz, PINK, 0.9 + rnd()*0.6, 0.9*regionB, r/RMAX);
+    }
+    // Young blue clusters sitting ON the arm ridge.
+    for (i=0;i<GAL.blueClusters;i++){
+      r = RMAX*(0.3 + 0.65*rnd()); k = Math.floor(rnd()*GAL.armCount);
+      phi = armAngle(r,k) + gauss(0.2)/r;
+      var bx = Math.cos(phi)*r, bz = Math.sin(phi)*r, by = gauss(hz(r)*0.5);
+      var nd = 6 + Math.floor(rnd()*7);
+      for (var q=0;q<nd;q++){
+        c = _c.copy(C.lbabyBlue).lerp(C.coreWhite, rnd()*0.6);
+        K.push(bx+gauss(0.05), by+gauss(0.03), bz+gauss(0.05), c, jitter()*1.1, base()*1.3, r/RMAX);
+      }
+      G.push(bx, by, bz, C.lbabyBlue, 0.7 + rnd()*0.4, 0.45, r/RMAX);
+    }
+
+    // ── SOFT GLOW (the milky light of stars too small to see one by one) ──
+    for (i=0;i<700;i++){                                   // core glow (faint: hundreds overlap here)
+      r = GAL.bulgeRadius*1.3*Math.pow(rnd(), 1.4); d = unitDir();
+      c = _c.copy(CREAM).lerp(C.peach, r/(GAL.bulgeRadius*1.3)*0.6);
+      G.push(d[0]*r, d[1]*r*GAL.bulgeFlatten, d[2]*r, c, 1.6+rnd()*2.2, 0.012, r/RMAX);
+    }
+    var gArm = 0, gTries = 0;
+    while (gArm < 5200 && gTries < 20000){                // arm glow
+      gTries++;
+      r = sampleRadius(); k = Math.floor(rnd()*GAL.armCount);
+      var gs = GAL.armWidth*1.25/Math.max(r, R0), gdp = gauss(gs);
+      if (rnd() > clumpAccept(r, k, gdp*r)) continue;
+      phi = armAngle(r,k) + gdp;
+      var gridge = Math.exp(-(gdp*gdp)/(2*gs*gs));
+      c = _c.copy(armColor(r, RMAX)).lerp(STEEL, 0.35);
+      G.push(Math.cos(phi)*r, gauss(hz(r)), Math.sin(phi)*r, c, 1.0+rnd()*1.3, 0.4*(0.6+0.4*gridge)*(0.12 + 0.88*smoothstep(1.2, 4.0, r)), r/RMAX);
+      gArm++;
+    }
+    for (i=0;i<1600;i++){                                  // faint disc glow
+      r = sampleRadius(); phi = rnd()*TAU;
+      c = _c.copy(C.peach).lerp(STEEL, smoothstep(0.1, 0.8, r/RMAX)).lerp(NEUTRAL, 0.4);
+      G.push(Math.cos(phi)*r, gauss(hz(r)), Math.sin(phi)*r, c, 1.8+rnd()*1.8, 0.16*smoothstep(1.0, 3.5, r), r/RMAX);
+    }
+
+    // ── DUST (drawn with normal blending, so it DARKENS what's behind it) ──
+    // A filament along each arm's inner edge, broken up by noise, with short
+    // "feathers" crossing the arm, plus patchy dust across the disc.
+    for (k=0;k<GAL.armCount;k++){
+      for (r = 1.0; r < RMAX*0.97; r += 0.022){
+        var n = fbm(r*1.6 + k*9.1, k*3.3 + 0.5);
+        if (n < GAL.dustBreak) continue;                   // gaps in the lane
+        var strength = smoothstep(GAL.dustBreak, GAL.dustBreak + 0.25, n);
+        var outer = 1 - smoothstep(0.8*RMAX, 0.97*RMAX, r);
+        var laneOff = GAL.dustOffset*(0.75 + 0.5*vnoise(r*2.4 + k*5.0, 11.3)); // wandering lane
+        var inner = 0.55 + 0.45*smoothstep(1.0, 2.2, r);   // lighter over the bright core
+        var puffs = 3 + Math.floor(rnd()*3);
+        for (var p=0;p<puffs;p++){
+          var ac = laneOff + gauss(GAL.dustWidth);
+          rr = r + gauss(0.03);
+          phi = armAngle(rr,k) + ac/rr;
+          c = _c.copy(DUST).lerp(DUST_RED, rnd()*0.4);
+          D.push(Math.cos(phi)*rr, gauss(hz(rr)*0.4), Math.sin(phi)*rr, c, 0.4+rnd()*0.6,
+                 strength*outer*inner*(0.25 + 0.75*rnd()*rnd()), rr/RMAX);
+        }
+        if (rnd() < 0.35){                                  // a faint second strand
+          var ac2 = laneOff + 0.2 + gauss(0.05); rr = r + gauss(0.03);
+          phi = armAngle(rr,k) + ac2/rr;
+          c = _c.copy(DUST).lerp(DUST_RED, rnd()*0.4);
+          D.push(Math.cos(phi)*rr, gauss(hz(rr)*0.4), Math.sin(phi)*rr, c, 0.35+rnd()*0.4,
+                 strength*outer*inner*0.45*rnd(), rr/RMAX);
+        }
+        if (r > 1.2 && rnd() < GAL.featherRate){           // a feather crossing the arm
+          var phiL = armAngle(r,k) + laneOff/r;
+          var px0 = Math.cos(phiL)*r, pz0 = Math.sin(phiL)*r;
+          var tx = Math.cos(phiL) - B*Math.sin(phiL), tz = Math.sin(phiL) + B*Math.cos(phiL);
+          var tl = Math.hypot(tx, tz); tx /= tl; tz /= tl;
+          var fa = 0.55 + rnd()*0.3;
+          var fx = Math.cos(phiL)*fa + tx*(1-fa), fz = Math.sin(phiL)*fa + tz*(1-fa);
+          var fl = Math.hypot(fx, fz); fx /= fl; fz /= fl;
+          var len = 0.4 + rnd()*1.1, nf = 8 + Math.floor(len*14);
+          for (var f=0; f<nf; f++){
+            var st = (f/nf)*len, wob = gauss(0.03);
+            var x = px0 + fx*st - fz*wob, z = pz0 + fz*st + fx*wob, rf = Math.hypot(x, z);
+            c = _c.copy(DUST).lerp(DUST_RED, rnd()*0.4);
+            D.push(x, gauss(hz(rf)*0.4), z, c, 0.5+rnd()*0.6, strength*outer*0.8*(1 - f/nf)*(0.5 + 0.5*rnd()), rf/RMAX);
+          }
+        }
+      }
+    }
+    for (i=0;i<GAL.dustPatches;i++){                       // patchy dust across the disc
+      r = sampleRadius(); phi = rnd()*TAU;
+      var x2 = Math.cos(phi)*r, z2 = Math.sin(phi)*r;
+      var m = fbm(x2*0.55 + 3.1, z2*0.55 + 7.7);
+      if (m < 0.55) continue;
+      c = _c.copy(DUST).lerp(DUST_RED, rnd()*0.3);
+      D.push(x2, gauss(hz(r)*0.5), z2, c, 0.8+rnd()*1.2, (m-0.55)*0.8*(1 - smoothstep(0.85*RMAX, RMAX, r)), r/RMAX);
+    }
+
+    // ── SOFT EDGES (added last, so everything above stays identical) ──
+    // The disc melts into the space around it instead of ending on a rim.
+    // Sparse outer stars: their number falls off steadily past the disc edge, down to
+    // the density of the far stars around the galaxy.
+    var nOuter = Math.round(N*GAL.outerStars);
+    for (i=0;i<nOuter;i++){
+      r = RMAX*(0.85 - 0.24*Math.log(1 - rnd()*0.94));        // 0.85 → ~1.5 Rmax
+      phi = rnd()*TAU; y = gauss(hz(r)*(1.6 + (r/RMAX)*1.4)); // puffier out here
+      c = _c.copy(C.lbabyBlue).lerp(C.coreWhite, rnd()*0.5).lerp(NEUTRAL, 0.35);
+      b = base()*(0.22 + 0.3*rnd())*(1 - 0.5*smoothstep(RMAX, 1.5*RMAX, r));
+      S.push(Math.cos(phi)*r, y, Math.sin(phi)*r, c, 0.4+rnd()*0.45, b, r/RMAX);
+    }
+    // A faint, wide glow envelope: big dim sprites thinning out well past the arms.
+    var nEnv = GAL.envelope > 0 ? 900 : 0;
+    for (i=0;i<nEnv;i++){
+      r = RMAX*(0.6 - 0.3*Math.log(1 - rnd()*0.93));          // 0.6 → ~1.4 Rmax
+      phi = rnd()*TAU;
+      var fall = Math.exp(-Math.max(0, r/RMAX - 0.6)/0.3);
+      c = _c.copy(STEEL).lerp(C.lbabyBlue, 0.3).lerp(NEUTRAL, 0.35);
+      G.push(Math.cos(phi)*r, gauss(hz(r)*3), Math.sin(phi)*r, c, 2.4+rnd()*1.8, 0.05*GAL.envelope*fall, r/RMAX);
+    }
+
+    return { stars: S.geom(), knots: K.geom(), glow: G.geom(), dust: D.geom() };
+  }
+
+  // ── materials — every galaxy layer shares the same inner/outer shear, so the
+  //    dust and glow stay glued to the arms as they turn ──────────────────────────
+  var U = { uTime:{value:0}, uDiff:{value:GAL.differential}, uPixelRatio:{value:DPR} };
+  var SHEAR = [
+    "uniform float uTime, uDiff, uPixelRatio;",
+    "attribute vec3 aColor; attribute float aScale, aBright, aSeed, aRadiusNorm;",
+    "vec3 shear(vec3 p, float rn){",
+    "  float ang = uDiff*uTime*(1.0/(rn+0.15) - 1.0);",
+    "  float cs = cos(ang), sn = sin(ang);",
+    "  return vec3(cs*p.x + sn*p.z, p.y, -sn*p.x + cs*p.z);",
+    "}"
+  ].join("\n");
+
+  function dotMaterial(boost){ // the site's dot recipe (v1)
+    return new THREE.ShaderMaterial({
+      uniforms: { uTime:U.uTime, uDiff:U.uDiff, uPixelRatio:U.uPixelRatio,
+                  uSize:{value:GAL.uSize}, uMaxSize:{value:GAL.uMaxSize},
+                  uTwinkleAmt:{value:GAL.twinkleAmount}, uBoost:{value:boost} },
+      transparent:true, depthWrite:false, depthTest:false, blending:THREE.AdditiveBlending,
+      vertexShader: SHEAR + [
+        "uniform float uSize, uMaxSize;",
+        "varying vec3 vColor; varying float vTw;",
+        "void main(){",
+        "  vColor = aColor*aBright;",
+        "  vec4 mv = modelViewMatrix*vec4(shear(position, aRadiusNorm), 1.0);",
+        "  vTw = 0.5 + 0.5*sin(uTime*1.5 + aSeed*6.2831);",
+        "  gl_PointSize = min(uSize*aScale*uPixelRatio / -mv.z, uMaxSize*uPixelRatio);",
+        "  gl_Position = projectionMatrix*mv;",
+        "}"
+      ].join("\n"),
+      fragmentShader: [
+        "uniform float uTwinkleAmt, uBoost; varying vec3 vColor; varying float vTw;",
+        "void main(){",
+        "  float d = length(gl_PointCoord-0.5); if (d > 0.5) discard;",
+        "  float a = pow(smoothstep(0.5, 0.12, d), 1.6);",
+        "  float b = (1.0-uTwinkleAmt) + uTwinkleAmt*vTw;",
+        "  gl_FragColor = vec4(vColor*b*uBoost, a);",
+        "}"
+      ].join("\n")
+    });
+  }
+  var starMat = dotMaterial(1.0);
+  var knotMat = dotMaterial(GAL.knotBrightness);
+
+  var glowMat = new THREE.ShaderMaterial({ // big, soft, faint → continuous haze
+    uniforms: { uTime:U.uTime, uDiff:U.uDiff, uPixelRatio:U.uPixelRatio,
+                uGlowSize:{value:GAL.glowSize}, uGlowAmt:{value:GAL.glowAmount}, uEdgeSoft:{value:GAL.edgeSoftness} },
+    transparent:true, depthWrite:false, depthTest:false, blending:THREE.AdditiveBlending,
+    vertexShader: SHEAR + [
+      "uniform float uGlowSize, uEdgeSoft; varying vec3 vColor;",
+      "void main(){",
+      "  // soft edges: toward the rim the glow turns larger + fainter (a smooth haze)",
+      "  float edge = uEdgeSoft*smoothstep(0.45, 1.0, aRadiusNorm);",
+      "  vColor = aColor*aBright*(1.0 - 0.6*edge);",
+      "  vec4 mv = modelViewMatrix*vec4(shear(position, aRadiusNorm), 1.0);",
+      "  gl_PointSize = min(uGlowSize*aScale*(1.0 + 0.9*edge)*uPixelRatio / -mv.z, 480.0*uPixelRatio);",
+      "  gl_Position = projectionMatrix*mv;",
+      "}"
+    ].join("\n"),
+    fragmentShader: [
+      "uniform float uGlowAmt; varying vec3 vColor;",
+      "void main(){",
+      "  float d = length(gl_PointCoord-0.5)*2.0; if (d > 1.0) discard;",
+      "  float a = exp(-d*d*4.5) * (1.0 - smoothstep(0.75, 1.0, d));",
+      "  gl_FragColor = vec4(vColor*uGlowAmt, a);",
+      "}"
+    ].join("\n")
+  });
+
+  var dustMat = new THREE.ShaderMaterial({ // MULTIPLY blending → absorbs the light behind it
+    uniforms: { uTime:U.uTime, uDiff:U.uDiff, uPixelRatio:U.uPixelRatio,
+                uDustSize:{value:GAL.dustSize}, uDustOpacity:{value:GAL.dustOpacity} },
+    transparent:true, depthWrite:false, depthTest:false, blending:THREE.MultiplyBlending,
+    vertexShader: SHEAR + [
+      "uniform float uDustSize; varying vec3 vColor; varying float vA;",
+      "void main(){",
+      "  vColor = aColor; vA = aBright;",
+      "  vec4 mv = modelViewMatrix*vec4(shear(position, aRadiusNorm), 1.0);",
+      "  gl_PointSize = min(uDustSize*aScale*uPixelRatio / -mv.z, 90.0*uPixelRatio);",
+      "  gl_Position = projectionMatrix*mv;",
+      "}"
+    ].join("\n"),
+    fragmentShader: [
+      "uniform float uDustOpacity; varying vec3 vColor; varying float vA;",
+      "void main(){",
+      "  float d = length(gl_PointCoord-0.5); if (d > 0.5) discard;",
+      "  float a = clamp(pow(smoothstep(0.5, 0.0, d), 1.3) * vA * uDustOpacity, 0.0, 1.0);",
+      "  gl_FragColor = vec4(mix(vec3(1.0), vColor, a), 1.0); // how much light passes",
+      "}"
+    ].join("\n")
+  });
+
+  // ── rig: tilted (the real scene's pose), spinning galaxy, turned by the drag ──
+  // Draw order: far stars → distant galaxies → glow → core → stars → dust → pink
+  // regions → sparkles.
+  var galaxyDrag = new THREE.Group();
+  var galaxyTilt = new THREE.Group();
+  var galaxySpin = new THREE.Group();
+  galaxyTilt.add(galaxySpin);
+  galaxyDrag.add(galaxyTilt);
+  scene.add(galaxyDrag);
+  var built = buildAll();
+  var glowPts  = new THREE.Points(built.glow,  glowMat);  glowPts.renderOrder  = 1;
+  var starPts  = new THREE.Points(built.stars, starMat);  starPts.renderOrder  = 3;
+  var dustPts  = new THREE.Points(built.dust,  dustMat);  dustPts.renderOrder  = 4;
+  var knotPts  = new THREE.Points(built.knots, knotMat);  knotPts.renderOrder  = 5;
+  [glowPts, starPts, dustPts, knotPts].forEach(function(o){ o.frustumCulled = false; galaxySpin.add(o); });
+
+  // Core: a tight creamy centre + a broad warm halo (billboard, faces the camera).
+  var coreUniforms = { uOpacity:{value:GAL.coreOpacity} };
+  var coreMat = new THREE.ShaderMaterial({
+    uniforms: coreUniforms, transparent:true, depthWrite:false, depthTest:false,
+    blending: THREE.AdditiveBlending,
+    vertexShader: "varying vec2 vUv; void main(){ vUv=uv; gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.0); }",
+    fragmentShader: [
+      "varying vec2 vUv; uniform float uOpacity;",
+      "void main(){",
+      "  float d = length(vUv-0.5)*2.0;",
+      "  float core = exp(-d*d*18.0);",
+      "  float halo = exp(-d*d*3.0)*0.55;",
+      "  vec3 col = mix(vec3(1.0,0.96,0.90), vec3(0.95,0.62,0.30), smoothstep(0.0, 0.8, d));",
+      "  gl_FragColor = vec4(col, (core+halo)*uOpacity*(1.0 - smoothstep(0.85, 1.0, d)));",
+      "}"
+    ].join("\n")
+  });
+  var coreGlow = new THREE.Mesh(new THREE.PlaneGeometry(1,1), coreMat);
+  coreGlow.renderOrder = 2;
+  scene.add(coreGlow); // at the galaxy centre; billboarded each frame
+
+  // ── the sky around the galaxy (the site's galaxy/sky.ts) ─────────────────────
+  // Pinned to the camera (infinitely far — no parallax) and oriented like the END
+  // view's camera, so things laid out in that view land on their designed spots; a
+  // drag turns it with the galaxy. Drawn FIRST, so the dust darkens the far stars
+  // behind the lanes.
+  var SKY_R = 150;
+  var sky = new THREE.Group(); scene.add(sky);
+  var SKY_END = new THREE.Quaternion().setFromRotationMatrix(new THREE.Matrix4().lookAt(
+    new THREE.Vector3(0, 3.2, 19), new THREE.Vector3(0, 0, 0), new THREE.Vector3(0, 1, 0)));
+
+  // Far stars (SpaceStars.tsx): thousands of tiny, faint stars over the whole sky, in
+  // the galaxy's own dot language (fixed ~1px, raw colours).
+  var farStarU = { uPixelRatio:U.uPixelRatio, uSize:{value:GAL.farStarSize},
+                   uBright:{value:GAL.farStarBrightness}, uFade:{value:1} };
+  var farStarPts = new THREE.Points(new THREE.BufferGeometry(), new THREE.ShaderMaterial({
+    uniforms: farStarU, transparent:true, depthWrite:false, depthTest:false, blending:THREE.AdditiveBlending,
+    vertexShader: [
+      "uniform float uPixelRatio, uSize;",
+      "attribute vec3 aColor; attribute float aScale, aBright; varying vec3 vColor;",
+      "void main(){",
+      "  vColor = aColor*aBright;",
+      "  gl_PointSize = uSize*aScale*uPixelRatio;",
+      "  gl_Position = projectionMatrix*modelViewMatrix*vec4(position, 1.0);",
+      "}"
+    ].join("\n"),
+    fragmentShader: [
+      "uniform float uFade, uBright; varying vec3 vColor;",
+      "void main(){",
+      "  float d = length(gl_PointCoord-0.5); if (d > 0.5) discard;",
+      "  float a = pow(smoothstep(0.5, 0.12, d), 1.6);",
+      "  gl_FragColor = vec4(vColor*uBright, a*uFade);",
+      "}"
+    ].join("\n")
+  }));
+  farStarPts.renderOrder = -3; farStarPts.frustumCulled = false; sky.add(farStarPts);
+  function buildFarStars(){
+    var srnd = mulberry32(31), n = W < 768 ? GAL.farStarCountMobile : GAL.farStarCount;
+    var tints = ["#ffffff","#eaf1ff","#cfe0ff","#c5e0ff","#fff4e6","#ffe3c7","#ffc896"];
+    var tw = [0.24, 0.2, 0.16, 0.12, 0.12, 0.1, 0.06], total = 0;
+    tw.forEach(function(w){ total += w; });
+    tints = tints.map(function(h){ return new THREE.Color(h); });
+    var pos=[], col=[], scl=[], bri=[];
+    for (var i=0;i<n;i++){
+      var u = srnd()*2-1, th = srnd()*TAU, s = Math.sqrt(1-u*u);
+      pos.push(s*Math.cos(th)*SKY_R, u*SKY_R, s*Math.sin(th)*SKY_R);
+      var pick = srnd()*total, k = 0;
+      while (k < tints.length-1 && (pick -= tw[k]) > 0) k++;
+      col.push(tints[k].r, tints[k].g, tints[k].b);
+      var standout = srnd() < 0.04;
+      scl.push(standout ? 1.5 + srnd()*0.6 : 0.8 + srnd()*0.45);
+      bri.push(standout ? 0.6 + srnd()*0.4 : 0.18 + 0.5*Math.pow(srnd(), 1.6));
+    }
+    var g = new THREE.BufferGeometry();
+    g.setAttribute("position", new THREE.Float32BufferAttribute(pos,3));
+    g.setAttribute("aColor", new THREE.Float32BufferAttribute(col,3));
+    g.setAttribute("aScale", new THREE.Float32BufferAttribute(scl,1));
+    g.setAttribute("aBright", new THREE.Float32BufferAttribute(bri,1));
+    var old = farStarPts.geometry; farStarPts.geometry = g; old.dispose();
+  }
+  buildFarStars();
+
+  // Distant galaxies (DistantGalaxies.tsx): tiny faint smudges — a tilted elliptical
+  // glow with a bright core, some with a hint of spiral arms. 9 hand-placed in the
+  // empty corners of the end view ("at" = x, y in half-heights; 2 stay in frame on a
+  // phone), 28 more scattered around the rest of the sky (found when you drag).
+  var FAR_PLACED = [
+    { at:[-1.05, 0.77], px:26, axis:0.42, angle:0.5,  spiral:true,  tint:0, bright:0.8  },
+    { at:[ 0.91, 0.83], px:17, axis:0.78, angle:-0.3, spiral:true,  tint:1, bright:0.7  },
+    { at:[ 1.42, 0.19], px:15, axis:0.22, angle:0.9,  spiral:true,  tint:0, bright:0.75 },
+    { at:[-1.01,-0.45], px:21, axis:0.55, angle:-0.7, spiral:true,  tint:2, bright:0.7  },
+    { at:[ 1.33,-0.28], px:10, axis:0.75, angle:0.3,  spiral:false, tint:2, bright:0.6  },
+    { at:[-0.42, 0.9 ], px:9,  axis:0.7,  angle:0.4,  spiral:false, tint:1, bright:0.6  },
+    { at:[ 0.3,  0.64], px:8,  axis:0.5,  angle:-1.0, spiral:true,  tint:3, bright:0.6  },
+    { at:[-1.43, 0.02], px:8,  axis:0.6,  angle:1.2,  spiral:false, tint:1, bright:0.55 },
+    { at:[ 1.45,-0.87], px:7,  axis:0.8,  angle:0.0,  spiral:true,  tint:3, bright:0.55 }
+  ];
+  var farGalU = { uPixelRatio:U.uPixelRatio, uSize:{value:GAL.farGalaxySize},
+                  uBright:{value:GAL.farGalaxyBrightness}, uFade:{value:1} };
+  var farGalPts = new THREE.Points(new THREE.BufferGeometry(), new THREE.ShaderMaterial({
+    uniforms: farGalU, transparent:true, depthWrite:false, depthTest:false, blending:THREE.AdditiveBlending,
+    vertexShader: [
+      "uniform float uPixelRatio, uSize;",
+      "attribute vec3 aColor; attribute float aPx, aAxis, aAngle, aType, aBright, aSeed;",
+      "varying vec3 vColor; varying float vAxis, vAngle, vType, vBright, vSeed;",
+      "void main(){",
+      "  vColor = aColor; vAxis = aAxis; vAngle = aAngle; vType = aType; vBright = aBright; vSeed = aSeed;",
+      "  gl_PointSize = aPx*uSize*uPixelRatio;",
+      "  gl_Position = projectionMatrix*modelViewMatrix*vec4(position, 1.0);",
+      "}"
+    ].join("\n"),
+    fragmentShader: [
+      "uniform float uFade, uBright;",
+      "varying vec3 vColor; varying float vAxis, vAngle, vType, vBright, vSeed;",
+      "void main(){",
+      "  vec2 p = (gl_PointCoord - 0.5)*2.0;",
+      "  float cs = cos(vAngle), sn = sin(vAngle);",
+      "  p = vec2(cs*p.x - sn*p.y, sn*p.x + cs*p.y);",
+      "  vec2 e = vec2(p.x, p.y/vAxis); // the tilted disc: an ellipse",
+      "  float r = length(e); if (r > 1.0) discard;",
+      "  float core = exp(-r*r*45.0);",
+      "  float disc = exp(-r*3.2);",
+      "  float th = atan(e.y, e.x);",
+      "  float arms = 0.5 + 0.5*cos(2.0*(th - 2.6*log(r + 0.06)) + vSeed*6.2831);",
+      "  disc *= mix(1.0, 0.3 + 1.2*arms, vType);",
+      "  float edge = 1.0 - smoothstep(0.55, 1.0, r);",
+      "  vec3 col = mix(vColor, vec3(1.0, 0.95, 0.88), core);",
+      "  gl_FragColor = vec4(col, (core*0.9 + disc*0.75)*edge*vBright*uBright*uFade);",
+      "}"
+    ].join("\n")
+  }));
+  farGalPts.renderOrder = -2; farGalPts.frustumCulled = false; sky.add(farGalPts);
+  (function buildFarGalaxies(){
+    var srnd = mulberry32(53), tanH = Math.tan(THREE.MathUtils.degToRad(camera.fov/2));
+    var tints = ["#c5e0ff","#ffe3c7","#ffc896","#9cc8ff"].map(function(h){ return new THREE.Color(h); });
+    var list = FAR_PLACED.map(function(g){
+      return { g:g, dir:new THREE.Vector3(g.at[0]*tanH, g.at[1]*tanH, -1).normalize() };
+    });
+    while (list.length < FAR_PLACED.length + 28){
+      var u = srnd()*2-1, th = srnd()*TAU, s = Math.sqrt(1-u*u);
+      var d = new THREE.Vector3(s*Math.cos(th), u, s*Math.sin(th));
+      if (d.z < 0 && Math.abs(d.x/-d.z) < tanH*1.8 && Math.abs(d.y/-d.z) < tanH*1.1) continue; // in the end view
+      var px = 6 + Math.pow(srnd(), 2)*20, axis = 0.2 + srnd()*0.8, angle = srnd()*Math.PI;
+      var spiral = srnd() < 0.6, tint = Math.floor(srnd()*tints.length), bright = 0.5 + srnd()*0.3;
+      list.push({ dir:d, g:{ px:px, axis:axis, angle:angle, spiral:spiral, tint:tint, bright:bright } });
+    }
+    var pos=[], col=[], pxs=[], ax=[], an=[], ty=[], br=[], sd=[];
+    list.forEach(function(it){
+      var g = it.g, c = tints[g.tint];
+      pos.push(it.dir.x*SKY_R*0.99, it.dir.y*SKY_R*0.99, it.dir.z*SKY_R*0.99);
+      col.push(c.r, c.g, c.b); pxs.push(g.px); ax.push(g.axis); an.push(g.angle);
+      ty.push(g.spiral ? 1 : 0); br.push(g.bright); sd.push(srnd());
+    });
+    var geo = new THREE.BufferGeometry();
+    geo.setAttribute("position", new THREE.Float32BufferAttribute(pos,3));
+    geo.setAttribute("aColor", new THREE.Float32BufferAttribute(col,3));
+    geo.setAttribute("aPx", new THREE.Float32BufferAttribute(pxs,1));
+    geo.setAttribute("aAxis", new THREE.Float32BufferAttribute(ax,1));
+    geo.setAttribute("aAngle", new THREE.Float32BufferAttribute(an,1));
+    geo.setAttribute("aType", new THREE.Float32BufferAttribute(ty,1));
+    geo.setAttribute("aBright", new THREE.Float32BufferAttribute(br,1));
+    geo.setAttribute("aSeed", new THREE.Float32BufferAttribute(sd,1));
+    farGalPts.geometry.dispose(); farGalPts.geometry = geo;
+  })();
+
+  // ── sparkly foreground stars (in the sky frame — they don't spin with the galaxy)
+  // A tight bright core, a soft halo and a thin cross-shaped sparkle, like bright
+  // stars in a telescope photo.
+  var sparkleUniforms = { uTime:U.uTime, uPixelRatio:U.uPixelRatio,
+                          uSparkSize:{value:GAL.sparkleSize}, uSpikes:{value:GAL.sparkleSpikes} };
+  var sparkleMat = new THREE.ShaderMaterial({
+    uniforms: sparkleUniforms, transparent:true, depthWrite:false, depthTest:false,
+    blending: THREE.AdditiveBlending,
+    vertexShader: [
+      "uniform float uTime, uPixelRatio, uSparkSize;",
+      "attribute vec3 aColor; attribute float aScale, aSeed;",
+      "varying vec3 vColor; varying float vB;",
+      "void main(){",
+      "  vColor = aColor; vB = 0.85 + 0.15*sin(uTime*0.9 + aSeed*6.2831);",
+      "  gl_PointSize = uSparkSize*aScale*uPixelRatio;",
+      "  gl_Position = projectionMatrix*modelViewMatrix*vec4(position, 1.0);",
+      "}"
+    ].join("\n"),
+    fragmentShader: [
+      "uniform float uSpikes; varying vec3 vColor; varying float vB;",
+      "void main(){",
+      "  vec2 p = gl_PointCoord - 0.5; float r = length(p);",
+      "  float core = exp(-r*r*900.0);",
+      "  float halo = exp(-r*r*120.0)*0.35;",
+      "  float sx = exp(-abs(p.y)*220.0) * pow(max(0.0, 1.0 - abs(p.x)*2.0), 2.0);",
+      "  float sy = exp(-abs(p.x)*220.0) * pow(max(0.0, 1.0 - abs(p.y)*2.0), 2.0);",
+      "  float a = (core + halo + uSpikes*(sx + sy)) * vB;",
+      "  gl_FragColor = vec4(vColor, a);",
+      "}"
+    ].join("\n")
+  });
+  var sparklePts = new THREE.Points(new THREE.BufferGeometry(), sparkleMat);
+  sparklePts.renderOrder = 6; sparklePts.frustumCulled = false;
+  sky.add(sparklePts);
+  function buildSparkles(){
+    // In the END view's camera space (the sky frame): the same seeded in-frame layout,
+    // plus ~11× more all around the sky, so a drag turns up new ones.
+    var srnd = mulberry32(7), c = new THREE.Color(), D = 14;
+    var tanH = Math.tan(THREE.MathUtils.degToRad(camera.fov/2)), aspect = camera.aspect;
+    var tints = [0xffffff, 0xfff1dc, 0xcfe0ff, 0xffe3c7];
+    var pos=[], col=[], scl=[], sed=[], i;
+    for (i=0;i<GAL.sparkleCount;i++){
+      var nx = (srnd()*2-1)*0.92, ny = (srnd()*2-1)*0.85;
+      pos.push(nx*tanH*aspect*D, ny*tanH*D, -D);
+      c.setHex(tints[Math.floor(srnd()*tints.length)]); col.push(c.r, c.g, c.b);
+      scl.push(0.45 + Math.pow(srnd(), 2)*0.9); sed.push(srnd());
+    }
+    var around = mulberry32(11);
+    for (i=0; i < GAL.sparkleCount*11; ){
+      var u = around()*2-1, th = around()*TAU, s = Math.sqrt(1-u*u);
+      var x = s*Math.cos(th), z = s*Math.sin(th);
+      if (z < 0 && Math.abs(x/-z) < tanH*aspect && Math.abs(u/-z) < tanH) continue; // in the frame
+      pos.push(x*D, u*D, z*D);
+      c.setHex(tints[Math.floor(around()*tints.length)]); col.push(c.r, c.g, c.b);
+      scl.push(0.45 + Math.pow(around(), 2)*0.9); sed.push(around());
+      i++;
+    }
+    var g = new THREE.BufferGeometry();
+    g.setAttribute("position", new THREE.Float32BufferAttribute(pos,3));
+    g.setAttribute("aColor", new THREE.Float32BufferAttribute(col,3));
+    g.setAttribute("aScale", new THREE.Float32BufferAttribute(scl,1));
+    g.setAttribute("aSeed", new THREE.Float32BufferAttribute(sed,1));
+    var old = sparklePts.geometry; sparklePts.geometry = g; old.dispose();
+  }
+  buildSparkles();
+
+  // ── drag: turns the galaxy + the space around it (like the site — star/config
+  //    ROTATION: horizontal, 0.003 rad per px, eased 0.03 per frame) ─────────────
+  var drag = { target:0, yaw:0, active:false, x:0 };
+  var canvasEl = renderer.domElement; canvasEl.style.cursor = "grab";
+  canvasEl.addEventListener("pointerdown", function(e){ drag.active = true; drag.x = e.clientX; canvasEl.style.cursor = "grabbing"; });
+  window.addEventListener("pointermove", function(e){
+    if (!drag.active) return;
+    drag.target += (e.clientX - drag.x)*0.003; drag.x = e.clientX;
+  });
+  window.addEventListener("pointerup", function(){ drag.active = false; canvasEl.style.cursor = "grab"; });
+  var Y_AXIS = new THREE.Vector3(0, 1, 0);
+
+  // ── bloom (soft photographic glow around bright areas) ───────────────────────
+  var composer = new THREE.EffectComposer(renderer);
+  composer.addPass(new THREE.RenderPass(scene, camera));
+  var bloom = new THREE.UnrealBloomPass(new THREE.Vector2(W, H), GAL.bloomStrength, GAL.bloomRadius, GAL.bloomThreshold);
+  composer.addPass(bloom);
+
+  // ── apply live params ────────────────────────────────────────────────────────
+  function applyLive(){
+    starMat.uniforms.uSize.value = GAL.uSize;       knotMat.uniforms.uSize.value = GAL.uSize;
+    starMat.uniforms.uMaxSize.value = GAL.uMaxSize; knotMat.uniforms.uMaxSize.value = GAL.uMaxSize;
+    starMat.uniforms.uTwinkleAmt.value = GAL.twinkleAmount; knotMat.uniforms.uTwinkleAmt.value = GAL.twinkleAmount;
+    knotMat.uniforms.uBoost.value = GAL.knotBrightness;
+    glowMat.uniforms.uGlowAmt.value = GAL.glowAmount;
+    glowMat.uniforms.uGlowSize.value = GAL.glowSize;
+    glowMat.uniforms.uEdgeSoft.value = GAL.edgeSoftness;
+    dustMat.uniforms.uDustOpacity.value = GAL.dustOpacity;
+    dustMat.uniforms.uDustSize.value = GAL.dustSize;
+    U.uDiff.value = GAL.differential;
+    coreUniforms.uOpacity.value = GAL.coreOpacity;
+    coreGlow.scale.setScalar(GAL.coreScale * GAL.bulgeRadius);
+    sparkleUniforms.uSparkSize.value = GAL.sparkleSize;
+    sparkleUniforms.uSpikes.value = GAL.sparkleSpikes;
+    bloom.strength = GAL.bloomStrength; bloom.radius = GAL.bloomRadius; bloom.threshold = GAL.bloomThreshold;
+    galaxyTilt.rotation.x = THREE.MathUtils.degToRad(90 - GAL.inclination);
+    galaxyTilt.rotation.z = THREE.MathUtils.degToRad(GAL.roll);
+    glowPts.visible = GAL.showGlow;
+    dustPts.visible = GAL.showDust;
+    sparklePts.visible = GAL.showSparkles;
+    farStarU.uSize.value = GAL.farStarSize; farStarU.uBright.value = GAL.farStarBrightness;
+    farStarPts.visible = GAL.showFarStars;
+    farGalU.uSize.value = GAL.farGalaxySize; farGalU.uBright.value = GAL.farGalaxyBrightness;
+    farGalPts.visible = GAL.showFarGalaxies;
+  }
+  applyLive();
+
+  function rebuild(){
+    var b = buildAll();
+    [[glowPts, b.glow], [starPts, b.stars], [dustPts, b.dust], [knotPts, b.knots]].forEach(function(pair){
+      var old = pair[0].geometry; pair[0].geometry = pair[1]; old.dispose();
+    });
+  }
+
+  // ── lil-gui ──────────────────────────────────────────────────────────────────
+  var gui = new lil.GUI({ title: "Realistic galaxy" });
+  var fCmp = gui.addFolder("Compare (switch layers on/off)");
+  fCmp.add(GAL,"showGlow").name("soft glow").onChange(applyLive);
+  fCmp.add(GAL,"showDust").name("dust lanes").onChange(applyLive);
+  fCmp.add(GAL,"showBloom").name("bloom");
+  fCmp.add(GAL,"showSparkles").name("sparkly stars").onChange(applyLive);
+  var fLook = gui.addFolder("Look");
+  fLook.add(GAL,"glowAmount",0,0.4,0.005).name("glow amount").onChange(applyLive);
+  fLook.add(GAL,"glowSize",80,500,5).name("glow size").onChange(applyLive);
+  fLook.add(GAL,"dustOpacity",0,1,0.01).name("dust darkness").onChange(applyLive);
+  fLook.add(GAL,"dustSize",20,160,1).name("dust puff size").onChange(applyLive);
+  fLook.add(GAL,"knotBrightness",0,2.5,0.05).name("pink regions").onChange(applyLive);
+  fLook.add(GAL,"coreOpacity",0,1.2,0.02).name("core glow").onChange(applyLive);
+  fLook.add(GAL,"coreScale",1,6,0.1).name("core size").onChange(applyLive);
+  fLook.add(GAL,"bloomStrength",0,2.5,0.05).name("bloom strength").onChange(applyLive);
+  fLook.add(GAL,"bloomRadius",0,1,0.01).name("bloom radius").onChange(applyLive);
+  fLook.add(GAL,"bloomThreshold",0,1,0.01).name("bloom threshold").onChange(applyLive);
+  fLook.add(GAL,"uSize",8,48,1).name("dot size").onChange(applyLive);
+  fLook.add(GAL,"twinkleAmount",0,0.6,0.01).name("twinkle").onChange(applyLive);
+  var fSpark = gui.addFolder("Sparkly stars");
+  fSpark.add(GAL,"sparkleCount",0,16,1).name("count").onFinishChange(buildSparkles);
+  fSpark.add(GAL,"sparkleSize",20,140,1).name("size").onChange(applyLive);
+  fSpark.add(GAL,"sparkleSpikes",0,1.5,0.05).name("sparkle").onChange(applyLive);
+  var fSpace = gui.addFolder("Space around it");
+  fSpace.add(GAL,"showFarStars").name("far stars").onChange(applyLive);
+  fSpace.add(GAL,"farStarBrightness",0,3,0.05).name("far stars brightness").onChange(applyLive);
+  fSpace.add(GAL,"farStarSize",0.5,3,0.05).name("far stars size (px)").onChange(applyLive);
+  fSpace.add(GAL,"farStarCount",0,40000,1000).name("far stars count").onFinishChange(buildFarStars);
+  fSpace.add(GAL,"showFarGalaxies").name("distant galaxies").onChange(applyLive);
+  fSpace.add(GAL,"farGalaxyBrightness",0,3,0.05).name("distant galaxies brightness").onChange(applyLive);
+  fSpace.add(GAL,"farGalaxySize",0.3,3,0.05).name("distant galaxies size").onChange(applyLive);
+  fSpace.add(GAL,"dragTurns").name("drag turns the galaxy");
+  fSpace.add(GAL,"edgeSoftness",0,1,0.01).name("soft edges").onChange(applyLive);
+  fSpace.add(GAL,"envelope",0,3,0.05).name("outer glow").onFinishChange(rebuild);
+  fSpace.add(GAL,"outerStars",0,0.15,0.005).name("outer stars").onFinishChange(rebuild);
+  fSpace.close();
+  var fPose = gui.addFolder("Pose & motion");
+  fPose.add(GAL,"inclination",0,90,1).onChange(applyLive);
+  fPose.add(GAL,"roll",-90,90,1).onChange(applyLive);
+  fPose.add(GAL,"spinSpeed",0,0.3,0.005);
+  fPose.add(GAL,"differential",0,0.012,0.001).onChange(applyLive);
+  fPose.add(GAL,"paused");
+  fPose.close();
+  var fShape = gui.addFolder("Shape (rebuilds)");
+  fShape.add(GAL,"count",10000,150000,5000).onFinishChange(rebuild);
+  fShape.add(GAL,"armCount",1,5,1).onFinishChange(rebuild);
+  fShape.add(GAL,"pitchDeg",8,35,1).name("armTightness").onFinishChange(rebuild);
+  fShape.add(GAL,"armWidth",0.4,2.0,0.05).onFinishChange(rebuild);
+  fShape.add(GAL,"clumpiness",0,1,0.05).name("knotty arms").onFinishChange(rebuild);
+  fShape.add(GAL,"interArmDim",0.1,1,0.05).name("between-arm brightness").onFinishChange(rebuild);
+  fShape.add(GAL,"tBlue",0.25,0.75,0.01).name("blue/peach balance").onFinishChange(rebuild);
+  fShape.add(GAL,"bulgeRadius",0.8,3.5,0.1).onFinishChange(rebuild);
+  fShape.add(GAL,"discRadius",6,14,0.5).name("Rmax").onFinishChange(rebuild);
+  fShape.add(GAL,"hiiCount",0,400,10).name("pink regions count").onFinishChange(rebuild);
+  fShape.add(GAL,"dustOffset",0,0.8,0.01).name("dust lane offset").onFinishChange(rebuild);
+  fShape.add(GAL,"dustBreak",0,0.8,0.01).name("dust gaps").onFinishChange(rebuild);
+  fShape.add(GAL,"featherRate",0,0.2,0.005).name("dust feathers").onFinishChange(rebuild);
+  fShape.add(GAL,"seed",1,9999,1).onFinishChange(rebuild);
+  fShape.add({ regenerate: function(){ GAL.seed = Math.floor(Math.random()*9999)+1; gui.controllersRecursive().forEach(function(c){c.updateDisplay();}); rebuild(); } }, "regenerate");
+  fShape.close();
+
+  // ── loop ─────────────────────────────────────────────────────────────────────
+  var clock = new THREE.Clock();
+  (function render(){
+    requestAnimationFrame(render);
+    var dt = clock.getDelta(), t = clock.getElapsedTime();
+    if (!GAL.paused) galaxySpin.rotation.y += GAL.spinSpeed * dt;
+    U.uTime.value = t;
+    // the drag turns the galaxy and its sky together (about the centre = the view's aim)
+    if (!GAL.dragTurns) drag.target = drag.yaw = 0;
+    drag.yaw += (drag.target - drag.yaw)*0.03;
+    galaxyDrag.rotation.y = drag.yaw;
+    sky.position.copy(camera.position);
+    sky.quaternion.setFromAxisAngle(Y_AXIS, drag.yaw).multiply(SKY_END);
+    coreGlow.quaternion.copy(camera.quaternion); // billboard
+    if (GAL.showBloom) composer.render(); else renderer.render(scene, camera);
+  })();
+
+  window.addEventListener("resize", function(){
+    W = window.innerWidth; H = window.innerHeight;
+    camera.aspect = W/H; camera.updateProjectionMatrix();
+    renderer.setSize(W,H); composer.setSize(W,H);
+    buildSparkles();
+  });
+})();
+</script>
+</body>
+</html>
