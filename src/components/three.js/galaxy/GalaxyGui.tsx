@@ -1,15 +1,17 @@
 "use client";
 
 import { useEffect } from "react";
-import { ScrollSmoother } from "gsap/all";
 import type { GUI } from "three/examples/jsm/libs/lil-gui.module.min.js";
-import { journeyTrigger } from "#/stores/journeyTrigger";
+import { copyValues, jumpToJourney } from "#/components/three.js/scene/devPanel";
+import { buildSunPanel } from "#/components/three.js/solar/SunGui";
 import { GALAXY, GALAXY_FX, GALAXY_SPACE, updateGalaxyPlacement } from "./config";
 import { journeyAtGalaxy } from "./pace";
 import { galaxyTuningSnapshot, rebuildGalaxy, resetGalaxyTuning } from "./tuning";
 
 /**
- * Dev tuning panel for the galaxy finale — the same lil-gui panel (folders + labels)
+ * Dev tuning panel — two sections: the SUN (see solar/SunGui.ts) and the GALAXY finale.
+ *
+ * The galaxy section is the same lil-gui panel (folders + labels)
  * as `docs/prototypes/galaxy-realistic.html` and `galaxy-zoom-realistic.html`, driving
  * the REAL scene live. It mutates `GALAXY` / `GALAXY_FX` in place: look values apply
  * instantly, shape values rebuild the galaxy, pose values re-place it (the Sun stays in
@@ -24,7 +26,7 @@ import { galaxyTuningSnapshot, rebuildGalaxy, resetGalaxyTuning } from "./tuning
  */
 
 /** Master switch — on: the panel shows in dev. Set to `false` to hide it (`?gui` still opens it). */
-const SHOW_GALAXY_GUI = true;
+const SHOW_GALAXY_GUI = false;
 
 const GalaxyGui = () => {
   useEffect(() => {
@@ -37,8 +39,11 @@ const GalaxyGui = () => {
     let cancelled = false;
     import("three/examples/jsm/libs/lil-gui.module.min.js").then(({ GUI }) => {
       if (cancelled) return;
-      panel = new GUI({ title: "Galaxy (dev)", width: 300 });
-      buildPanel(panel);
+      panel = new GUI({ title: "Tuning (dev)", width: 310 });
+      buildSunPanel(panel.addFolder("☀ Sun"));
+      const galaxy = panel.addFolder("✦ Galaxy finale");
+      buildPanel(galaxy);
+      galaxy.close(); // one section open at a time keeps the panel short
     });
     return () => {
       cancelled = true;
@@ -53,16 +58,6 @@ export default GalaxyGui;
 /** Scroll to a point of the galaxy finale (0 = leaving the Voyager, 1 = full galaxy). */
 function jumpToGalaxy(progress: number) {
   jumpToJourney(journeyAtGalaxy(progress));
-}
-
-/** Scroll to a point of the pinned journey (master progress 0..1). */
-function jumpToJourney(mp: number) {
-  const trigger = journeyTrigger.current;
-  if (!trigger) return;
-  const y = trigger.start + mp * (trigger.end - trigger.start);
-  const smoother = ScrollSmoother.get();
-  if (smoother) smoother.scrollTo(y, false);
-  else window.scrollTo(0, y);
 }
 
 function buildPanel(gui: GUI) {
@@ -195,16 +190,7 @@ function buildPanel(gui: GUI) {
 
   const fValues = gui.addFolder("Values");
   const actions = {
-    copy: () => {
-      const json = galaxyTuningSnapshot();
-      navigator.clipboard
-        .writeText(json)
-        .then(() => flash(copy, "copied ✓", "copy values"))
-        .catch(() => {
-          console.info("[GalaxyGui] current values:\n" + json);
-          flash(copy, "copy blocked — logged to console", "copy values");
-        });
-    },
+    copy: () => copyValues(copy, galaxyTuningSnapshot(), "copy values", "GalaxyGui"),
     reset: () => {
       resetGalaxyTuning();
       refresh();
@@ -215,10 +201,4 @@ function buildPanel(gui: GUI) {
 
   // Keep the panel compact: the everyday folders open, the rest closed.
   [fNear, fSpark, fSpace, fPose, fShape, fTime].forEach((folder) => folder.close());
-}
-
-/** Briefly relabel a button (feedback), then restore it. */
-function flash(controller: { name: (label: string) => unknown }, label: string, restore: string) {
-  controller.name(label);
-  window.setTimeout(() => controller.name(restore), 1600);
 }
