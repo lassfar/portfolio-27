@@ -94,42 +94,87 @@ export const SOLAR = {
 
   // Faint orbit guide-rings.
   ring: {
-    color: "#5f6f92", // muted blue-grey
-    opacity: 0.16,
+    visible: true, // show the planets' orbit lines (the Earth's included)
+    color: "#ffffff",
+    opacity: 0.02, // barely there
     segments: 200,
   },
 
   // Mild dot-thinning of the far siblings as the camera pulls back.
   planetThinMax: 0.35,
-} as const;
+};
 
 // ── The sun ──────────────────────────────────────────────────────────────────
 
+/**
+ * The Sun — a see-through ball of tightly packed dots, with the original Sun's warm glow
+ * inside it. The dots follow the Saturn / Earth dot style: scattered at
+ * random over the sphere with a little radial grain, varied in size and brightness,
+ * soft and round, shrinking with distance. They shimmer gently and drift slowly along
+ * the surface (never leaving it). Coloured like the original Sun (warm white → orange →
+ * deep red-orange from the centre of the disc to its edge); the far side shows dimmer
+ * through the gaps. Mutable: the dev panel (SunGui) tunes it live. See Sun.tsx.
+ */
 export const SUN = {
   radius: 3.4,
-  count: 30000, // desktop particle count — dense so the dots fuse into a solid, THICK disc
-  countMobile: 11000,
-  size: 40, // base point size — big enough that grains overlap into a solid disc
-  spin: 0.04, // slow self-rotation (rad/sec)
+  count: 7500, // dots scattered over the sphere
+  countMobile: 7000,
+  dotSize: 95, // base point size (distance-attenuated, like the Saturn / Earth dots)
+  dotSoftness: 0.35, // how soft each dot's edge is (0.02 = crisp → 0.5 = a soft blur)
+  brightness: 1.45, // overall brightness of the dots
+  shellJitter: 0.02, // radial grain of the dot shell (× radius), like the Saturn / Earth
+  spin: 0.04, // slow rotation (rad/s); the poles turn ~25% slower
+  swirl: 0.006, // how far dots drift ALONG the surface (× radius) — they never leave it
+  shimmer: 0.24, // how much each dot's brightness gently rises and falls
+  shimmerSpeed: 0.5,
 
-  // Fiery gradient: bright core → orange → deep red-orange limb, like the sun
-  // reference. The corona/gas beyond the surface fades to a faint deep red.
+  // The original Sun's colours + gradient, across the disc as you see it: the centre →
+  // (linear) → the middle colour at `gradientSplit` of the way out → the edge colour.
+  core: "#fff2d4", // bright warm-white centre
+  mid: "#ff9a2e", // orange
+  edge: "#e8461c", // deep red-orange edge
+  gradientSplit: 0.55,
+  backDim: 0.35, // far-side dots, seen through the gaps
+  paused: false, // freeze the Sun's motion (for tuning)
+};
+
+/**
+ * The original Sun, kept inside and around the dotted shell (SunCore.tsx):
+ *   • its BODY — a dense volume of dots filling the sphere (a real 3D glow, not a flat
+ *     disc), bright warm-white at the centre → orange → deep red-orange toward the edge,
+ *     slowly boiling; it sits just inside the shell and shows through its gaps;
+ *   • its CORONA — living dots drifting in a loose cloud just outside the sphere,
+ *     wisping gently in and out and flickering, orange → deep red;
+ *   • its soft warm HALO (glow sprite) around it all.
+ * Mutable: the dev panel (SunGui) tunes it live.
+ */
+export const SUN_CORE = {
+  radiusScale: 0.96, // × SUN.radius — just inside the dotted shell
+  count: 30000, // desktop particle count — dense so the dots fuse into a glowing volume
+  countMobile: 11000,
+  size: 40, // base point size
+  spin: 0.04, // slow self-rotation (rad/sec)
   core: "#fff2d4", // bright warm-white center
   mid: "#ff9a2e", // orange
-  edge: "#e8461c", // deep red-orange limb
-  corona: "#c23210", // faint red corona / gas beyond the surface
-
-  // Living, boiling surface (GPU shader).
-  granulation: 2, // simplex-noise frequency for the boiling surface
-  flowSpeed: 0.22, // how fast the surface churns
-  surfaceBoil: 0.012, // normal displacement of the surface — SMALL, so the sphere shape holds (life is mostly brightness)
-  coronaDrift: 0.14, // outward wispy drift of the OUTER EDGE gas — kept low so the rim lives gently
-  coronaFlicker: 0.24, // brightness flicker of the outer edge (lower = calmer)
-  fill: 1, // how far in from the limb the dense body reaches (0..1) — bigger = thicker/fuller
-  coronaFraction: 0.1, // share of particles forming the tight outer gas rim (lower = more on the dense body)
-  coronaReach: 0.28, // how far the corona extends beyond the surface (× radius)
-  glowSize: 2.6, // soft glow-halo diameter as a multiple of the radius — kept tight so it hugs the sun
-} as const;
+  edge: "#e8461c", // deep red-orange toward the edge
+  gradientSplit: 0.55, // where the middle colour sits, centre (0) → edge (1)
+  granulation: 2, // simplex-noise frequency of the boil
+  flowSpeed: 0.22, // how fast it churns
+  surfaceBoil: 0.012, // tiny inward dimple of the outer grains (the shape holds)
+  fill: 1, // how far in from the edge the volume reaches (1 = all the way to the centre)
+  // The corona: living dots drifting around the sphere (around the FULL-size shell).
+  corona: "#c23210", // faint red corona / gas
+  coronaFraction: 0.25, // share of the dots that form the corona cloud
+  coronaReach: 0.19, // how far the cloud extends beyond the surface (× radius)
+  coronaDrift: 0.63, // outward wispy drift in and out
+  coronaFlicker: 0.75, // brightness flicker (lower = calmer)
+  glowSize: 2.3, // soft halo diameter as a multiple of the radius
+  haloTint: "#ffffff", // tints the halo's warm gradient (white = as is)
+  // Strengths (0 hides a part).
+  bodyStrength: 2,
+  coronaStrength: 2,
+  haloStrength: 2.05,
+};
 
 // ── The sibling planets (inner → outer) ──────────────────────────────────────
 //

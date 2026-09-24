@@ -2,7 +2,7 @@
 
 import { useFrame } from "@react-three/fiber";
 import { useMemo, useRef } from "react";
-import { Group, LineBasicMaterial } from "three";
+import { Group, LineBasicMaterial, LineLoop } from "three";
 import { useVoyageScroll } from "#/stores/useVoyageScroll";
 import { useSceneRotation } from "#/stores/useSceneRotation";
 import { easeOutCubic, remap01 } from "#/components/three.js/star/utils";
@@ -14,7 +14,6 @@ import {
   PLANETS,
   SOLAR,
   SOLAR_MOBILE_SCALE,
-  SUN,
   SUNPOS,
   VOYAGE,
 } from "./config";
@@ -39,7 +38,6 @@ const SolarSystem = ({ animate = true }: Props) => {
   const isSmall = typeof window !== "undefined" && window.innerWidth < 768;
   const scaleCount = (n: number) =>
     isSmall ? Math.round(n * SOLAR_MOBILE_SCALE) : n;
-  const sunCount = isSmall ? SUN.countMobile : SUN.count;
 
   const sysRef = useRef<Group>(null);
   const rotRef = useRef<Group>(null);
@@ -59,8 +57,9 @@ const SolarSystem = ({ animate = true }: Props) => {
   return (
     <group ref={sysRef} position={SUNPOS}>
       <group ref={rotRef}>
-        <Sun count={sunCount} animate={animate} />
+        <Sun animate={animate} />
 
+        {/* The orbit lines — shown while SOLAR.ring.visible (live, see OrbitRing). */}
         {PLANETS.map((def) => (
           <OrbitRing key={`ring-${def.id}`} radius={def.radius} />
         ))}
@@ -84,9 +83,11 @@ export default SolarSystem;
 
 /**
  * A faint circular guide-ring (local to the sun pivot), fading in with the
- * system over the reveal window.
+ * system over the reveal window. Shown while `SOLAR.ring.visible`; its colour +
+ * opacity are live too (the dev panel tunes them).
  */
 const OrbitRing = ({ radius }: { radius: number }) => {
+  const lineRef = useRef<LineLoop>(null);
   const matRef = useRef<LineBasicMaterial>(null);
 
   const positions = useMemo(() => {
@@ -102,7 +103,9 @@ const OrbitRing = ({ radius }: { radius: number }) => {
   }, [radius]);
 
   useFrame(() => {
-    if (!matRef.current) return;
+    if (lineRef.current) lineRef.current.visible = SOLAR.ring.visible;
+    if (!matRef.current || !SOLAR.ring.visible) return;
+    matRef.current.color.set(SOLAR.ring.color);
     const voyage = useVoyageScroll.getState().progress;
     const earthFade = remap01(voyage, VOYAGE.earthFadeStart, VOYAGE.earthFadeEnd);
     const reveal =
@@ -112,7 +115,7 @@ const OrbitRing = ({ radius }: { radius: number }) => {
   });
 
   return (
-    <lineLoop>
+    <lineLoop ref={lineRef}>
       <bufferGeometry>
         <bufferAttribute
           attach="attributes-position"

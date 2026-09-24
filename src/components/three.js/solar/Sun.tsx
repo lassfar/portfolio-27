@@ -1,286 +1,170 @@
 "use client";
 
-import { useFrame } from "@react-three/fiber";
-import { useMemo, useRef } from "react";
+import { useFrame, useThree } from "@react-three/fiber";
+import { useEffect, useMemo } from "react";
 import {
-  AdditiveBlending,
-  CanvasTexture,
+  BufferGeometry,
   Color,
-  Points,
+  Float32BufferAttribute,
+  NormalBlending,
   ShaderMaterial,
-  SpriteMaterial,
 } from "three";
 import { useVoyageScroll } from "#/stores/useVoyageScroll";
 import { easeOutCubic, remap01 } from "#/components/three.js/star/utils";
-import { SIMPLEX_NOISE } from "#/components/three.js/planet/shaders";
-import { SOLAR, SUN, VOYAGE } from "./config";
+import { SOLAR, SUN, SUN_CORE, VOYAGE } from "./config";
 import { finaleReturn } from "./reveal";
+import { DOT_FRAG, DOT_VERT } from "./sunShaders";
+import SunCore from "./SunCore";
+import { useSunTuning } from "./tuning";
 
 type Props = {
-  count?: number;
   animate?: boolean;
 };
 
 /**
- * The sun — a THICK ball of living dots: a dense particle body with a boiling,
- * granular surface (simplex noise animated on the GPU), a bright core fading
- * through orange to a deep red-orange limb, and a faint red CORONA / gas that
- * wisps beyond the surface. The particles are packed dense enough (SUN.count +
- * SUN.fill) that they fuse into a solid, thick disc rather than a sparse cloud
- * like the planets. Unlit + additively blended so it reads as emissive; a soft
- * glow-halo sprite behind it fills the gaps. Fades in with the system and spins
- * slowly on the real-time clock.
+ * Dots scattered at random over the unit sphere (like the Saturn's), each with a little
+ * radial grain — an organic, grainy surface, never a regular pattern.
  */
-const Sun = ({ count = SUN.count, animate = true }: Props) => {
-  const pointsRef = useRef<Points>(null);
-  const materialRef = useRef<ShaderMaterial>(null);
-  const glowRef = useRef<SpriteMaterial>(null);
+function scatteredSphere(n: number): Float32Array {
+  const out = new Float32Array(n * 3);
+  for (let i = 0; i < n; i++) {
+    const u = Math.random() * 2 - 1;
+    const theta = Math.random() * Math.PI * 2;
+    const s = Math.sqrt(1 - u * u);
+    const r = 1 + (Math.random() - 0.5) * SUN.shellJitter;
+    out[i * 3] = s * Math.cos(theta) * r;
+    out[i * 3 + 1] = u * r;
+    out[i * 3 + 2] = s * Math.sin(theta) * r;
+  }
+  return out;
+}
 
-  // Soft warm glow-halo (a camera-facing radial gradient) behind the grains, so
-  // the sun reads as a solid glowing body, not a cloud of dots.
-  const glow = useMemo(() => {
-    const canvas = document.createElement("canvas");
-    canvas.width = canvas.height = 128;
-    const ctx = canvas.getContext("2d");
-    if (ctx) {
-      const g = ctx.createRadialGradient(64, 64, 0, 64, 64, 64);
-      g.addColorStop(0.0, "rgba(255,216,150,0.85)");
-      g.addColorStop(0.22, "rgba(255,120,44,0.45)");
-      g.addColorStop(0.55, "rgba(200,52,16,0.16)");
-      g.addColorStop(1.0, "rgba(120,24,6,0.0)");
-      ctx.fillStyle = g;
-      ctx.fillRect(0, 0, 128, 128);
-    }
-    return new CanvasTexture(canvas);
-  }, []);
+/**
+ * The Sun — a see-through ball of tightly packed dots, coloured like the original Sun,
+ * with the original Sun's glowing core, corona and halo inside and around it:
+ *
+ *   • the dots follow the Saturn / Earth dot style — scattered at random with a little
+ *     radial grain, varied in size and brightness, soft and round, shrinking with
+ *     distance — packed tight; they shimmer gently and drift slowly along the surface
+ *     (keeping their radius) while the Sun turns;
+ *   • the original Sun's colours + gradient across the disc (warm white at the centre →
+ *     orange → deep red-orange at the edge), so it reads round;
+ *   • see-through: the far side shows dimmer through the gaps, behind the glowing core
+ *     (SunCore — a 3D volume of warm dots); the same shell dots are drawn twice: far
+ *     side, then the core, then the near side.
+ *
+ * Fades in with the system, out for the Earth dive, back in for the galaxy finale.
+ * Every value is live-tunable from the dev panel (SunGui); shape values rebuild the dots.
+ */
+const Sun = ({ animate = true }: Props) => {
+  const dpr = useThree((s) => s.viewport.dpr);
+  const isSmall = typeof window !== "undefined" && window.innerWidth < 768;
+  const version = useSunTuning((s) => s.version); // bumped by the panel's shape values
 
-  const { positions, colors, scales, seeds, shells } = useMemo(() => {
-    const positions = new Float32Array(count * 3);
-    const colors = new Float32Array(count * 3);
-    const scales = new Float32Array(count);
-    const seeds = new Float32Array(count);
-    const shells = new Float32Array(count); // 0 = surface, 1 = corona / gas
-
-    const c = new Color();
-    const core = new Color(SUN.core);
-    const mid = new Color(SUN.mid);
-    const edge = new Color(SUN.edge);
-    const corona = new Color(SUN.corona);
-
-    // The dense body reaches from `inner` out to the limb (1.0). A bigger
-    // SUN.fill = a lower inner = a fuller, thicker sphere of dots.
-    const inner = 1 - SUN.fill;
-
+  const geometry = useMemo(() => {
+    const count = isSmall ? SUN.countMobile : SUN.count;
+    const g = new BufferGeometry();
+    g.setAttribute("position", new Float32BufferAttribute(scatteredSphere(count), 3));
+    const scale = new Float32Array(count);
+    const bright = new Float32Array(count);
+    const seed = new Float32Array(count);
     for (let i = 0; i < count; i++) {
-      const u = Math.random() * 2 - 1;
-      const theta = Math.random() * Math.PI * 2;
-      const s = Math.sqrt(1 - u * u);
-      const dx = s * Math.cos(theta);
-      const dy = u;
-      const dz = s * Math.sin(theta);
-
-      const isCorona = Math.random() < SUN.coronaFraction;
-      shells[i] = isCorona ? 1 : 0;
-
-      // Body: a dense ball, biased toward the surface so the limb is crisp but
-      // the interior still fills in (thick). Corona: a faint outer gas glow.
-      const rf = isCorona
-        ? 1.0 + Math.pow(Math.random(), 1.6) * SUN.coronaReach
-        : inner + Math.pow(Math.random(), 0.5) * SUN.fill;
-      const r = SUN.radius * rf;
-      positions[i * 3] = dx * r;
-      positions[i * 3 + 1] = dy * r;
-      positions[i * 3 + 2] = dz * r;
-
-      if (isCorona) {
-        c.copy(edge).lerp(corona, Math.random());
-      } else {
-        // Inner → outer surface: core → orange → deep red-orange limb.
-        const t = (rf - inner) / SUN.fill; // 0 inner … 1 limb
-        if (t < 0.55) c.copy(core).lerp(mid, t / 0.55);
-        else c.copy(mid).lerp(edge, (t - 0.55) / 0.45);
-      }
-      const j = 0.85 + Math.random() * 0.3;
-      colors[i * 3] = c.r * j;
-      colors[i * 3 + 1] = c.g * j;
-      colors[i * 3 + 2] = c.b * j;
-
-      scales[i] = isCorona ? 0.7 + Math.random() * 1.1 : 0.6 + Math.random() * 0.7;
-      seeds[i] = Math.random();
+      scale[i] = 0.6 + Math.random() * 0.8; // varied sizes, like the Saturn's dots
+      bright[i] = 0.82 + Math.random() * 0.32; // varied brightness
+      seed[i] = Math.random();
     }
-    return { positions, colors, scales, seeds, shells };
-  }, [count]);
+    g.setAttribute("aScale", new Float32BufferAttribute(scale, 1));
+    g.setAttribute("aBright", new Float32BufferAttribute(bright, 1));
+    g.setAttribute("aSeed", new Float32BufferAttribute(seed, 1));
+    return g;
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- `version` rebuilds from the tuned SUN
+  }, [isSmall, version]);
+  useEffect(() => () => geometry.dispose(), [geometry]);
 
-  const uniforms = useMemo(
+  const shared = useMemo(
     () => ({
       uTime: { value: 0 },
-      uSize: { value: SUN.size },
-      uPixelRatio: {
-        value:
-          typeof window !== "undefined"
-            ? Math.min(window.devicePixelRatio, 2)
-            : 1.5,
-      },
+      uRadius: { value: SUN.radius },
       uReveal: { value: 0 },
-      uGranulation: { value: SUN.granulation },
-      uFlowSpeed: { value: SUN.flowSpeed },
-      uSurfaceBoil: { value: SUN.surfaceBoil },
-      uCoronaDrift: { value: SUN.coronaDrift },
-      uCoronaFlicker: { value: SUN.coronaFlicker },
     }),
     []
   );
 
+  const materials = useMemo(() => {
+    const c = (hex: string) => new Color(hex);
+    const dots = (side: 1 | -1) =>
+      new ShaderMaterial({
+        transparent: true,
+        depthWrite: false,
+        blending: NormalBlending,
+        uniforms: {
+          ...shared,
+          uSpin: { value: SUN.spin },
+          uSwirl: { value: SUN.swirl },
+          uSize: { value: SUN.dotSize },
+          uPixelRatio: { value: 1 },
+          uShimmer: { value: SUN.shimmer },
+          uShimmerSpeed: { value: SUN.shimmerSpeed },
+          uBackDim: { value: SUN.backDim },
+          uSide: { value: side },
+          uCore: { value: c(SUN.core) },
+          uMid: { value: c(SUN.mid) },
+          uEdge: { value: c(SUN.edge) },
+          uSplit: { value: SUN.gradientSplit },
+          uBrightness: { value: SUN.brightness },
+          uSoftness: { value: SUN.dotSoftness },
+        },
+        vertexShader: DOT_VERT,
+        fragmentShader: DOT_FRAG,
+      });
+    return { far: dots(-1), near: dots(1) };
+  }, [shared]);
+  useEffect(() => () => Object.values(materials).forEach((m) => m.dispose()), [materials]);
+
   useFrame((_, delta) => {
-    const m = materialRef.current;
-    if (!m) return;
-    if (animate) {
-      m.uniforms.uTime.value += delta;
-      if (pointsRef.current) pointsRef.current.rotation.y += delta * SUN.spin;
+    if (animate && !SUN.paused) shared.uTime.value += delta;
+    shared.uRadius.value = SUN.radius;
+    // Live values (the dev panel tunes SUN in place).
+    for (const m of [materials.far, materials.near]) {
+      const u = m.uniforms;
+      u.uPixelRatio.value = dpr;
+      u.uSpin.value = SUN.spin;
+      u.uSwirl.value = SUN.swirl;
+      u.uSize.value = SUN.dotSize;
+      u.uShimmer.value = SUN.shimmer;
+      u.uShimmerSpeed.value = SUN.shimmerSpeed;
+      u.uBackDim.value = SUN.backDim;
+      u.uSplit.value = SUN.gradientSplit;
+      u.uBrightness.value = SUN.brightness;
+      u.uSoftness.value = SUN.dotSoftness;
+      u.uCore.value.set(SUN.core);
+      u.uMid.value.set(SUN.mid);
+      u.uEdge.value.set(SUN.edge);
     }
     const voyage = useVoyageScroll.getState().progress;
-    // Fade in with the system, then fade OUT as we dive to Earth — then fade BACK
-    // in for the galaxy finale (the pull-out re-reveals the whole real system).
+    // Fade in with the system, then fade OUT as we dive to Earth — then fade BACK in
+    // for the galaxy finale (the pull-out re-reveals the whole real system).
     const earthFade = remap01(voyage, VOYAGE.earthFadeStart, VOYAGE.earthFadeEnd);
-    const reveal =
+    shared.uReveal.value =
       easeOutCubic(remap01(voyage, SOLAR.revealStart, SOLAR.revealEnd)) *
       (1 - earthFade * (1 - finaleReturn()));
-    m.uniforms.uReveal.value = reveal;
-    if (glowRef.current) glowRef.current.opacity = reveal;
   });
 
+  // Far side → the old Sun's halo, glowing core + drifting corona → near side.
   return (
     <group>
-      <sprite scale={[SUN.radius * SUN.glowSize, SUN.radius * SUN.glowSize, 1]}>
-        <spriteMaterial
-          ref={glowRef}
-          map={glow}
-          transparent
-          depthWrite={false}
-          blending={AdditiveBlending}
-          opacity={0}
-        />
-      </sprite>
-      <points ref={pointsRef}>
-        <bufferGeometry>
-          <bufferAttribute
-            attach="attributes-position"
-            count={count}
-            array={positions}
-            itemSize={3}
-            args={[positions, 3]}
-          />
-          <bufferAttribute
-            attach="attributes-aColor"
-            count={count}
-            array={colors}
-            itemSize={3}
-            args={[colors, 3]}
-          />
-          <bufferAttribute
-            attach="attributes-aScale"
-            count={count}
-            array={scales}
-            itemSize={1}
-            args={[scales, 1]}
-          />
-          <bufferAttribute
-            attach="attributes-aSeed"
-            count={count}
-            array={seeds}
-            itemSize={1}
-            args={[seeds, 1]}
-          />
-          <bufferAttribute
-            attach="attributes-aShell"
-            count={count}
-            array={shells}
-            itemSize={1}
-            args={[shells, 1]}
-          />
-        </bufferGeometry>
-        <shaderMaterial
-          ref={materialRef}
-          transparent
-          depthWrite={false}
-          blending={AdditiveBlending}
-          uniforms={uniforms}
-          vertexShader={VERTEX_SHADER}
-          fragmentShader={FRAGMENT_SHADER}
-        />
-      </points>
+      <points geometry={geometry} material={materials.far} renderOrder={-4} frustumCulled={false} />
+      <SunCore
+        count={isSmall ? SUN_CORE.countMobile : SUN_CORE.count}
+        version={version}
+        animate={animate}
+        time={shared.uTime}
+        reveal={shared.uReveal}
+        renderOrder={-2}
+      />
+      <points geometry={geometry} material={materials.near} renderOrder={-1} frustumCulled={false} />
     </group>
   );
 };
 
 export default Sun;
-
-const VERTEX_SHADER = /* glsl */ `
-uniform float uTime;
-uniform float uSize;
-uniform float uPixelRatio;
-uniform float uGranulation;
-uniform float uFlowSpeed;
-uniform float uSurfaceBoil;
-uniform float uCoronaDrift;
-uniform float uCoronaFlicker;
-attribute vec3 aColor;
-attribute float aScale;
-attribute float aSeed;
-attribute float aShell;
-varying vec3 vColor;
-varying float vBright;
-varying float vShell;
-varying float vSeed;
-
-${SIMPLEX_NOISE}
-
-void main(){
-  vColor = aColor;
-  vShell = aShell;
-  vSeed = aSeed;
-
-  vec3 nrm = normalize(position);
-  vec3 p = position;
-  float t = uTime * uFlowSpeed;
-
-  // Boiling granulation on the surface; wispy outward drift for the corona/gas.
-  float gran = snoise(position * uGranulation + vec3(0.0, 0.0, t));
-  float wisp = snoise(position * 1.1 + vec3(t, t * 0.6, 0.0));
-  // Surface: dimple INWARD only (never poke past the limb) so the silhouette
-  // stays a clean round sphere — its life comes from the brightness boil below.
-  // Outer edge: a low, gentle outward drift.
-  float surfDisp = min(gran, 0.0) * uSurfaceBoil;
-  p += nrm * mix(surfDisp, wisp * uCoronaDrift, aShell);
-
-  // Granulation makes the surface boil (bright ↔ dim); the outer edge only
-  // flickers gently (uCoronaFlicker), so it lives at a lower level.
-  float surfB = 0.62 + 0.95 * (gran * 0.5 + 0.5);
-  float coronaB = 0.4 + uCoronaFlicker * (wisp * 0.5 + 0.5);
-  vBright = mix(surfB, coronaB, aShell);
-
-  vec4 mv = modelViewMatrix * vec4(p, 1.0);
-  float tw = 0.85 + 0.15 * sin(uTime * 1.3 + aSeed * 6.2831);
-  gl_PointSize = uSize * aScale * tw * uPixelRatio / -mv.z;
-  gl_Position = projectionMatrix * mv;
-}
-`;
-
-const FRAGMENT_SHADER = /* glsl */ `
-precision highp float;
-uniform float uReveal;
-varying vec3 vColor;
-varying float vBright;
-varying float vShell;
-varying float vSeed;
-
-void main(){
-  float d = length(gl_PointCoord - 0.5);
-  if (d > 0.5) discard;
-  float a = smoothstep(0.5, 0.08, d) * uReveal;
-  // Corona particles are fainter — a soft gas glow / halo.
-  a *= mix(1.0, 0.4, vShell);
-  if (a < 0.003) discard;
-  gl_FragColor = vec4(vColor * vBright, a);
-}
-`;
