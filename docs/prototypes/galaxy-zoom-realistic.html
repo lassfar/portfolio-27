@@ -817,7 +817,7 @@
       "  float r = length(e); if (r > 1.0) discard;",
       "  float core = exp(-r*r*45.0);",
       "  float disc = exp(-r*3.2);",
-      "  float th = atan(e.y, e.x);",
+      "  float th = r > 1e-4 ? atan(e.y, e.x) : 0.0; // atan(0,0) is undefined (NaN on some GPUs)",
       "  float arms = 0.5 + 0.5*cos(2.0*(th - 2.6*log(r + 0.06)) + vSeed*6.2831);",
       "  disc *= mix(1.0, 0.3 + 1.2*arms, vType);",
       "  float edge = 1.0 - smoothstep(0.55, 1.0, r);",
