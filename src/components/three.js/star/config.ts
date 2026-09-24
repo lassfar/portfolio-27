@@ -125,6 +125,42 @@ export const HERO_SCROLL = {
  * of the journey. Saturn assembles over assembleStart..1, overlapping the
  * star's burst so the explosion debris hands off into the planet.
  */
+/**
+ * The galaxy finale's PACING, in scroll % (see JOURNEY.galaxyPace / galaxy/pace.ts):
+ *   1. fly out from the Voyager to the whole solar system (`toSolar`), leaving at the
+ *      same speed as before (`departSpeed` = toSolar / the old 308%) and GLIDING TO
+ *      REST on the system;
+ *   2. hold there (`solarHold`) — the planets keep orbiting;
+ *   3. ease out of the hold and fly out to the galaxy (`toGalaxy`, ~1.5× the old 392%,
+ *      so its fastest moment is the old constant speed), GLIDING TO REST on the full
+ *      view.
+ * Everything in the finale is keyed to the galaxy progress, so the fades stay in step
+ * with the camera. (The Earth / Voyager arrivals work the same way.)
+ */
+const GALAXY_PACE = { toSolar: 400, solarHold: 100, toGalaxy: 590, departSpeed: 1.3 };
+
+/**
+ * Where each beat sits on the one pin, in ABSOLUTE scroll (% of the viewport height).
+ * The pin's fractions (mp, below) are derived from these, so adding or lengthening a
+ * beat never moves the ones before it — just shift what comes after.
+ */
+const SCROLL = {
+  craftCoverStart: 858, // the Craft starts sliding up as the Maker exits…
+  journeyEnd: 1010, // …covering by the end of the star → Saturn → About block
+  constellationEnd: 1330,
+  craftFadeStart: 1370,
+  craftFadeEnd: 1461.5, // = the Saturn's fly-away / voyage start
+  voyageEnd: 2860, // the Earth has fully arrived
+  earthDwellEnd: 3010, // + the ~150% Earth dwell
+  galaxyStart: 3710, // + the Lab (~700%)
+  galaxyEnd: 3710 + GALAXY_PACE.toSolar + GALAXY_PACE.solarHold + GALAXY_PACE.toGalaxy, // 4800
+  contactStart: 5050, // + ~250% on the full galaxy (the camera drifts gently back — GALAXY_ZOOM.driftBack)
+  contactEnd: 5210, // + the ~160% form reveal
+  pinEnd: 5270, // + a ~60% hold on the form
+};
+/** Master-progress fraction (mp) of an absolute scroll position. */
+const at = (pct: number) => pct / SCROLL.pinEnd;
+
 export const JOURNEY = {
   // ── Pin length + the two coordinate spaces ──────────────────────────────────
   //
@@ -135,19 +171,13 @@ export const JOURNEY = {
   //   • jp  (journey progress, mp / journeyEnd, 0..1) — the star→Saturn→About
   //         block. Its internal thresholds (starSpan…exitStart) are jp-fractions,
   //         so they DON'T change when journeyEnd / pinLength change.
-  pinLength: "+=4750%", // journey + Craft + voyage + Earth dwell + Lab + Galaxy finale + Contact
-  // The star→Saturn→About journey occupies mp 0..journeyEnd (≈1010% of scroll,
-  // unchanged feel); the tail (journeyEnd..1) is the Craft, the voyage (fly-out +
-  // solar reveal + Earth dive), the Earth DWELL, the Lab (Voyager), then the GALAXY
-  // finale (pull back from Voyager → fly through stars → the galaxy resolves), then
-  // the CONTACT form over the blurred galaxy.
-  // Fractions shrink as the pin grows but the ABSOLUTE scroll of each earlier phase
-  // is preserved — the mp tail thresholds below were rescaled by the old/new pin
-  // ratio each time new scroll was appended: × 2160/2860 (Earth dive), × 2860/3560
-  // (the Lab), × 3560/3710 (the ~150% Earth dwell), × 3710/4410 (the ~700% Galaxy
-  // finale, G below), then × 4410/4750 (the ~340% Contact form, C below). Every mp
-  // threshold keeps its absolute scroll position.
-  journeyEnd: 0.2125, // 0.2289 × 4410/4750
+  pinLength: `+=${SCROLL.pinEnd}%`, // journey + Craft + voyage + Earth dwell + Lab + Galaxy finale + Contact
+  // The star→Saturn→About journey occupies mp 0..journeyEnd (≈1010% of scroll);
+  // the tail (journeyEnd..1) is the Craft, the voyage (fly-out + solar reveal + Earth
+  // dive), the Earth DWELL, the Lab (Voyager), then the GALAXY finale (pull back from
+  // Voyager → fly through stars → the galaxy resolves), then the CONTACT form over the
+  // blurred galaxy. All the mp thresholds come from `SCROLL` (absolute positions).
+  journeyEnd: at(SCROLL.journeyEnd),
   starSpan: 0.218, // star plays over 0..starSpan of the JOURNEY (jp), not the pin
   assembleStart: 0.198, // Saturn assembles over assembleStart..assembleEnd (overlaps the burst)
   assembleEnd: 0.455, // Saturn fully built by here — ≈260% of scroll to build
@@ -186,12 +216,12 @@ export const JOURNEY = {
   // constellation then assembles, it fades out to reveal the Saturn again, and the
   // Saturn flies away. All within the same pin, so the cosmos never unpins → no
   // boundary jump, and reverse mirrors exactly.
-  craftCoverStart: 0.1807, // Craft begins sliding up AS the Maker exits
-  craftCoverEnd: 0.2125, // …fully covering by the time the Maker has exited (= journeyEnd) → no Saturn shown between
-  constellationEnd: 0.28, // constellation assembles over craftCoverEnd..constellationEnd
-  craftFadeStart: 0.2884, // brief hold, then Craft fades out (opacity 1→0)…
-  craftFadeEnd: 0.3077, // …fully gone here → the Saturn is revealed behind it
-  flyAwayStart: 0.3077, // where the Saturn is revealed and the voyage begins (voyage = 0)
+  craftCoverStart: at(SCROLL.craftCoverStart), // Craft begins sliding up AS the Maker exits
+  craftCoverEnd: at(SCROLL.journeyEnd), // …fully covering by the time the Maker has exited (= journeyEnd) → no Saturn shown between
+  constellationEnd: at(SCROLL.constellationEnd), // constellation assembles over craftCoverEnd..constellationEnd
+  craftFadeStart: at(SCROLL.craftFadeStart), // brief hold, then Craft fades out (opacity 1→0)…
+  craftFadeEnd: at(SCROLL.craftFadeEnd), // …fully gone here → the Saturn is revealed behind it
+  flyAwayStart: at(SCROLL.craftFadeEnd), // where the Saturn is revealed and the voyage begins (voyage = 0)
   // ── The voyage → the Earth DWELL → the Lab ───────────────────────────────────
   // useVoyageScroll = remap01(mp, flyAwayStart, voyageEnd) → reaches 1 as the Earth
   // arrives (the camera glides to REST — see the Earth dive in CosmicScene) and
@@ -199,23 +229,29 @@ export const JOURNEY = {
   // The dwell [voyageEnd, earthDwellEnd] is a flat ~150% stretch (D above) where the
   // Earth simply holds fully in view (still idly self-spinning) before the Lab.
   // useLabScroll = remap01(mp, earthDwellEnd, galaxyStart): the Lab (Earth→Voyager) beat.
-  voyageEnd: 0.6021, // 0.6485 × 4410/4750 — Earth fully arrived (voyage = 1) at the SAME absolute scroll
-  earthDwellEnd: 0.6337, // voyageEnd + D(150%)/4750 — Earth holds fully in view over voyageEnd..here, then the Lab begins
+  voyageEnd: at(SCROLL.voyageEnd), // Earth fully arrived (voyage = 1)
+  earthDwellEnd: at(SCROLL.earthDwellEnd), // Earth holds fully in view over voyageEnd..here, then the Lab begins
   // ── The Galaxy finale ────────────────────────────────────────────────────────
   // The Lab ends at galaxyStart (Voyager fully framed); from there the camera pulls
-  // BACK and useGalaxyScroll = remap01(mp, galaxyStart, galaxyEnd) drives the
+  // BACK and useGalaxyScroll (galaxy/pace.ts — eased, see galaxyPace) drives the
   // pull-back, the star-field fly-through, the galaxy's reveal, and the "You are here"
   // marker.
-  galaxyStart: 0.7811, // = 3710/4750 — Lab ends / galaxy pull-back begins; ~700% (G) to galaxyEnd
-  galaxyEnd: 0.9284, // = 4410/4750 (the old pin end) — the whole galaxy is in view
+  galaxyStart: at(SCROLL.galaxyStart), // Lab ends / galaxy pull-back begins (~1090% to galaxyEnd)
+  galaxyEnd: at(SCROLL.galaxyEnd), // the whole galaxy is in view (at rest)
+  galaxyPace: GALAXY_PACE, // the finale's eased pacing (see GALAXY_PACE above)
   // ── Contact (the fullscreen form) ────────────────────────────────────────────
-  // After a short PAUSE on the full galaxy (~120%), the form fades in over it — like
-  // The Maker: the cosmos blurs + dims, the title writes in, then the fields rise in —
-  // over contactStart..contactEnd (~160%), then holds to the pin end (~60%).
-  contactStart: 0.9537, // = 4530/4750 — the pause on the full galaxy ends
-  contactEnd: 0.9874, // = 4690/4750 — the form is fully in
-  contactBlur: 64, // px of blur on the cosmos behind the form (as The Maker)
-  contactDim: 0.6, // brightness multiplier on the cosmos behind the form
+  // After ~250% on the full galaxy (time to take it in, while the camera drifts gently
+  // back — GALAXY_ZOOM.driftBack), the form fades in
+  // over it — like The Maker: the galaxy softens behind it, the title writes in, then
+  // the fields rise in — over contactStart..contactEnd (~160%), then holds to the end.
+  contactStart: at(SCROLL.contactStart),
+  contactEnd: at(SCROLL.contactEnd),
+  // The galaxy stays a recognisable soft BACKDROP behind the form: a light blur (a
+  // heavy one, like The Maker's, averages its fine dots into a flat haze) and a mild
+  // dim — done in WebGL (scene/VeilPass); a soft vignette behind the form keeps the
+  // text readable (Contact.tsx).
+  contactBlur: 1.6, // how far the blur spreads behind the form (1 = the kernel's default)
+  contactDim: 0.68, // brightness multiplier on the cosmos behind the form (screen values)
 } as const;
 
 /** Camera-less "zoom": centering, growing and the fly-through (Universe). */

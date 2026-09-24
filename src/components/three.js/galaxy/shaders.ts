@@ -35,7 +35,7 @@ void main(){
 
 export const DOT_FRAG = /* glsl */ `
 precision highp float;
-uniform float uTwinkleAmt, uBoost, uReveal;
+uniform float uTwinkleAmt, uBoost, uReveal, uFlight;
 varying vec3 vColor;
 varying float vTw;
 void main(){
@@ -43,7 +43,8 @@ void main(){
   if (d > 0.5) discard;
   float a = pow(smoothstep(0.5, 0.12, d), 1.6);
   float b = (1.0 - uTwinkleAmt) + uTwinkleAmt * vTw;
-  gl_FragColor = vec4(vColor * b * uBoost, a * uReveal);
+  // uFlight: the extra brightness during the flight out (GALAXY.flightBoost).
+  gl_FragColor = vec4(vColor * b * uBoost * uFlight, a * uReveal);
 }
 `;
 
@@ -126,13 +127,16 @@ void main(){ vUv = uv; gl_Position = projectionMatrix * modelViewMatrix * vec4(p
 export const CORE_FRAG = /* glsl */ `
 precision highp float;
 varying vec2 vUv;
-uniform float uOpacity;
+uniform float uOpacity, uCoreLift;
 void main(){
   float d = length(vUv - 0.5) * 2.0;
   float core = exp(-d * d * 18.0);
   float halo = exp(-d * d * 3.0) * 0.55;
   vec3 col = mix(vec3(1.0, 0.96, 0.90), vec3(0.95, 0.62, 0.30), smoothstep(0.0, 0.8, d));
-  gl_FragColor = vec4(col, (core + halo) * uOpacity * (1.0 - smoothstep(0.85, 1.0, d)));
+  // uCoreLift: extra light in the tight centre only (never the wide halo, which fills
+  // the screen from inside the galaxy) — see GALAXY.coreFlightBoost.
+  float a = (core + halo) * uOpacity + core * uCoreLift;
+  gl_FragColor = vec4(col, a * (1.0 - smoothstep(0.85, 1.0, d)));
 }
 `;
 
@@ -220,7 +224,9 @@ void main(){
   if (r > 1.0) discard;
   float core = exp(-r * r * 45.0);
   float disc = exp(-r * 3.2);
-  float th = atan(e.y, e.x);
+  // atan(0, 0) is undefined in GLSL — NaN on some GPU backends, and one NaN pixel
+  // spreads through the bloom blur into a black screen. Guard the exact centre.
+  float th = r > 1e-4 ? atan(e.y, e.x) : 0.0;
   float arms = 0.5 + 0.5 * cos(2.0 * (th - 2.6 * log(r + 0.06)) + vSeed * 6.2831);
   disc *= mix(1.0, 0.3 + 1.2 * arms, vType);
   float edge = 1.0 - smoothstep(0.55, 1.0, r);

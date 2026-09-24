@@ -9,10 +9,15 @@ import { create } from "zustand";
  */
 type GalaxyScrollState = {
   progress: number;
+  /** After the galaxy has landed: the gentle pull-back before the Contact form (0..1). */
+  drift: number;
   setProgress: (progress: number) => void;
+  setDrift: (drift: number) => void;
 };
 
 export const useGalaxyScroll = create<GalaxyScrollState>((set) => ({
   progress: 0,
+  drift: 0,
   setProgress: (progress) => set({ progress }),
+  setDrift: (drift) => set({ drift }),
 }));

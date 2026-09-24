@@ -79,13 +79,19 @@ const Contact = ({ overlayRef, reduced }: ContactProps) => {
         "px-10 md:px-6 py-16" // (wider on phones, so the fields clear the section spine)
       )}
     >
+      {/* A soft dark vignette behind the form, so the text reads over the (softly
+          blurred) galaxy while it still glows all around. Styled in globals.css (a
+          class, not an inline colour — colour extensions rewrite inline colours before
+          hydration, which made React log a mismatch). */}
+      <div aria-hidden className="home-contact__vignette pointer-events-none absolute inset-0" />
+
       {/* Section spine — fades in with this block. */}
       <SectionMarker label="CONTACT" />
 
       <div
         className={clsx(
           "home-contact__inner",
-          "w-full max-w-2xl flex flex-col items-center",
+          "relative w-full max-w-2xl flex flex-col items-center",
           reduced ? "pointer-events-auto" : "pointer-events-none"
         )}
       >

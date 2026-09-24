@@ -33,7 +33,7 @@ export const GALAXY = {
   bulgeRadius: 2.5,
   bulgeFlatten: 0.6,
   armCount: 4,
-  pitchDeg: 18, // spiral pitch (tightness) — smaller = more wound
+  pitchDeg: 14, // spiral pitch (tightness) — smaller = more wound
   armPhase: 0,
   armWidth: 2, // gaussian arm fuzz (physical width)
   ridgeGain: 0.6, // brightness boost along each arm's spine
@@ -64,6 +64,10 @@ export const GALAXY = {
   // camera upright — exactly reproducing the study's inclined-spiral pose.
   inclination: 74, // deg — 0 = face-on, 90 = edge-on
   roll: -23, // deg — position angle of the major axis
+  // The full view CENTRES the galaxy on screen (the camera turns a little from the core
+  // toward the middle of the tilted disc — pose unchanged): 0 = aim at the core, 1 =
+  // centre the whole disc rim (its faint outer edge makes that sit a bit high).
+  frameCentering: 0.7,
 
   // ── Motion ───────────────────────────────────────────────────────────────────
   spinSpeed: 0.015, // rad/s — the galaxy turns gently on its own axis (about its centre)
@@ -76,24 +80,45 @@ export const GALAXY = {
   flyFrom: 0.03,
   flyResetBelow: 0.002,
   paused: false, // freeze the spin (and the solar system's flight) — for tuning
+  // While the galaxy is revealed, the view CIRCLES around it — sideways (about the
+  // vertical, like walking around it), against its own spin — and settles into the
+  // designed pose as the full view frames up. Degrees in total; negative = the other way.
+  // It's ONE move with the zoom-out: driven by the same progress, so the two start
+  // from rest and glide to rest together, at a pace that suits something this huge.
+  revealOrbit: 120,
+  // How much of the turn is saved for the end: 1 = evenly along the zoom-out, higher =
+  // more of it late (2 ≈ half of the turn in the last 30% of the reveal).
+  revealOrbitLate: 2,
 
   // ── Render ──────────────────────────────────────────────────────────────────
   // Star dots keep a FIXED size on screen through the whole zoom (they never balloon
   // when the camera is inside/close), in the site's dot language.
   uSize: 1.0, // px — constant on-screen dot size
-  twinkleAmount: 0,
+  twinkleAmount: 0.05,
+  // Extra dot brightness DURING the flight out through the galaxy: from inside it the
+  // dots are spread over the whole screen (and still fading in), so they read dim. It
+  // ramps in as the galaxy appears and back out as the full view settles, so the
+  // full view keeps its tuned look. (0 = none, 0.6 = +60%.) Galaxy progress windows.
+  flightBoost: 0.6,
+  flightBoostIn: [0.44, 0.6] as [number, number],
+  flightBoostOut: [0.85, 1] as [number, number],
   knotBrightness: 1.0, // the pink star-forming regions
   // Soft glow + dust have a REAL size in space (world-attenuated). Each sprite fades
   // out when it's close to the camera, so from INSIDE the galaxy they only show in the
   // distance (a Milky-Way band with dust) and never balloon into blobs up close.
   glowAmount: 0.235,
-  glowSize: 245, // (× GALAXY_SCALE in the shader)
+  glowSize: 260, // (× GALAXY_SCALE in the shader)
   dustOpacity: 0.9, // how dark the dust lanes are
-  dustSize: 190, // (× GALAXY_SCALE in the shader)
+  dustSize: 250, // (× GALAXY_SCALE in the shader)
   nearFadeStart: 0, // LOCAL galaxy units: glow/dust invisible closer than this…
   nearFadeEnd: 7, // …and fully visible beyond this
-  coreOpacity: 0.2, // core-glow billboard opacity (blooms in late — see coreGlowIn)
-  coreScale: 3.2, // core-glow size = coreScale × bulgeRadius (× GALAXY_SCALE)
+  coreOpacity: 0.3, // core-glow billboard opacity (blooms in late — see coreGlowIn)
+  coreScale: 5.5, // core-glow size = coreScale × bulgeRadius (× GALAXY_SCALE)
+  // Extra core glow DURING the flight (same window as `flightBoost`): the core's own
+  // glow only swells in late (`coreGlowIn`), so from inside the galaxy the bulge read
+  // as a flat grey cluster — this lights its tight centre (not the wide halo) on the
+  // way out, easing back to the tuned look for the full view.
+  coreFlightBoost: 0.4,
 
   // ── Reveal window, in `useGalaxyScroll` progress (0..1 over the galaxy beat) ──
   // The galaxy stays HIDDEN through the opening beats — the Voyager fading out, then
@@ -129,7 +154,7 @@ export const GALAXY_FX = {
   bloomThreshold: 0.66, // screen brightness
   // Brightness above this rolls off softly instead of clipping to a hard white edge
   // (the scene renders in half-float, so there's headroom above 1).
-  highlightKnee: 0.65,
+  highlightKnee: 0.64,
   // The page colour (globals.css --color-rich-black), which the galaxy layer bakes in
   // under its light as it appears — see COMPOSITE_FRAG.
   pageBackground: "#19191c",
@@ -251,7 +276,15 @@ updateGalaxyPlacement();
  * so the camera just looks head-on from slightly above.
  */
 export const GALAXY_ZOOM = {
-  dEnd: RMAX_WORLD * (19.3 / 10.5), // ≈ 1042 — the study's framing distance, scaled
+  dEnd: RMAX_WORLD * (19.3 / 10.5), // ≈ 1042 — the study's framing distance, scaled (sets the zoom's pace)
+  // The full view is this much CLOSER than the study's framing, so the galaxy fills ~10%
+  // more of the frame (the camera ends at dEnd / endCloser ≈ 947). Built up over the
+  // flight out to the galaxy only, so the solar-system framing is unchanged.
+  endCloser: 1.1,
+  // Once the galaxy has landed, the camera DRIFTS gently back over the pause before the
+  // Contact form (JOURNEY galaxyEnd → contactStart), eased, until the galaxy is this much
+  // smaller on screen — the form comes in as it settles.
+  driftBack: 0.02,
   endDir: [0, 3.2, 19] as [number, number, number], // study camera dir (upright, slightly above)
   curve: 1.0, // accel curve on the eased look/dir lerp (1 = smoothstep)
   // The camera's AIM pans in two legs: Voyager → the (flying) Sun — framing the whole

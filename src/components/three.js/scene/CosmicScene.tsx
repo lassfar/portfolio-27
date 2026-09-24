@@ -1,12 +1,12 @@
 "use client";
 
 import { Canvas, useFrame, useThree } from "@react-three/fiber";
-import { Bloom, EffectComposer } from "@react-three/postprocessing";
-import type { BloomEffect } from "postprocessing";
-import { ReactNode, RefObject, useEffect, useRef } from "react";
-import { Euler, Group, Vector3 } from "three";
+import { EffectComposer } from "@react-three/postprocessing";
+import { BlendFunction, BloomEffect } from "postprocessing";
+import { ReactNode, RefObject, useEffect, useMemo, useRef } from "react";
+import { Euler, Group, PerspectiveCamera, Vector3 } from "three";
 import Universe from "#/components/three.js/star/Universe";
-import { BLOOM, CAMERA, PARTICLES } from "#/components/three.js/star/config";
+import { BLOOM, CAMERA, JOURNEY, PARTICLES } from "#/components/three.js/star/config";
 import {
   clamp01,
   easeInOutCubic,
@@ -43,7 +43,10 @@ import {
   GALAXY_ZOOM,
 } from "#/components/three.js/galaxy/config";
 import { SoftHighlights, SoftHighlightsEffect } from "./SoftHighlights";
+import { VeilPass } from "./VeilPass";
+import { cosmicVeil } from "#/stores/cosmicVeil";
 import { flyingSunPos, flyOffset, galaxyCenterPos } from "#/components/three.js/galaxy/spin";
+import { frameGalaxy } from "#/components/three.js/galaxy/framing";
 import { useAboutScroll } from "#/stores/useAboutScroll";
 import { useVoyageScroll } from "#/stores/useVoyageScroll";
 import { useLabScroll } from "#/stores/useLabScroll";
@@ -78,8 +81,28 @@ const CosmicScene = () => {
   const planetCount = isSmall ? PLANET.countMobile : PLANET.count;
   const ringCount = isSmall ? RING.countMobile : RING.count;
 
-  const bloomRef = useRef<BloomEffect>(null);
   const highlightsRef = useRef<SoftHighlightsEffect>(null);
+  // The site bloom, created here and handed to the composer as-is (not through
+  // @react-three/postprocessing's <Bloom>: that wrapper JSON-stringifies its props,
+  // and under React 19 `ref` is a prop — once it holds the live effect, whose
+  // resolution points back at it, every re-render threw "circular structure").
+  // Same settings the wrapper applied (it forces the ADD blend).
+  const bloom = useMemo(
+    () =>
+      new BloomEffect({
+        blendFunction: BlendFunction.ADD,
+        intensity: BLOOM.intensity,
+        luminanceThreshold: BLOOM.threshold,
+        luminanceSmoothing: BLOOM.smoothing,
+        radius: BLOOM.radius,
+        mipmapBlur: true,
+      }),
+    []
+  );
+  useEffect(() => () => bloom.dispose(), [bloom]);
+  // Blurs + dims the scene behind the Contact form (see VeilPass).
+  const veil = useMemo(() => new VeilPass(), []);
+  useEffect(() => () => veil.dispose(), [veil]);
   // The starfield group — CameraRig pins it to the camera each frame (see below),
   // so it's shared between Universe (which rotates it) and CameraRig.
   const starfieldRef = useRef<Group>(null);
@@ -162,20 +185,15 @@ const CosmicScene = () => {
         <Galaxy animate={animate} />
 
         <EffectComposer>
-          <Bloom
-            ref={bloomRef}
-            intensity={BLOOM.intensity}
-            luminanceThreshold={BLOOM.threshold}
-            luminanceSmoothing={BLOOM.smoothing}
-            radius={BLOOM.radius}
-            mipmapBlur
-          />
+          {/* First, so the effects pass after it still writes the final (encoded) output. */}
+          <primitive object={veil} dispose={null} />
+          <primitive object={bloom} dispose={null} />
           {/* The galaxy finale's camera-like highlight roll-off (strength ramped by
             BloomController, so it's off for every earlier beat). */}
           <SoftHighlights ref={highlightsRef} knee={GALAXY_FX.highlightKnee} />
         </EffectComposer>
 
-        <BloomController bloomRef={bloomRef} highlightsRef={highlightsRef} />
+        <BloomController bloom={bloom} veil={veil} highlightsRef={highlightsRef} />
         <CameraRig starfieldRef={starfieldRef} />
         <InteractionLock />
       </Canvas>
@@ -424,6 +442,10 @@ const CameraRig = ({
     // system wherever it has flown to in the galaxy — not back to a fixed home.
     // A pure function of useGalaxyScroll (+ the live Sun) → reverses on scroll-up.
     const galaxy = clamp01(useGalaxyScroll.getState().progress);
+    let framing = 0; // how much the galaxy framing applies (the leg-2 pan, below)
+    // After landing: the gentle drift back before the Contact form (eased).
+    const drift = easeInOutCubic(clamp01(useGalaxyScroll.getState().drift));
+    const driftScale = 1 + (1 / (1 - GALAXY_ZOOM.driftBack) - 1) * drift;
     if (galaxy > 0) {
       const z = galaxy;
       const ps = GALAXY_ZOOM.panSunEnd;
@@ -456,6 +478,9 @@ const CameraRig = ({
         lx = lerp(sx, cx, s);
         ly = lerp(sy, cy, s);
         lz = lerp(sz, cz, s);
+        // …ending a little closer than the study framing (GALAXY_ZOOM.endCloser),
+        // built up over this leg so the solar-system framing is unchanged.
+        const d2 = (dist / Math.pow(GALAXY_ZOOM.endCloser, e)) * driftScale;
         let dx = lerp(G_START_DIR[0], G_END_DIR[0], s);
         let dy = lerp(G_START_DIR[1], G_END_DIR[1], s);
         let dz = lerp(G_START_DIR[2], G_END_DIR[2], s);
@@ -463,14 +488,18 @@ const CameraRig = ({
         dx /= dl;
         dy /= dl;
         dz /= dl;
-        px = lx + dx * dist;
-        py = ly + dy * dist;
-        pz = lz + dz * dist;
+        px = lx + dx * d2;
+        py = ly + dy * d2;
+        pz = lz + dz * d2;
+        framing = s;
       }
     }
 
     camera.position.set(px, py, pz);
     camera.lookAt(lx, ly, lz);
+    // Centre the whole galaxy on screen as it frames up (turns the camera slightly —
+    // the pose is unchanged; the sky is kept in place — see galaxy/framing.ts).
+    frameGalaxy(camera as PerspectiveCamera, framing, driftScale);
     // Pin the starfield to the camera in the SAME frame the camera moves (this
     // rig runs last), so the stars sit at a constant distance and never lag — no
     // velocity-coupled size "pumping" as you scroll.
@@ -518,16 +547,25 @@ const InteractionLock = () => {
  *
  * For the galaxy finale it ramps in the soft highlight roll-off over
  * `GALAXY_FX.fxIn` (the galaxy's reveal), so every earlier beat is untouched. (The
- * galaxy's bloom is its own — see galaxy/GalaxyBloom.)
+ * galaxy's bloom is its own — see galaxy/GalaxyBloom.) And it drives the Contact
+ * veil (VeilPass), which is switched off entirely while there's nothing to veil.
  */
 const BloomController = ({
-  bloomRef,
+  bloom,
+  veil,
   highlightsRef,
 }: {
-  bloomRef: RefObject<BloomEffect | null>;
+  bloom: BloomEffect;
+  veil: VeilPass;
   highlightsRef: RefObject<SoftHighlightsEffect | null>;
 }) => {
   useFrame(() => {
+    // The Contact veil (written by the journey). `contactDim` is a screen-value
+    // brightness; the pass works in linear light.
+    veil.veil = cosmicVeil.contact;
+    veil.enabled = cosmicVeil.contact > 0.001; // not the last pass → safe to skip (no copy)
+    veil.dim = Math.pow(JOURNEY.contactDim, 2.2);
+    veil.spread = JOURNEY.contactBlur;
     if (highlightsRef.current) {
       highlightsRef.current.knee = GALAXY_FX.highlightKnee; // live-tunable (GalaxyGui)
       const galaxy = clamp01(useGalaxyScroll.getState().progress);
@@ -535,9 +573,8 @@ const BloomController = ({
         remap01(galaxy, GALAXY_FX.fxIn[0], GALAXY_FX.fxIn[1]),
       );
     }
-    if (!bloomRef.current) return;
     const progress = useAboutScroll.getState().progress;
-    bloomRef.current.intensity =
+    bloom.intensity =
       BLOOM.intensity * (1 - remap01(progress, 0.05, 0.6));
   });
   return null;

@@ -20,13 +20,14 @@ import {
   Vector2,
   WebGLRenderTarget,
 } from "three";
-import { clamp01, easeOutCubic, remap01 } from "#/components/three.js/star/utils";
+import { clamp01, easeInOutCubic, easeOutCubic, remap01 } from "#/components/three.js/star/utils";
 import { useGalaxyScroll } from "#/stores/useGalaxyScroll";
 import { GALAXY, GALAXY_CENTER, GALAXY_FX, GALAXY_SCALE, GALAXY_SPACE, GALAXY_TILT } from "./config";
 import { buildGalaxyLayers, GalaxyLayers } from "./buildGalaxy";
 import { galaxyTuning } from "./tuning";
 import { advanceSolarFly, galaxyCenterPos, galaxyDrag, updateGalaxyDrag } from "./spin";
 import { SKY_END_VIEW } from "./sky";
+import { galaxyFraming } from "./framing";
 import GalaxySparkles from "./GalaxySparkles";
 import SpaceStars from "./SpaceStars";
 import DistantGalaxies from "./DistantGalaxies";
@@ -118,6 +119,7 @@ const Galaxy = ({ animate = true }: { animate?: boolean }) => {
       uDiff: { value: GALAXY.differential },
       uPixelRatio: { value: 1 },
       uReveal: { value: 0 },
+      uFlight: { value: 1 },
       uNearA: { value: GALAXY.nearFadeStart * GALAXY_SCALE },
       uNearB: { value: GALAXY.nearFadeEnd * GALAXY_SCALE },
     }),
@@ -172,7 +174,7 @@ const Galaxy = ({ animate = true }: { animate?: boolean }) => {
       core: new ShaderMaterial({
         ...base,
         blending: AdditiveBlending,
-        uniforms: { uOpacity: { value: 0 } },
+        uniforms: { uOpacity: { value: 0 }, uCoreLift: { value: 0 } },
         vertexShader: CORE_VERT,
         fragmentShader: CORE_FRAG,
       }),
@@ -296,13 +298,23 @@ const Galaxy = ({ animate = true }: { animate?: boolean }) => {
     const reveal = easeOutCubic(remap01(p, GALAXY.revealStart, GALAXY.revealEnd));
     if (rootRef.current) rootRef.current.visible = reveal > 0.001;
     shared.uReveal.value = reveal;
+    // Dots a little brighter during the flight out through the galaxy (back to the
+    // tuned look once the full view settles).
+    const flight = easeInOutCubic(
+      remap01(p, GALAXY.flightBoostIn[0], GALAXY.flightBoostIn[1]) *
+        (1 - remap01(p, GALAXY.flightBoostOut[0], GALAXY.flightBoostOut[1]))
+    );
+    shared.uFlight.value = 1 + GALAXY.flightBoost * flight;
     // Bake in the page background quickly as the galaxy starts to appear (see
     // COMPOSITE_FRAG), so it's in place long before the galaxy is noticeable.
     composite.uniforms.uFill.value = remap01(p, GALAXY.revealStart, GALAXY.revealStart + 0.06);
     if (animate) shared.uTime.value += delta;
-    // The core glows in LATER (while we look at the Sun it stays quiet).
+    // The core glows in LATER (while we look at the Sun it stays quiet) — plus a warm
+    // lift of its bright centre during the flight, so from inside the galaxy the bulge
+    // reads as luminous.
     materials.core.uniforms.uOpacity.value =
       GALAXY.coreOpacity * remap01(p, GALAXY.coreGlowIn[0], GALAXY.coreGlowIn[1]);
+    materials.core.uniforms.uCoreLift.value = GALAXY.coreFlightBoost * flight;
     if (animate && !GALAXY.paused && spinRef.current) {
       spinRef.current.rotation.y += GALAXY.spinSpeed * delta;
     }
@@ -329,10 +341,14 @@ const Galaxy = ({ animate = true }: { animate?: boolean }) => {
       coreRef.current.quaternion.copy(inverseDrag.copy(galaxyDrag).invert()).multiply(camera.quaternion);
     }
     // The sky: pinned to the camera (infinitely far), oriented like the end view,
-    // turned by the drag with the galaxy.
+    // turned by the drag with the galaxy — and by the framing turn (so centring the
+    // galaxy moves only the galaxy; the sky keeps its designed layout).
     if (skyRef.current) {
       skyRef.current.position.copy(camera.position);
-      skyRef.current.quaternion.copy(galaxyDrag).multiply(SKY_END_VIEW);
+      skyRef.current.quaternion
+        .copy(galaxyFraming.correction)
+        .multiply(galaxyDrag)
+        .multiply(SKY_END_VIEW);
     }
     gl.getDrawingBufferSize(bufferSize);
     if (target.width !== bufferSize.x || target.height !== bufferSize.y) {

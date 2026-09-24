@@ -1,5 +1,5 @@
 import { Euler, Quaternion, Vector3 } from "three";
-import { clamp01 } from "#/components/three.js/star/utils";
+import { clamp01, remap01 } from "#/components/three.js/star/utils";
 import { SUNPOS } from "#/components/three.js/solar/config";
 import { useGalaxyScroll } from "#/stores/useGalaxyScroll";
 import { useSceneRotation } from "#/stores/useSceneRotation";
@@ -9,6 +9,7 @@ import {
   GALAXY_PLACEMENT,
   GALAXY_SPACE,
   GALAXY_TILT,
+  GALAXY_ZOOM,
 } from "./config";
 
 /**
@@ -84,33 +85,78 @@ export function flyOffset(): [number, number, number] {
 //
 // A drag already turns the whole cosmos (`useSceneRotation`: the starfield, the
 // planets around the Sun, the Voyager). The galaxy — and the space around it (deep
-// stars, distant galaxies, sparkles) — joins in: it turns by the SAME rotation,
-// about the Sun, so the solar system stays exactly where it is in its arm.
+// stars, distant galaxies, sparkles) — joins in: each frame's drag turns it by the
+// SAME rotation, about the Sun, so the solar system stays exactly where it is in its
+// arm. (While none of the galaxy's space is on screen, nothing is kept.)
 //
-// Only the turn made since the galaxy's space came on screen counts: while none of
-// it is visible, the reference follows the scene rotation (no turn) — so it always
-// first appears in its designed pose, whatever was dragged earlier in the journey.
+// …but the FULL VIEW always lands in the designed pose, however much was dragged on
+// the way (e.g. turning the solar system): scrolling on toward the full view unwinds
+// the kept turn — the short way, so any amount of dragging costs at most a half-turn
+// — on the same curve as the reveal orbit (one move), reaching zero exactly at the
+// full view. A drag AT the full view turns the galaxy freely; scrolling back keeps
+// that pose (no jump); scrolling forward again unwinds it. Nothing ever jumps: the
+// kept turn only changes by the drag itself or by scrolling forward.
+//
+// The REVEAL ORBIT rides on the same turn: as the galaxy is revealed, its space turns
+// by `GALAXY.revealOrbit` → 0 (with the galaxy's spin — so the view reads as circling
+// around it against the spin), settling into the designed pose at the full view. It's
+// driven by the ZOOM-OUT's own progress (the camera distance grows exponentially with
+// it), so the turn and the pull-back are one move — starting from rest after the
+// solar-system hold and gliding to rest together — weighted toward the end
+// (`revealOrbitLate`). It only starts moving as the galaxy starts to appear.
 
-/** The galaxy space's live drag turn (identity = the designed pose). */
+/** The galaxy space's live turn — the drag + the reveal orbit (identity = the designed pose). */
 export const galaxyDrag = new Quaternion();
 
-const _dragBase = new Quaternion();
+const _dragKept = new Quaternion(); // the user's (unwinding) turn of the galaxy space
 const _dragNow = new Quaternion();
-const _dragInv = new Quaternion();
+const _dragPrev = new Quaternion();
+const _dragStep = new Quaternion();
 const _dragEuler = new Euler();
+const _identity = new Quaternion();
+const _orbit = new Quaternion();
+const _up = new Vector3(0, 1, 0);
+let _hasPrev = false;
+let _prevE = 0;
 
 /** The galaxy progress at which its space first shows (galaxy or deep stars). */
 export function galaxySpaceAppearsAt(): number {
   return Math.min(GALAXY.revealStart, GALAXY_SPACE.starsIn[0]);
 }
 
+/**
+ * How much of the reveal's turn is still to come at zoom-out progress `e` (1 → 0):
+ * the curve the reveal orbit AND the drag unwinding follow, so they move as one.
+ */
+function revealTurnLeft(e: number): number {
+  return 1 - Math.pow(e, Math.max(1, GALAXY.revealOrbitLate));
+}
+
 /** Update `galaxyDrag` from the shared scene rotation. Called once per frame by the Galaxy. */
 export function updateGalaxyDrag(): void {
   const g = clamp01(useGalaxyScroll.getState().progress);
+  const e = remap01(g, GALAXY_ZOOM.panSunEnd, 1); // the zoom-out's progress (leg 2)
   const r = useSceneRotation.getState();
   _dragNow.setFromEuler(_dragEuler.set(r.pitch, r.yaw, 0)); // same order as the starfield
-  if (g < galaxySpaceAppearsAt() || !GALAXY_SPACE.dragTurns) _dragBase.copy(_dragNow);
-  galaxyDrag.copy(_dragNow).multiply(_dragInv.copy(_dragBase).invert());
+
+  if (g < galaxySpaceAppearsAt() || !GALAXY_SPACE.dragTurns) {
+    _dragKept.identity(); // nothing of the galaxy on screen: keep no turn
+  } else if (_hasPrev) {
+    // This frame's drag turns the galaxy space too (world-space step)…
+    _dragKept.premultiply(_dragStep.copy(_dragNow).multiply(_dragPrev.invert()));
+    // …and scrolling on toward the full view unwinds what's kept, on the reveal's
+    // curve: what's left shrinks with the turn still to come → exactly 0 at the end.
+    const before = revealTurnLeft(_prevE);
+    const after = revealTurnLeft(e);
+    if (after < before && before > 0) _dragKept.slerp(_identity, 1 - after / before);
+  }
+  _dragPrev.copy(_dragNow);
+  _prevE = e;
+  _hasPrev = true;
+
+  // The reveal orbit, on the same curve.
+  const degrees = GALAXY.revealOrbit * revealTurnLeft(e);
+  galaxyDrag.setFromAxisAngle(_up, -(degrees * Math.PI) / 180).multiply(_dragKept);
 }
 
 const _c = new Vector3();

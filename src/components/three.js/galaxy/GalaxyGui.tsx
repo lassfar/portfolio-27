@@ -3,9 +3,9 @@
 import { useEffect } from "react";
 import { ScrollSmoother } from "gsap/all";
 import type { GUI } from "three/examples/jsm/libs/lil-gui.module.min.js";
-import { JOURNEY } from "#/components/three.js/star/config";
 import { journeyTrigger } from "#/stores/journeyTrigger";
 import { GALAXY, GALAXY_FX, GALAXY_SPACE, updateGalaxyPlacement } from "./config";
+import { journeyAtGalaxy } from "./pace";
 import { galaxyTuningSnapshot, rebuildGalaxy, resetGalaxyTuning } from "./tuning";
 
 /**
@@ -13,18 +13,18 @@ import { galaxyTuningSnapshot, rebuildGalaxy, resetGalaxyTuning } from "./tuning
  * as `docs/prototypes/galaxy-realistic.html` and `galaxy-zoom-realistic.html`, driving
  * the REAL scene live. It mutates `GALAXY` / `GALAXY_FX` in place: look values apply
  * instantly, shape values rebuild the galaxy, pose values re-place it (the Sun stays in
- * its arm). Plus "jump to" buttons (the finale is ~78% down the page), the scroll
+ * its arm). Plus "jump to" buttons (the finale is ~72% down the page), the scroll
  * timing windows, "copy values" (to bake them into config.ts) and "reset".
  *
  * Visibility: with `SHOW_GALAXY_GUI` on, it shows in development (`?gui=0` hides it);
  * in production it only ever shows with `?gui` in the URL, so visitors never see it.
- * With the switch off (now), it stays hidden unless you open the site with `?gui`.
+ * With the switch off, it stays hidden unless you open the site with `?gui`.
  * lil-gui is the copy bundled with three.js, loaded on demand — it adds nothing to the
  * page otherwise.
  */
 
-/** Master switch — hidden for now; set to `true` to bring the panel back in dev. */
-const SHOW_GALAXY_GUI = false;
+/** Master switch — on: the panel shows in dev. Set to `false` to hide it (`?gui` still opens it). */
+const SHOW_GALAXY_GUI = true;
 
 const GalaxyGui = () => {
   useEffect(() => {
@@ -52,7 +52,7 @@ export default GalaxyGui;
 
 /** Scroll to a point of the galaxy finale (0 = leaving the Voyager, 1 = full galaxy). */
 function jumpToGalaxy(progress: number) {
-  jumpToJourney(JOURNEY.galaxyStart + progress * (JOURNEY.galaxyEnd - JOURNEY.galaxyStart));
+  jumpToJourney(journeyAtGalaxy(progress));
 }
 
 /** Scroll to a point of the pinned journey (master progress 0..1). */
@@ -107,6 +107,8 @@ function buildPanel(gui: GUI) {
   fLook.add(FX, "highlightKnee", 0.3, 0.95, 0.01).name("highlight softness");
   fLook.add(G, "uSize", 0.3, 4, 0.05).name("dot size (px)");
   fLook.add(G, "twinkleAmount", 0, 0.6, 0.01).name("twinkle");
+  fLook.add(G, "flightBoost", 0, 2, 0.05).name("dots brighter in flight");
+  fLook.add(G, "coreFlightBoost", 0, 1.5, 0.05).name("core brighter in flight");
 
   const fNear = gui.addFolder("Inside view (glow + dust up close)");
   fNear.add(G, "nearFadeStart", 0, 12, 0.1).name("hidden closer than");
@@ -133,6 +135,9 @@ function buildPanel(gui: GUI) {
   const fPose = gui.addFolder("Pose & motion");
   fPose.add(G, "inclination", 0, 90, 1).onChange(place);
   fPose.add(G, "roll", -90, 90, 1).onChange(place);
+  fPose.add(G, "frameCentering", 0, 1, 0.05).name("centre the galaxy");
+  fPose.add(G, "revealOrbit", -270, 270, 5).name("circle around on reveal (°)");
+  fPose.add(G, "revealOrbitLate", 1, 4, 0.1).name("…saved for the end");
   fPose.add(G, "spinSpeed", 0, 0.3, 0.005).name("spin speed");
   fPose.add(G, "differential", 0, 0.012, 0.001);
   fPose.add(G, "paused");
@@ -179,6 +184,10 @@ function buildPanel(gui: GUI) {
   fTime.add(FX.fxIn, "1", 0, 1, 0.01).name("…full at");
   fTime.add(SP.fadeIn, "0", 0, 1, 0.01).name("sparkles from");
   fTime.add(SP.fadeIn, "1", 0, 1, 0.01).name("…full at");
+  fTime.add(G.flightBoostIn, "0", 0, 1, 0.01).name("flight boost from");
+  fTime.add(G.flightBoostIn, "1", 0, 1, 0.01).name("…full at");
+  fTime.add(G.flightBoostOut, "0", 0, 1, 0.01).name("…easing off from");
+  fTime.add(G.flightBoostOut, "1", 0, 1, 0.01).name("…gone at");
   fTime.add(SPACE.starsIn, "0", 0, 1, 0.01).name("far stars from");
   fTime.add(SPACE.starsIn, "1", 0, 1, 0.01).name("…full at");
   fTime.add(SPACE.galaxiesIn, "0", 0, 1, 0.01).name("distant galaxies from");

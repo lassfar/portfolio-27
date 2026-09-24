@@ -1,6 +1,6 @@
 "use client";
 
-import { forwardRef, useMemo } from "react";
+import { forwardRef, useEffect, useMemo } from "react";
 import { Uniform } from "three";
 import { BlendFunction, Effect } from "postprocessing";
 
@@ -60,6 +60,7 @@ export class SoftHighlightsEffect extends Effect {
 export const SoftHighlights = forwardRef<SoftHighlightsEffect, { knee?: number }>(
   function SoftHighlights({ knee = 0.65 }, ref) {
     const effect = useMemo(() => new SoftHighlightsEffect({ knee }), [knee]);
+    useEffect(() => () => effect.dispose(), [effect]); // (a new knee makes a new effect)
     return <primitive ref={ref} object={effect} dispose={null} />;
   }
 );

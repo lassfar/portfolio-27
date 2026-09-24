@@ -10,10 +10,12 @@ import { useVoyageScroll } from "#/stores/useVoyageScroll";
 import { useLabScroll } from "#/stores/useLabScroll";
 import { useGalaxyScroll } from "#/stores/useGalaxyScroll";
 import { journeyTrigger } from "#/stores/journeyTrigger";
+import { cosmicVeil } from "#/stores/cosmicVeil";
 import { JOURNEY } from "#/components/three.js/star/config";
 import { clamp01, remap01 } from "#/components/three.js/star/utils";
 import { addTextsScrollWriteIn } from "#/components/hooks/motions/texts/textsScrollWriteInMotion";
 import { addConstellationAssembly } from "#/components/pages/home/skills/Skills";
+import { galaxyProgressAt } from "#/components/three.js/galaxy/pace";
 
 gsap.registerPlugin(useGSAP, ScrollTrigger, SplitText);
 
@@ -81,6 +83,7 @@ export default function useCosmicJourney(refs: CosmicJourneyRefs): void {
       const setVoyage = useVoyageScroll.getState().setProgress;
       const setLab = useLabScroll.getState().setProgress;
       const setGalaxy = useGalaxyScroll.getState().setProgress;
+      const setGalaxyDrift = useGalaxyScroll.getState().setDrift;
 
       const easeIn = gsap.parseEase("power2.in");
       const easeOut = gsap.parseEase("power2.out");
@@ -97,18 +100,15 @@ export default function useCosmicJourney(refs: CosmicJourneyRefs): void {
         contactRef.current?.querySelectorAll<HTMLElement>(".home-contact__piece") ?? []
       );
 
-      // ── The cosmos behind the overlays: blurred + dimmed under the About and
-      //    the Contact (each passes its own 0..1 veil; they never overlap) ─────────
+      // ── The cosmos behind the overlays: blurred + dimmed under the About (a CSS
+      //    filter on the canvas) and under the Contact (inside WebGL — the scene's
+      //    VeilPass: Chrome sometimes painted the CSS-filtered canvas black there).
+      //    Each passes its own 0..1 veil; they never overlap. ─────────────────────
       const renderCosmos = (aboutVeil: number, contactVeil: number) => {
+        cosmicVeil.contact = contactVeil;
         if (!cosmos) return;
-        const blur = Math.max(
-          JOURNEY.revealBlur * aboutVeil,
-          JOURNEY.contactBlur * contactVeil
-        );
-        const dim = Math.min(
-          1 - (1 - JOURNEY.revealDim) * aboutVeil,
-          1 - (1 - JOURNEY.contactDim) * contactVeil
-        );
+        const blur = JOURNEY.revealBlur * aboutVeil;
+        const dim = 1 - (1 - JOURNEY.revealDim) * aboutVeil;
         cosmos.style.filter =
           blur > 0 || dim < 1 ? `blur(${blur}px) brightness(${dim})` : "none";
       };
@@ -225,8 +225,11 @@ export default function useCosmicJourney(refs: CosmicJourneyRefs): void {
             // Over [voyageEnd, earthDwellEnd] this stays 0, so the Earth just holds.
             setLab(remap01(mp, JOURNEY.earthDwellEnd, JOURNEY.galaxyStart));
             // The Galaxy finale runs over galaxyStart..galaxyEnd: the camera pulls back
-            // from the Voyager, flies through stars, and the galaxy resolves.
-            setGalaxy(remap01(mp, JOURNEY.galaxyStart, JOURNEY.galaxyEnd));
+            // from the Voyager, flies through stars, and the galaxy resolves — eased,
+            // with a rest on the whole solar system (galaxy/pace.ts).
+            setGalaxy(galaxyProgressAt(mp));
+            // Once it has landed, the camera drifts gently back until the form comes in.
+            setGalaxyDrift(remap01(mp, JOURNEY.galaxyEnd, JOURNEY.contactStart));
             renderCosmos(renderAbout(jp), renderContact(mp));
             renderCraft(mp);
             toggleTitle(aboutTitle, jp >= JOURNEY.revealStart);
@@ -301,11 +304,13 @@ export default function useCosmicJourney(refs: CosmicJourneyRefs): void {
 
       return () => {
         journeyTrigger.current = null;
+        cosmicVeil.contact = 0;
         setStar(0);
         setAbout(0);
         setVoyage(0);
         setLab(0);
         setGalaxy(0);
+        setGalaxyDrift(0);
         descSplits.forEach((s) => s.revert());
         contactIntroSplits.forEach((s) => s.revert());
         aboutTitle?.tween.kill();
