@@ -1,15 +1,9 @@
 import type { GUI } from "three/examples/jsm/libs/lil-gui.module.min.js";
 import { GALAXY_ZOOM } from "#/components/three.js/galaxy/config";
 import { journeyAtGalaxy } from "#/components/three.js/galaxy/pace";
-import { copyValues, jumpToJourney } from "#/components/three.js/scene/devPanel";
-import { JOURNEY } from "#/components/three.js/star/config";
+import { copyValues, jumpToJourney, jumpToVoyage } from "#/components/three.js/scene/devPanel";
 import { SOLAR, SUN, SUN_CORE, VOYAGE } from "./config";
 import { rebuildSun, resetSunTuning, sunTuningSnapshot } from "./tuning";
-
-/** Scroll to a point of the voyage (0 = leaving the Saturn → 1 = the Earth). */
-function jumpToVoyage(v: number) {
-  jumpToJourney(JOURNEY.flyAwayStart + v * (JOURNEY.voyageEnd - JOURNEY.flyAwayStart));
-}
 
 /**
  * The Sun's section of the dev tuning panel (hosted by GalaxyGui). It mutates `SUN`,

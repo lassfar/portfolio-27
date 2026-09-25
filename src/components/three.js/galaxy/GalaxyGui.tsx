@@ -3,13 +3,15 @@
 import { useEffect } from "react";
 import type { GUI } from "three/examples/jsm/libs/lil-gui.module.min.js";
 import { copyValues, jumpToJourney } from "#/components/three.js/scene/devPanel";
+import { buildPlanetPanel } from "#/components/three.js/solar/PlanetGui";
 import { buildSunPanel } from "#/components/three.js/solar/SunGui";
 import { GALAXY, GALAXY_FX, GALAXY_SPACE, updateGalaxyPlacement } from "./config";
 import { journeyAtGalaxy } from "./pace";
 import { galaxyTuningSnapshot, rebuildGalaxy, resetGalaxyTuning } from "./tuning";
 
 /**
- * Dev tuning panel — two sections: the SUN (see solar/SunGui.ts) and the GALAXY finale.
+ * Dev tuning panel — three sections: the SUN (solar/SunGui.ts), the PLANETS
+ * (solar/PlanetGui.ts) and the GALAXY finale.
  *
  * The galaxy section is the same lil-gui panel (folders + labels)
  * as `docs/prototypes/galaxy-realistic.html` and `galaxy-zoom-realistic.html`, driving
@@ -40,10 +42,14 @@ const GalaxyGui = () => {
     import("three/examples/jsm/libs/lil-gui.module.min.js").then(({ GUI }) => {
       if (cancelled) return;
       panel = new GUI({ title: "Tuning (dev)", width: 310 });
-      buildSunPanel(panel.addFolder("☀ Sun"));
+      const sun = panel.addFolder("☀ Sun");
+      buildSunPanel(sun);
+      buildPlanetPanel(panel.addFolder("● Planets"));
       const galaxy = panel.addFolder("✦ Galaxy finale");
       buildPanel(galaxy);
-      galaxy.close(); // one section open at a time keeps the panel short
+      // One section open at a time keeps the panel short.
+      sun.close();
+      galaxy.close();
     });
     return () => {
       cancelled = true;
