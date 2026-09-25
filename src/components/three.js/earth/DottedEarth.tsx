@@ -5,6 +5,8 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import {
   Color,
   Group,
+  Mesh,
+  MeshBasicMaterial,
   NormalBlending,
   Points,
   Raycaster,
@@ -13,19 +15,11 @@ import {
   Vector2,
   Vector3,
 } from "three";
-import {
-  clamp01,
-  damp,
-  easeOutCubic,
-  remap01,
-} from "#/components/three.js/star/utils";
-import { useVoyageScroll } from "#/stores/useVoyageScroll";
-import { useLabScroll } from "#/stores/useLabScroll";
+import { damp } from "#/components/three.js/star/utils";
 import { useEarthAnchor } from "#/stores/useEarthAnchor";
 import { useSceneRotation } from "#/stores/useSceneRotation";
-import { SOLAR, SUNPOS } from "#/components/three.js/solar/config";
-import { finaleFarFade, finaleReturn } from "#/components/three.js/solar/reveal";
-import { LAB } from "#/components/three.js/voyager/config";
+import { SUNPOS } from "#/components/three.js/solar/config";
+import { earthReveal } from "#/components/three.js/solar/reveal";
 import { EARTH } from "./config";
 import { directionToUV } from "./utils";
 import { earthOwnsDrag, dragMode } from "./interaction";
@@ -57,6 +51,8 @@ const DottedEarth = ({ animate = true, interactive = true }: Props) => {
   const spinRef = useRef<Group>(null);
   const pointsRef = useRef<Points>(null);
   const dotMatRef = useRef<ShaderMaterial>(null);
+  const coreRef = useRef<Mesh>(null); // the solid core under the dots
+  const coreMatRef = useRef<MeshBasicMaterial>(null);
 
   const gl = useThree((s) => s.gl);
   const camera = useThree((s) => s.camera);
@@ -239,15 +235,14 @@ const DottedEarth = ({ animate = true, interactive = true }: Props) => {
 
   useFrame((_, delta) => {
     // Earth appears WITH the system (like a sibling) and stays — it's a member,
-    // not a grow-in. No scale transition; the camera does all the approaching.
-    const voyage = clamp01(useVoyageScroll.getState().progress);
-    // Fade the Earth out as the Lab begins (the camera pulls away to the Voyager),
-    // then BACK in for the galaxy finale (the system re-reveals as one body).
-    const labFade = remap01(clamp01(useLabScroll.getState().progress), 0, LAB.earthFadeEnd);
-    const r =
-      easeOutCubic(remap01(voyage, SOLAR.revealStart, SOLAR.revealEnd)) *
-      (1 - labFade * (1 - finaleReturn())) *
-      finaleFarFade(); // gone once the system is a speck
+    // not a grow-in. No scale transition; the camera does all the approaching. It
+    // fades out as the Lab pulls away to the Voyager, back in for the finale.
+    const r = earthReveal();
+    if (coreRef.current && coreMatRef.current) {
+      coreRef.current.visible = EARTH.showCore && r > 0.001;
+      coreRef.current.scale.setScalar(EARTH.radius * EARTH.coreScale);
+      coreMatRef.current.opacity = r;
+    }
     if (dotMatRef.current) {
       dotMatRef.current.uniforms.uReveal.value = r;
       if (animate) dotMatRef.current.uniforms.uTime.value += delta; // twinkle
@@ -305,10 +300,12 @@ const DottedEarth = ({ animate = true, interactive = true }: Props) => {
       <group ref={sceneMirrorRef}>
         <group ref={tiltRef} rotation={[0, 0, EARTH.tilt]} visible={false}>
           <group ref={spinRef}>
-            {/* Dark inner sphere hides the back-facing dots (config: EARTH.showCore). */}
-            <mesh scale={EARTH.coreScale} renderOrder={1} visible={EARTH.showCore}>
-              <sphereGeometry args={[EARTH.radius, 48, 48]} />
-              <meshBasicMaterial color={EARTH.coreColor} />
+            {/* The solid core (EARTH.showCore): drawn before every dot (renderOrder −0.5,
+              like the planets' cores) and writing depth, so nothing behind the globe
+              shows through its gaps; transparent so it fades with the Earth. */}
+            <mesh ref={coreRef} renderOrder={-0.5} visible={false}>
+              <sphereGeometry args={[1, 48, 32]} />
+              <meshBasicMaterial ref={coreMatRef} color={EARTH.coreColor} transparent depthWrite opacity={0} />
             </mesh>
 
             {buffers && (

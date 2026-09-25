@@ -52,6 +52,12 @@ export const PLANET = {
   countMobile: 28000, // reduced count on small screens
   size: 10, // base point size
   shellJitter: 0.04, // radial thickness of the particle shell (surface grain)
+  // A solid dark core just under the surface dots (their grain + breathing reach
+  // 0.965): the Saturn reads as a solid planet — its far side, the back of its rings
+  // and whatever is behind it never show through the gaps. It grows with the
+  // assembling planet and fades in as the last dots land.
+  coreScale: 0.95, // fraction of radius
+  coreColor: "#19191C", // --color-rich-black, like the space around it
   bandFrequency: 9.0, // number of latitude bands
   bandWaviness: 0.0, // longitude warp of the bands (0 = perfectly straight bands)
 

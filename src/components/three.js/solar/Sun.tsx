@@ -1,11 +1,12 @@
 "use client";
 
 import { useFrame, useThree } from "@react-three/fiber";
-import { useEffect, useMemo } from "react";
+import { useEffect, useMemo, useRef } from "react";
 import {
   BufferGeometry,
   Color,
   Float32BufferAttribute,
+  Mesh,
   NormalBlending,
   ShaderMaterial,
 } from "three";
@@ -51,7 +52,10 @@ function scatteredSphere(n: number): Float32Array {
  *     orange → deep red-orange at the edge), so it reads round;
  *   • see-through: the far side shows dimmer through the gaps, behind the glowing core
  *     (SunCore — a 3D volume of warm dots); the same shell dots are drawn twice: far
- *     side, then the core, then the near side.
+ *     side, then the core, then the near side;
+ *   • yet solid to the rest of the system: an invisible depth-only sphere inside it
+ *     hides what's behind the Sun (planets, the asteroid belt, orbit lines) — only
+ *     while it's visible, so it never hides anything once the Sun has faded.
  *
  * Fades in with the system, out for the Earth dive, back in for the galaxy finale.
  * Every value is live-tunable from the dev panel (SunGui); shape values rebuild the dots.
@@ -60,6 +64,7 @@ const Sun = ({ animate = true }: Props) => {
   const dpr = useThree((s) => s.viewport.dpr);
   const isSmall = typeof window !== "undefined" && window.innerWidth < 768;
   const version = useSunTuning((s) => s.version); // bumped by the panel's shape values
+  const occluderRef = useRef<Mesh>(null);
 
   const geometry = useMemo(() => {
     const count = isSmall ? SUN.countMobile : SUN.count;
@@ -148,6 +153,10 @@ const Sun = ({ animate = true }: Props) => {
     shared.uReveal.value =
       easeOutCubic(remap01(voyage, SOLAR.revealStart, SOLAR.revealEnd)) *
       (1 - earthFade * (1 - finaleReturn()));
+    if (occluderRef.current) {
+      occluderRef.current.visible = shared.uReveal.value > 0.02;
+      occluderRef.current.scale.setScalar(SUN.radius * 0.97);
+    }
   });
 
   // Far side → the old Sun's halo, glowing core + drifting corona → near side.
@@ -162,6 +171,13 @@ const Sun = ({ animate = true }: Props) => {
         reveal={shared.uReveal}
         renderOrder={-2}
       />
+      {/* Depth only, after the glow and before the near side and everything else. It
+        must be transparent: three draws every opaque object before any transparent one,
+        whatever its renderOrder, and it would then hide the glow inside. */}
+      <mesh ref={occluderRef} renderOrder={-1.5} visible={false}>
+        <sphereGeometry args={[1, 32, 16]} />
+        <meshBasicMaterial colorWrite={false} transparent />
+      </mesh>
       <points geometry={geometry} material={materials.near} renderOrder={-1} frustumCulled={false} />
     </group>
   );

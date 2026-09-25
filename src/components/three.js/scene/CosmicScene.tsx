@@ -22,16 +22,18 @@ import {
 } from "#/components/three.js/planet/config";
 import SolarSystem from "#/components/three.js/solar/SolarSystem";
 import {
+  EARTH_ELEMENTS,
   orbitPosition,
-  SATURN_FLY,
-  SATURN_ORBIT_PHASE0,
   SATURN_ORBIT_RADIUS,
   SOLAR,
   SUNPOS,
   VOYAGE,
 } from "#/components/three.js/solar/config";
+import { orbitPositionAt, saturnAngle, systemTime } from "#/components/three.js/solar/orbits";
+import { ORBIT_PRIORITY, planetInspect } from "#/components/three.js/solar/planetTuning";
+import EarthMoon from "#/components/three.js/solar/EarthMoon";
 import DottedEarth from "#/components/three.js/earth/DottedEarth";
-import { EARTH_CAM, EARTH_ORBIT } from "#/components/three.js/earth/config";
+import { EARTH_CAM } from "#/components/three.js/earth/config";
 import Voyager from "#/components/three.js/voyager/Voyager";
 import TravelDust from "#/components/three.js/voyager/TravelDust";
 import PaleBlueDot from "#/components/three.js/voyager/PaleBlueDot";
@@ -151,6 +153,7 @@ const CosmicScene = () => {
           its orbit) so it fills the view by perspective. */}
         <EarthMember>
           <DottedEarth animate={animate} />
+          <EarthMoon animate={animate} />
         </EarthMember>
 
         {/* The Lab — Voyager 1. A SOLID, lit craft (the one man-made object among
@@ -208,12 +211,13 @@ export default CosmicScene;
 /**
  * The Saturn is a working member: it orbits the sun on its OWN (time-based),
  * never moved by scroll. Its orbit passes through the world origin, so during the
- * intro (voyage 0) the clock is held at 0 → it sits at the origin where the star
- * bursts and assembles, and the camera is at the star distance (untouched intro).
- * Once the voyage begins it orbits continuously; the clock resets at voyage 0
- * (invisible — the camera tracks it, the starfield follows the camera, and the
- * system is hidden there). Publishes its world position so the CameraRig can lock
- * onto it. Body pose + self-spin live in Planet.
+ * intro (voyage 0) the system's clock (`systemTime`) is held at 0 → it sits at the
+ * origin where the star bursts and assembles, and the camera is at the star distance
+ * (untouched intro). Once the voyage begins it orbits continuously — counterclockwise
+ * seen from the north, at its Kepler pace, like every planet — and the clock resets
+ * at voyage 0 (invisible — the camera tracks it, the starfield follows the camera,
+ * and the system is hidden there). Publishes its world position so the CameraRig can
+ * lock onto it. Body pose + self-spin live in Planet.
  *
  * Like the rest of the solar system (see SolarSystem), its orbital offset is
  * turned by the SHARED space rotation (`useSceneRotation`) so a drag rotates the
@@ -225,22 +229,17 @@ export default CosmicScene;
  */
 const SaturnMember = ({ children }: { children: ReactNode }) => {
   const posRef = useRef<Group>(null);
-  const clock = useRef(0);
   const offset = useRef(new Vector3());
   const rotated = useRef(new Vector3());
   const euler = useRef(new Euler());
 
-  useFrame((_, delta) => {
+  useFrame((state) => {
     if (!posRef.current) return;
     const voyage = clamp01(useVoyageScroll.getState().progress);
-    if (voyage <= 0.001) clock.current = 0;
-    else clock.current += delta * SATURN_FLY.speed;
+    const t = systemTime(state.clock.elapsedTime, voyage);
 
     // Orbital offset from the sun (local to the system, exactly like a sibling).
-    const [ox, oy, oz] = orbitPosition(
-      SATURN_ORBIT_RADIUS,
-      SATURN_ORBIT_PHASE0 + clock.current,
-    );
+    const [ox, oy, oz] = orbitPosition(SATURN_ORBIT_RADIUS, saturnAngle(SATURN_ORBIT_RADIUS, t));
     offset.current.set(ox, oy, oz);
 
     // Same offset turned by the shared scene rotation (matches SolarSystem's
@@ -270,11 +269,12 @@ const SaturnMember = ({ children }: { children: ReactNode }) => {
 };
 
 /**
- * Earth as a normal member of the solar system: it orbits the sun continuously on
- * its own place (EARTH_ORBIT), turned by the shared scene rotation exactly like
- * the sibling planets. It never grows or transitions — it just publishes its live
- * world position to `useEarthAnchor` so the CameraRig can fly to it and track it.
- * Body (dots), self-spin and drag live in DottedEarth.
+ * Earth as a normal member of the solar system: the 3rd planet, on its real orbit
+ * (EARTH_ELEMENTS, see solar/orbits.ts) on the system's clock, turned by the shared
+ * scene rotation exactly like the sibling planets. It never grows or transitions — it
+ * just publishes its live world position to `useEarthAnchor` so the CameraRig can fly
+ * to it and track it. Body (dots), self-spin and drag live in DottedEarth; its Moon
+ * rides along (EarthMoon).
  */
 const EarthMember = ({ children }: { children: ReactNode }) => {
   const posRef = useRef<Group>(null);
@@ -283,17 +283,13 @@ const EarthMember = ({ children }: { children: ReactNode }) => {
 
   useFrame((state) => {
     if (!posRef.current) return;
-    const t = state.clock.getElapsedTime();
-    const [ox, oy, oz] = orbitPosition(
-      EARTH_ORBIT.radius,
-      EARTH_ORBIT.phase + t * EARTH_ORBIT.speed,
-    );
+    const t = systemTime(state.clock.elapsedTime, useVoyageScroll.getState().progress);
     // Turn the orbital offset by the shared scene rotation (matches the siblings),
     // then place it relative to the sun.
     const r = useSceneRotation.getState();
-    offset.current
-      .set(ox, oy, oz)
-      .applyEuler(euler.current.set(r.pitch, r.yaw, 0));
+    orbitPositionAt(EARTH_ELEMENTS, t, offset.current).applyEuler(
+      euler.current.set(r.pitch, r.yaw, 0),
+    );
     // Base off the Sun's LIVE position so the Earth flies WITH the system at the finale.
     const sun = flyingSunPos();
     const wx = sun[0] + offset.current.x;
@@ -301,7 +297,7 @@ const EarthMember = ({ children }: { children: ReactNode }) => {
     const wz = sun[2] + offset.current.z;
     posRef.current.position.set(wx, wy, wz);
     useEarthAnchor.getState().set(wx, wy, wz);
-  });
+  }, ORBIT_PRIORITY);
 
   return <group ref={posRef}>{children}</group>;
 };
@@ -379,6 +375,7 @@ const G_END_DIR: [number, number, number] = [
   GALAXY_ZOOM.endDir[2] / _gEndLen,
 ];
 const G_Z_RATIO = GALAXY_ZOOM.dEnd / G_D_START;
+const _inspectPos = new Vector3(); // the dev inspect camera's target (scratch)
 
 const CameraRig = ({
   starfieldRef,
@@ -404,16 +401,59 @@ const CameraRig = ({
     // easeInOutCubic → the camera eases out of the wide view and GLIDES TO REST
     // as the Earth fills the frame (velocity → 0 at arrival), so it settles
     // smoothly into the dwell instead of slamming to a stop.
+    // The real-size Earth is tiny, so the distance to it closes as a steady ZOOM
+    // (EARTH_CAM.steadyZoom): along the same straight path, the remaining distance
+    // shrinks by the same factor each step instead of at a constant speed.
     const ap = remap01(voyage, VOYAGE.flyoutEnd, 1);
     if (ap > 0) {
       const apE = easeInOutCubic(ap);
       const e = useEarthAnchor.getState();
-      px = lerp(px, e.x + EARTH_CAM.offset[0], apE);
-      py = lerp(py, e.y + EARTH_CAM.offset[1], apE);
-      pz = lerp(pz, e.z + EARTH_CAM.offset[2], apE);
-      lx = lerp(lx, e.x, apE);
-      ly = lerp(ly, e.y, apE);
-      lz = lerp(lz, e.z, apE);
+      const [ox, oy, oz] = EARTH_CAM.offset;
+      // The straight path: from the wide view (segment 1) to the arrival pose.
+      const ax = px;
+      const ay = py;
+      const az = pz;
+      const bx = e.x + ox;
+      const by = e.y + oy;
+      const bz = e.z + oz;
+      const dEnd = Math.hypot(ox, oy, oz);
+      const d0 = Math.max(Math.hypot(ax - e.x, ay - e.y, az - e.z), dEnd + 1e-3);
+      const d = d0 * Math.pow(dEnd / d0, apE); // distance to the Earth, zooming evenly
+      const zoomed = 1 - (d - dEnd) / (d0 - dEnd);
+      const u = lerp(apE, zoomed, EARTH_CAM.steadyZoom);
+      px = lerp(ax, bx, u);
+      py = lerp(ay, by, u);
+      pz = lerp(az, bz, u);
+      lx = lerp(lx, e.x, u);
+      ly = lerp(ly, e.y, u);
+      lz = lerp(lz, e.z, u);
+
+      // The Earth is the 3rd planet, close to the Sun: when it's behind the Sun, the
+      // straight path would fly through it. Find where the path passes closest to the
+      // Sun and, if that's nearer than sunClear, bend the path away from it there — in
+      // ONE fixed direction (Sun → that point), by a smooth bump that is 0 at the start
+      // and at the arrival — so the camera arcs past the Sun instead of swinging round it.
+      const [sx, sy, sz] = flyingSunPos();
+      const dx = bx - ax;
+      const dy = by - ay;
+      const dz = bz - az;
+      const along = clamp01(((sx - ax) * dx + (sy - ay) * dy + (sz - az) * dz) / (dx * dx + dy * dy + dz * dz || 1));
+      const cx = ax + dx * along - sx;
+      const cy = ay + dy * along - sy;
+      const cz = az + dz * along - sz;
+      const closest = Math.hypot(cx, cy, cz);
+      const clear = EARTH_CAM.sunClear;
+      if (closest < clear && along > 0 && along < 1) {
+        const inv = closest > 1e-3 ? 1 / closest : 0;
+        const [nx, ny, nz] = closest > 1e-3 ? [cx * inv, cy * inv, cz * inv] : [0, 1, 0];
+        // (u/along)^m · ((1−u)/(1−along))² — flat at the start, 1 at `along`, 0 on arrival.
+        const bump =
+          Math.pow(u / along, (2 * along) / (1 - along)) * Math.pow((1 - u) / (1 - along), 2);
+        const lift = (clear - closest) * bump;
+        px += nx * lift;
+        py += ny * lift;
+        pz += nz * lift;
+      }
     }
 
     // ── Segment 3: one smooth fly from Earth straight to the readable Voyager
@@ -493,6 +533,40 @@ const CameraRig = ({
         pz = lz + dz * d2;
         framing = s;
       }
+    }
+
+    // Dev only: the panel's "inspect planet" camera (PlanetGui) — close to one planet,
+    // at a chosen angle from the Sun (planetInspect.sunAngle), so even the speck-sized
+    // ones can be seen and tuned.
+    const inspectedBody = planetInspect.id ? planetInspect.bodies[planetInspect.id] : undefined;
+    if (inspectedBody) {
+      const inspected = inspectedBody.object.getWorldPosition(_inspectPos);
+      const [sx, sy, sz] = flyingSunPos();
+      let tx = sx - inspected.x;
+      let ty = sy - inspected.y;
+      let tz = sz - inspected.z;
+      const tl = Math.hypot(tx, ty, tz) || 1;
+      tx /= tl;
+      ty /= tl;
+      tz /= tl;
+      // Swing the view from the Sun's direction toward the side (toSun × up), a touch
+      // from above.
+      const sl = Math.hypot(tz, tx) || 1;
+      const ang = (planetInspect.sunAngle * Math.PI) / 180;
+      let dx = tx * Math.cos(ang) - (tz / sl) * Math.sin(ang);
+      let dy = ty * Math.cos(ang) + 0.25;
+      let dz = tz * Math.cos(ang) + (tx / sl) * Math.sin(ang);
+      const dl = Math.hypot(dx, dy, dz);
+      const dist = inspectedBody.size * planetInspect.distance;
+      dx = (dx / dl) * dist;
+      dy = (dy / dl) * dist;
+      dz = (dz / dl) * dist;
+      px = inspected.x + dx;
+      py = inspected.y + dy;
+      pz = inspected.z + dz;
+      lx = inspected.x;
+      ly = inspected.y;
+      lz = inspected.z;
     }
 
     camera.position.set(px, py, pz);

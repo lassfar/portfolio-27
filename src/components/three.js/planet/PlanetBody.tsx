@@ -2,12 +2,14 @@
 
 import { useFrame } from "@react-three/fiber";
 import { useMemo, useRef } from "react";
-import { Color, NormalBlending, Points, ShaderMaterial } from "three";
+import { Color, Mesh, MeshBasicMaterial, NormalBlending, Points, ShaderMaterial, Vector3 } from "three";
 import { useAboutScroll } from "#/stores/useAboutScroll";
+import { useSaturnAnchor } from "#/stores/useSaturnAnchor";
 import { useVoyageScroll } from "#/stores/useVoyageScroll";
-import { remap01 } from "#/components/three.js/star/utils";
+import { easeInOutCubic, remap01 } from "#/components/three.js/star/utils";
+import { flyingSunPos } from "#/components/three.js/galaxy/spin";
 import { FLYOUT, GROWTH, LIGHT, PLANET, PLANET_PALETTE, SCATTER } from "./config";
-import { VOYAGE } from "#/components/three.js/solar/config";
+import { PLANET_STYLE, SOLAR, VOYAGE } from "#/components/three.js/solar/config";
 import { SIMPLEX_NOISE } from "./shaders";
 
 type Props = {
@@ -27,6 +29,8 @@ type Props = {
 const PlanetBody = ({ count = PLANET.count, animate = true }: Props) => {
   const pointsRef = useRef<Points>(null);
   const materialRef = useRef<ShaderMaterial>(null);
+  const coreRef = useRef<Mesh>(null); // the solid core under the dots
+  const coreMatRef = useRef<MeshBasicMaterial>(null);
 
   const { positions, colors, scales, seeds, halos, scatters } = useMemo(() => {
     const positions = new Float32Array(count * 3);
@@ -116,6 +120,9 @@ const PlanetBody = ({ count = PLANET.count, animate = true }: Props) => {
       uOpacity: { value: 1 },
       uLightDir: { value: LIGHT.dir },
       uAmbient: { value: LIGHT.ambient },
+      uSunDir: { value: new Vector3(0, 0, 1) }, // view-space direction to the real Sun
+      uSunLight: { value: 0 }, // 0 = the About light → 1 = lit by the real Sun
+      uSunAmbient: { value: PLANET_STYLE.ambient }, // its night side once Sun-lit
       uRimStart: { value: PLANET.rimStart },
       uRimScatter: { value: PLANET.rimScatter },
       uHaloOpacity: { value: PLANET.haloOpacity },
@@ -129,7 +136,7 @@ const PlanetBody = ({ count = PLANET.count, animate = true }: Props) => {
     []
   );
 
-  useFrame((_, delta) => {
+  useFrame((state, delta) => {
     const m = materialRef.current;
     if (!m) return;
     if (animate) m.uniforms.uTime.value += delta;
@@ -147,64 +154,93 @@ const PlanetBody = ({ count = PLANET.count, animate = true }: Props) => {
     // distance), capped so the hero Saturn stays legible and never vanishes.
     // Reverses cleanly on scroll-up.
     m.uniforms.uThin.value = FLYOUT.thinMax * voyage;
+
+    // From the voyage on, the real Sun lights it (a real day and night side), blended
+    // in as the system fades in; the About section keeps its own light.
+    m.uniforms.uSunLight.value = easeInOutCubic(remap01(voyage, SOLAR.revealStart, SOLAR.revealEnd));
+    m.uniforms.uSunAmbient.value = PLANET_STYLE.ambient;
+    const [sx, sy, sz] = flyingSunPos();
+    const a = useSaturnAnchor.getState();
+    m.uniforms.uSunDir.value.set(sx - a.x, sy - a.y, sz - a.z).transformDirection(state.camera.matrixWorldInverse);
+
+    // The solid core grows with the assembling planet (the shader's assembleScale)
+    // and only fades in as the last dots land, so no dark ball shows mid-assembly.
+    if (coreRef.current && coreMatRef.current) {
+      const grow = smoothstep(0, 0.82, progress);
+      const wob = smoothstep(0.6, 1, progress);
+      const assembleScale =
+        GROWTH.startScale + (1 - GROWTH.startScale) * grow + GROWTH.overshoot * Math.sin(Math.PI * wob);
+      coreRef.current.scale.setScalar(PLANET.radius * PLANET.coreScale * assembleScale);
+      const opacity = smoothstep(0.85, 1, progress) * m.uniforms.uOpacity.value;
+      coreMatRef.current.opacity = opacity;
+      coreRef.current.visible = opacity > 0.001;
+    }
   });
 
   return (
-    <points ref={pointsRef}>
-      <bufferGeometry>
-        <bufferAttribute
-          attach="attributes-position"
-          count={count}
-          array={positions}
-          itemSize={3}
-          args={[positions, 3]}
+    <>
+      {/* The solid core: drawn before the dots and the rings (renderOrder −0.5) and
+        writing depth, so the far side and the back of the rings hide behind it. */}
+      <mesh ref={coreRef} renderOrder={-0.5} visible={false}>
+        <sphereGeometry args={[1, 48, 32]} />
+        <meshBasicMaterial ref={coreMatRef} color={PLANET.coreColor} transparent depthWrite opacity={0} />
+      </mesh>
+      <points ref={pointsRef}>
+        <bufferGeometry>
+          <bufferAttribute
+            attach="attributes-position"
+            count={count}
+            array={positions}
+            itemSize={3}
+            args={[positions, 3]}
+          />
+          <bufferAttribute
+            attach="attributes-aColor"
+            count={count}
+            array={colors}
+            itemSize={3}
+            args={[colors, 3]}
+          />
+          <bufferAttribute
+            attach="attributes-aScale"
+            count={count}
+            array={scales}
+            itemSize={1}
+            args={[scales, 1]}
+          />
+          <bufferAttribute
+            attach="attributes-aSeed"
+            count={count}
+            array={seeds}
+            itemSize={1}
+            args={[seeds, 1]}
+          />
+          <bufferAttribute
+            attach="attributes-aHalo"
+            count={count}
+            array={halos}
+            itemSize={1}
+            args={[halos, 1]}
+          />
+          <bufferAttribute
+            attach="attributes-aScatter"
+            count={count}
+            array={scatters}
+            itemSize={3}
+            args={[scatters, 3]}
+          />
+        </bufferGeometry>
+        <shaderMaterial
+          ref={materialRef}
+          transparent
+          depthWrite
+          blending={NormalBlending}
+          uniforms={uniforms}
+          vertexShader={VERTEX_SHADER}
+          fragmentShader={FRAGMENT_SHADER}
         />
-        <bufferAttribute
-          attach="attributes-aColor"
-          count={count}
-          array={colors}
-          itemSize={3}
-          args={[colors, 3]}
-        />
-        <bufferAttribute
-          attach="attributes-aScale"
-          count={count}
-          array={scales}
-          itemSize={1}
-          args={[scales, 1]}
-        />
-        <bufferAttribute
-          attach="attributes-aSeed"
-          count={count}
-          array={seeds}
-          itemSize={1}
-          args={[seeds, 1]}
-        />
-        <bufferAttribute
-          attach="attributes-aHalo"
-          count={count}
-          array={halos}
-          itemSize={1}
-          args={[halos, 1]}
-        />
-        <bufferAttribute
-          attach="attributes-aScatter"
-          count={count}
-          array={scatters}
-          itemSize={3}
-          args={[scatters, 3]}
-        />
-      </bufferGeometry>
-      <shaderMaterial
-        ref={materialRef}
-        transparent
-        depthWrite
-        blending={NormalBlending}
-        uniforms={uniforms}
-        vertexShader={VERTEX_SHADER}
-        fragmentShader={FRAGMENT_SHADER}
-      />
-    </points>
+      </points>
+    </>
   );
 };
 
@@ -229,6 +265,9 @@ uniform float uSwirl;
 uniform float uFlowSpeed;
 uniform vec3 uLightDir;
 uniform float uAmbient;
+uniform vec3 uSunDir;
+uniform float uSunLight;
+uniform float uSunAmbient;
 uniform float uRimStart;
 uniform float uRimScatter;
 uniform float uForm;         // 0 = dispersed in space, 1 = assembled
@@ -283,7 +322,11 @@ void main(){
 
   // Directional lighting (surface keeps lit/shadowed sides; halo stays soft).
   float diff = max(dot(viewNrm, normalize(uLightDir)), 0.0);
-  float litSurface = uAmbient + (1.0 - uAmbient) * diff;
+  float litAbout = uAmbient + (1.0 - uAmbient) * diff;
+  // The real Sun: a soft terminator, like the other planets.
+  float sunDiff = smoothstep(-0.12, 0.45, dot(viewNrm, normalize(uSunDir)));
+  float litSun = uSunAmbient + (1.0 - uSunAmbient) * sunDiff;
+  float litSurface = mix(litAbout, litSun, uSunLight);
   float litHalo = uAmbient + 0.25;
   vBright = mix(litSurface, litHalo, aHalo);
 

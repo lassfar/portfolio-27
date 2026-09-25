@@ -1,23 +1,16 @@
 "use client";
 
 import { useFrame } from "@react-three/fiber";
-import { useMemo, useRef } from "react";
-import { Group, LineBasicMaterial, LineLoop } from "three";
-import { useVoyageScroll } from "#/stores/useVoyageScroll";
+import { useEffect, useMemo, useRef } from "react";
+import { BufferGeometry, Float32BufferAttribute, Group, LineBasicMaterial, LineLoop } from "three";
 import { useSceneRotation } from "#/stores/useSceneRotation";
-import { easeOutCubic, remap01 } from "#/components/three.js/star/utils";
 import Sun from "./Sun";
 import OrbitingPlanet from "./OrbitingPlanet";
-import { EARTH_ORBIT } from "#/components/three.js/earth/config";
-import {
-  orbitPosition,
-  PLANETS,
-  SOLAR,
-  SOLAR_MOBILE_SCALE,
-  SUNPOS,
-  VOYAGE,
-} from "./config";
-import { finaleFarFade, finaleReturn } from "./reveal";
+import AsteroidBelt from "./AsteroidBelt";
+import { EARTH_ELEMENTS, PLANETS, SATURN_ORBIT_RADIUS, SOLAR, SUNPOS } from "./config";
+import { circleOutline, orbitOutline } from "./orbits";
+import { ORBIT_PRIORITY, usePlanetTuning } from "./planetTuning";
+import { siblingReveal } from "./reveal";
 import { flyingSunPos } from "#/components/three.js/galaxy/spin";
 
 type Props = {
@@ -26,19 +19,17 @@ type Props = {
 
 /**
  * The solar system the Saturn belongs to — the sun blazing at the centre and the
- * sibling planets orbiting it on a near edge-on plane. Everything hangs off a
- * pivot at the sun with a rotation group that mirrors the SHARED space rotation
- * (`useSceneRotation`, driven by the star's drag) — so dragging turns the whole
- * cosmos, starfield + solar system, together as one (not an independent spin).
+ * planets on their real orbits around it (see orbits.ts), with the asteroid belt
+ * between Mars and Jupiter. Everything hangs off a pivot at the sun with a rotation
+ * group that mirrors the SHARED space rotation (`useSceneRotation`, driven by the
+ * star's drag) — so dragging turns the whole cosmos, starfield + solar system,
+ * together as one (not an independent spin). The Saturn and the Earth are placed by
+ * their own members (CosmicScene); their orbit lines are drawn here.
  *
  * The camera flies back to reveal it; the bodies fade in over the reveal window
- * (`useVoyageScroll`) and the orbits run continuously on the real-time clock.
+ * (`useVoyageScroll`) and move on the system's clock (`systemTime`).
  */
 const SolarSystem = ({ animate = true }: Props) => {
-  const isSmall = typeof window !== "undefined" && window.innerWidth < 768;
-  const scaleCount = (n: number) =>
-    isSmall ? Math.round(n * SOLAR_MOBILE_SCALE) : n;
-
   const sysRef = useRef<Group>(null);
   const rotRef = useRef<Group>(null);
   useFrame(() => {
@@ -52,27 +43,25 @@ const SolarSystem = ({ animate = true }: Props) => {
       const sun = flyingSunPos();
       sysRef.current.position.set(sun[0], sun[1], sun[2]);
     }
-  });
+  }, ORBIT_PRIORITY);
 
   return (
     <group ref={sysRef} position={SUNPOS}>
       <group ref={rotRef}>
         <Sun animate={animate} />
 
-        {/* The orbit lines — shown while SOLAR.ring.visible (live, see OrbitRing). */}
+        {/* The orbit lines — the real ovals (shown while SOLAR.ring.visible). */}
         {PLANETS.map((def) => (
-          <OrbitRing key={`ring-${def.id}`} radius={def.radius} />
+          <OrbitRing key={`ring-${def.id}`} outline={() => orbitOutline(def.orbit, SOLAR.ring.segments)} />
         ))}
-        {/* Earth's own orbit line (Earth itself is the EarthMember, not a sibling). */}
-        <OrbitRing radius={EARTH_ORBIT.radius} />
+        <OrbitRing outline={() => orbitOutline(EARTH_ELEMENTS, SOLAR.ring.segments)} />
+        {/* The Saturn's: the fixed circle through the origin (see SaturnMember). */}
+        <OrbitRing outline={() => circleOutline(SATURN_ORBIT_RADIUS, SOLAR.ring.segments)} />
+
+        <AsteroidBelt />
 
         {PLANETS.map((def) => (
-          <OrbitingPlanet
-            key={def.id}
-            def={def}
-            count={scaleCount(def.count)}
-            animate={animate}
-          />
+          <OrbitingPlanet key={def.id} def={def} animate={animate} />
         ))}
       </group>
     </group>
@@ -82,56 +71,33 @@ const SolarSystem = ({ animate = true }: Props) => {
 export default SolarSystem;
 
 /**
- * A faint circular guide-ring (local to the sun pivot), fading in with the
- * system over the reveal window. Shown while `SOLAR.ring.visible`; its colour +
- * opacity are live too (the dev panel tunes them).
+ * A faint orbit line (local to the sun pivot), fading with the sibling planets. Shown
+ * while `SOLAR.ring.visible`; its colour + opacity are live, and its shape rebuilds
+ * when the dev panel changes an orbit.
  */
-const OrbitRing = ({ radius }: { radius: number }) => {
+const OrbitRing = ({ outline }: { outline: () => Float32Array }) => {
   const lineRef = useRef<LineLoop>(null);
   const matRef = useRef<LineBasicMaterial>(null);
+  const version = usePlanetTuning((s) => s.version);
 
-  const positions = useMemo(() => {
-    const seg = SOLAR.ring.segments;
-    const arr = new Float32Array(seg * 3);
-    for (let i = 0; i < seg; i++) {
-      const [x, y, z] = orbitPosition(radius, (i / seg) * Math.PI * 2);
-      arr[i * 3] = x;
-      arr[i * 3 + 1] = y;
-      arr[i * 3 + 2] = z;
-    }
-    return arr;
-  }, [radius]);
+  const geometry = useMemo(() => {
+    const g = new BufferGeometry();
+    g.setAttribute("position", new Float32BufferAttribute(outline(), 3));
+    return g;
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- `version` rebuilds from the tuned orbits
+  }, [version]);
+  useEffect(() => () => geometry.dispose(), [geometry]);
 
   useFrame(() => {
     if (lineRef.current) lineRef.current.visible = SOLAR.ring.visible;
     if (!matRef.current || !SOLAR.ring.visible) return;
     matRef.current.color.set(SOLAR.ring.color);
-    const voyage = useVoyageScroll.getState().progress;
-    const earthFade = remap01(voyage, VOYAGE.earthFadeStart, VOYAGE.earthFadeEnd);
-    const reveal =
-      easeOutCubic(remap01(voyage, SOLAR.revealStart, SOLAR.revealEnd)) *
-      (1 - earthFade * (1 - finaleReturn()));
-    matRef.current.opacity = SOLAR.ring.opacity * reveal * finaleFarFade();
+    matRef.current.opacity = SOLAR.ring.opacity * siblingReveal();
   });
 
   return (
-    <lineLoop ref={lineRef}>
-      <bufferGeometry>
-        <bufferAttribute
-          attach="attributes-position"
-          count={positions.length / 3}
-          array={positions}
-          itemSize={3}
-          args={[positions, 3]}
-        />
-      </bufferGeometry>
-      <lineBasicMaterial
-        ref={matRef}
-        color={SOLAR.ring.color}
-        transparent
-        opacity={0}
-        depthWrite={false}
-      />
+    <lineLoop ref={lineRef} geometry={geometry}>
+      <lineBasicMaterial ref={matRef} color={SOLAR.ring.color} transparent opacity={0} depthWrite={false} />
     </lineLoop>
   );
 };
