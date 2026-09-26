@@ -90,18 +90,29 @@ const CosmicScene = () => {
   // and under React 19 `ref` is a prop — once it holds the live effect, whose
   // resolution points back at it, every re-render threw "circular structure").
   // Same settings the wrapper applied (it forces the ADD blend).
-  const bloom = useMemo(
-    () =>
-      new BloomEffect({
-        blendFunction: BlendFunction.ADD,
-        intensity: BLOOM.intensity,
-        luminanceThreshold: BLOOM.threshold,
-        luminanceSmoothing: BLOOM.smoothing,
-        radius: BLOOM.radius,
-        mipmapBlur: true,
-      }),
-    []
-  );
+  // Its intensity is 0 from the About section on (BloomController) — it then adds
+  // nothing, yet its luminance pass + 8-level blur would still run every frame. So while
+  // it's 0 those are skipped and it samples no texture — three's built-in blank one (no
+  // stale glow left behind); the moment it's above 0 again (scrolling back up) it blurs
+  // afresh before drawing.
+  const bloom = useMemo(() => {
+    const effect = new BloomEffect({
+      blendFunction: BlendFunction.ADD,
+      intensity: BLOOM.intensity,
+      luminanceThreshold: BLOOM.threshold,
+      luminanceSmoothing: BLOOM.smoothing,
+      radius: BLOOM.radius,
+      mipmapBlur: true,
+    });
+    const map = effect.uniforms.get("map");
+    const update = effect.update.bind(effect);
+    effect.update = (renderer, inputBuffer, deltaTime) => {
+      const on = effect.intensity > 0;
+      if (map) map.value = on ? effect.mipmapBlurPass.texture : null;
+      if (on) update(renderer, inputBuffer, deltaTime);
+    };
+    return effect;
+  }, []);
   useEffect(() => () => bloom.dispose(), [bloom]);
   // Blurs + dims the scene behind the Contact form (see VeilPass).
   const veil = useMemo(() => new VeilPass(), []);
@@ -123,7 +134,9 @@ const CosmicScene = () => {
           far: 2800,
         }}
         dpr={[1, 1.5]}
-        gl={{ antialias: true, alpha: true }}
+        // (No canvas antialiasing: only the composer's final full-screen pass reaches
+        // the canvas; the composer smooths the scene itself, 8× multisampled.)
+        gl={{ antialias: false, alpha: true }}
       >
         {/* Starfield + star: drag-rotates, scroll zooms + bursts the star. */}
         <Universe
