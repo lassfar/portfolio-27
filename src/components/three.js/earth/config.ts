@@ -28,6 +28,14 @@ export const EARTH = {
   dotSize: 5.5 * EARTH_RADIUS, // base point size (distance-attenuated, so × the radius) — tuned for the close-up
   dotMaxSize: 7, // hard cap (framebuffer px) so dots can't balloon up close → bounds overdraw
   shellJitter: 0.04, // tiny radial grain so the surface reads dotty like the Saturn
+  // Level of detail while it's a speck: far away every dot is a 1 px point and each
+  // screen pixel shows the last dot drawn there, so only enough dots to keep every
+  // pixel covered are drawn — the full field is back from ~14 px (the whole approach,
+  // dive and dwell draw every dot, exactly as before).
+  lod: {
+    perPixel: 8, // fewest dots per screen pixel in open ocean (its sparsest part) — an empty pixel ≈ 0.03%
+    fadeBand: 0.13, // share of the drawn dots that fade in / out at the edge of the count (as PLANET_LOD)
+  },
 
   // Lit by the ACTUAL sun (its world position) → a real day/night terminator
   // that sweeps as the globe spins + orbits. Ambient keeps the night side from

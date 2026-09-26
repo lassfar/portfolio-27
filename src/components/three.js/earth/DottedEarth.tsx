@@ -8,6 +8,7 @@ import {
   Mesh,
   MeshBasicMaterial,
   NormalBlending,
+  PerspectiveCamera,
   Points,
   Raycaster,
   ShaderMaterial,
@@ -36,7 +37,12 @@ type DotBuffers = {
   colors: Float32Array;
   scales: Float32Array;
   seeds: Float32Array;
+  /** Ocean dots per unit of surface ÷ all dots per unit of surface (its level of detail
+   *  keeps the open ocean — the sparsest part — covered). */
+  oceanDensity: number;
 };
+
+const DEG = Math.PI / 180;
 
 /**
  * The interactive Earth — a dense sphere of dots coloured per-dot from a real
@@ -89,6 +95,8 @@ const DottedEarth = ({ animate = true, interactive = true }: Props) => {
       // the dots pack onto the continents and the map reads clearly.
       let i = 0;
       let guard = 0;
+      let oceanTries = 0; // ocean candidates (∝ the ocean's share of the surface)
+      let oceanKept = 0;
       const maxTries = count * 40;
       while (i < count && guard < maxTries) {
         guard++;
@@ -114,7 +122,9 @@ const DottedEarth = ({ animate = true, interactive = true }: Props) => {
           data[(py * cv.width + px) * 4] / 255 < EARTH.landThreshold; // dark = land
 
         // Bias toward land: keep every land dot, drop most ocean dots.
+        if (!isLand) oceanTries++;
         if (!isLand && Math.random() > EARTH.oceanDensity) continue;
+        if (!isLand) oceanKept++;
 
         // Tiny radial shell jitter → grainy, dotty surface (like the Saturn shell).
         const rr =
@@ -139,7 +149,9 @@ const DottedEarth = ({ animate = true, interactive = true }: Props) => {
         seeds[i] = Math.random();
         i++;
       }
-      setBuffers({ positions, colors, scales, seeds });
+      // The ocean's share of the dots ÷ its share of the surface.
+      const oceanDensity = oceanTries > 0 && i > 0 ? oceanKept / i / (oceanTries / guard) : 1;
+      setBuffers({ positions, colors, scales, seeds, oceanDensity });
     };
     return () => {
       cancelled = true;
@@ -162,9 +174,14 @@ const DottedEarth = ({ animate = true, interactive = true }: Props) => {
       // and Earth's world positions, so lighting comes from the real sun.
       uLightDir: { value: new Vector3(0, 0, 1) },
       uAmbient: { value: EARTH.light.ambient },
+      // Level of detail: the dots drawn (the first uLodCount) + the share that fades.
+      uLodCount: { value: count },
+      uLodFade: { value: EARTH.lod.fadeBand },
     }),
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- `count` only seeds uLodCount (updated each frame)
     []
   );
+  const earthPos = useMemo(() => new Vector3(), []);
 
   // ── Drag-rotate (globe spin) ────────────────────────────────────────────────
   const targetYaw = useRef<number>(EARTH.initialYaw);
@@ -233,7 +250,7 @@ const DottedEarth = ({ animate = true, interactive = true }: Props) => {
     };
   }, [gl, interactive, camera, hit]);
 
-  useFrame((_, delta) => {
+  useFrame((state, delta) => {
     // Earth appears WITH the system (like a sibling) and stays — it's a member,
     // not a grow-in. No scale transition; the camera does all the approaching. It
     // fades out as the Lab pulls away to the Voyager, back in for the finale.
@@ -252,6 +269,23 @@ const DottedEarth = ({ animate = true, interactive = true }: Props) => {
         .set(SUNPOS[0] - a.x, SUNPOS[1] - a.y, SUNPOS[2] - a.z)
         .transformDirection(camera.matrixWorldInverse);
       dotMatRef.current.uniforms.uLightDir.value.copy(sunDir.current);
+
+      // Level of detail: far away every dot is a 1 px point and each pixel shows the
+      // last one drawn there, so draw just enough to keep every pixel covered — at
+      // least EARTH.lod.perPixel per pixel in open ocean. Full field from ~14 px on.
+      const points = pointsRef.current;
+      if (points && buffers && r > 0.001) {
+        const cam = state.camera as PerspectiveCamera;
+        const dist = Math.max(points.getWorldPosition(earthPos).distanceTo(cam.position), EARTH.radius * 1.05);
+        const focal = state.size.height / 2 / Math.tan((cam.fov * DEG) / 2);
+        const radiusPx = (EARTH.radius * focal) / dist;
+        const dots = Math.min(
+          count,
+          (EARTH.lod.perPixel * 4 * Math.PI * radiusPx * radiusPx) / buffers.oceanDensity
+        );
+        points.geometry.setDrawRange(0, Math.min(count, Math.ceil(dots * (1 + EARTH.lod.fadeBand))));
+        dotMatRef.current.uniforms.uLodCount.value = dots;
+      }
     }
     if (tiltRef.current) tiltRef.current.visible = r > 0.001;
 
@@ -371,14 +405,20 @@ uniform float uMaxSize;
 uniform float uPixelRatio;
 uniform vec3 uLightDir;
 uniform float uAmbient;
+uniform float uLodCount, uLodFade;
 attribute vec3 aColor;
 attribute float aScale;
 attribute float aSeed;
 varying vec3 vColor;
 varying float vBright;
+varying float vLod;
 
 void main(){
   vColor = aColor;
+  // Level of detail: the dots past uLodCount fade out over the next uLodFade share
+  // (every dot is at 1.0 when the whole field is drawn).
+  float index = float(gl_VertexID);
+  vLod = clamp((uLodCount * (1.0 + uLodFade) - index) / max(uLodCount * uLodFade, 1.0), 0.0, 1.0);
 
   // A dot's surface normal is its (radial) direction. Back-face cull: if it faces
   // away from the camera it's on the hidden hemisphere (behind the opaque core),
@@ -408,11 +448,12 @@ precision highp float;
 uniform float uReveal;
 varying vec3 vColor;
 varying float vBright;
+varying float vLod;
 
 void main(){
   float d = length(gl_PointCoord - 0.5);
   if (d > 0.5) discard;
-  float a = smoothstep(0.5, 0.15, d) * uReveal;
+  float a = smoothstep(0.5, 0.15, d) * uReveal * vLod;
   if (a < 0.01) discard;
   gl_FragColor = vec4(vColor * vBright, a);
 }
