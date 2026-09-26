@@ -20,7 +20,8 @@ import { LAB } from "#/components/three.js/voyager/config";
 import { EARTH } from "./config";
 import { PHOTO_LOCATIONS, type PhotoLocation } from "./data";
 import { latLngToVector3 } from "./utils";
-import { pinScreen } from "./pinScreen";
+import { pinLabels, pinScreen } from "./pinScreen";
+import { LABEL_PRIORITY, projectToViewport } from "#/components/three.js/scene/labelProjection";
 
 const UP = new Vector3(0, 1, 0);
 
@@ -55,6 +56,9 @@ function makeGlowTexture() {
  */
 const EarthPins = () => {
   const glow = useMemo(makeGlowTexture, []);
+  // Once every pin is projected (its own callbacks, at LABEL_PRIORITY), lay out the
+  // DOM labels — in the same frame, before it's drawn.
+  useFrame(() => pinLabels.update?.(), LABEL_PRIORITY + 0.05);
   return (
     <group>
       {PHOTO_LOCATIONS.map((loc, i) => (
@@ -76,6 +80,7 @@ const Pin = ({
   glow: CanvasTexture;
 }) => {
   const camera = useThree((s) => s.camera);
+  const gl = useThree((s) => s.gl);
   const groupRef = useRef<Group>(null);
   const headRef = useRef<Group>(null);
   const glowRef = useRef<SpriteMaterial>(null);
@@ -94,6 +99,8 @@ const Pin = ({
     return { pos: p, quat: q };
   }, [loc]);
 
+  // After the camera has moved this frame (LABEL_PRIORITY), so the pin's culling and
+  // its label follow exactly what's drawn.
   useFrame((state) => {
     if (!groupRef.current) return;
     const approach = remap01(
@@ -117,17 +124,12 @@ const Pin = ({
     // Publish the head's screen position for the DOM label overlay. The label
     // shows only once the Earth is in full view (EARTH.pinLabelsAt) and the pin
     // is on the near hemisphere and in front of the camera.
-    if (headRef.current && typeof window !== "undefined") {
-      headRef.current.getWorldPosition(screen.current);
-      screen.current.project(camera);
+    if (headRef.current) {
+      const ahead = projectToViewport(headRef.current, camera, gl.domElement, screen.current);
       pinScreen[loc.id] = {
-        x: (screen.current.x * 0.5 + 0.5) * window.innerWidth,
-        y: (-screen.current.y * 0.5 + 0.5) * window.innerHeight,
-        shown:
-          front &&
-          screen.current.z < 1 &&
-          approach >= EARTH.pinLabelsAt &&
-          labFade < 0.5,
+        x: screen.current.x,
+        y: screen.current.y,
+        shown: front && ahead && approach >= EARTH.pinLabelsAt && labFade < 0.5,
       };
     }
 
@@ -135,10 +137,12 @@ const Pin = ({
     scale.current = damp(scale.current, target, 0.2);
     if (headRef.current) headRef.current.scale.setScalar(scale.current);
     if (glowRef.current) {
-      const pulse = 0.4 + 0.14 * Math.sin(state.clock.getElapsedTime() * 2 + phase);
+      // (elapsedTime, not getElapsedTime(): that call resets the clock mid-frame and
+      // would shorten the next frame's delta for everything that animates by it.)
+      const pulse = 0.4 + 0.14 * Math.sin(state.clock.elapsedTime * 2 + phase);
       glowRef.current.opacity = hovered ? 0.95 : pulse;
     }
-  });
+  }, LABEL_PRIORITY);
 
   const over = (e: ThreeEvent<PointerEvent>) => {
     e.stopPropagation();

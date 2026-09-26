@@ -8,7 +8,8 @@ import { useLabScroll } from "#/stores/useLabScroll";
 import { useGalaxyScroll } from "#/stores/useGalaxyScroll";
 import { useSceneRotation } from "#/stores/useSceneRotation";
 import { LAB, VOYAGER } from "./config";
-import { recordScreen } from "./recordScreen";
+import { recordLabel, recordScreen } from "./recordScreen";
+import { LABEL_PRIORITY, projectToViewport } from "#/components/three.js/scene/labelProjection";
 
 type Vec3 = [number, number, number];
 const UP = new Vector3(0, 1, 0);
@@ -55,16 +56,18 @@ const RTG_AT: Vec3[] = [0.52, 0.72, 0.92].map((t) => along(RTG_A, RTG_T, t));
  * in over LAB.revealStart, and turns WITH the shared cosmos — it mirrors
  * `useSceneRotation` (exactly like the Saturn), so dragging rotates the space and
  * the craft as one rigid scene instead of spinning the probe on its own. The
- * Record's world position is projected into `recordScreen` each frame for the DOM
- * label overlay. Needs scene lights (added in CosmicScene).
+ * Record's world position is projected into `recordScreen` each frame (once the
+ * camera has moved) for the DOM label overlay. Needs scene lights (added in CosmicScene).
  */
 const Voyager = () => {
   const camera = useThree((s) => s.camera);
+  const gl = useThree((s) => s.gl);
 
   const rootRef = useRef<Group>(null); // visibility + opacity fade
   const spinRef = useRef<Group>(null); // mirrors the shared scene rotation
   const recordRef = useRef<Mesh>(null);
   const worldPos = useRef(new Vector3());
+  const labelOn = useRef(false); // the Lab is in full view and the craft is shown
 
   useFrame(() => {
     const lab = clamp01(useLabScroll.getState().progress);
@@ -79,10 +82,8 @@ const Voyager = () => {
     const visible = reveal > 0.001;
 
     if (rootRef.current) rootRef.current.visible = visible;
-    if (!visible) {
-      recordScreen.shown = false;
-      return;
-    }
+    labelOn.current = visible && lab >= LAB.recordLabelAt;
+    if (!visible) return;
     // Fade the whole craft in/out via material opacity (materials are declared
     // `transparent`, so we only set the value here) — only while it's shown.
     rootRef.current?.traverse((o) => {
@@ -101,15 +102,20 @@ const Voyager = () => {
       spinRef.current.rotation.set(r.pitch, r.yaw + VOYAGER.initialYaw, 0);
     }
 
-    // Project the Golden Record to screen for the DOM label overlay.
-    if (recordRef.current && typeof window !== "undefined") {
-      recordRef.current.getWorldPosition(worldPos.current);
-      worldPos.current.project(camera);
-      recordScreen.x = (worldPos.current.x * 0.5 + 0.5) * window.innerWidth;
-      recordScreen.y = (-worldPos.current.y * 0.5 + 0.5) * window.innerHeight;
-      recordScreen.shown = worldPos.current.z < 1 && lab >= LAB.recordLabelAt;
-    }
   });
+
+  // Project the Golden Record for the DOM label once the camera has moved this frame,
+  // and lay the label out in the same step (before the frame is drawn).
+  useFrame(() => {
+    const ahead =
+      labelOn.current &&
+      !!recordRef.current &&
+      projectToViewport(recordRef.current, camera, gl.domElement, worldPos.current);
+    recordScreen.x = worldPos.current.x;
+    recordScreen.y = worldPos.current.y;
+    recordScreen.shown = ahead;
+    recordLabel.update?.();
+  }, LABEL_PRIORITY);
 
   const c = VOYAGER.colors;
   return (

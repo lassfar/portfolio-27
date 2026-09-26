@@ -1,25 +1,24 @@
 "use client";
 
 import { useEffect, useRef } from "react";
-import { recordScreen } from "#/components/three.js/voyager/recordScreen";
+import { recordLabel, recordScreen } from "#/components/three.js/voyager/recordScreen";
 import { useLabStore } from "#/stores/useLabStore";
 
 /**
  * The always-on label anchored above Voyager's Golden Record, shown once the Lab
  * is in full view. The 3D craft publishes the record's projected screen position
- * to `recordScreen`; here we read it on our own rAF loop and position the label
- * imperatively (transform + opacity), so nothing re-renders per frame. Clicking
- * it opens the experiments panel — the same seam the Earth pins use to open the
- * gallery.
+ * to `recordScreen` once the camera has moved, then calls our `update` in that same
+ * step (`recordLabel`), so the label moves with the record in the very frame it's
+ * drawn — positioned imperatively (transform + opacity), so nothing re-renders per
+ * frame. Clicking it opens the experiments panel — the same seam the Earth pins
+ * use to open the gallery.
  */
 const RecordLabel = () => {
   const ref = useRef<HTMLButtonElement>(null);
 
   useEffect(() => {
-    let raf = 0;
     let shownBefore: boolean | null = null; // opacity / pointer-events only change with it
-    const tick = () => {
-      raf = requestAnimationFrame(tick);
+    const update = () => {
       const el = ref.current;
       if (!el) return;
       const s = recordScreen;
@@ -29,8 +28,10 @@ const RecordLabel = () => {
       el.style.opacity = s.shown ? "1" : "0";
       el.style.pointerEvents = s.shown ? "auto" : "none";
     };
-    raf = requestAnimationFrame(tick);
-    return () => cancelAnimationFrame(raf);
+    recordLabel.update = update;
+    return () => {
+      if (recordLabel.update === update) recordLabel.update = null;
+    };
   }, []);
 
   return (

@@ -2,7 +2,7 @@
 
 import { useEffect, useRef } from "react";
 import { PHOTO_LOCATIONS } from "#/components/three.js/earth/data";
-import { pinScreen } from "#/components/three.js/earth/pinScreen";
+import { pinLabels, pinScreen } from "#/components/three.js/earth/pinScreen";
 import { useGalleryStore } from "#/stores/useGalleryStore";
 
 /** Gap (px) kept between labels that would otherwise overlap. */
@@ -14,8 +14,9 @@ const OFFSET_Y = 8;
 /**
  * Always-on place labels anchored above each globe pin, shown once the Earth is
  * in full view. The 3D pins publish their projected screen positions to
- * `pinScreen`; here we read those on our own rAF loop and position each label
- * imperatively (transform + opacity), so nothing re-renders per frame.
+ * `pinScreen` once the camera has moved, then call our `update` in that same step
+ * (`pinLabels`), so each label moves with its pin in the very frame it's drawn —
+ * positioned imperatively (transform + opacity), so nothing re-renders per frame.
  *
  * Each label is anchored to one side of its pin (loc.labelAnchor) — used to fan
  * clustered places apart (London top-right, Brockenhurst top-left, ~130 km
@@ -27,7 +28,6 @@ const PinLabels = () => {
   const refs = useRef<Record<string, HTMLButtonElement | null>>({});
 
   useEffect(() => {
-    let raf = 0;
     // Each label's last shown state — its opacity / pointer-events are only written
     // when it changes (the positions are still written every frame while shown).
     const shownBefore: Record<string, boolean> = {};
@@ -37,9 +37,7 @@ const PinLabels = () => {
       el.style.opacity = shown ? "1" : "0";
       el.style.pointerEvents = shown ? "auto" : "none";
     };
-    const tick = () => {
-      raf = requestAnimationFrame(tick);
-
+    const update = () => {
       // 1. READ pass: gather the visible labels with their measured geometry.
       //    `left`/`top` are the label's desired top-left (centered on the pin,
       //    sitting above the head). Reads are batched before any writes to
@@ -100,8 +98,10 @@ const PinLabels = () => {
         b.el.style.transform = `translate(${b.left}px, ${b.top}px)`;
       }
     };
-    raf = requestAnimationFrame(tick);
-    return () => cancelAnimationFrame(raf);
+    pinLabels.update = update;
+    return () => {
+      if (pinLabels.update === update) pinLabels.update = null;
+    };
   }, []);
 
   return (
