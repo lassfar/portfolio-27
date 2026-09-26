@@ -61,6 +61,7 @@ export const PARTICLES = {
   explodeScatter: 2.0, // extra turbulent scatter at full burst
 } as const;
 
+/** Mutable: the dev panel (`?gui` → ✧ Stars) tunes it live. */
 export const STARFIELD = {
   count: 2600,
   minRadius: 11,
@@ -74,7 +75,21 @@ export const STARFIELD = {
   // toward white so the field reads as a real night sky, not a rainbow.
   tints: ["#cfe0ff", "#eaf1ff", "#ffffff", "#fff4e6", "#ffe6c2", "#ffd9a8"],
   tintWeights: [0.1, 0.2, 0.3, 0.2, 0.12, 0.08],
-} as const;
+  // The brightest standouts sparkle like stars in a space photo — the galaxy finale's
+  // own sparkle (GALAXY_FX.sparkles: sharp core, soft halo, hairline 4-ray cross),
+  // drawn smaller. Widths are in screen px (smooth profiles, so they never flicker).
+  sparkle: {
+    share: 1, // share of the standouts that sparkle (the brightest first) — 1 = all of them (≈8% of the field)
+    size: 23, // sprite px for the biggest (smallest: 45% of it) — the rays' reach; the galaxy's is 62 (×0.45–1.35)
+    spikes: 0.2, // ray strength (the galaxy's is 1.15)
+    rayWidth: 0.2, // ray thickness (px)
+    coreSize: 0.45, // bright centre (px)
+    halo: 0, // soft glow around the centre (0 = none; the galaxy's is 0.35)
+    haloSize: 0.5, // its reach (px)
+    pulseSpeed: 0, // brightness pulse speed (rad/s) — still
+    pulseAmount: 0, // its depth — none
+  },
+};
 
 // ── Deep-space haze (faint nebula / dust backdrop) ───────────────────────────
 
