@@ -42,6 +42,12 @@ export const EARTH = {
   // going fully black so the shadowed continents stay a little legible.
   light: {
     ambient: 0.2, // a clear day/night terminator; the continents stay faintly visible at night
+    // …except while the Earth is in full view (the photo-pins): the whole globe is in
+    // daylight, so every place reads. The night side fades away over this stretch of
+    // the approach (0..1, the labels show at pinLabelsAt 0.85) and back as the Lab
+    // pulls away.
+    dayFrom: 0.7,
+    dayTo: 0.95,
   },
 
   // Per-dot land/ocean, sampled from the mask (land = dark pixels).

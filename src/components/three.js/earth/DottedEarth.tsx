@@ -16,14 +16,16 @@ import {
   Vector2,
   Vector3,
 } from "three";
-import { damp } from "#/components/three.js/star/utils";
+import { clamp01, damp, easeInOutCubic, lerp, remap01 } from "#/components/three.js/star/utils";
 import { useEarthAnchor } from "#/stores/useEarthAnchor";
 import { useSceneRotation } from "#/stores/useSceneRotation";
 import { SUNPOS } from "#/components/three.js/solar/config";
 import { earthReveal } from "#/components/three.js/solar/reveal";
 import { EARTH } from "./config";
 import { directionToUV } from "./utils";
-import { earthOwnsDrag, dragMode } from "./interaction";
+import { earthApproach, earthOwnsDrag, dragMode } from "./interaction";
+import { useLabScroll } from "#/stores/useLabScroll";
+import { LAB } from "#/components/three.js/voyager/config";
 import EarthPins from "./EarthPins";
 
 type Props = {
@@ -269,6 +271,12 @@ const DottedEarth = ({ animate = true, interactive = true }: Props) => {
         .set(SUNPOS[0] - a.x, SUNPOS[1] - a.y, SUNPOS[2] - a.z)
         .transformDirection(camera.matrixWorldInverse);
       dotMatRef.current.uniforms.uLightDir.value.copy(sunDir.current);
+      // Daylight while the Earth is in full view: the night side fades away on the
+      // arrival and back as the Lab pulls away (EARTH.light).
+      const arrived = easeInOutCubic(remap01(earthApproach(), EARTH.light.dayFrom, EARTH.light.dayTo));
+      const leaving = remap01(clamp01(useLabScroll.getState().progress), 0, LAB.earthFadeEnd);
+      const day = arrived * (1 - easeInOutCubic(leaving));
+      dotMatRef.current.uniforms.uAmbient.value = lerp(EARTH.light.ambient, 1, day);
 
       // Level of detail: far away every dot is a 1 px point and each pixel shows the
       // last one drawn there, so draw just enough to keep every pixel covered — at
