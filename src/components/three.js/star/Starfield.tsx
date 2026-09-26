@@ -2,10 +2,11 @@
 
 import { useFrame } from "@react-three/fiber";
 import { useMemo, useRef } from "react";
-import { AdditiveBlending, Color, ShaderMaterial } from "three";
+import { AdditiveBlending, Color, Points, ShaderMaterial } from "three";
 import { STARFIELD } from "./config";
 import { clamp01, remap01 } from "./utils";
 import { useGalaxyScroll } from "#/stores/useGalaxyScroll";
+import { useDrawGate } from "#/components/three.js/scene/useDrawGate";
 
 /** Galaxy-beat window over which this near, camera-pinned field fades out, leaving
  *  only the galaxy's own (world-fixed) stars as the space around you. It lingers
@@ -39,6 +40,9 @@ const pickTint = (): number => {
  */
 const Starfield = ({ count = STARFIELD.count, animate = true }: Props) => {
   const materialRef = useRef<ShaderMaterial>(null);
+  const pointsRef = useRef<Points>(null);
+  // Once it has faded into the galaxy finale its stars output nothing — skip the draw.
+  useDrawGate(pointsRef, () => (materialRef.current?.uniforms.uReveal.value ?? 1) > 0);
 
   const { positions, colors, scales, brights, seeds } = useMemo(() => {
     const positions = new Float32Array(count * 3);
@@ -105,7 +109,7 @@ const Starfield = ({ count = STARFIELD.count, animate = true }: Props) => {
   });
 
   return (
-    <points>
+    <points ref={pointsRef}>
       <bufferGeometry>
         <bufferAttribute
           attach="attributes-position"

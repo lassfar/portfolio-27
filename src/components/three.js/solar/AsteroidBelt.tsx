@@ -8,6 +8,7 @@ import { ASTEROIDS, EARTH_ELEMENTS, orbitRadius, SOLAR_MOTION } from "./config";
 import { systemTime } from "./orbits";
 import { usePlanetTuning } from "./planetTuning";
 import { siblingReveal } from "./reveal";
+import { useDrawGate } from "#/components/three.js/scene/useDrawGate";
 
 const DEG = Math.PI / 180;
 
@@ -88,6 +89,8 @@ const AsteroidBelt = () => {
     []
   );
   useEffect(() => () => material.dispose(), [material]);
+  // Faded out (its shader draws nothing then) — skip the draw.
+  useDrawGate(pointsRef, () => material.uniforms.uReveal.value > 0);
 
   useFrame((state) => {
     const u = material.uniforms;

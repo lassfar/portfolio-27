@@ -11,6 +11,7 @@ import { flyingSunPos } from "#/components/three.js/galaxy/spin";
 import { FLYOUT, GROWTH, LIGHT, PLANET, PLANET_PALETTE, SCATTER } from "./config";
 import { PLANET_STYLE, SOLAR, VOYAGE } from "#/components/three.js/solar/config";
 import { SIMPLEX_NOISE } from "./shaders";
+import { useDrawGate } from "#/components/three.js/scene/useDrawGate";
 
 type Props = {
   /** Particle count (set adaptively by the parent for perf). */
@@ -29,6 +30,10 @@ type Props = {
 const PlanetBody = ({ count = PLANET.count, animate = true }: Props) => {
   const pointsRef = useRef<Points>(null);
   const materialRef = useRef<ShaderMaterial>(null);
+  // Before it assembles and once it has faded out (from the Earth dive on), its shader
+  // discards every dot (no colour, no depth) — skip the draw. (The rings aren't gated:
+  // their invisible grains still write depth, which is part of the explosion's look.)
+  useDrawGate(pointsRef, () => (materialRef.current?.uniforms.uOpacity.value ?? 1) > 0);
   const coreRef = useRef<Mesh>(null); // the solid core under the dots
   const coreMatRef = useRef<MeshBasicMaterial>(null);
 

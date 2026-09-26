@@ -8,8 +8,10 @@ import {
   Float32BufferAttribute,
   Mesh,
   NormalBlending,
+  Points,
   ShaderMaterial,
 } from "three";
+import { useDrawGate } from "#/components/three.js/scene/useDrawGate";
 import { useVoyageScroll } from "#/stores/useVoyageScroll";
 import { easeOutCubic, remap01 } from "#/components/three.js/star/utils";
 import { SOLAR, SUN, SUN_CORE, VOYAGE } from "./config";
@@ -65,6 +67,8 @@ const Sun = ({ animate = true }: Props) => {
   const isSmall = typeof window !== "undefined" && window.innerWidth < 768;
   const version = useSunTuning((s) => s.version); // bumped by the panel's shape values
   const occluderRef = useRef<Mesh>(null);
+  const farRef = useRef<Points>(null);
+  const nearRef = useRef<Points>(null);
 
   const geometry = useMemo(() => {
     const count = isSmall ? SUN.countMobile : SUN.count;
@@ -125,6 +129,10 @@ const Sun = ({ animate = true }: Props) => {
     return { far: dots(-1), near: dots(1) };
   }, [shared]);
   useEffect(() => () => Object.values(materials).forEach((m) => m.dispose()), [materials]);
+  // While the Sun is faded out (before the voyage, the Earth, the Lab) its dots output
+  // nothing — skip the draws.
+  useDrawGate(farRef, () => shared.uReveal.value > 0);
+  useDrawGate(nearRef, () => shared.uReveal.value > 0);
 
   useFrame((_, delta) => {
     if (animate && !SUN.paused) shared.uTime.value += delta;
@@ -162,7 +170,7 @@ const Sun = ({ animate = true }: Props) => {
   // Far side → the old Sun's halo, glowing core + drifting corona → near side.
   return (
     <group>
-      <points geometry={geometry} material={materials.far} renderOrder={-4} frustumCulled={false} />
+      <points ref={farRef} geometry={geometry} material={materials.far} renderOrder={-4} frustumCulled={false} />
       <SunCore
         count={isSmall ? SUN_CORE.countMobile : SUN_CORE.count}
         version={version}
@@ -178,7 +186,7 @@ const Sun = ({ animate = true }: Props) => {
         <sphereGeometry args={[1, 32, 16]} />
         <meshBasicMaterial colorWrite={false} transparent />
       </mesh>
-      <points geometry={geometry} material={materials.near} renderOrder={-1} frustumCulled={false} />
+      <points ref={nearRef} geometry={geometry} material={materials.near} renderOrder={-1} frustumCulled={false} />
     </group>
   );
 };

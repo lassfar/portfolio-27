@@ -10,6 +10,7 @@ import {
   Mesh,
   NormalBlending,
   PerspectiveCamera,
+  Points,
   ShaderMaterial,
   Sphere,
   Vector3,
@@ -20,6 +21,7 @@ import { flyingSunPos } from "#/components/three.js/galaxy/spin";
 import { PLANET_LOD, PLANET_STYLE, PlanetLook, SATURN_LOOK, SOLAR_MOBILE_SCALE } from "./config";
 import { PLANET_FRAG, PLANET_VERT } from "./planetShaders";
 import { planetInspect, usePlanetTuning } from "./planetTuning";
+import { useDrawGate } from "#/components/three.js/scene/useDrawGate";
 
 /** What a dotted body needs (a planet or a moon). Mutable: the dev panel tunes it. */
 export type BodyShape = {
@@ -159,6 +161,10 @@ const DottedBody = ({ body, animate, reveal, spinRate, spinAngle, children }: Pr
   );
   useEffect(() => () => coreMaterial.dispose(), [coreMaterial]);
 
+  // Faded out (its shader draws nothing then) — skip the draw.
+  const pointsRef = useRef<Points>(null);
+  useDrawGate(pointsRef, () => material.uniforms.uReveal.value > 0);
+
   useFrame((state, delta) => {
     const u = material.uniforms;
     if (animate) u.uTime.value += delta;
@@ -173,6 +179,14 @@ const DottedBody = ({ body, animate, reveal, spinRate, spinAngle, children }: Pr
     u.uSunPos.value.set(sx, sy, sz);
     // For the dev panel's inspect camera.
     if (bodyRef.current) planetInspect.bodies[body.id] = { object: bodyRef.current, size: body.size };
+
+    // Faded out: nothing else to update — its dots and core draw nothing. (Its clock and
+    // spin above keep running, so it comes back exactly as it would have.)
+    u.uReveal.value = reveal();
+    if (u.uReveal.value <= 0) {
+      if (coreRef.current) coreRef.current.visible = false;
+      return;
+    }
 
     // Level of detail: its radius on screen (CSS px) → how many dots, and how big.
     const cam = state.camera as PerspectiveCamera;
@@ -243,7 +257,6 @@ const DottedBody = ({ body, animate, reveal, spinRate, spinAngle, children }: Pr
     u.uSpot.value.set(L.spot.lat * DEG, L.spot.lon * DEG, L.spot.size * DEG, L.spot.strength);
     u.uSpotAspect.value = L.spot.aspect;
 
-    u.uReveal.value = reveal();
     // Optional dot-thinning as the camera pulls away (off by default).
     u.uThin.value = PLANET_STYLE.thin * useVoyageScroll.getState().progress;
     // The core sits just under the lowest dots and fades with them.
@@ -270,7 +283,7 @@ const DottedBody = ({ body, animate, reveal, spinRate, spinAngle, children }: Pr
       </mesh>
       <group ref={tiltRef}>
         <group ref={spinRef}>
-          <points geometry={geometry} material={material} frustumCulled={false} />
+          <points ref={pointsRef} geometry={geometry} material={material} frustumCulled={false} />
         </group>
         {children}
       </group>

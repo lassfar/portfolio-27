@@ -14,6 +14,7 @@ import {
   SpriteMaterial,
 } from "three";
 import { SIMPLEX_NOISE } from "#/components/three.js/planet/shaders";
+import { useDrawGate } from "#/components/three.js/scene/useDrawGate";
 import { SUN, SUN_CORE } from "./config";
 
 type Props = {
@@ -139,6 +140,8 @@ const SunCore = ({ count, version, animate, time, reveal, renderOrder }: Props) 
     [time, reveal]
   );
   useEffect(() => () => material.dispose(), [material]);
+  // Faded out with the Sun: its dots output nothing — skip the draw (read at draw time).
+  useDrawGate(pointsRef, () => reveal.value > 0);
 
   useFrame((_, delta) => {
     // Live values (the dev panel tunes SUN_CORE in place).

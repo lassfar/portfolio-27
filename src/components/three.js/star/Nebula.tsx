@@ -14,6 +14,7 @@ import {
   ZOOM,
 } from "./config";
 import { remap01 } from "./utils";
+import { useDrawGate } from "#/components/three.js/scene/useDrawGate";
 
 type Props = {
   /** Particle count (set adaptively by the parent for perf). */
@@ -43,6 +44,8 @@ const Nebula = ({ count = PARTICLES.count, animate = true }: Props) => {
   const materialRef = useRef<ShaderMaterial>(null);
   const glowMatRef = useRef<ShaderMaterial>(null);
   const glowGroupRef = useRef<Group>(null);
+  // Once the star has faded out (after the hero) its dots output nothing — skip the draw.
+  useDrawGate(pointsRef, () => (materialRef.current?.uniforms.uOpacity.value ?? 1) > 0);
 
   const { positions, colors, scales, seeds } = useMemo(() => {
     const positions = new Float32Array(count * 3);
