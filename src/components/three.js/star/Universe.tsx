@@ -14,6 +14,7 @@ import { useAboutScroll } from "#/stores/useAboutScroll";
 import { useSceneRotation } from "#/stores/useSceneRotation";
 import { useSceneIntro } from "#/stores/useSceneIntro";
 import { dragMode } from "#/components/three.js/earth/interaction";
+import { SCENE_MOTION_PRIORITY } from "#/components/three.js/solar/planetTuning";
 
 /**
  * The deterministic scroll/intro yaw the scene reaches by the time Saturn is
@@ -182,7 +183,11 @@ const Universe = ({ animate = true, count, starfieldRef }: Props) => {
     // Publish the resolved scene rotation so the (non-interactive) Saturn mirrors
     // it exactly and stays perfectly in sync with the 3D space.
     useSceneRotation.getState().setRotation(currentRot.current.x, yaw);
+    // (First thing each frame — SCENE_MOTION_PRIORITY — so every reader of it, the
+    // solar system's orbits included, sees this frame's rotation.)
+  }, SCENE_MOTION_PRIORITY);
 
+  useFrame(() => {
     // ── Scroll zoom: center → grow → fly through camera (the burst itself
     //    lives in the nebula's shader) ──
     const progress = useHeroScroll.getState().progress;

@@ -39,6 +39,14 @@ export const planetInspect = {
 /** useFrame priority of everything that moves the bodies: before the rest (the camera). */
 export const ORBIT_PRIORITY = -1;
 
+/**
+ * Before that, the scene's shared motion: the drag / idle rotation (Universe) and the
+ * solar system's flight through the galaxy (Galaxy). Everything that reads them —
+ * the orbits above, the camera, the Saturn, the Earth — then sees this frame's value
+ * (read a frame late, the system trailed the camera: a visible shake).
+ */
+export const SCENE_MOTION_PRIORITY = ORBIT_PRIORITY - 1;
+
 // Snapshot of the code defaults, taken when this module loads (before any tuning).
 const DEFAULTS = structuredClone({
   style: PLANET_STYLE,

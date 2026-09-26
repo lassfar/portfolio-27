@@ -23,6 +23,7 @@ import {
 import { clamp01, easeInOutCubic, easeOutCubic, remap01 } from "#/components/three.js/star/utils";
 import { useGalaxyScroll } from "#/stores/useGalaxyScroll";
 import { useLabScroll } from "#/stores/useLabScroll";
+import { SCENE_MOTION_PRIORITY } from "#/components/three.js/solar/planetTuning";
 import { GALAXY, GALAXY_CENTER, GALAXY_FX, GALAXY_SCALE, GALAXY_SPACE, GALAXY_TILT } from "./config";
 import { buildGalaxyLayers, GalaxyLayers } from "./buildGalaxy";
 import { galaxyTuning } from "./tuning";
@@ -238,9 +239,10 @@ const Galaxy = ({ animate = true }: { animate?: boolean }) => {
   useEffect(() => () => composite.dispose(), [composite]);
 
   // The solar system's flight through the arm (galaxy/spin.ts) — BEFORE every other
-  // frame callback, so everything flying with it (planets, Voyager, camera) reads the
-  // same position this frame.
-  useFrame((_, delta) => advanceSolarFly(delta, animate), -1);
+  // frame callback (SCENE_MOTION_PRIORITY, ahead of the orbits' −1), so everything
+  // flying with it (the Sun and planets, the Earth, the Voyager, the camera) reads
+  // the same position this frame.
+  useFrame((_, delta) => advanceSolarFly(delta, animate), SCENE_MOTION_PRIORITY);
 
   // Scroll-driven state + live-tunable values (normal priority).
   useFrame((_, delta) => {
