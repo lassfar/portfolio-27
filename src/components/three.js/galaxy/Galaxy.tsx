@@ -22,6 +22,7 @@ import {
 } from "three";
 import { clamp01, easeInOutCubic, easeOutCubic, remap01 } from "#/components/three.js/star/utils";
 import { useGalaxyScroll } from "#/stores/useGalaxyScroll";
+import { useLabScroll } from "#/stores/useLabScroll";
 import { GALAXY, GALAXY_CENTER, GALAXY_FX, GALAXY_SCALE, GALAXY_SPACE, GALAXY_TILT } from "./config";
 import { buildGalaxyLayers, GalaxyLayers } from "./buildGalaxy";
 import { galaxyTuning } from "./tuning";
@@ -89,6 +90,7 @@ const Galaxy = ({ animate = true }: { animate?: boolean }) => {
   const compositeRef = useRef<Mesh>(null);
   const gl = useThree((s) => s.gl);
   const camera = useThree((s) => s.camera);
+  const mainScene = useThree((s) => s.scene);
   const dpr = useThree((s) => s.viewport.dpr);
 
   const isSmall = typeof window !== "undefined" && window.innerWidth < 768;
@@ -331,7 +333,32 @@ const Galaxy = ({ animate = true }: { animate?: boolean }) => {
   const bufferSize = useMemo(() => new Vector2(), []);
   const savedClear = useMemo(() => new Color(), []);
   const inverseDrag = useMemo(() => new Quaternion(), []);
+  const warmed = useRef(false);
   useFrame(() => {
+    // Once, midway through the Lab (well before the galaxy first shows), compile the
+    // galaxy's shaders — so its first appearance doesn't stutter. They're compiled with
+    // its render target bound (the variant they're drawn with), all offscreen: nothing
+    // on screen changes. (Jumping straight into the finale compiles on first use, as before.)
+    if (!warmed.current && useLabScroll.getState().progress > 0.5) {
+      warmed.current = true;
+      gl.getDrawingBufferSize(bufferSize);
+      if (target.width !== bufferSize.x || target.height !== bufferSize.y) {
+        target.setSize(bufferSize.x, bufferSize.y);
+      }
+      const prevTarget = gl.getRenderTarget();
+      const prevAlpha = gl.getClearAlpha();
+      const prevAutoClear = gl.autoClear;
+      gl.getClearColor(savedClear);
+      gl.setRenderTarget(target);
+      gl.setClearColor(0x000000, 0);
+      gl.autoClear = false;
+      gl.compile(galaxyScene, camera);
+      if (compositeRef.current) gl.compile(compositeRef.current, camera, mainScene);
+      bloom.render(gl, target); // its passes compile on first use
+      gl.setRenderTarget(prevTarget);
+      gl.setClearColor(savedClear, prevAlpha);
+      gl.autoClear = prevAutoClear;
+    }
     const on = layerOn.current;
     if (compositeRef.current) compositeRef.current.visible = on;
     if (!on) return;
