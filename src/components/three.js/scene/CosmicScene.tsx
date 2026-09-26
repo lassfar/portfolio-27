@@ -40,6 +40,7 @@ import PaleBlueDot from "#/components/three.js/voyager/PaleBlueDot";
 import { LAB_CAM, VOYAGER_POS } from "#/components/three.js/voyager/config";
 import Galaxy from "#/components/three.js/galaxy/Galaxy";
 import GalaxyGui from "#/components/three.js/galaxy/GalaxyGui";
+import PerfProbe from "./PerfProbe";
 import {
   GALAXY_FX,
   GALAXY_ZOOM,
@@ -199,6 +200,8 @@ const CosmicScene = () => {
         <BloomController bloom={bloom} veil={veil} highlightsRef={highlightsRef} />
         <CameraRig starfieldRef={starfieldRef} />
         <InteractionLock />
+        {/* Dev-only (?perf / ?perf=overlay) — renders nothing otherwise. */}
+        <PerfProbe />
       </Canvas>
       {/* Dev tuning panel for the galaxy finale (dev, or `?gui` in production). */}
       <GalaxyGui />
