@@ -37,6 +37,7 @@ const TravelDust = () => {
   const count = isSmall ? D.countMobile : D.count;
 
   const prev = useRef<Vector3 | null>(null);
+  const move = useRef(new Vector3()); // this frame's camera travel (reused, no garbage)
   const dir = useRef(new Vector3(0, 0, 1));
   const axisDir = useRef(new Vector3(0, 0, 1)); // corridor axis — default streak direction
   const heads = useMemo(() => new Float32Array(count * 3), [count]);
@@ -112,8 +113,7 @@ const TravelDust = () => {
 
     // Real per-frame camera travel → drives streak length + opacity.
     if (!prev.current) prev.current = camera.position.clone();
-    const move = camera.position.clone().sub(prev.current);
-    const moveDist = move.length();
+    const moveDist = move.current.subVectors(camera.position, prev.current).length();
     prev.current.copy(camera.position);
 
     // Opacity + streak length both come from the camera's real per-frame travel,
@@ -126,7 +126,7 @@ const TravelDust = () => {
     material.opacity = op;
 
     // Direction: the camera's real velocity when moving, else the corridor axis.
-    if (moveDist > 1e-4) dir.current.copy(move).multiplyScalar(1 / moveDist);
+    if (moveDist > 1e-4) dir.current.copy(move.current).multiplyScalar(1 / moveDist);
     else dir.current.copy(axisDir.current);
     const half = Math.min(D.maxStreak, Math.max(D.minStreak, moveDist * D.streakK)) * 0.5;
     const dx = dir.current.x * half;

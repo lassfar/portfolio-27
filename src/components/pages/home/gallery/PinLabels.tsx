@@ -28,6 +28,15 @@ const PinLabels = () => {
 
   useEffect(() => {
     let raf = 0;
+    // Each label's last shown state — its opacity / pointer-events are only written
+    // when it changes (the positions are still written every frame while shown).
+    const shownBefore: Record<string, boolean> = {};
+    const setShown = (id: string, el: HTMLButtonElement, shown: boolean) => {
+      if (shownBefore[id] === shown) return;
+      shownBefore[id] = shown;
+      el.style.opacity = shown ? "1" : "0";
+      el.style.pointerEvents = shown ? "auto" : "none";
+    };
     const tick = () => {
       raf = requestAnimationFrame(tick);
 
@@ -58,11 +67,9 @@ const PinLabels = () => {
               : s.x - w - OFFSET_X;
           const top = s.y - h - OFFSET_Y;
           boxes.push({ el, cx: left + w / 2, left, top, w, h });
-          el.style.opacity = "1";
-          el.style.pointerEvents = "auto";
+          setShown(loc.id, el, true);
         } else {
-          el.style.opacity = "0";
-          el.style.pointerEvents = "none";
+          setShown(loc.id, el, false);
         }
       }
 

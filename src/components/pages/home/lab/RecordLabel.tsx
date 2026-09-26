@@ -17,19 +17,17 @@ const RecordLabel = () => {
 
   useEffect(() => {
     let raf = 0;
+    let shownBefore: boolean | null = null; // opacity / pointer-events only change with it
     const tick = () => {
       raf = requestAnimationFrame(tick);
       const el = ref.current;
       if (!el) return;
       const s = recordScreen;
-      if (s.shown) {
-        el.style.transform = `translate(calc(${s.x}px - 50%), calc(${s.y}px - 220%))`;
-        el.style.opacity = "1";
-        el.style.pointerEvents = "auto";
-      } else {
-        el.style.opacity = "0";
-        el.style.pointerEvents = "none";
-      }
+      if (s.shown) el.style.transform = `translate(calc(${s.x}px - 50%), calc(${s.y}px - 220%))`;
+      if (s.shown === shownBefore) return;
+      shownBefore = s.shown;
+      el.style.opacity = s.shown ? "1" : "0";
+      el.style.pointerEvents = s.shown ? "auto" : "none";
     };
     raf = requestAnimationFrame(tick);
     return () => cancelAnimationFrame(raf);

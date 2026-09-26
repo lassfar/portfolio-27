@@ -78,22 +78,20 @@ const Voyager = () => {
       easeOutCubic(remap01(lab, LAB.revealStart, LAB.revealEnd)) * (1 - galaxyFade);
     const visible = reveal > 0.001;
 
-    if (rootRef.current) {
-      rootRef.current.visible = visible;
-      // Fade the whole craft in/out via material opacity (materials are declared
-      // `transparent`, so we only set the value here).
-      rootRef.current.traverse((o) => {
-        const mesh = o as Mesh;
-        const mat = mesh.material as Material | Material[] | undefined;
-        if (!mat) return;
-        if (Array.isArray(mat)) mat.forEach((m) => (m.opacity = reveal));
-        else mat.opacity = reveal;
-      });
-    }
+    if (rootRef.current) rootRef.current.visible = visible;
     if (!visible) {
       recordScreen.shown = false;
       return;
     }
+    // Fade the whole craft in/out via material opacity (materials are declared
+    // `transparent`, so we only set the value here) — only while it's shown.
+    rootRef.current?.traverse((o) => {
+      const mesh = o as Mesh;
+      const mat = mesh.material as Material | Material[] | undefined;
+      if (!mat) return;
+      if (Array.isArray(mat)) mat.forEach((m) => (m.opacity = reveal));
+      else mat.opacity = reveal;
+    });
 
     // Turn WITH the cosmos: mirror the shared scene rotation (drag + idle drift),
     // so the craft and the starfield rotate as one — it's part of the space, not
