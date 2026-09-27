@@ -1,5 +1,5 @@
 /**
- * The Lab's experiments — the tiles carried on Voyager's Golden Record, opened
+ * The Lab's experiments — the tiles carried on the Parker Solar Probe's memory card, opened
  * from the DOM experiments panel (ExperimentsPanel).
  *
  * M4a ships these as elegant placeholders. M4b turns the first one ("worlds")

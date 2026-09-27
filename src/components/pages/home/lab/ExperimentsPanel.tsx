@@ -5,8 +5,8 @@ import { useLabStore } from "#/stores/useLabStore";
 import { EXPERIMENTS } from "#/components/three.js/voyager/data";
 
 /**
- * The Lab experiments side panel — "On the Record". Slides in from the right when
- * the Voyager's Golden Record is clicked (mirrors the Earth GalleryPanel shell),
+ * The Lab experiments side panel — "On the Card". Slides in from the right when
+ * the Parker Solar Probe's memory card is clicked (mirrors the Earth GalleryPanel shell),
  * leaving the craft visible beside it. M4a shows the experiments as elegant
  * placeholder tiles; M4b lazy-mounts a live tile's own canvas (the parked worlds
  * scene) via `next/dynamic({ ssr: false })`.
@@ -36,15 +36,16 @@ const ExperimentsPanel = () => {
         </button>
 
         <p className="text-[11px] uppercase tracking-[0.4em] text-peach/80">
-          The Lab · sent into the dark
+          The Lab · flying into the Sun
         </p>
         <h2 className="mt-3 text-4xl font-light leading-[1.05] tracking-tight text-white lg:text-5xl">
-          On the Record
+          On the Card
         </h2>
         <span className="mt-5 block h-px w-16 bg-gradient-to-r from-peach to-transparent" />
         <p className="mt-6 max-w-sm text-[15px] font-light italic leading-relaxed text-gray-slate/70">
-          Small experiments in motion, shaders and code — carried on Voyager’s
-          Golden Record. More will drift into orbit soon.
+          Small experiments in motion, shaders and code — carried on Parker’s
+          memory card, beside 1.1 million names, closer to the Sun than anything
+          we’ve ever built. More will drift into orbit soon.
         </p>
       </header>
 
