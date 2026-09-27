@@ -19,7 +19,7 @@ const meta = {
   argTypes: {
     variant: {
       control: { type: "select" },
-      options: ["primary", "secondary", "light", "outline"],
+      options: ["primary", "secondary", "light", "outline", "text"],
       description: "Visual style of the button",
       table: { defaultValue: { summary: "primary" } },
     },
@@ -32,7 +32,8 @@ const meta = {
     state: {
       control: { type: "select" },
       options: ["default", "text", "filled"],
-      description: "Interaction state — not yet implemented in component (P27-34)",
+      description:
+        "Interaction state — not yet implemented in component (P27-34)",
       table: { defaultValue: { summary: "default" } },
     },
     label: {
@@ -53,7 +54,12 @@ type Story = StoryObj<typeof meta>;
 // ── Variants ────────────────────────────────────────────────────────────────
 
 export const Primary: Story = {
-  args: { label: "Primary", variant: "primary", size: "medium" },
+  args: {
+    label: "Primary",
+    variant: "primary",
+    size: "medium",
+    state: "filled",
+  },
 };
 
 export const Secondary: Story = {
@@ -66,6 +72,16 @@ export const Light: Story = {
 
 export const Outline: Story = {
   args: { label: "Outline", variant: "outline", size: "medium" },
+};
+
+/** With a trailing icon that slides on hover (the navigation assistant uses "→"). */
+export const WithIcon: Story = {
+  args: { label: "The Craft", variant: "primary", size: "medium", icon: "→" },
+};
+
+/** Text only: no border, no background. */
+export const Text: Story = {
+  args: { label: "Text", variant: "text", size: "medium" },
 };
 
 // ── Sizes ────────────────────────────────────────────────────────────────────

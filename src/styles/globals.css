@@ -436,3 +436,130 @@
 .story-timeline.is-phone .story-timeline__tip {
   display: none;
 }
+
+/* ── UI/Button (P27-75): soft frosted glass ─────────────────────────────────────────
+   A light, see-through pill that blurs what's behind it (not dark), a thin ring and a
+   faint top highlight, light-peach text; on hover the ring warms up and a soft glow
+   appears. Each variant only sets its tones (--ui-*). */
+.ui-button {
+  --ui-bg: color-mix(in srgb, var(--color-gray-slate) 10%, transparent);
+  --ui-bg-hover: color-mix(in srgb, var(--color-gray-slate) 16%, transparent);
+  --ui-highlight: color-mix(in srgb, var(--color-gray-slate) 22%, transparent);
+  --ui-text: var(--color-light-peach);
+  --ui-ring: color-mix(in srgb, var(--color-peach) 55%, transparent);
+  --ui-ring-hover: var(--color-peach);
+  --ui-glow: color-mix(in srgb, var(--color-peach) 45%, transparent);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.55em;
+  width: fit-content;
+  border: 0;
+  border-radius: 9999px;
+  font-family: var(--font-sans);
+  font-weight: 500; /* Tailwind's font-medium: reads clearly on the light glass */
+  line-height: 1;
+  white-space: nowrap;
+  color: var(--ui-text);
+  background: var(--ui-bg);
+  box-shadow:
+    inset 0 0 0 1px var(--ui-ring),
+    inset 0 1px 0 var(--ui-highlight),
+    0 0 0 0 transparent;
+  backdrop-filter: blur(16px) saturate(140%);
+  -webkit-backdrop-filter: blur(16px) saturate(140%);
+  cursor: pointer;
+  transition:
+    color 0.3s ease,
+    background-color 0.3s ease,
+    box-shadow 0.4s ease,
+    transform 0.3s ease;
+}
+.ui-button:hover {
+  background: var(--ui-bg-hover);
+  box-shadow:
+    inset 0 0 0 1px var(--ui-ring-hover),
+    inset 0 1px 0 var(--ui-highlight),
+    0 0 26px -4px var(--ui-glow);
+}
+.ui-button:active {
+  transform: scale(0.98);
+}
+.ui-button:focus-visible {
+  outline: none;
+  box-shadow:
+    inset 0 0 0 1px var(--ui-ring-hover),
+    inset 0 1px 0 var(--ui-highlight),
+    0 0 0 3px color-mix(in srgb, var(--color-peach) 35%, transparent);
+}
+.ui-button:disabled {
+  opacity: 0.5;
+  cursor: default;
+  box-shadow: inset 0 0 0 1px var(--ui-ring);
+  transform: none;
+}
+.ui-button__icon {
+  transition: transform 0.3s ease;
+}
+.ui-button:hover .ui-button__icon {
+  transform: translateX(3px);
+}
+
+/* Variants: tones only. */
+.ui-button--outline {
+  --ui-bg: color-mix(in srgb, var(--color-peach) 6%, transparent);
+  --ui-bg-hover: color-mix(in srgb, var(--color-peach) 12%, transparent);
+  --ui-text: var(--color-peach);
+  --ui-ring: color-mix(in srgb, var(--color-peach) 70%, transparent);
+}
+.ui-button--secondary {
+  --ui-text: var(--color-gray-slate);
+  --ui-ring: color-mix(in srgb, var(--color-gray-slate) 30%, transparent);
+  --ui-ring-hover: color-mix(in srgb, var(--color-gray-slate) 70%, transparent);
+  --ui-glow: color-mix(in srgb, var(--color-gray-slate) 22%, transparent);
+}
+.ui-button--light {
+  --ui-bg: color-mix(in srgb, var(--color-light-peach) 16%, transparent);
+  --ui-bg-hover: color-mix(in srgb, var(--color-light-peach) 24%, transparent);
+  --ui-ring: color-mix(in srgb, var(--color-light-peach) 40%, transparent);
+  --ui-ring-hover: var(--color-light-peach);
+  --ui-glow: color-mix(in srgb, var(--color-light-peach) 35%, transparent);
+}
+.ui-button--text {
+  --ui-bg: transparent;
+  --ui-bg-hover: transparent;
+  --ui-highlight: transparent;
+  --ui-text: var(--color-peach);
+  --ui-ring: transparent;
+  --ui-ring-hover: transparent;
+  --ui-glow: transparent;
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+}
+.ui-button--text:hover {
+  --ui-text: var(--color-light-peach);
+}
+
+/* Sizes: pill paddings. */
+/* Letter spacing tightens as the text grows: small text needs a little air, large none. */
+.ui-button--small {
+  padding: 0.5em 1em;
+  font-size: 12px;
+  letter-spacing: 0.02em;
+}
+.ui-button--medium {
+  padding: 0.7em 1.4em;
+  font-size: 14px;
+  letter-spacing: 0.01em;
+}
+.ui-button--large {
+  padding: 0.85em 1.9em;
+  font-size: 16px;
+  letter-spacing: 0;
+}
+.ui-button--text.ui-button--small,
+.ui-button--text.ui-button--medium,
+.ui-button--text.ui-button--large {
+  padding-inline: 0.3em;
+}
+

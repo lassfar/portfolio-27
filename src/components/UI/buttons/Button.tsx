@@ -1,65 +1,42 @@
 import clsx from "clsx";
-import React from "react";
 import { ButtonProps } from "#/components/UI/buttons/button.types";
 
+/**
+ * The site's button (Storybook: UI/Button): a soft-glass pill, a thin peach ring and
+ * light-peach text, glowing softly on hover, like the scene's labels and tooltips.
+ * `variant` sets its tone and `size` its padding; the styles are the `.ui-button` block
+ * in globals.css (design tokens only). The label sits in `.ui-button__label` so it can
+ * be animated (e.g. written in with SplitText).
+ */
 const Button = ({
   label = "Button",
   size = "medium",
-  state = "default",
+  state = "default", // not yet implemented (P27-34)
   variant = "primary",
   type = "button",
+  icon,
   onClick = () => {},
+  className,
   ...props
-}: ButtonProps) => {
-  const getVariant = () => {
-    switch (variant) {
-      case "primary":
-        return "bg-peach text-white border-none";
-      case "secondary":
-        return "bg-white text-peach";
-      case "light":
-        return "bg-light-peach text-dark-peach";
-      case "outline":
-        return "border-peach bg-transparent text-peach";
-      default:
-        return "bg-peach text-white";
-    }
-  };
-
-  const getSize = () => {
-    switch (size) {
-      case "medium":
-        return `px-4 py-1 text-normal ${
-          variant === "outline" ? "border border-solid border-1" : ""
-        }`;
-      case "small":
-        return `px-2 py-1 bg-peach text-sm ${
-          variant === "outline" ? "border border-solid border-0.5" : ""
-        }`;
-      case "large":
-        return `px-10 py-3 text-xl font-bold tracking-tighter ${
-          variant === "outline" ? "border border-solid border-2" : ""
-        }`;
-      default:
-        return "px-4 py-2 text-normal";
-    }
-  };
-
-  return (
-    <button
-      {...props}
-      onClick={onClick}
-      className={clsx(
-        "flex items-center gap-1 w-fit rounded-md cursor-pointer",
-        getVariant(),
-        getSize(),
-        props.className ? props.className : ""
-      )}
-      type={type}
-    >
-      {label}
-    </button>
-  );
-};
+}: ButtonProps) => (
+  <button
+    {...props}
+    type={type}
+    onClick={onClick}
+    className={clsx(
+      "ui-button",
+      `ui-button--${variant}`,
+      `ui-button--${size}`,
+      className,
+    )}
+  >
+    <span className="ui-button__label">{label}</span>
+    {icon && (
+      <span className="ui-button__icon" aria-hidden="true">
+        {icon}
+      </span>
+    )}
+  </button>
+);
 
 export default Button;
