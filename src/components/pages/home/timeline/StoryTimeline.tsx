@@ -1,18 +1,22 @@
 "use client";
 
-import gsap from "gsap";
-import { ScrollSmoother } from "gsap/all";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { mpAt } from "#/components/three.js/star/config";
-import { journeyTrigger } from "#/stores/journeyTrigger";
-import { isScrollLocked } from "#/stores/scrollLock";
+import {
+  glideToJourney,
+  stopGlideOnInput,
+} from "#/components/pages/home/scroll/glide";
 import { useJourneyScroll } from "#/stores/useJourneyScroll";
 import { useTimelineTuning } from "#/stores/useTimelineTuning";
+import { PHASE_STOPS } from "#/components/pages/home/phase-nav/config";
 import { STORY_CHAPTERS, TIMELINE } from "./config";
 import { chapterAt, chapterPositions, fillAt, railLayout } from "./layout";
 import StoryTimelineRail from "./StoryTimelineRail";
-import type { StoryTimelineRest, StoryTimelineToast } from "./StoryTimeline.types";
+import type {
+  StoryTimelineRest,
+  StoryTimelineToast,
+} from "./StoryTimeline.types";
 
 /**
  * The story timeline, live: it follows the pinned journey's scroll (useJourneyScroll).
@@ -22,7 +26,7 @@ import type { StoryTimelineRest, StoryTimelineToast } from "./StoryTimeline.type
  *   then hides if TIMELINE.hideAfter is set.
  * - A new chapter's name pops up by its star (TIMELINE.nameOnChange; always on phones,
  *   which have no hover).
- * - Clicking a star glides the smooth scroll to that chapter.
+ * - Clicking a star glides the smooth scroll to that chapter's resting point.
  * - The dev panel (TimelineGui) edits TIMELINE live; its `rev` re-renders this.
  *
  * Portalled to the body, like the Earth gallery and the Lab: the page content lives in
@@ -46,7 +50,8 @@ const StoryTimeline = () => {
   useTimelineTuning((s) => s.rev); // re-render when the dev panel edits TIMELINE in place
   const { minGap, railLength } = TIMELINE;
   const { horizontal } = railLayout(TIMELINE);
-  const railPx = ((horizontal ? viewport.width : viewport.height) * railLength) / 100;
+  const railPx =
+    ((horizontal ? viewport.width : viewport.height) * railLength) / 100;
   const positions = useMemo(
     () => chapterPositions(STORY_CHAPTERS, minGap, railPx),
     [minGap, railPx],
@@ -81,14 +86,18 @@ const StoryTimeline = () => {
       const fill = fillRef.current;
       if (fill) {
         fill.style.width = fill.style.height = ""; // the direction may have changed (dev panel)
-        fill.style[horizontal ? "width" : "height"] = `${fillAt(STORY_CHAPTERS, positions, mp) * 100}%`;
+        fill.style[horizontal ? "width" : "height"] =
+          `${fillAt(STORY_CHAPTERS, positions, mp) * 100}%`;
       }
       setCurrent(chapterAt(STORY_CHAPTERS, mp));
       setShown(mp >= mpAt(TIMELINE.showAfter));
       setRest("awake");
       window.clearTimeout(dimTimer);
       window.clearTimeout(hideTimer);
-      dimTimer = window.setTimeout(() => setRest("dim"), TIMELINE.dimAfter * 1000);
+      dimTimer = window.setTimeout(
+        () => setRest("dim"),
+        TIMELINE.dimAfter * 1000,
+      );
       if (TIMELINE.hideAfter > 0) {
         hideTimer = window.setTimeout(
           () => setRest("hidden"),
@@ -121,38 +130,20 @@ const StoryTimeline = () => {
   useEffect(() => () => window.clearTimeout(toastTimer.current), []);
 
   // A wheel, touch or key press takes the scroll back from a glide.
-  useEffect(() => {
-    const stop = () => {
-      const smoother = ScrollSmoother.get();
-      if (smoother) gsap.killTweensOf(smoother, "scrollTop");
-    };
-    window.addEventListener("wheel", stop, { passive: true });
-    window.addEventListener("touchstart", stop, { passive: true });
-    window.addEventListener("keydown", stop);
-    return () => {
-      window.removeEventListener("wheel", stop);
-      window.removeEventListener("touchstart", stop);
-      window.removeEventListener("keydown", stop);
-    };
-  }, []);
+  useEffect(stopGlideOnInput, []);
 
-  // Glide to a chapter, landing just inside it (not while a panel holds the scroll).
+  // Glide to a chapter (not while a panel holds the scroll): to its resting point (the
+  // phase buttons' — Saturn built, the Earth up close, the probe's close-up…), so you
+  // arrive on the chapter itself, not the tail of the one before; else just inside it.
   const glideTo = useCallback((index: number) => {
-    const trigger = journeyTrigger.current;
-    if (!trigger || isScrollLocked()) return;
-    const mp = index === 0 ? 0 : STORY_CHAPTERS[index].start + mpAt(TIMELINE.glideInside);
-    const y = trigger.start + mp * (trigger.end - trigger.start);
-    const smoother = ScrollSmoother.get();
-    if (!smoother) {
-      window.scrollTo({ top: y, behavior: "smooth" });
-      return;
-    }
-    gsap.to(smoother, {
-      scrollTop: y,
-      duration: TIMELINE.glideSeconds,
-      ease: "power3.inOut",
-      overwrite: true,
-    });
+    const chapter = STORY_CHAPTERS[index];
+    const rest = PHASE_STOPS.find((s) => s.id === chapter.id);
+    const mp = rest
+      ? rest.target
+      : index === 0
+        ? 0
+        : chapter.start + mpAt(TIMELINE.glideInside);
+    glideToJourney(mp, TIMELINE.glideSeconds);
   }, []);
 
   if (!mounted || reduced) return null;

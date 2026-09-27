@@ -37,6 +37,15 @@ export function galaxyProgressAt(mp: number): number {
 }
 
 /**
+ * Where the finale rests on the whole solar system: the master progress [start, end] of
+ * the hold between the pull-out and the flight to the galaxy.
+ */
+export function solarRestRange(): [number, number] {
+  const at = (u: number) => JOURNEY.galaxyStart + (u / TOTAL) * (JOURNEY.galaxyEnd - JOURNEY.galaxyStart);
+  return [at(P.toSolar), at(P.toSolar + P.solarHold)];
+}
+
+/**
  * The inverse (for the dev panel's "jump to"): the master progress where the galaxy
  * progress reaches `g`. At the solar system itself it lands mid-hold.
  */

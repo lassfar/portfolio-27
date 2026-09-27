@@ -8,15 +8,16 @@ import { buildSunPanel } from "#/components/three.js/solar/SunGui";
 import { buildStarsPanel } from "#/components/three.js/star/StarsGui";
 import { buildParkerPanel } from "#/components/three.js/parker/ParkerGui";
 import { buildTimelinePanel } from "#/components/pages/home/timeline/TimelineGui";
+import { buildPhaseNavPanel } from "#/components/pages/home/phase-nav/PhaseNavGui";
 import { GALAXY, GALAXY_FX, GALAXY_SPACE, updateGalaxyPlacement } from "./config";
 import { journeyAtGalaxy } from "./pace";
 import { galaxyTuningSnapshot, rebuildGalaxy, resetGalaxyTuning } from "./tuning";
 
 /**
- * Dev tuning panel — six sections: the STARS (star/StarsGui.ts), the SUN
+ * Dev tuning panel — seven sections: the STARS (star/StarsGui.ts), the SUN
  * (solar/SunGui.ts), the PLANETS (solar/PlanetGui.ts), the PARKER SOLAR PROBE
- * (parker/ParkerGui.ts), the STORY TIMELINE (pages/home/timeline/TimelineGui.ts) and the
- * GALAXY finale.
+ * (parker/ParkerGui.ts), the STORY TIMELINE (pages/home/timeline/TimelineGui.ts), the
+ * GALAXY finale and the NAVIGATION ASSISTANT (pages/home/phase-nav/PhaseNavGui.ts).
  *
  * The galaxy section is the same lil-gui panel (folders + labels)
  * as `docs/prototypes/galaxy-realistic.html` and `galaxy-zoom-realistic.html`, driving
@@ -56,6 +57,7 @@ const GalaxyGui = () => {
       buildTimelinePanel(panel.addFolder("⋮ Story timeline"));
       const galaxy = panel.addFolder("✦ Galaxy finale");
       buildPanel(galaxy);
+      buildPhaseNavPanel(panel.addFolder("◉ Navigation assistant"));
       // One section open at a time keeps the panel short.
       sun.close();
       galaxy.close();
