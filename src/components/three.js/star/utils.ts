@@ -43,3 +43,14 @@ export const easeOutCubic = (t: number): number => 1 - Math.pow(1 - t, 3);
  */
 export const easeInOutCubic = (t: number): number =>
   t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2;
+
+/**
+ * easeInOutCubic that ARRIVES STILL MOVING: the same gentle start, but its speed at the
+ * end is `end` × its average speed (0 = easeInOutCubic) — for a move that hands
+ * straight over to the next one, with no pause between them.
+ */
+export const easeInOutCubicTo = (t: number, end: number): number => {
+  if (t < 0.5) return 4 * t * t * t;
+  const p = (3 - end) / (1 - end);
+  return 1 - end * (1 - t) - 0.5 * (1 - end) * Math.pow(2, p) * Math.pow(1 - t, p);
+};

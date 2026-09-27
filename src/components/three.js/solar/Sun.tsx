@@ -15,7 +15,7 @@ import { useDrawGate } from "#/components/three.js/scene/useDrawGate";
 import { useVoyageScroll } from "#/stores/useVoyageScroll";
 import { easeOutCubic, remap01 } from "#/components/three.js/star/utils";
 import { SOLAR, SUN, SUN_CORE, VOYAGE } from "./config";
-import { finaleReturn } from "./reveal";
+import { sunReturn } from "./reveal";
 import { DOT_FRAG, DOT_VERT } from "./sunShaders";
 import SunCore from "./SunCore";
 import { useSunTuning } from "./tuning";
@@ -155,12 +155,13 @@ const Sun = ({ animate = true }: Props) => {
       u.uEdge.value.set(SUN.edge);
     }
     const voyage = useVoyageScroll.getState().progress;
-    // Fade in with the system, then fade OUT as we dive to Earth — then fade BACK in
-    // for the galaxy finale (the pull-out re-reveals the whole real system).
+    // Fade in with the system, then fade OUT as we dive to Earth — then fade BACK in as
+    // we leave for the Parker Solar Probe (fading again as the Lab focuses on it, if
+    // PARKER_FOCUS.fadeSun), and for the galaxy finale (sunReturn).
     const earthFade = remap01(voyage, VOYAGE.earthFadeStart, VOYAGE.earthFadeEnd);
     shared.uReveal.value =
       easeOutCubic(remap01(voyage, SOLAR.revealStart, SOLAR.revealEnd)) *
-      (1 - earthFade * (1 - finaleReturn()));
+      (1 - earthFade * (1 - sunReturn()));
     if (occluderRef.current) {
       occluderRef.current.visible = shared.uReveal.value > 0.02;
       occluderRef.current.scale.setScalar(SUN.radius * 0.97);

@@ -10,6 +10,7 @@ import { BLOOM, CAMERA, JOURNEY, PARTICLES } from "#/components/three.js/star/co
 import {
   clamp01,
   easeInOutCubic,
+  easeInOutCubicTo,
   lerp,
   remap01,
 } from "#/components/three.js/star/utils";
@@ -34,10 +35,11 @@ import { ORBIT_PRIORITY, planetInspect } from "#/components/three.js/solar/plane
 import EarthMoon from "#/components/three.js/solar/EarthMoon";
 import DottedEarth from "#/components/three.js/earth/DottedEarth";
 import { EARTH_CAM } from "#/components/three.js/earth/config";
-import Voyager from "#/components/three.js/voyager/Voyager";
-import TravelDust from "#/components/three.js/voyager/TravelDust";
-import PaleBlueDot from "#/components/three.js/voyager/PaleBlueDot";
-import { LAB_CAM, VOYAGER_POS } from "#/components/three.js/voyager/config";
+import ParkerProbe from "#/components/three.js/parker/ParkerProbe";
+import { LAB_CAM } from "#/components/three.js/voyager/config";
+import { parkerOffset } from "#/components/three.js/parker/orbit";
+import { parkerViewDir } from "#/components/three.js/parker/pose";
+import { METRE, PARKER_CAM } from "#/components/three.js/parker/config";
 import Galaxy from "#/components/three.js/galaxy/Galaxy";
 import GalaxyGui from "#/components/three.js/galaxy/GalaxyGui";
 import PerfProbe from "./PerfProbe";
@@ -48,7 +50,7 @@ import {
 import { SoftHighlights, SoftHighlightsEffect } from "./SoftHighlights";
 import { VeilPass } from "./VeilPass";
 import { cosmicVeil } from "#/stores/cosmicVeil";
-import { flyingSunPos, flyOffset, galaxyCenterPos } from "#/components/three.js/galaxy/spin";
+import { flyingSunPos, galaxyCenterPos } from "#/components/three.js/galaxy/spin";
 import { frameGalaxy } from "#/components/three.js/galaxy/framing";
 import { useAboutScroll } from "#/stores/useAboutScroll";
 import { useVoyageScroll } from "#/stores/useVoyageScroll";
@@ -57,7 +59,7 @@ import { useGalaxyScroll } from "#/stores/useGalaxyScroll";
 import { useSceneRotation } from "#/stores/useSceneRotation";
 import { useSaturnAnchor } from "#/stores/useSaturnAnchor";
 import { useEarthAnchor } from "#/stores/useEarthAnchor";
-import { useVoyagerAnchor } from "#/stores/useVoyagerAnchor";
+import { useParkerAnchor } from "#/stores/useParkerAnchor";
 import { useGalleryStore } from "#/stores/useGalleryStore";
 import { useLabStore } from "#/stores/useLabStore";
 import { setScrollLock } from "#/stores/scrollLock";
@@ -126,7 +128,8 @@ const CosmicScene = () => {
       <Canvas
         // far is large enough for the galaxy finale, where the camera pulls out to
         // ~1300 world units to frame the whole (scaled-up) spiral. near stays close
-        // so the readable near-field beats (Voyager, Earth) keep their depth detail.
+        // so the readable near-field beats (the Earth) keep their depth detail. (The
+        // real-size Parker Solar Probe is drawn in scaled space — see ParkerProbe.)
         camera={{
           position: [0, 0, CAMERA.z],
           fov: CAMERA.fov,
@@ -170,31 +173,22 @@ const CosmicScene = () => {
           <EarthMoon animate={animate} />
         </EarthMember>
 
-        {/* The Lab — Voyager 1. A SOLID, lit craft (the one man-made object among
-          the particle worlds), so it needs the scene's only real lights. The
-          camera pulls back from Earth and flies to it (CameraRig segment 3). */}
+        {/* The Lab — the Parker Solar Probe (it replaced Voyager 1 in P27-72), at its
+          real size on its real orbit. A SOLID, lit craft (the one man-made object among
+          the particle worlds): a soft ambient + a cool fill here, and its own sunlight
+          (a directional light from the Sun, in ParkerProbe). The camera flies from the
+          Earth and dives to it (CameraRig segment 3). */}
         <ambientLight intensity={0.6} color="#50505a" />
-        <directionalLight
-          position={[-4, 5, 6]}
-          intensity={1.6}
-          color="#fff0dd"
-        />
         <directionalLight
           position={[5, -2, -4]}
           intensity={0.4}
           color="#9ec2ff"
         />
-        <VoyagerMember>
-          <Voyager />
-        </VoyagerMember>
-
-        {/* The dust rush past the camera on the Earth→Voyager trip, and the lonely
-          pale-blue Earth left far behind (Voyager's real "Pale Blue Dot"). */}
-        <TravelDust />
-        <PaleBlueDot />
+        <ParkerMember />
+        <ParkerProbe />
 
         {/* The Galaxy finale — ONE exponential pull-out (CameraRig segment 4). The
-          camera backs off the Voyager; the REAL solar system (Sun + planets, above)
+          camera backs off the Parker Solar Probe; the REAL solar system (Sun + planets, above)
           fades back in and frames up "fully visible", then shrinks as we keep flying
           out through the galaxy's own (fixed-size) stars until the whole brand-tinted
           spiral resolves around it. The galaxy is huge + world-fixed and centred so
@@ -319,25 +313,69 @@ const EarthMember = ({ children }: { children: ReactNode }) => {
 };
 
 /**
- * Voyager sits at a FIXED world position (VOYAGER_POS) — the empty origin — and
- * publishes it to `useVoyagerAnchor` so the CameraRig can fly to it in the Lab
- * beat. Unlike the orbiting Saturn/Earth it doesn't move; only the camera does.
- * At the finale it travels WITH the solar system as it flies through the galaxy
- * (`flyOffset` — zero whenever the Lab is on screen).
+ * The Parker Solar Probe on its REAL orbit (parker/orbit.ts: JPL elements, its true
+ * position right now, at its real speed), turned by the shared scene rotation like
+ * the planets and based off the Sun's LIVE position so it flies with the system in the
+ * finale. Publishes to `useParkerAnchor`: the CameraRig flies to it, the probe draws
+ * itself there (see ParkerProbe — it's real size, so it places itself each frame).
  */
-const VoyagerMember = ({ children }: { children: ReactNode }) => {
-  const posRef = useRef<Group>(null);
+const ParkerMember = () => {
+  const offset = useRef(new Vector3());
+  const euler = useRef(new Euler());
   useFrame(() => {
-    if (!posRef.current) return;
-    const [ox, oy, oz] = flyOffset();
-    const x = VOYAGER_POS[0] + ox;
-    const y = VOYAGER_POS[1] + oy;
-    const z = VOYAGER_POS[2] + oz;
-    posRef.current.position.set(x, y, z);
-    useVoyagerAnchor.getState().set(x, y, z);
-  });
-  return <group ref={posRef}>{children}</group>;
+    const r = useSceneRotation.getState();
+    parkerOffset(offset.current).applyEuler(euler.current.set(r.pitch, r.yaw, 0));
+    const sun = flyingSunPos();
+    useParkerAnchor
+      .getState()
+      .set(sun[0] + offset.current.x, sun[1] + offset.current.y, sun[2] + offset.current.z);
+  }, ORBIT_PRIORITY);
+  return null;
 };
+
+/**
+ * Bend a straight camera path a → b away from the Sun: find where the path passes
+ * closest to it and, if that's nearer than `clear`, push the camera out there — in ONE
+ * fixed direction (Sun → that point), by a smooth bump that is 0 at the start and at
+ * the arrival — so the camera arcs past the Sun instead of swinging round it. `u` is
+ * how far along the path the camera is (0..1). Adds the push to `out`. `fromClose`:
+ * the path starts a few metres from the real-size probe, where even a slight push
+ * would be huge — so the bump eases in from the start (smoothstep either side of the
+ * closest point), nil next to the probe.
+ */
+function bendAroundSun(
+  a: readonly [number, number, number],
+  b: readonly [number, number, number],
+  u: number,
+  clear: number,
+  out: [number, number, number],
+  fromClose = false,
+) {
+  const [sx, sy, sz] = flyingSunPos();
+  const [ax, ay, az] = a;
+  const dx = b[0] - ax;
+  const dy = b[1] - ay;
+  const dz = b[2] - az;
+  const along = clamp01(((sx - ax) * dx + (sy - ay) * dy + (sz - az) * dz) / (dx * dx + dy * dy + dz * dz || 1));
+  const cx = ax + dx * along - sx;
+  const cy = ay + dy * along - sy;
+  const cz = az + dz * along - sz;
+  const closest = Math.hypot(cx, cy, cz);
+  if (closest < clear && along > 0 && along < 1) {
+    const inv = closest > 1e-3 ? 1 / closest : 0;
+    const [nx, ny, nz] = closest > 1e-3 ? [cx * inv, cy * inv, cz * inv] : [0, 1, 0];
+    // (u/along)^m · ((1−u)/(1−along))² — flat at the start, 1 at `along`, 0 on arrival
+    // (fromClose: a smoothstep on either side of `along`).
+    const t = u < along ? u / along : (1 - u) / (1 - along);
+    const bump = fromClose
+      ? t * t * (3 - 2 * t)
+      : Math.pow(u / along, (2 * along) / (1 - along)) * Math.pow((1 - u) / (1 - along), 2);
+    const lift = (clear - closest) * bump;
+    out[0] += nx * lift;
+    out[1] += ny * lift;
+    out[2] += nz * lift;
+  }
+}
 
 /**
  * The camera does ALL the scroll work, in FOUR chained segments, each a pure
@@ -348,31 +386,25 @@ const VoyagerMember = ({ children }: { children: ReactNode }) => {
  *      close-up, flies OUT — up + back — easing its aim to the SUN.
  *   2. wide → Earth    (useVoyageScroll flyoutEnd … 1): dives onto the live Earth,
  *      filling the view by perspective while the system fades.
- *   3. Earth → Voyager (useLabScroll): one smooth fly to the readable Voyager pose.
- *   4. Voyager → Galaxy (useGalaxyScroll): ONE exponential pull-out — the finale.
- *      Distance grows exponentially from the Voyager framing out to `dEnd`. The aim
- *      pans in two legs — Voyager → the Sun (framing the whole REAL solar system,
- *      which fades back in), then Sun → the galaxy centre while the view climbs above
- *      the disc — so the solar system shrinks to a speck as the whole galaxy resolves
- *      around it. Derived to start EXACTLY on the segment-3 Voyager pose.
+ *   3. Earth → the Parker Solar Probe (useLabScroll), NASA "Eyes" style: a pull
+ *      back to the inner solar system, then a zoom onto the real-size probe, ending
+ *      in its 3/4 close-up.
+ *   4. Parker → Galaxy (useGalaxyScroll): the finale, in two legs — the zoom reversed,
+ *      backing away from the probe to the solar-system framing (the whole REAL solar
+ *      system fading back in); then ONE exponential pull-out out to `dEnd`, the aim
+ *      panning the Sun → the galaxy centre while the view climbs above the disc — so
+ *      the solar system shrinks to a speck as the whole galaxy resolves around it.
+ *      It starts EXACTLY on the segment-3 close-up.
  */
 
-// ── Segment-4 exponential-zoom constants (derived so the beat opens on the Voyager
-// rest pose, then flies out to frame the galaxy). Computed once, at module load. ──
-const G_LOOK_START: [number, number, number] = [
-  VOYAGER_POS[0] + LAB_CAM.look[0],
-  VOYAGER_POS[1] + LAB_CAM.look[1],
-  VOYAGER_POS[2] + LAB_CAM.look[2],
-];
-const _gCamStart = [
-  VOYAGER_POS[0] + LAB_CAM.offset[0],
-  VOYAGER_POS[1] + LAB_CAM.offset[1],
-  VOYAGER_POS[2] + LAB_CAM.offset[2],
-];
+// ── Segment-4 exponential-zoom constants. Computed once, at module load. ──
+// The finale's reference start: the Voyager-era Lab framing (LAB_CAM) the galaxy's
+// scale was tuned to — its distance and ¾ direction. (The finale now opens on the Parker
+// Solar Probe's close-up and pulls back out to the solar-system framing — PARKER_CAM.pullOut.)
 const _gStartVec = [
-  _gCamStart[0] - G_LOOK_START[0],
-  _gCamStart[1] - G_LOOK_START[1],
-  _gCamStart[2] - G_LOOK_START[2],
+  LAB_CAM.offset[0] - LAB_CAM.look[0],
+  LAB_CAM.offset[1] - LAB_CAM.look[1],
+  LAB_CAM.offset[2] - LAB_CAM.look[2],
 ];
 const G_D_START = Math.hypot(_gStartVec[0], _gStartVec[1], _gStartVec[2]);
 const G_START_DIR: [number, number, number] = [
@@ -392,6 +424,74 @@ const G_END_DIR: [number, number, number] = [
 ];
 const G_Z_RATIO = GALAXY_ZOOM.dEnd / G_D_START;
 const _inspectPos = new Vector3(); // the dev inspect camera's target (scratch)
+const _closeDir = new Vector3(); // the Parker close-up's direction (scratch)
+const _fromDir = new Vector3(); // the Lab turn's view directions (scratch)
+const _toDir = new Vector3();
+
+/**
+ * Turn the unit view direction `from` toward `to` by the share `t`, at a steady
+ * angular rate (a true rotation, not a slide of the aim point). Writes into `from`.
+ */
+function turnToward(from: Vector3, to: Vector3, t: number) {
+  from.normalize();
+  to.normalize();
+  const angle = Math.acos(Math.min(1, Math.max(-1, from.dot(to))));
+  if (angle < 1e-6 || t <= 0) return from;
+  if (t >= 1) return from.copy(to);
+  const sin = Math.sin(angle);
+  const a = Math.sin((1 - t) * angle) / sin;
+  const b = Math.sin(t * angle) / sin;
+  return from.multiplyScalar(a).addScaledVector(to, b).normalize();
+}
+
+/**
+ * A smooth curve through the points (xs, ys) that never overshoots them (monotone
+ * cubic, Fritsch–Carlson): its slope is continuous, and 0 at both ends — so a motion
+ * driven by it speeds up and slows down gently between keyframes, and starts and stops
+ * at rest.
+ */
+function monotoneCurve(x: number, xs: readonly number[], ys: readonly number[]): number {
+  const n = xs.length;
+  if (x <= xs[0]) return ys[0];
+  if (x >= xs[n - 1]) return ys[n - 1];
+  const d: number[] = [];
+  for (let i = 0; i < n - 1; i++) d.push((ys[i + 1] - ys[i]) / (xs[i + 1] - xs[i]));
+  const m: number[] = [0];
+  for (let i = 1; i < n - 1; i++) m.push(d[i - 1] * d[i] <= 0 ? 0 : (d[i - 1] + d[i]) / 2);
+  m.push(0);
+  for (let i = 0; i < n - 1; i++) {
+    if (d[i] === 0) {
+      m[i] = 0;
+      m[i + 1] = 0;
+      continue;
+    }
+    const a = m[i] / d[i];
+    const b = m[i + 1] / d[i];
+    const s2 = a * a + b * b;
+    if (s2 > 9) {
+      const k = 3 / Math.sqrt(s2);
+      m[i] = k * a * d[i];
+      m[i + 1] = k * b * d[i];
+    }
+  }
+  let k = 0;
+  while (x > xs[k + 1]) k++;
+  const h = xs[k + 1] - xs[k];
+  const t = (x - xs[k]) / h;
+  const t2 = t * t;
+  const t3 = t2 * t;
+  return (
+    (2 * t3 - 3 * t2 + 1) * ys[k] +
+    (t3 - 2 * t2 + t) * h * m[k] +
+    (-2 * t3 + 3 * t2) * ys[k + 1] +
+    (t3 - t2) * h * m[k + 1]
+  );
+}
+
+/** The Lab overview's direction from the Sun: the voyage's wide view (angled from above). */
+const _overDir = new Vector3(0, FLYOUT.rise, CAMERA.z + FLYOUT.distance)
+  .sub(new Vector3(...SUNPOS))
+  .normalize();
 
 const CameraRig = ({
   starfieldRef,
@@ -399,7 +499,6 @@ const CameraRig = ({
   starfieldRef: RefObject<Group | null>;
 }) => {
   const camera = useThree((s) => s.camera);
-
   useFrame(() => {
     const a = useSaturnAnchor.getState();
     const voyage = clamp01(useVoyageScroll.getState().progress);
@@ -445,55 +544,95 @@ const CameraRig = ({
       lz = lerp(lz, e.z, u);
 
       // The Earth is the 3rd planet, close to the Sun: when it's behind the Sun, the
-      // straight path would fly through it. Find where the path passes closest to the
-      // Sun and, if that's nearer than sunClear, bend the path away from it there — in
-      // ONE fixed direction (Sun → that point), by a smooth bump that is 0 at the start
-      // and at the arrival — so the camera arcs past the Sun instead of swinging round it.
-      const [sx, sy, sz] = flyingSunPos();
-      const dx = bx - ax;
-      const dy = by - ay;
-      const dz = bz - az;
-      const along = clamp01(((sx - ax) * dx + (sy - ay) * dy + (sz - az) * dz) / (dx * dx + dy * dy + dz * dz || 1));
-      const cx = ax + dx * along - sx;
-      const cy = ay + dy * along - sy;
-      const cz = az + dz * along - sz;
-      const closest = Math.hypot(cx, cy, cz);
-      const clear = EARTH_CAM.sunClear;
-      if (closest < clear && along > 0 && along < 1) {
-        const inv = closest > 1e-3 ? 1 / closest : 0;
-        const [nx, ny, nz] = closest > 1e-3 ? [cx * inv, cy * inv, cz * inv] : [0, 1, 0];
-        // (u/along)^m · ((1−u)/(1−along))² — flat at the start, 1 at `along`, 0 on arrival.
-        const bump =
-          Math.pow(u / along, (2 * along) / (1 - along)) * Math.pow((1 - u) / (1 - along), 2);
-        const lift = (clear - closest) * bump;
-        px += nx * lift;
-        py += ny * lift;
-        pz += nz * lift;
-      }
+      // straight path would fly through it — so it bends round the Sun (bendAroundSun).
+      const bent: [number, number, number] = [px, py, pz];
+      bendAroundSun([ax, ay, az], [bx, by, bz], u, EARTH_CAM.sunClear, bent);
+      [px, py, pz] = bent;
     }
 
-    // ── Segment 3: one smooth fly from Earth straight to the readable Voyager
-    // pose. voyage is clamped at 1 here (Earth-close pose from segment 2).
-    // easeInOutCubic mirrors the Earth ARRIVAL: velocity is 0 at BOTH ends, so the
-    // camera eases GENTLY out of the resting dwell (a soft leave, no abrupt launch)
-    // and still glides to REST at the Voyager. Peak speed is unchanged — it just
-    // sits mid-flight, so the dust rush still crests between the two, not at t=0.
+    // ── Segment 3: the Lab — Earth → the Parker Solar Probe, NASA "Eyes" style (see
+    // PARKER_CAM): a steady zoom OUT from the full Earth view to an overview of the
+    // inner solar system (angled from above, the view turning from the Earth to the Sun),
+    // arriving still moving — no hold, like the Saturn fly-out into the Earth dive; the
+    // PSP marked on its orbit. Then the zoom into the real-size probe
+    // (~0.00000008 units): the camera flies straight at it, its distance following one
+    // smooth curve through PARKER_CAM.zoomKeys — normal speed while the scene is on screen,
+    // fast through the empty stretch (only its tooltip), slow for the arrival — swinging
+    // round to the 3/4 close-up side (the solar system fading to focus on it). A pure
+    // function of useLabScroll + the live anchors → reverses on scroll-up.
     const lab = clamp01(useLabScroll.getState().progress);
     if (lab > 0) {
-      const t = easeInOutCubic(lab);
-      const v = useVoyagerAnchor.getState();
-      px = lerp(px, v.x + LAB_CAM.offset[0], t);
-      py = lerp(py, v.y + LAB_CAM.offset[1], t);
-      pz = lerp(pz, v.z + LAB_CAM.offset[2], t);
-      lx = lerp(lx, v.x + LAB_CAM.look[0], t);
-      ly = lerp(ly, v.y + LAB_CAM.look[1], t);
-      lz = lerp(lz, v.z + LAB_CAM.look[2], t);
+      const C = PARKER_CAM;
+      const pk = useParkerAnchor.getState();
+      const sun = flyingSunPos();
+      const earth = useEarthAnchor.getState();
+      // The overview: the Sun centred, angled from above.
+      const over: [number, number, number] = [
+        sun[0] + _overDir.x * C.overview,
+        sun[1] + _overDir.y * C.overview,
+        sun[2] + _overDir.z * C.overview,
+      ];
+      // 1. Pull back from the Earth pose (segment 2): a steady zoom out — the distance
+      //    from the Earth grows by the same factor each step (the Earth arrival, reversed).
+      const home: [number, number, number] = [px, py, pz];
+      const back = easeInOutCubicTo(remap01(lab, C.pullBack[0], C.pullBack[1]), C.pullBackArrive);
+      const dE0 = Math.max(Math.hypot(px - earth.x, py - earth.y, pz - earth.z), 1e-3);
+      const dE1 = Math.hypot(over[0] - earth.x, over[1] - earth.y, over[2] - earth.z);
+      const dE = dE0 * Math.pow(dE1 / dE0, back);
+      const u = clamp01((dE - dE0) / (dE1 - dE0 || 1));
+      const cam: [number, number, number] = [lerp(px, over[0], u), lerp(py, over[1], u), lerp(pz, over[2], u)];
+      bendAroundSun(home, over, u, EARTH_CAM.sunClear, cam);
+      // 3. The zoom into the probe, setting off from the overview as the pull-back arrives.
+      const keys = C.zoomKeys;
+      let flown = -1; // the share of the distance to the probe flown (−1: not zooming yet)
+      if (lab > keys[0][0]) {
+        let fx = over[0] - pk.x;
+        let fy = over[1] - pk.y;
+        let fz = over[2] - pk.z;
+        const d0 = Math.hypot(fx, fy, fz) || 1;
+        fx /= d0;
+        fy /= d0;
+        fz /= d0;
+        const d = Math.exp(
+          monotoneCurve(
+            lab,
+            keys.map((k) => k[0]),
+            keys.map((k) => Math.log(k[1] ?? d0)),
+          ),
+        );
+        const close = parkerViewDir(_closeDir, pk.x, pk.y, pk.z, sun);
+        const e = remap01(lab, C.swing[0], C.swing[1]);
+        const sw = e * e * (3 - 2 * e); // the swing to the close-up side, over the arrival
+        let dx = lerp(fx, close.x, sw);
+        let dy = lerp(fy, close.y, sw);
+        let dz = lerp(fz, close.z, sw);
+        const dl = Math.hypot(dx, dy, dz) || 1;
+        cam[0] = pk.x + (dx / dl) * d;
+        cam[1] = pk.y + (dy / dl) * d;
+        cam[2] = pk.z + (dz / dl) * d;
+        const dEnd = keys[keys.length - 1][1] ?? d0;
+        flown = clamp01((d0 - d) / (d0 - dEnd));
+      }
+      [px, py, pz] = cam;
+      if (flown < 0) {
+        // The view turns at a steady rate from the Earth to the Sun as it pulls back.
+        turnToward(_fromDir.set(earth.x - px, earth.y - py, earth.z - pz), _toDir.set(sun[0] - px, sun[1] - py, sun[2] - pz), back);
+      } else {
+        // Like the Earth dive, the aim slides from the Sun to the probe with the distance
+        // flown — so the view holds still (no turn in place): the probe keeps its place
+        // on screen while the camera flies straight at it, and centres on arrival.
+        _fromDir.set(lerp(sun[0], pk.x, flown) - px, lerp(sun[1], pk.y, flown) - py, lerp(sun[2], pk.z, flown) - pz).normalize();
+      }
+      lx = px + _fromDir.x;
+      ly = py + _fromDir.y;
+      lz = pz + _fromDir.z;
     }
 
     // ── Segment 4: the finale — ONE exponential pull-out. At galaxy = 0 this
-    // reproduces the segment-3 Voyager pose exactly (constants derived from LAB_CAM),
-    // so it takes over seamlessly, then flies OUT: distance grows exponentially while
-    // the aim pans Voyager → the (flying) Sun → the galaxy centre. Anchored on the
+    // reproduces the segment-3 close-up of the Parker Solar Probe exactly, so it takes
+    // over seamlessly, then flies OUT: it backs away from the probe to the solar-system
+    // framing (the Lab's zoom in, reversed), then the distance grows exponentially
+    // while the aim pans the (flying) Sun → the galaxy centre. Anchored on the
     // LIVE Sun position (`flyingSunPos`), so scrolling BACK zooms into the solar
     // system wherever it has flown to in the galaxy — not back to a fixed home.
     // A pure function of useGalaxyScroll (+ the live Sun) → reverses on scroll-up.
@@ -506,22 +645,60 @@ const CameraRig = ({
       const z = galaxy;
       const ps = GALAXY_ZOOM.panSunEnd;
       const sun = flyingSunPos();
-      // Distance grows exponentially with raw z the whole beat (the prototype feel).
+      // Distance grows exponentially with raw z (the prototype feel).
       const dist = G_D_START * Math.pow(G_Z_RATIO, z);
       if (z <= ps) {
-        // Leg 1: aim pans Voyager → the (flying) Sun, framing the whole real system.
-        // View dir holds the Voyager ¾ (smoothstep so it eases out of the rest pose).
-        // The Voyager flies with the system, so its framing does too (`flyOffset`).
-        const e = z / ps;
-        const s = e * e * (3 - 2 * e);
+        // Leg 1: the Lab's zoom into the probe, reversed — the camera backs straight away
+        // from the real-size probe toward the finale's solar-system framing (the Sun
+        // centred, from the ¾ side), swinging off the close-up side as it departs; its
+        // distance follows PARKER_CAM.pullOut (slow → fast through the empty stretch →
+        // normal once the solar system is back), the aim sliding from the probe to the
+        // Sun with the distance flown (the view holds still — no turn in place). The
+        // probe flies with the system, so its framing does too.
+        const C = PARKER_CAM;
         const [sx, sy, sz] = sun;
-        const [ox, oy, oz] = flyOffset();
-        lx = lerp(G_LOOK_START[0] + ox, sx, s);
-        ly = lerp(G_LOOK_START[1] + oy, sy, s);
-        lz = lerp(G_LOOK_START[2] + oz, sz, s);
-        px = lx + G_START_DIR[0] * dist;
-        py = ly + G_START_DIR[1] * dist;
-        pz = lz + G_START_DIR[2] * dist;
+        const pk = useParkerAnchor.getState();
+        const dFrame = G_D_START * Math.pow(G_Z_RATIO, ps);
+        const frame: [number, number, number] = [
+          sx + G_START_DIR[0] * dFrame,
+          sy + G_START_DIR[1] * dFrame,
+          sz + G_START_DIR[2] * dFrame,
+        ];
+        let fx = frame[0] - pk.x;
+        let fy = frame[1] - pk.y;
+        let fz = frame[2] - pk.z;
+        const d1 = Math.hypot(fx, fy, fz) || 1;
+        fx /= d1;
+        fy /= d1;
+        fz /= d1;
+        const d = Math.exp(
+          monotoneCurve(
+            z,
+            C.pullOut.map((k) => k[0]),
+            C.pullOut.map((k) => Math.log(k[1] ?? d1)),
+          ),
+        );
+        const close = parkerViewDir(_closeDir, pk.x, pk.y, pk.z, sun);
+        const e = remap01(z, C.pullOutSwing[0], C.pullOutSwing[1]);
+        const sw = e * e * (3 - 2 * e);
+        let dx = lerp(close.x, fx, sw);
+        let dy = lerp(close.y, fy, sw);
+        let dz = lerp(close.z, fz, sw);
+        const dl = Math.hypot(dx, dy, dz) || 1;
+        const cam: [number, number, number] = [
+          pk.x + (dx / dl) * d,
+          pk.y + (dy / dl) * d,
+          pk.z + (dz / dl) * d,
+        ];
+        // When the probe is on the far side of the Sun, the way out bends round it.
+        bendAroundSun([pk.x, pk.y, pk.z], frame, clamp01(d / d1), EARTH_CAM.sunClear, cam, true);
+        [px, py, pz] = cam;
+        const dStart = C.pullOut[0][1] ?? 0;
+        const flown = clamp01((d - dStart) / (d1 - dStart));
+        _fromDir.set(lerp(pk.x, sx, flown) - px, lerp(pk.y, sy, flown) - py, lerp(pk.z, sz, flown) - pz).normalize();
+        lx = px + _fromDir.x;
+        ly = py + _fromDir.y;
+        lz = pz + _fromDir.z;
       } else {
         // Leg 2: aim pans the (flying) Sun → galaxy centre while the view swings to the
         // study pose, so the solar system shrinks and the whole spiral frames up. The

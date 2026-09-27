@@ -2,7 +2,7 @@
 
 import { useFrame, useThree } from "@react-three/fiber";
 import { useRef } from "react";
-import { DoubleSide, Group, Material, Mesh, Quaternion, Vector3 } from "three";
+import { DoubleSide, Group, Material, Mesh, Vector3 } from "three";
 import { clamp01, easeOutCubic, remap01 } from "#/components/three.js/star/utils";
 import { useLabScroll } from "#/stores/useLabScroll";
 import { useGalaxyScroll } from "#/stores/useGalaxyScroll";
@@ -10,31 +10,7 @@ import { useSceneRotation } from "#/stores/useSceneRotation";
 import { LAB, VOYAGER } from "./config";
 import { recordLabel, recordScreen } from "./recordScreen";
 import { LABEL_PRIORITY, projectToViewport } from "#/components/three.js/scene/labelProjection";
-
-type Vec3 = [number, number, number];
-const UP = new Vector3(0, 1, 0);
-
-/**
- * A strut/boom that actually CONNECTS point `a` to point `b`: a cylinder centred
- * at their midpoint, its length = |b-a|, oriented from local +Y onto (b-a). This
- * keeps every boom rooted on the bus instead of floating in space.
- */
-function seg(a: Vec3, b: Vec3) {
-  const va = new Vector3(...a);
-  const vb = new Vector3(...b);
-  const dir = vb.clone().sub(va);
-  const len = dir.length();
-  const mid = va.clone().add(vb).multiplyScalar(0.5).toArray() as Vec3;
-  const quat = new Quaternion()
-    .setFromUnitVectors(UP, dir.clone().normalize())
-    .toArray() as [number, number, number, number];
-  return { mid, quat, len };
-}
-
-/** A point fraction `t` of the way from `a` to `b`. */
-function along(a: Vec3, b: Vec3, t: number): Vec3 {
-  return [a[0] + (b[0] - a[0]) * t, a[1] + (b[1] - a[1]) * t, a[2] + (b[2] - a[2]) * t];
-}
+import { along, seg, type Vec3 } from "#/components/three.js/scene/strut";
 
 // ── Attachment anchors on the bus → tips (everything roots on the ten-sided bus) ──
 const NECK = seg([0, -0.34, -0.12], [0, 0.06, -0.26]); // bus top → dish underside
@@ -50,6 +26,9 @@ const RTG = seg(RTG_A, RTG_T);
 const RTG_AT: Vec3[] = [0.52, 0.72, 0.92].map((t) => along(RTG_A, RTG_T, t));
 
 /**
+ * UNUSED since P27-72 — replaced by the Parker Solar Probe (`parker/ParkerProbe.tsx`);
+ * kept for reference.
+ *
  * Voyager 1 — a SOLID, lit craft built from primitive geometry (dish + rim +
  * feed, ten-sided bus, magnetometer / science / RTG booms, and a glowing Golden
  * Record). The camera flies to it during the Lab beat (see CameraRig). It fades

@@ -142,9 +142,11 @@ export const HERO_SCROLL = {
  */
 /**
  * The galaxy finale's PACING, in scroll % (see JOURNEY.galaxyPace / galaxy/pace.ts):
- *   1. fly out from the Voyager to the whole solar system (`toSolar`), leaving at the
- *      same speed as before (`departSpeed` = toSolar / the old 308%) and GLIDING TO
- *      REST on the system;
+ *   1. pull back out from the Parker Solar Probe to the whole solar system
+ *      (`toSolar` — as long as the zoom in to it, mirroring it: a slow departure, fast
+ *      through the empty stretch, normal once the system is back; see PARKER_CAM.pullOut)
+ *      and GLIDE TO REST on the system (`departSpeed` 1: the distance curve itself
+ *      starts at rest);
  *   2. hold there (`solarHold`) — the planets keep orbiting;
  *   3. ease out of the hold and fly out to the galaxy (`toGalaxy`, ~1.5× the old 392%,
  *      so its fastest moment is the old constant speed), GLIDING TO REST on the full
@@ -152,7 +154,7 @@ export const HERO_SCROLL = {
  * Everything in the finale is keyed to the galaxy progress, so the fades stay in step
  * with the camera. (The Earth / Voyager arrivals work the same way.)
  */
-const GALAXY_PACE = { toSolar: 400, solarHold: 100, toGalaxy: 590, departSpeed: 1.3 };
+const GALAXY_PACE = { toSolar: 700, solarHold: 100, toGalaxy: 590, departSpeed: 1 };
 
 /**
  * Where each beat sits on the one pin, in ABSOLUTE scroll (% of the viewport height).
@@ -167,11 +169,11 @@ const SCROLL = {
   craftFadeEnd: 1461.5, // = the Saturn's fly-away / voyage start
   voyageEnd: 2860, // the Earth has fully arrived
   earthDwellEnd: 3010, // + the ~150% Earth dwell
-  galaxyStart: 3710, // + the Lab (~700%)
-  galaxyEnd: 3710 + GALAXY_PACE.toSolar + GALAXY_PACE.solarHold + GALAXY_PACE.toGalaxy, // 4800
-  contactStart: 5050, // + ~250% on the full galaxy (the camera drifts gently back — GALAXY_ZOOM.driftBack)
-  contactEnd: 5210, // + the ~160% form reveal
-  pinEnd: 5270, // + a ~60% hold on the form
+  galaxyStart: 4410, // + the Lab (~1400%: the trip to the Parker Solar Probe — as long as Saturn → Earth)
+  galaxyEnd: 4410 + GALAXY_PACE.toSolar + GALAXY_PACE.solarHold + GALAXY_PACE.toGalaxy, // 5800
+  contactStart: 6050, // + ~250% on the full galaxy (the camera drifts gently back — GALAXY_ZOOM.driftBack)
+  contactEnd: 6210, // + the ~160% form reveal
+  pinEnd: 6270, // + a ~60% hold on the form
 };
 /** Master-progress fraction (mp) of an absolute scroll position. */
 const at = (pct: number) => pct / SCROLL.pinEnd;

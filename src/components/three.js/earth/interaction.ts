@@ -1,6 +1,7 @@
 import { clamp01, remap01 } from "#/components/three.js/star/utils";
 import { useVoyageScroll } from "#/stores/useVoyageScroll";
 import { useLabScroll } from "#/stores/useLabScroll";
+import { useGalaxyScroll } from "#/stores/useGalaxyScroll";
 import { VOYAGE } from "#/components/three.js/solar/config";
 import { LAB } from "#/components/three.js/voyager/config";
 
@@ -26,9 +27,20 @@ export const earthOwnsDrag = (): boolean =>
  * against the globe (see DottedEarth's onDown):
  *   • "globe" — the down grabbed the Earth while it's the focus → spin the GLOBE
  *     only; Universe stands down so the space stays put.
- *   • "scene" — the down missed the globe (empty space), or the Earth isn't the
- *     focus → rotate the whole cosmos (Universe); the Earth turns WITH it, like
- *     every other body (Saturn, Voyager).
+ *   • "probe" — at the Parker Solar Probe's close-up (probeOwnsDrag) → turn the probe
+ *     and the space together, like the Saturn (ParkerProbe circles the camera round
+ *     it); Universe stands down.
+ *   • "scene" — otherwise → rotate the whole cosmos (Universe); the Earth turns WITH
+ *     it, like every other body (Saturn).
  * Shared so the globe and Universe always agree and never both move at once.
  */
-export const dragMode: { current: "globe" | "scene" } = { current: "scene" };
+export const dragMode: { current: "globe" | "scene" | "probe" } = { current: "scene" };
+
+/**
+ * True while the Lab rests at the Parker Solar Probe's close-up: a drag there ORBITS the
+ * camera round the probe ("probe" — the probe stays put, the Sun, stars and planets turn
+ * round it), so it can be seen from any angle; Universe stands down.
+ */
+export const probeOwnsDrag = (): boolean =>
+  clamp01(useLabScroll.getState().progress) >= LAB.recordLabelAt &&
+  clamp01(useGalaxyScroll.getState().progress) <= 0.001;

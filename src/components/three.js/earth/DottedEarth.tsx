@@ -23,7 +23,7 @@ import { SUNPOS } from "#/components/three.js/solar/config";
 import { earthReveal } from "#/components/three.js/solar/reveal";
 import { EARTH } from "./config";
 import { directionToUV } from "./utils";
-import { earthApproach, earthOwnsDrag, dragMode } from "./interaction";
+import { earthApproach, earthOwnsDrag, probeOwnsDrag, dragMode } from "./interaction";
 import { useLabScroll } from "#/stores/useLabScroll";
 import { LAB } from "#/components/three.js/voyager/config";
 import EarthPins from "./EarthPins";
@@ -219,7 +219,7 @@ const DottedEarth = ({ animate = true, interactive = true }: Props) => {
       hit.sphere.center.set(a.x, a.y, a.z);
       hit.sphere.radius = EARTH.radius;
       const onGlobe = hit.rc.ray.intersectSphere(hit.sphere, hit.point) !== null;
-      dragMode.current = earthOwnsDrag() && onGlobe ? "globe" : "scene";
+      dragMode.current = earthOwnsDrag() && onGlobe ? "globe" : probeOwnsDrag() ? "probe" : "scene";
     };
     const onMove = (e: PointerEvent) => {
       if (!dragging.current) return;

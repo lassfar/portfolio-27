@@ -81,11 +81,11 @@ const Universe = ({ animate = true, count, starfieldRef }: Props) => {
     };
     const onMove = (e: PointerEvent) => {
       if (!dragging.current) return;
-      // Stand down when THIS drag grabbed the globe (DottedEarth's hit-test set
-      // dragMode on pointer-down) — that drag spins the Earth only, so the space
-      // must stay put. A drag on empty space keeps dragMode "scene" and rotates
-      // the whole cosmos here (the Earth is carried with it, like Saturn).
-      if (dragMode.current === "globe") {
+      // Stand down when THIS drag grabbed the globe, or orbits the camera round the
+      // Parker Solar Probe (DottedEarth sets dragMode on pointer-down) — the space
+      // must stay put. Otherwise ("scene") it rotates the whole cosmos here (the
+      // Earth is carried with it, like Saturn).
+      if (dragMode.current !== "scene") {
         last.current = { x: e.clientX, y: e.clientY };
         return;
       }

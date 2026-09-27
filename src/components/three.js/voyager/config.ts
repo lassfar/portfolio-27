@@ -59,49 +59,13 @@ export const LAB_CAM = {
 } as const;
 
 /**
- * Lab sub-phases, in `useLabScroll` progress (0..1 over the appended Lab scroll).
- * The beat: the instant you leave Earth you're in a dust corridor rushing toward
- * Voyager (fast), the camera decelerating so it resolves — directly at readable
- * size — by the end, with a pale-blue Earth left behind.
+ * Lab sub-phases, in `useLabScroll` progress (0..1 over the appended Lab scroll). You
+ * leave the Earth and fly to the Parker Solar Probe (its camera timings live in
+ * parker/config.ts PARKER_CAM).
  */
 export const LAB = {
-  earthFadeEnd: 0.16, // the Earth globe fades out fast as we rush away
-  revealStart: 0.45, // Voyager stays hidden through the rush…
-  revealEnd: 0.7, // …then fades in over the last stretch, already at a good size
-  recordLabelAt: 0.85, // the Golden Record label shows once the craft is readable
-} as const;
-
-/**
- * The dust corridor — a REAL field of particles fixed in world space along the
- * ACTUAL Earth→Voyager path (the tube is built from Voyager to wherever the camera
- * leaves Earth, captured at the start of the beat), so you're in the dust from the
- * first instant. The camera genuinely flies down it, dust streaming past by true
- * parallax. Each particle stretches into a motion-blur streak in proportion to how
- * fast the camera actually moved this frame, and fades to nothing when it stops —
- * no pop-in, and the arrival calms naturally.
- */
-export const TRAVEL_DUST = {
-  count: 1500,
-  countMobile: 650,
-  radius: 9, // tube radius around the Earth→Voyager axis
-  // Both streak length AND opacity are driven by the camera's REAL per-frame
-  // travel — long, bright streaks aligned to velocity while rushing, fading to
-  // nothing as it settles. A lab window keeps it to the beat.
-  streakK: 4.5, // streak length per unit of per-frame camera travel
-  minStreak: 0.05,
-  maxStreak: 8,
-  opacityK: 0.8, // opacity per unit of per-frame camera travel
-  maxOpacity: 0.95,
-} as const;
-
-/**
- * The Pale Blue Dot — Earth as a single lonely blue pixel far behind Voyager,
- * echoing the photo Voyager 1 actually took of Earth from ~6 billion km. Fades in
- * as the craft settles and lingers.
- */
-export const PALE_BLUE_DOT = {
-  pos: [-4.3, 2.5, -6.5] as [number, number, number], // upper-left, sitting far beyond the craft
-  size: 0.28, // sprite scale — a soft but findable speck
-  color: "#9fc6ff",
-  fade: [0.55, 0.82] as [number, number], // lab range to fade in
+  earthFadeEnd: 0.16, // the Earth's pins, daylight and drag hand off as you leave it
+  revealStart: 0.45, // (the retired Voyager's fade-in)
+  revealEnd: 0.7,
+  recordLabelAt: 0.9, // the memory-card label shows once you've arrived
 } as const;

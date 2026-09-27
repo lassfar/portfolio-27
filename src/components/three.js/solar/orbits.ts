@@ -74,8 +74,12 @@ export function systemTime(elapsed: number, voyage: number): number {
   return elapsed - startedAt;
 }
 
-/** A point of an orbit (at eccentric anomaly E), in display coordinates. */
-function orbitPoint(el: OrbitElements, a: number, E: number, out: Vector3): Vector3 {
+/**
+ * A point of an orbit (at eccentric anomaly E), in display coordinates — `a` in any
+ * unit (the scene's compressed radius for the planets; AU for the Parker Solar Probe,
+ * whose distance is compressed point by point — see parker/orbit.ts).
+ */
+export function orbitPoint(el: OrbitElements, a: number, E: number, out: Vector3): Vector3 {
   const xp = a * (Math.cos(E) - el.e);
   const yp = a * Math.sqrt(1 - el.e * el.e) * Math.sin(E);
   const w = (el.peri - el.node) * DEG; // argument of perihelion
