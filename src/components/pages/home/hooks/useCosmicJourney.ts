@@ -8,6 +8,7 @@ import { useHeroScroll } from "#/stores/useHeroScroll";
 import { useAboutScroll } from "#/stores/useAboutScroll";
 import { useVoyageScroll } from "#/stores/useVoyageScroll";
 import { useLabScroll } from "#/stores/useLabScroll";
+import { useJourneyScroll } from "#/stores/useJourneyScroll";
 import { useGalaxyScroll } from "#/stores/useGalaxyScroll";
 import { journeyTrigger } from "#/stores/journeyTrigger";
 import { cosmicVeil } from "#/stores/cosmicVeil";
@@ -82,6 +83,7 @@ export default function useCosmicJourney(refs: CosmicJourneyRefs): void {
       const setAbout = useAboutScroll.getState().setProgress;
       const setVoyage = useVoyageScroll.getState().setProgress;
       const setLab = useLabScroll.getState().setProgress;
+      const setJourney = useJourneyScroll.getState().setProgress;
       const setGalaxy = useGalaxyScroll.getState().setProgress;
       const setGalaxyDrift = useGalaxyScroll.getState().setDrift;
 
@@ -215,6 +217,7 @@ export default function useCosmicJourney(refs: CosmicJourneyRefs): void {
           onUpdate: (self) => {
             const mp = self.progress; // master 0..1
             const jp = clamp01(mp / JOURNEY.journeyEnd); // journey 0..1
+            setJourney(mp); // the whole story (the story timeline)
             setStar(clamp01(jp / JOURNEY.starSpan));
             setAbout(remap01(jp, JOURNEY.assembleStart, JOURNEY.assembleEnd));
             // Voyage spans flyAwayStart..voyageEnd (0→1); its sub-phases (fly-away,
@@ -309,6 +312,7 @@ export default function useCosmicJourney(refs: CosmicJourneyRefs): void {
         setAbout(0);
         setVoyage(0);
         setLab(0);
+        setJourney(0);
         setGalaxy(0);
         setGalaxyDrift(0);
         descSplits.forEach((s) => s.revert());

@@ -15,6 +15,9 @@ import { ScrollSmoother } from "gsap/all";
  */
 const locks = new Set<string>();
 
+/** Whether any feature is holding the smooth scroll frozen right now. */
+export const isScrollLocked = (): boolean => locks.size > 0;
+
 export function setScrollLock(key: string, on: boolean): void {
   const wasLocked = locks.size > 0;
   if (on) locks.add(key);

@@ -175,8 +175,8 @@ const SCROLL = {
   contactEnd: 6210, // + the ~160% form reveal
   pinEnd: 6270, // + a ~60% hold on the form
 };
-/** Master-progress fraction (mp) of an absolute scroll position. */
-const at = (pct: number) => pct / SCROLL.pinEnd;
+/** Master-progress fraction (mp) of an absolute scroll position (% of the viewport height). */
+export const mpAt = (pct: number) => pct / SCROLL.pinEnd;
 
 export const JOURNEY = {
   // ── Pin length + the two coordinate spaces ──────────────────────────────────
@@ -194,7 +194,7 @@ export const JOURNEY = {
   // dive), the Earth DWELL, the Lab (Voyager), then the GALAXY finale (pull back from
   // Voyager → fly through stars → the galaxy resolves), then the CONTACT form over the
   // blurred galaxy. All the mp thresholds come from `SCROLL` (absolute positions).
-  journeyEnd: at(SCROLL.journeyEnd),
+  journeyEnd: mpAt(SCROLL.journeyEnd),
   starSpan: 0.218, // star plays over 0..starSpan of the JOURNEY (jp), not the pin
   assembleStart: 0.198, // Saturn assembles over assembleStart..assembleEnd (overlaps the burst)
   assembleEnd: 0.455, // Saturn fully built by here — ≈260% of scroll to build
@@ -233,12 +233,12 @@ export const JOURNEY = {
   // constellation then assembles, it fades out to reveal the Saturn again, and the
   // Saturn flies away. All within the same pin, so the cosmos never unpins → no
   // boundary jump, and reverse mirrors exactly.
-  craftCoverStart: at(SCROLL.craftCoverStart), // Craft begins sliding up AS the Maker exits
-  craftCoverEnd: at(SCROLL.journeyEnd), // …fully covering by the time the Maker has exited (= journeyEnd) → no Saturn shown between
-  constellationEnd: at(SCROLL.constellationEnd), // constellation assembles over craftCoverEnd..constellationEnd
-  craftFadeStart: at(SCROLL.craftFadeStart), // brief hold, then Craft fades out (opacity 1→0)…
-  craftFadeEnd: at(SCROLL.craftFadeEnd), // …fully gone here → the Saturn is revealed behind it
-  flyAwayStart: at(SCROLL.craftFadeEnd), // where the Saturn is revealed and the voyage begins (voyage = 0)
+  craftCoverStart: mpAt(SCROLL.craftCoverStart), // Craft begins sliding up AS the Maker exits
+  craftCoverEnd: mpAt(SCROLL.journeyEnd), // …fully covering by the time the Maker has exited (= journeyEnd) → no Saturn shown between
+  constellationEnd: mpAt(SCROLL.constellationEnd), // constellation assembles over craftCoverEnd..constellationEnd
+  craftFadeStart: mpAt(SCROLL.craftFadeStart), // brief hold, then Craft fades out (opacity 1→0)…
+  craftFadeEnd: mpAt(SCROLL.craftFadeEnd), // …fully gone here → the Saturn is revealed behind it
+  flyAwayStart: mpAt(SCROLL.craftFadeEnd), // where the Saturn is revealed and the voyage begins (voyage = 0)
   // ── The voyage → the Earth DWELL → the Lab ───────────────────────────────────
   // useVoyageScroll = remap01(mp, flyAwayStart, voyageEnd) → reaches 1 as the Earth
   // arrives (the camera glides to REST — see the Earth dive in CosmicScene) and
@@ -246,23 +246,23 @@ export const JOURNEY = {
   // The dwell [voyageEnd, earthDwellEnd] is a flat ~150% stretch (D above) where the
   // Earth simply holds fully in view (still idly self-spinning) before the Lab.
   // useLabScroll = remap01(mp, earthDwellEnd, galaxyStart): the Lab (Earth→Voyager) beat.
-  voyageEnd: at(SCROLL.voyageEnd), // Earth fully arrived (voyage = 1)
-  earthDwellEnd: at(SCROLL.earthDwellEnd), // Earth holds fully in view over voyageEnd..here, then the Lab begins
+  voyageEnd: mpAt(SCROLL.voyageEnd), // Earth fully arrived (voyage = 1)
+  earthDwellEnd: mpAt(SCROLL.earthDwellEnd), // Earth holds fully in view over voyageEnd..here, then the Lab begins
   // ── The Galaxy finale ────────────────────────────────────────────────────────
   // The Lab ends at galaxyStart (Voyager fully framed); from there the camera pulls
   // BACK and useGalaxyScroll (galaxy/pace.ts — eased, see galaxyPace) drives the
   // pull-back, the star-field fly-through, the galaxy's reveal, and the "You are here"
   // marker.
-  galaxyStart: at(SCROLL.galaxyStart), // Lab ends / galaxy pull-back begins (~1090% to galaxyEnd)
-  galaxyEnd: at(SCROLL.galaxyEnd), // the whole galaxy is in view (at rest)
+  galaxyStart: mpAt(SCROLL.galaxyStart), // Lab ends / galaxy pull-back begins (~1090% to galaxyEnd)
+  galaxyEnd: mpAt(SCROLL.galaxyEnd), // the whole galaxy is in view (at rest)
   galaxyPace: GALAXY_PACE, // the finale's eased pacing (see GALAXY_PACE above)
   // ── Contact (the fullscreen form) ────────────────────────────────────────────
   // After ~250% on the full galaxy (time to take it in, while the camera drifts gently
   // back — GALAXY_ZOOM.driftBack), the form fades in
   // over it — like The Maker: the galaxy softens behind it, the title writes in, then
   // the fields rise in — over contactStart..contactEnd (~160%), then holds to the end.
-  contactStart: at(SCROLL.contactStart),
-  contactEnd: at(SCROLL.contactEnd),
+  contactStart: mpAt(SCROLL.contactStart),
+  contactEnd: mpAt(SCROLL.contactEnd),
   // The galaxy stays a recognisable soft BACKDROP behind the form: a light blur (a
   // heavy one, like The Maker's, averages its fine dots into a flat haze) and a mild
   // dim — done in WebGL (scene/VeilPass); a soft vignette behind the form keeps the
