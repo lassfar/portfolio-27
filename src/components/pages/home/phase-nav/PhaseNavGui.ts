@@ -21,6 +21,12 @@ export function buildPhaseNavPanel(gui: GUI) {
     .add(PHASE_NAV, "revealSeconds", 0.3, 2.5, 0.05)
     .name("grow / fold back (s)");
   fAssist
+    .add(PHASE_NAV, "hoverOpenDelay", 0, 1, 0.02)
+    .name("mouse: open after (s)");
+  fAssist
+    .add(PHASE_NAV, "hoverCloseDelay", 0, 5, 0.1)
+    .name("mouse: fold back after leaving (s)");
+  fAssist
     .add(PHASE_NAV, "autoCloseSeconds", 2, 20, 0.5)
     .name("fold back if unused (s)");
 

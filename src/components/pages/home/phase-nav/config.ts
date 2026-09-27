@@ -101,7 +101,9 @@ export const PHASE_NAV = {
   size: "large" as const,
   orbSize: 16, // px
   revealSeconds: 0.8, // the orb → button morph (the label writes in after it); reversed the same, calmly
-  autoCloseSeconds: 6, // an unused button folds back into the orb after this long
+  autoCloseSeconds: 6, // an unused button (opened by a tap / Enter) folds back after this long
+  hoverOpenDelay: 0.12, // desktop: the mouse opens it after resting this long (s)…
+  hoverCloseDelay: 2, // …and leaving folds it back after this grace (s)
   secondsPerScreen: 1,
   minSeconds: 1.5,
   maxSeconds: 8,

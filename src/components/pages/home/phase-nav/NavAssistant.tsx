@@ -29,8 +29,8 @@ function rgba(hex: string): (alpha: number) => string {
 
 /**
  * The navigation assistant (P27-74): a small glowing orb at the bottom of the screen,
- * its glow breathing slowly. Hover grows it and says "Next chapter"; a click grows the
- * dot into the next chapter's button (the pill opens out of the dot, then the label
+ * its glow breathing slowly. On desktop the mouse grows the dot into the next chapter's
+ * button as it arrives (touch: a tap; keyboard: Enter) (the pill opens out of the dot, then the label
  * writes in). Clicking the button glides there and the button folds back into the orb:
  * the same animation, reversed. It also folds back on scroll, after
  * PHASE_NAV.autoCloseSeconds, on Esc or on a click elsewhere.
@@ -76,7 +76,7 @@ const NavAssistant = () => {
   // Grow the dot into the button: a shell that starts as the orb (its size, colour and
   // layered glow) stretches into the button's pill while cooling from peach to glass; the real
   // button then takes over and its label writes in, letter by letter.
-  const openButton = contextSafe(() => {
+  const openButton = contextSafe((byHover = false) => {
     const r = reveal.current;
     const sh = shell.current;
     const glow = orb.current?.querySelector(".nav-assistant__glow");
@@ -142,11 +142,38 @@ const NavAssistant = () => {
         T * 0.9,
       );
     anim.current = { tl, split };
-    autoClose.current = window.setTimeout(
-      () => closeRef.current(),
-      PHASE_NAV.autoCloseSeconds * 1000,
-    );
+    // Opened by a hover, it stays while the pointer does (leaving folds it back).
+    if (!byHover) {
+      autoClose.current = window.setTimeout(
+        () => closeRef.current(),
+        PHASE_NAV.autoCloseSeconds * 1000,
+      );
+    }
   });
+
+  // Desktop: the mouse opens it (after a short intent pause, so a pass-over doesn't),
+  // and leaving the orb + button folds it back after a short grace (so slipping off the
+  // edge doesn't). Touch and keyboard keep the tap / Enter.
+  const hoverTimer = useRef(0);
+  const onPointerEnter = (e: React.PointerEvent) => {
+    if (e.pointerType !== "mouse") return;
+    window.clearTimeout(hoverTimer.current);
+    if (!out.current) {
+      hoverTimer.current = window.setTimeout(
+        () => openButton(true),
+        PHASE_NAV.hoverOpenDelay * 1000,
+      );
+    }
+  };
+  const onPointerLeave = (e: React.PointerEvent) => {
+    if (e.pointerType !== "mouse") return;
+    window.clearTimeout(hoverTimer.current);
+    hoverTimer.current = window.setTimeout(
+      () => closeRef.current(),
+      PHASE_NAV.hoverCloseDelay * 1000,
+    );
+  };
+  useEffect(() => () => window.clearTimeout(hoverTimer.current), []);
 
   // Follow the story: what to offer next, whether we're past the hero, and scrolling
   // folds an open button back.
@@ -217,6 +244,8 @@ const NavAssistant = () => {
         open && "is-open",
       )}
       style={{ "--na-orb": `${PHASE_NAV.orbSize}px` } as CSSProperties}
+      onPointerEnter={onPointerEnter}
+      onPointerLeave={onPointerLeave}
     >
       <button
         ref={orb}
@@ -225,7 +254,7 @@ const NavAssistant = () => {
         aria-label={stop ? `Next chapter: ${stop.name}` : "Next chapter"}
         aria-expanded={open}
         tabIndex={visible && !open ? 0 : -1}
-        onClick={openButton}
+        onClick={() => openButton()}
       >
         <span className="nav-assistant__glow" />
       </button>

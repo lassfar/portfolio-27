@@ -542,8 +542,17 @@
   border-color: var(--color-peach);
   box-shadow: 0 0 0 2px color-mix(in srgb, var(--color-peach) 35%, transparent);
 }
-.nav-assistant.is-open .nav-assistant__orb {
-  pointer-events: none;
+/* Touch: no hover, so no tooltip; a bigger tap target. */
+@media (hover: none) {
+  .nav-assistant__tip {
+    display: none;
+  }
+}
+@media (pointer: coarse) {
+  .nav-assistant__orb {
+    width: 48px;
+    height: 48px;
+  }
 }
 /* The orb: warm, with a layered glow that breathes slowly, like an AI assistant — a hot
    light-peach core, a peach middle and a wide dark-peach halo — circled by a thin ring
