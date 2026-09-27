@@ -76,7 +76,7 @@ export const PARKER_VIEW = {
   // side (the Sun behind it), the craft would otherwise be a black silhouette.
   fill: 1.3,
   fillColor: "#e8e4de",
-  cardLabelPx: 60, // the memory-card label shows once the probe is this big on screen
+  cardLabelPx: 30, // the memory-card label replaces its name once it's this big on screen (clearly recognisable)
 } as const;
 
 /**

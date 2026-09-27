@@ -233,13 +233,11 @@ const ParkerProbe = () => {
     }
     if (fillRef.current) fillRef.current.position.copy(delta).multiplyScalar(-1 / d);
 
-    // Its label: the name on the marker from afar; the memory card once you're there.
+    // Its label, with no gap between the two: its name while it's a dot or still small;
+    // the memory card (clickable, it opens the Lab) once it's clearly recognisable, on
+    // the way in and on the way back out (the finale's pull-out).
     label.current =
-      galaxy <= 0.001 && lab >= LAB.recordLabelAt && px >= PARKER_VIEW.cardLabelPx
-        ? "card"
-        : markerOpacity > 0.5
-          ? "probe"
-          : "off";
+      markerIn < 0.5 ? "off" : px >= PARKER_VIEW.cardLabelPx ? "card" : "probe";
   }, DRAW_PRIORITY);
 
   // Project the label's anchor once everything is placed, and lay it out in the same

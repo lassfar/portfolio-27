@@ -67,5 +67,5 @@ export const LAB = {
   earthFadeEnd: 0.16, // the Earth's pins, daylight and drag hand off as you leave it
   revealStart: 0.45, // (the retired Voyager's fade-in)
   revealEnd: 0.7,
-  recordLabelAt: 0.9, // the memory-card label shows once you've arrived
+  recordLabelAt: 0.9, // you've arrived: the close-up (its drag orbit, the assistant's rest window)
 } as const;
