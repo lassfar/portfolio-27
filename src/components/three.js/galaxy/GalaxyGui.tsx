@@ -6,13 +6,15 @@ import { copyValues, jumpToJourney } from "#/components/three.js/scene/devPanel"
 import { buildPlanetPanel } from "#/components/three.js/solar/PlanetGui";
 import { buildSunPanel } from "#/components/three.js/solar/SunGui";
 import { buildStarsPanel } from "#/components/three.js/star/StarsGui";
+import { buildParkerPanel } from "#/components/three.js/parker/ParkerGui";
 import { GALAXY, GALAXY_FX, GALAXY_SPACE, updateGalaxyPlacement } from "./config";
 import { journeyAtGalaxy } from "./pace";
 import { galaxyTuningSnapshot, rebuildGalaxy, resetGalaxyTuning } from "./tuning";
 
 /**
- * Dev tuning panel — four sections: the STARS (star/StarsGui.ts), the SUN
- * (solar/SunGui.ts), the PLANETS (solar/PlanetGui.ts) and the GALAXY finale.
+ * Dev tuning panel — five sections: the STARS (star/StarsGui.ts), the SUN
+ * (solar/SunGui.ts), the PLANETS (solar/PlanetGui.ts), the PARKER SOLAR PROBE
+ * (parker/ParkerGui.ts) and the GALAXY finale.
  *
  * The galaxy section is the same lil-gui panel (folders + labels)
  * as `docs/prototypes/galaxy-realistic.html` and `galaxy-zoom-realistic.html`, driving
@@ -48,6 +50,7 @@ const GalaxyGui = () => {
       const sun = panel.addFolder("☀ Sun");
       buildSunPanel(sun);
       buildPlanetPanel(panel.addFolder("● Planets"));
+      buildParkerPanel(panel.addFolder("✦ Parker Solar Probe"));
       const galaxy = panel.addFolder("✦ Galaxy finale");
       buildPanel(galaxy);
       // One section open at a time keeps the panel short.
