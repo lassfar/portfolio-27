@@ -8,10 +8,10 @@ type Props = {
 };
 
 /**
- * A small editorial "spine" that runs vertically down the right edge of a
- * section — a thin rule, a wide-tracked uppercase label (Helvetica Neue) and a
- * peach accent dot. A quiet way to name each beat of the story without competing
- * with the big cursive titles.
+ * A small editorial "spine" that runs vertically down the LEFT edge of a
+ * section (the right edge belongs to the story timeline) — a thin rule, a
+ * wide-tracked uppercase label (Helvetica Neue) and a peach accent dot. A quiet
+ * way to name each beat of the story without competing with the big cursive titles.
  */
 const SectionMarker = forwardRef<HTMLDivElement, Props>(
   ({ label, className }, ref) => (
@@ -20,7 +20,7 @@ const SectionMarker = forwardRef<HTMLDivElement, Props>(
       aria-hidden
       className={clsx(
         "pointer-events-none select-none",
-        "absolute right-4 sm:right-6 md:right-8 top-0 bottom-0 z-30",
+        "absolute left-4 sm:left-6 md:left-8 top-0 bottom-0 z-30",
         "flex items-center",
         className
       )}
