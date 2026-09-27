@@ -318,6 +318,8 @@
   background: var(--tl-color);
 }
 .story-timeline__star.is-current .story-timeline__glyph {
+  /* The pulse's colour, mixed here: the CSS pipeline drops color-mix() inside @keyframes. */
+  --tl-glow-soft: color-mix(in srgb, var(--tl-color) calc(var(--tl-glow) * 55%), transparent);
   filter: drop-shadow(
     0 0 calc(var(--tl-current) * 0.45) color-mix(in srgb, var(--tl-color) calc(var(--tl-glow) * 100%), transparent)
   );
@@ -327,9 +329,7 @@
 }
 @keyframes story-timeline-breathe {
   50% {
-    filter: drop-shadow(
-      0 0 calc(var(--tl-current) * 0.95) color-mix(in srgb, var(--tl-color) calc(var(--tl-glow) * 55%), transparent)
-    );
+    filter: drop-shadow(0 0 calc(var(--tl-current) * 0.95) var(--tl-glow-soft));
   }
 }
 /* Orbit: small dots; the current one wears a thin orbit ring (a planet on its path)
