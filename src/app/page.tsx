@@ -1,6 +1,7 @@
 import Hero from "#/components/pages/home/Hero";
 import EarthGallery from "#/components/pages/home/gallery/EarthGallery";
 import LabExperiments from "#/components/pages/home/lab/LabExperiments";
+import StoryTimeline from "#/components/pages/home/timeline/StoryTimeline";
 
 export default function Home() {
   return (
@@ -14,8 +15,11 @@ export default function Home() {
       {/* Fixed DOM overlays (crisp media) opened by the Earth photo-pins. */}
       <EarthGallery />
 
-      {/* Fixed DOM overlays for The Lab — opened by Voyager's Golden Record. */}
+      {/* Fixed DOM overlays for The Lab — opened by the Parker Solar Probe's memory card. */}
       <LabExperiments />
+
+      {/* The story timeline: a rail on the left with one star per chapter. */}
+      <StoryTimeline />
     </main>
   );
 }

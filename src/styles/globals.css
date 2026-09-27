@@ -119,3 +119,320 @@
   font-weight: 400;
   font-style: normal;
 }
+
+/* ── Story timeline (P27-73) ─────────────────────────────────────────────────────────
+   A thin rail down one edge of the screen that fills with peach, one small four-point
+   star per chapter (the site's sparkles). StoryTimelineRail places it (any edge or
+   corner, inline) and passes the tuned sizes as custom properties from
+   timeline/config.ts; `is-vertical` / `is-horizontal` lay out the rail, and `tip-*` opens
+   tooltips toward the inside of the screen. */
+.story-timeline {
+  position: fixed;
+  z-index: 40; /* under the labels (z-45) and the side panels (z-50) */
+  opacity: 0;
+  visibility: hidden;
+  transition:
+    opacity 0.45s ease,
+    visibility 0s linear 0.45s;
+}
+.story-timeline.is-shown {
+  opacity: 1;
+  visibility: visible;
+  transition: opacity 0.45s ease;
+}
+.story-timeline.is-vertical {
+  width: 24px;
+  height: var(--tl-length);
+}
+.story-timeline.is-horizontal {
+  width: var(--tl-length);
+  height: 24px;
+}
+/* At rest: dimmed, then (TIMELINE.hideAfter) hidden. Hovering its spot brings it back. */
+.story-timeline.is-shown.is-idle:not(:hover):not(:focus-within) {
+  opacity: var(--tl-dim);
+}
+.story-timeline.is-shown.is-asleep:not(:hover):not(:focus-within) {
+  opacity: 0;
+}
+
+.story-timeline__rail,
+.story-timeline__fill {
+  position: absolute;
+  border-radius: 9999px;
+}
+.is-vertical .story-timeline__rail,
+.is-vertical .story-timeline__fill {
+  top: 0;
+  left: 50%;
+  width: var(--tl-rail);
+  transform: translateX(-50%);
+}
+.is-vertical .story-timeline__rail {
+  bottom: 0;
+}
+.is-horizontal .story-timeline__rail,
+.is-horizontal .story-timeline__fill {
+  top: 50%;
+  left: 0;
+  height: var(--tl-rail);
+  transform: translateY(-50%);
+}
+.is-horizontal .story-timeline__rail {
+  right: 0;
+}
+.story-timeline__rail {
+  background: color-mix(in srgb, var(--tl-rail-color) calc(var(--tl-rail-alpha) * 100%), transparent);
+}
+.story-timeline__fill {
+  background: var(--tl-color);
+}
+
+.story-timeline__list {
+  position: absolute;
+  inset: 0;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.story-timeline__item {
+  position: absolute;
+  transform: translate(-50%, -50%);
+}
+.is-vertical .story-timeline__item {
+  left: 50%;
+}
+.is-horizontal .story-timeline__item {
+  top: 50%;
+}
+
+/* A 24px hit area around the star. */
+.story-timeline__star {
+  position: relative;
+  display: grid;
+  place-items: center;
+  width: 24px;
+  height: 24px;
+  padding: 0;
+  border: 0;
+  border-radius: 9999px;
+  background: none;
+  cursor: pointer;
+}
+.story-timeline__star:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--tl-color) 60%, transparent);
+}
+/* Each chapter's mark. Its shape (TIMELINE.shape → `shape-*`) only sets these variables
+   — the size normal / current, rotation, scale, corner, clip — circle is the base. */
+.story-timeline {
+  --tl-w: var(--tl-star);
+  --tl-h: var(--tl-star);
+  --tl-cw: var(--tl-current);
+  --tl-ch: var(--tl-current);
+  --tl-rot: 0deg;
+  --tl-scale: 1;
+  --tl-hover: 1.3;
+  --tl-radius: 9999px;
+  --tl-clip: none;
+}
+/* A tiny four-point sparkle, like the site's sparkling stars. */
+.story-timeline.shape-star {
+  --tl-w: calc(var(--tl-star) * 1.9);
+  --tl-h: calc(var(--tl-star) * 1.9);
+  --tl-cw: calc(var(--tl-current) * 2.2);
+  --tl-ch: calc(var(--tl-current) * 2.2);
+  --tl-radius: 0;
+  --tl-clip: polygon(50% 0%, 61% 39%, 100% 50%, 61% 61%, 50% 100%, 39% 61%, 0% 50%, 39% 39%);
+}
+/* A small square on its point, like a marker on a star chart. */
+.story-timeline.shape-diamond {
+  --tl-rot: 45deg;
+  --tl-scale: 0.78;
+  --tl-hover: 1.05;
+  --tl-radius: 1.5px;
+}
+/* A short line across the rail, like marks on a ruler; the current one is longer. */
+.story-timeline.shape-tick {
+  --tl-w: calc(var(--tl-star) * 1.6);
+  --tl-h: max(1.5px, var(--tl-rail));
+  --tl-cw: calc(var(--tl-current) * 2.2);
+  --tl-ch: calc(max(1.5px, var(--tl-rail)) + 1px);
+  --tl-hover: 1.15;
+}
+/* A small rounded bar along the rail; the current one is taller. */
+.story-timeline.shape-capsule {
+  --tl-w: calc(var(--tl-star) * 0.7);
+  --tl-h: calc(var(--tl-star) * 1.7);
+  --tl-cw: calc(var(--tl-current) * 0.7);
+  --tl-ch: calc(var(--tl-current) * 2.3);
+}
+/* Ticks and capsules turn with a horizontal rail (across / along it). */
+.story-timeline.is-horizontal:is(.shape-tick, .shape-capsule) {
+  --tl-rot: 90deg;
+}
+
+.story-timeline__glyph {
+  position: relative;
+  display: grid;
+  place-items: center;
+}
+.story-timeline__glyph::before {
+  content: "";
+  width: var(--tl-w);
+  height: var(--tl-h);
+  border-radius: var(--tl-radius);
+  clip-path: var(--tl-clip);
+  background: color-mix(in srgb, var(--tl-rail-color) calc(var(--tl-upcoming-alpha) * 100%), transparent);
+  transform: rotate(var(--tl-rot)) scale(var(--tl-scale));
+  transition:
+    width 0.3s ease,
+    height 0.3s ease,
+    background-color 0.3s ease,
+    box-shadow 0.3s ease,
+    transform 0.2s ease;
+}
+.story-timeline__star:hover .story-timeline__glyph::before {
+  transform: rotate(var(--tl-rot)) scale(var(--tl-hover));
+}
+/* Not reached yet: hollow rings instead of soft fills (TIMELINE.upcoming) — for the
+   shapes an outline can show on (not the clipped star, nor the thin tick). */
+.story-timeline.is-hollow:is(.shape-circle, .shape-diamond, .shape-capsule, .shape-orbit)
+  .story-timeline__star:not(.is-passed):not(.is-current)
+  .story-timeline__glyph::before {
+  background: transparent;
+  box-shadow: inset 0 0 0 1px
+    color-mix(in srgb, var(--tl-rail-color) calc(var(--tl-upcoming-alpha) * 100%), transparent);
+}
+/* Not reached yet (hidden while TIMELINE.upcomingAlpha is 0): a faint mark under the
+   pointer / focus shows what you're about to pick. */
+.story-timeline__star:not(.is-passed):not(.is-current):is(:hover, :focus-visible) .story-timeline__glyph::before {
+  background: color-mix(in srgb, var(--tl-rail-color) 50%, transparent);
+}
+.story-timeline__star.is-passed .story-timeline__glyph::before {
+  background: var(--tl-color);
+}
+.story-timeline__star.is-current .story-timeline__glyph::before {
+  width: var(--tl-cw);
+  height: var(--tl-ch);
+  background: var(--tl-color);
+}
+.story-timeline__star.is-current .story-timeline__glyph {
+  filter: drop-shadow(
+    0 0 calc(var(--tl-current) * 0.45) color-mix(in srgb, var(--tl-color) calc(var(--tl-glow) * 100%), transparent)
+  );
+}
+.story-timeline.is-pulse .story-timeline__star.is-current .story-timeline__glyph {
+  animation: story-timeline-breathe 3.2s ease-in-out infinite;
+}
+@keyframes story-timeline-breathe {
+  50% {
+    filter: drop-shadow(
+      0 0 calc(var(--tl-current) * 0.95) color-mix(in srgb, var(--tl-color) calc(var(--tl-glow) * 55%), transparent)
+    );
+  }
+}
+/* Orbit: small dots; the current one wears a thin orbit ring (a planet on its path)
+   instead of the glow. */
+.story-timeline.shape-orbit .story-timeline__star.is-current .story-timeline__glyph {
+  filter: none;
+  animation: none;
+}
+.story-timeline.shape-orbit .story-timeline__glyph::after {
+  content: "";
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: calc(var(--tl-current) * 2.3);
+  height: calc(var(--tl-current) * 2.3);
+  border: 1px solid color-mix(in srgb, var(--tl-color) calc((0.25 + var(--tl-glow) * 0.75) * 100%), transparent);
+  border-radius: 9999px;
+  opacity: 0;
+  transform: translate(-50%, -50%) scale(0.4);
+  transition:
+    opacity 0.3s ease,
+    transform 0.3s ease;
+  pointer-events: none;
+}
+.story-timeline.shape-orbit .story-timeline__star.is-current .story-timeline__glyph::after {
+  opacity: 1;
+  transform: translate(-50%, -50%) scale(1);
+}
+
+/* The tooltip and the name-on-change pill: the Lab label's look (RecordLabel). */
+.story-timeline__tip,
+.story-timeline__toast {
+  position: absolute;
+  top: 50%;
+  padding: 6px 12px;
+  border-radius: 9999px;
+  font-family: var(--font-sans);
+  font-size: 11px;
+  font-weight: 300;
+  line-height: 1;
+  letter-spacing: 0.025em;
+  white-space: nowrap;
+  color: var(--tl-tip-color);
+  background: color-mix(in srgb, var(--color-rich-black) 85%, transparent);
+  box-shadow: 0 0 0 1px rgb(255 255 255 / 0.1);
+  backdrop-filter: blur(12px);
+  opacity: 0;
+  transform: var(--tl-tip-from);
+  transition:
+    opacity 0.18s ease,
+    transform 0.18s ease;
+  pointer-events: none;
+}
+.story-timeline__star:is(:hover, :focus-visible) .story-timeline__tip,
+.story-timeline__toast.is-on {
+  opacity: 1;
+  transform: var(--tl-tip-to);
+}
+/* Which side they open on: into the screen, away from the edge (tip-*, from the position). */
+.story-timeline.tip-right {
+  --tl-tip-from: translate(-4px, -50%);
+  --tl-tip-to: translate(0, -50%);
+}
+.story-timeline.tip-left {
+  --tl-tip-from: translate(4px, -50%);
+  --tl-tip-to: translate(0, -50%);
+}
+.story-timeline.tip-below {
+  --tl-tip-from: translate(-50%, -4px);
+  --tl-tip-to: translate(-50%, 0);
+}
+.story-timeline.tip-above {
+  --tl-tip-from: translate(-50%, 4px);
+  --tl-tip-to: translate(-50%, 0);
+}
+.tip-right .story-timeline__tip {
+  top: 50%;
+  left: calc(100% + 6px);
+}
+.tip-left .story-timeline__tip {
+  top: 50%;
+  right: calc(100% + 6px);
+}
+.tip-below .story-timeline__tip {
+  top: calc(100% + 6px);
+  left: 50%;
+}
+.tip-above .story-timeline__tip {
+  bottom: calc(100% + 6px);
+  left: 50%;
+}
+.tip-right .story-timeline__toast {
+  left: 30px;
+}
+.tip-left .story-timeline__toast {
+  right: 30px;
+}
+.tip-below .story-timeline__toast {
+  top: 30px;
+}
+.tip-above .story-timeline__toast {
+  bottom: 30px;
+}
+.story-timeline.is-phone .story-timeline__tip {
+  display: none;
+}
