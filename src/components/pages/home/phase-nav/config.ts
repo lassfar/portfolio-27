@@ -32,8 +32,8 @@ const [solarRestStart, solarRestEnd] = solarRestRange();
  */
 export const PHASE_STOPS: readonly PhaseStop[] = [
   {
-    id: "saturn", // the About text, fully coloured in
-    name: title("saturn"),
+    id: "maker", // the About text, fully coloured in
+    name: title("maker"),
     window: [
       jp(lerp(JOURNEY.fillStart, JOURNEY.exitStart, 0.6)),
       jp(JOURNEY.exitStart),
@@ -47,8 +47,8 @@ export const PHASE_STOPS: readonly PhaseStop[] = [
     target: JOURNEY.craftFadeStart - mpAt(5),
   },
   {
-    id: "solar-system", // the wide, Sun-centred view
-    name: title("solar-system"),
+    id: "voyage", // the wide, Sun-centred view
+    name: title("voyage"),
     window: [
       voyageAt(VOYAGE.flyoutEnd - 0.08),
       voyageAt(VOYAGE.flyoutEnd + 0.04),
@@ -68,10 +68,8 @@ export const PHASE_STOPS: readonly PhaseStop[] = [
     target: labAt(0.95),
   },
   {
-    id: "galaxy", // the finale's rest on the whole solar system
-    // Not "The Galaxy" (too close to "The Milky Way", the stop after): the way back out
-    // from the probe to the whole system.
-    name: "The Way Out",
+    id: "way-out", // the finale's rest on the whole solar system
+    name: title("way-out"),
     window: [
       solarRestStart - 0.03 * (solarRestStart - JOURNEY.galaxyStart),
       solarRestEnd,
@@ -80,7 +78,7 @@ export const PHASE_STOPS: readonly PhaseStop[] = [
   },
   {
     id: "milky-way", // the full galaxy
-    name: "The Milky Way",
+    name: title("milky-way"),
     window: [JOURNEY.galaxyEnd, JOURNEY.contactStart],
     target: JOURNEY.galaxyEnd + mpAt(5),
   },
@@ -119,7 +117,7 @@ export const PHASE_NAV = {
 export function nextStopAt(mp: number): PhaseStop | null {
   if (mp >= JOURNEY.contactStart) return null;
   const at = PHASE_STOPS.findIndex(
-    (s) => s.window !== null && mp >= s.window[0] && mp < s.window[1]
+    (s) => s.window !== null && mp >= s.window[0] && mp < s.window[1],
   );
   if (at >= 0) return PHASE_STOPS[at + 1] ?? null;
   return PHASE_STOPS.find((s) => s.target > mp) ?? null;
@@ -130,6 +128,6 @@ export function glideSeconds(distance: number): number {
   const screens = Math.abs(distance) / mpAt(100);
   return Math.min(
     PHASE_NAV.maxSeconds,
-    Math.max(PHASE_NAV.minSeconds, screens * PHASE_NAV.secondsPerScreen)
+    Math.max(PHASE_NAV.minSeconds, screens * PHASE_NAV.secondsPerScreen),
   );
 }

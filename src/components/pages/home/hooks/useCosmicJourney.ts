@@ -24,7 +24,6 @@ export type CosmicJourneyRefs = {
   containerRef: RefObject<HTMLDivElement | null>;
   contentRef: RefObject<HTMLDivElement | null>;
   logoRef: RefObject<HTMLDivElement | null>;
-  heroMarkerRef: RefObject<HTMLDivElement | null>;
   aboutRevealRef: RefObject<HTMLDivElement | null>;
   aboutTitleRef: RefObject<HTMLHeadingElement | null>;
   aboutPara1Ref: RefObject<HTMLParagraphElement | null>;
@@ -56,7 +55,6 @@ export default function useCosmicJourney(refs: CosmicJourneyRefs): void {
     containerRef,
     contentRef,
     logoRef,
-    heroMarkerRef,
     aboutRevealRef,
     aboutTitleRef,
     aboutPara1Ref,
@@ -258,11 +256,6 @@ export default function useCosmicJourney(refs: CosmicJourneyRefs): void {
       )
         .to(
           logoRef.current,
-          { autoAlpha: 0, ease: "power1.in", duration: contentExit },
-          0
-        )
-        .to(
-          heroMarkerRef.current,
           { autoAlpha: 0, ease: "power1.in", duration: contentExit },
           0
         )

@@ -4,7 +4,6 @@ import { useEffect, useRef, useState } from "react";
 import dynamic from "next/dynamic";
 import useTextsWritingMotion from "#/components/hooks/motions/texts/useTextsWritingMotion";
 import SunriseLogo from "#/components/assets/pictures/logos/sunrise-logo";
-import SectionMarker from "#/components/UI/SectionMarker";
 import Button from "#/components/UI/buttons/Button";
 import Skills from "#/components/pages/home/skills/Skills";
 import Contact from "#/components/pages/home/contact/Contact";
@@ -37,7 +36,6 @@ const Hero = () => {
   const aboutTitleRef = useRef<HTMLHeadingElement | null>(null);
   const aboutPara1Ref = useRef<HTMLParagraphElement | null>(null);
   const aboutPara2Ref = useRef<HTMLParagraphElement | null>(null);
-  const heroMarkerRef = useRef<HTMLDivElement | null>(null);
   const craftRef = useRef<HTMLDivElement | null>(null);
   const contactRef = useRef<HTMLDivElement | null>(null);
 
@@ -118,7 +116,6 @@ const Hero = () => {
     containerRef,
     contentRef,
     logoRef,
-    heroMarkerRef,
     aboutRevealRef,
     aboutTitleRef,
     aboutPara1Ref,
@@ -160,9 +157,6 @@ const Hero = () => {
       >
         <SunriseLogo width={56} height={48} className="w-10 sm:w-12 h-auto" />
       </div>
-
-      {/* Section spine — fades out with the hero copy as the journey begins. */}
-      <SectionMarker ref={heroMarkerRef} label="ORIGIN" className="z-10" />
 
       {/* Content overlay — pointer-events-none so drags reach the space;
           interactive children re-enable pointer events. */}
@@ -242,9 +236,6 @@ const Hero = () => {
           "px-6"
         )}
       >
-        {/* Section spine — fades in with this block. */}
-        <SectionMarker label="THE MAKER" />
-
         <h2
           ref={aboutTitleRef}
           className={clsx(

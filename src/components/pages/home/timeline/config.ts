@@ -1,21 +1,25 @@
+import { solarRestRange } from "#/components/three.js/galaxy/pace";
 import { JOURNEY } from "#/components/three.js/star/config";
 import type { StoryChapter, StoryTimelineTuning } from "./StoryTimeline.types";
 
 /**
- * The story's chapters, in order: one star each on the timeline.
+ * The story's chapters, in order: the ONE naming of the site, shared by the timeline (one
+ * star each), the always-visible story title (uppercased) and the navigation
+ * assistant's button (P27-76).
  *
  * `start` is where the chapter begins on the pinned journey, taken from the scroll map
- * (JOURNEY), so the timeline follows any re-pacing. To add a part to the story, add
- * one entry here.
+ * (JOURNEY), so everything follows any re-pacing. To add a part to the story, add one
+ * entry here.
  */
 export const STORY_CHAPTERS: readonly StoryChapter[] = [
-  { id: "star", name: "The Star", start: 0 },
-  { id: "saturn", name: "Saturn", start: JOURNEY.assembleStart * JOURNEY.journeyEnd }, // Saturn starts assembling
+  { id: "origin", name: "Origin", start: 0 }, // the star
+  { id: "maker", name: "The Maker", start: JOURNEY.assembleStart * JOURNEY.journeyEnd }, // Saturn assembles, then About
   { id: "craft", name: "The Craft", start: JOURNEY.craftCoverStart },
-  { id: "solar-system", name: "The Solar System", start: JOURNEY.flyAwayStart },
+  { id: "voyage", name: "The Voyage", start: JOURNEY.flyAwayStart }, // out to the solar system
   { id: "earth", name: "The Earth", start: JOURNEY.voyageEnd },
-  { id: "lab", name: "The Lab", start: JOURNEY.earthDwellEnd },
-  { id: "galaxy", name: "The Galaxy", start: JOURNEY.galaxyStart },
+  { id: "lab", name: "The Lab", start: JOURNEY.earthDwellEnd }, // the Parker Solar Probe
+  { id: "way-out", name: "The Way Out", start: JOURNEY.galaxyStart }, // back out to the whole system
+  { id: "milky-way", name: "The Milky Way", start: solarRestRange()[1] }, // out to the full galaxy
   { id: "contact", name: "Contact", start: JOURNEY.contactStart },
 ];
 

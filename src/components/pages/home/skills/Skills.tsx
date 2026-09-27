@@ -3,7 +3,6 @@
 import { RefObject, useEffect, useMemo, useState } from "react";
 import gsap from "gsap";
 import clsx from "clsx";
-import SectionMarker from "#/components/UI/SectionMarker";
 
 /**
  * Skills — "The Craft" constellation, now an OVERLAY inside the shared cosmic
@@ -202,9 +201,6 @@ const Skills = ({ overlayRef, reduced = false }: Props) => {
           />
         ))}
       </div>
-
-      {/* Section spine */}
-      <SectionMarker label="THE CRAFT" />
 
       {/* Title + intro */}
       <h2

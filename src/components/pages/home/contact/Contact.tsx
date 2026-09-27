@@ -2,7 +2,6 @@
 
 import clsx from "clsx";
 import { FormEvent, useRef, useState } from "react";
-import SectionMarker from "#/components/UI/SectionMarker";
 import Button from "#/components/UI/buttons/Button";
 import {
   CONTACT_LINKS,
@@ -84,9 +83,6 @@ const Contact = ({ overlayRef, reduced }: ContactProps) => {
           class, not an inline colour — colour extensions rewrite inline colours before
           hydration, which made React log a mismatch). */}
       <div aria-hidden className="home-contact__vignette pointer-events-none absolute inset-0" />
-
-      {/* Section spine — fades in with this block. */}
-      <SectionMarker label="CONTACT" />
 
       <div
         className={clsx(

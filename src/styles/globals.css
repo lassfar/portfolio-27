@@ -437,6 +437,63 @@
   display: none;
 }
 
+/* ── The story title (P27-76) ─────────────────────────────────────────────────────────
+   The current chapter's title on the left edge, always visible: a thin rule, the title
+   in wide-tracked capitals reading bottom → top (-90°), a peach dot. */
+.story-title {
+  position: fixed;
+  top: 50%;
+  left: 16px;
+  z-index: 30; /* under the timeline (40), the labels (45) and the side panels (50) */
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  transform: translateY(-50%);
+  pointer-events: none;
+  user-select: none;
+}
+.story-title__rule {
+  width: 1px;
+  height: 32px;
+  background: color-mix(in srgb, var(--color-gray-slate) 25%, transparent);
+}
+.story-title__label {
+  writing-mode: vertical-rl;
+  transform: rotate(180deg); /* -90°: reads bottom → top */
+  font-family: var(--font-sans);
+  font-size: 10px;
+  font-weight: 500;
+  line-height: 1;
+  letter-spacing: 0.42em;
+  text-transform: uppercase;
+  white-space: nowrap;
+  color: color-mix(in srgb, var(--color-gray-slate) 50%, transparent);
+}
+.story-title__dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 9999px;
+  background: color-mix(in srgb, var(--color-peach) 70%, transparent);
+}
+@media (width >= 40rem) {
+  .story-title {
+    left: 24px;
+    gap: 16px;
+  }
+  .story-title__rule {
+    height: 40px;
+  }
+  .story-title__label {
+    font-size: 11px;
+  }
+}
+@media (width >= 48rem) {
+  .story-title {
+    left: 32px;
+  }
+}
+
 /* ── The navigation assistant (P27-74) ─────────────────────────────────────────────
    A glowing orb at the bottom centre (NavAssistant); a click grows it into the next
    chapter's button (GSAP). The root is a zero-size anchor: orb, tooltip and button are
