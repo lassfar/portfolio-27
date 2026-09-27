@@ -9,6 +9,7 @@ import { useAboutScroll } from "#/stores/useAboutScroll";
 import { useVoyageScroll } from "#/stores/useVoyageScroll";
 import { useLabScroll } from "#/stores/useLabScroll";
 import { useJourneyScroll } from "#/stores/useJourneyScroll";
+import { storyEase } from "#/components/three.js/scene/storyMotion";
 import { useGalaxyScroll } from "#/stores/useGalaxyScroll";
 import { journeyTrigger } from "#/stores/journeyTrigger";
 import { cosmicVeil } from "#/stores/cosmicVeil";
@@ -217,7 +218,9 @@ export default function useCosmicJourney(refs: CosmicJourneyRefs): void {
             const jp = clamp01(mp / JOURNEY.journeyEnd); // journey 0..1
             setJourney(mp); // the whole story (the story timeline)
             setStar(clamp01(jp / JOURNEY.starSpan));
-            setAbout(remap01(jp, JOURNEY.assembleStart, JOURNEY.assembleEnd));
+            // Saturn assembles on the story's standard curve (P27-77), eased here so the
+            // shaders, its core and the spin all follow the same timing.
+            setAbout(storyEase(remap01(jp, JOURNEY.assembleStart, JOURNEY.assembleEnd)));
             // Voyage spans flyAwayStart..voyageEnd (0→1); its sub-phases (fly-away,
             // solar reveal, Earth dive) are voyage fractions in the R3F components.
             // It clamps at 1 through the Earth dwell + the Lab, so the Earth holds.

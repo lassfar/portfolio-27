@@ -15,7 +15,7 @@ import {
   Vector3,
 } from "three";
 import { clamp01, damp, remap01 } from "#/components/three.js/star/utils";
-import { ROTATION } from "#/components/three.js/star/config";
+import { ROTATION, labAt } from "#/components/three.js/star/config";
 import { useLabScroll } from "#/stores/useLabScroll";
 import { useGalaxyScroll } from "#/stores/useGalaxyScroll";
 import { useParkerAnchor } from "#/stores/useParkerAnchor";
@@ -218,7 +218,7 @@ const ParkerProbe = () => {
     const px = ((2 * PARKER.shield.radius * METRE) / d) * pxPerRad;
     root.visible = px >= PARKER_VIEW.modelMinPx;
     const markerIn =
-      smoothstep(0, 0.08, lab) * (1 - smoothstep(PARKER_CAM.markerOut[0], PARKER_CAM.markerOut[1], galaxy));
+      smoothstep(0, labAt(112), lab) * (1 - smoothstep(PARKER_CAM.markerOut[0], PARKER_CAM.markerOut[1], galaxy));
     const markerOpacity =
       markerIn * (1 - smoothstep(PARKER_VIEW.markerFade[0], PARKER_VIEW.markerFade[1], px));
     marker.visible = markerOpacity > 0.001;

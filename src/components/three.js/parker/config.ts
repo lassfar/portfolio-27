@@ -1,4 +1,5 @@
 import { EARTH_RADIUS } from "#/components/three.js/solar/config";
+import { labAt } from "#/components/three.js/star/config";
 
 /**
  * The Parker Solar Probe — launched 12 August 2018, the Lab's craft (it replaced
@@ -101,35 +102,26 @@ export const PARKER_CAM = {
   distance: 9, // the close-up distance (METRES)
   side: 55 * (Math.PI / 180), // the close-up sits this far off the anti-Sun axis (3/4, the Sun behind)
   lift: 0.25, // …and a little above the orbit plane
-  pullBack: [0, 0.3] as [number, number],
-  // The pull-back's speed as it reaches the overview (× its average; 0 = glides to rest):
-  // the pace the Saturn fly-out reaches the wide view at, relative to its distance.
-  pullBackArrive: 0.1,
+  // Timings in the Lab are set in scroll % into it (labAt), so the trip keeps its
+  // length whatever the close-up's pause (star/config PAUSES.probe).
+  pullBack: [0, labAt(420)] as [number, number],
   overview: 22, // the overview's distance from the Sun (scene units) — frames the Earth's orbit
   // The zoom's distance to the probe (scene units): [lab, distance] keyframes, eased as one
   // smooth curve (monotone — velocity continuous, zero at both ends). null = from the
   // overview.
   zoomKeys: [
-    [0.3, null],
-    [0.56, 1.5], // normal speed while the solar system is on screen…
-    [0.66, 2000 * (EARTH_RADIUS / 6_371_000)], // …fast through the empty stretch (2000 m: ~1 px)…
-    [0.9, 9 * (EARTH_RADIUS / 6_371_000)], // …slow for the arrival (the close-up distance)
+    [labAt(420), null],
+    [labAt(784), 1.5], // normal speed while the solar system is on screen…
+    [labAt(924), 2000 * (EARTH_RADIUS / 6_371_000)], // …fast through the empty stretch (2000 m: ~1 px)…
+    [labAt(1260), 9 * (EARTH_RADIUS / 6_371_000)], // …slow for the arrival (the close-up distance)
   ] as [number, number | null][],
-  focus: [0.54, 0.64] as [number, number], // the solar system fades to focus on the probe
-  swing: [0.72, 0.9] as [number, number], // lab progress over which it swings to the close-up side
-  // The finale's pull back OUT (galaxy progress, its first leg — GALAXY_PACE.toSolar),
-  // the zoom in reversed: the camera backs straight away from the probe toward the
-  // finale's solar-system framing, its distance to the probe as [galaxy, distance]
-  // keyframes, eased as one smooth curve — a SLOW departure (the swing away from the
-  // close-up side over `pullOutSwing`), FAST through the empty stretch, NORMAL once the
-  // solar system is back (null = at the framing, GALAXY_ZOOM.panSunEnd). The aim slides
-  // from the probe to the Sun with the distance flown, as on the way in.
-  pullOut: [
-    [0, 9 * (EARTH_RADIUS / 6_371_000)],
-    [0.13, 2000 * (EARTH_RADIUS / 6_371_000)],
-    [0.18, 1.5],
-    [0.44, null],
-  ] as [number, number | null][],
+  focus: [labAt(756), labAt(896)] as [number, number], // the solar system fades to focus on the probe
+  swing: [labAt(1008), labAt(1260)] as [number, number], // over which it swings to the close-up side
+  // The finale's pull back OUT (galaxy progress, its first leg — GALAXY_PACE.toSolar):
+  // the camera backs straight away from the probe toward the finale's solar-system
+  // framing, its distance growing in log space on the story's standard curve
+  // (scene/storyMotion) — slow off the close-up, fast through the empty stretch, slow
+  // onto the system — swinging off the close-up side over `pullOutSwing`.
   pullOutSwing: [0, 0.13] as [number, number],
   markerOut: [0.34, 0.44] as [number, number], // finale: the marker fades out over this galaxy progress
 } as const;

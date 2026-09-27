@@ -149,7 +149,6 @@ export const FLYOUT = {
   //          orbits read as wide flattened ellipses (like a solar-system poster).
   //          The camera also eases its look-target from the fixed Saturn (origin)
   //          to the sun, so the view settles sun-centred with the Saturn aside.
-  ease: 1.1, // >1 = gentle start, accelerating away
   damping: 0.09, // 0..1 follow speed for the move (lower = smoother/laggier)
   // The Saturn is a PERSISTENT member now (it stays and flies), so it must keep
   // its full density — no thinning. (Kept as a knob for a possible distance LOD

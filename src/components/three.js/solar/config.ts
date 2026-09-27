@@ -1,4 +1,5 @@
 import { PLANET, SATURN } from "#/components/three.js/planet/config";
+import { labAt } from "#/components/three.js/star/config";
 
 /**
  * The solar system the Saturn belongs to — the sun at the centre and the
@@ -130,11 +131,11 @@ export const SOLAR = {
   // dive, it fades BACK in over this window (in `useGalaxyScroll` progress) as the
   // camera pulls back from the Parker Solar Probe, so the real solar system is what we see
   // "fully visible" before it shrinks into the galaxy. See solar/reveal.ts.
-  finaleReturn: [0.14, 0.26] as [number, number], // as the pull-out leaves the empty stretch (PARKER_CAM.pullOut)
+  finaleReturn: [0.18, 0.29] as [number, number], // as the pull-out leaves the empty stretch (~2000 m → ~2 units from the probe)
   // …and it returns as you leave the Earth for the Parker Solar Probe too (in
   // `useLabScroll` progress): the probe flies near the Sun, so the Lab is set in the
   // real system again.
-  labReturn: [0.05, 0.3] as [number, number],
+  labReturn: [labAt(70), labAt(420)] as [number, number], // Lab progress, from scroll % into the Lab
   // …and once the camera is far out (the system is only a few pixels wide), the
   // planets + orbit lines fade away over this window so their dark shaded dots don't
   // smudge the galaxy; the Sun stays as the "You are here" speck. Reverses on scroll-up.

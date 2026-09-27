@@ -1,6 +1,7 @@
 import type { GUI } from "three/examples/jsm/libs/lil-gui.module.min.js";
 import { copyValues, jumpToJourney, jumpToVoyage } from "#/components/three.js/scene/devPanel";
 import { JOURNEY, STARFIELD } from "./config";
+import { LAB } from "#/components/three.js/voyager/config";
 
 /** The code defaults, for "reset" (the panel mutates STARFIELD in place). */
 const DEFAULTS = {
@@ -36,7 +37,7 @@ export function buildStarsPanel(gui: GUI) {
     hero: () => jumpToJourney(0),
     about: () => jumpToJourney(JOURNEY.journeyEnd * 0.7), // the Saturn, built
     wide: () => jumpToVoyage(0.5),
-    lab: () => jumpToJourney(JOURNEY.earthDwellEnd + 0.97 * (JOURNEY.galaxyStart - JOURNEY.earthDwellEnd)), // at the Parker Solar Probe
+    lab: () => jumpToJourney(JOURNEY.earthDwellEnd + ((LAB.recordLabelAt + 1) / 2) * (JOURNEY.galaxyStart - JOURNEY.earthDwellEnd)), // at the Parker Solar Probe
   };
   fJump.add(jumps, "hero").name("the hero");
   fJump.add(jumps, "about").name("About (the Saturn)");

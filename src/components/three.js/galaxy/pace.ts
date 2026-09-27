@@ -1,5 +1,6 @@
 import { JOURNEY } from "#/components/three.js/star/config";
 import { remap01 } from "#/components/three.js/star/utils";
+import { galaxyFlightEase } from "#/components/three.js/scene/storyMotion";
 import { GALAXY_ZOOM } from "./config";
 
 /**
@@ -17,23 +18,15 @@ const P = JOURNEY.galaxyPace;
 const TOTAL = P.toSolar + P.solarHold + P.toGalaxy;
 const SOLAR = GALAXY_ZOOM.panSunEnd;
 
-/** Cubic from `speed` (× the average rate) at the start to REST at the end. */
-function glideToRest(t: number, speed: number): number {
-  const t2 = t * t;
-  const t3 = t2 * t;
-  return speed * (t - 2 * t2 + t3) + (3 * t2 - 2 * t3);
-}
-
-function smoothstep(t: number): number {
-  return t * t * (3 - 2 * t);
-}
-
 /** Galaxy progress (0..1) at a master journey progress `mp`. */
 export function galaxyProgressAt(mp: number): number {
   const u = remap01(mp, JOURNEY.galaxyStart, JOURNEY.galaxyEnd) * TOTAL; // scroll % in
-  if (u <= P.toSolar) return SOLAR * glideToRest(u / P.toSolar, P.departSpeed);
+  // The pull-out: an even pace here; the camera's own distance curve (the story's
+  // standard curve, CameraRig segment 4) eases it slow → fast → slow.
+  if (u <= P.toSolar) return SOLAR * (u / P.toSolar);
   if (u <= P.toSolar + P.solarHold) return SOLAR;
-  return SOLAR + (1 - SOLAR) * smoothstep((u - P.toSolar - P.solarHold) / P.toGalaxy);
+  // The flight out to the galaxy: its own curve, slow → normal → very slow (P27-77).
+  return SOLAR + (1 - SOLAR) * galaxyFlightEase((u - P.toSolar - P.solarHold) / P.toGalaxy);
 }
 
 /**

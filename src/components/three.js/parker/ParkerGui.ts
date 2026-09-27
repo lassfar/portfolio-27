@@ -1,6 +1,7 @@
 import type { GUI } from "three/examples/jsm/libs/lil-gui.module.min.js";
 import { jumpToJourney } from "#/components/three.js/scene/devPanel";
-import { JOURNEY } from "#/components/three.js/star/config";
+import { JOURNEY, labAt } from "#/components/three.js/star/config";
+import { LAB } from "#/components/three.js/voyager/config";
 import { PARKER_FOCUS } from "./config";
 
 /** Scroll to a point of the Lab (0 = leaving the Earth → 1 = at the Parker Solar Probe). */
@@ -16,12 +17,13 @@ function jumpToLab(lab: number) {
 export function buildParkerPanel(gui: GUI) {
   const fJump = gui.addFolder("Jump to");
   const jumps = {
-    leave: () => jumpToLab(0.15),
-    overview: () => jumpToLab(0.3),
-    zoom: () => jumpToLab(0.55),
-    empty: () => jumpToLab(0.66),
-    arrive: () => jumpToLab(0.8),
-    closeUp: () => jumpToLab(0.97),
+    // Scroll % into the Lab (labAt), so they stay on their beats whatever its pause.
+    leave: () => jumpToLab(labAt(210)),
+    overview: () => jumpToLab(labAt(420)),
+    zoom: () => jumpToLab(labAt(770)),
+    empty: () => jumpToLab(labAt(924)),
+    arrive: () => jumpToLab(labAt(1120)),
+    closeUp: () => jumpToLab((LAB.recordLabelAt + 1) / 2), // the middle of the close-up's pause
   };
   fJump.add(jumps, "leave").name("leaving the Earth");
   fJump.add(jumps, "overview").name("the overview");

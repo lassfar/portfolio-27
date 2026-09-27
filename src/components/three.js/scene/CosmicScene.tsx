@@ -10,7 +10,6 @@ import { BLOOM, CAMERA, JOURNEY, PARTICLES } from "#/components/three.js/star/co
 import {
   clamp01,
   easeInOutCubic,
-  easeInOutCubicTo,
   lerp,
   remap01,
 } from "#/components/three.js/star/utils";
@@ -62,6 +61,7 @@ import { useEarthAnchor } from "#/stores/useEarthAnchor";
 import { useParkerAnchor } from "#/stores/useParkerAnchor";
 import { useGalleryStore } from "#/stores/useGalleryStore";
 import { useLabStore } from "#/stores/useLabStore";
+import { storyEase } from "./storyMotion";
 import { setScrollLock } from "#/stores/scrollLock";
 
 /**
@@ -400,7 +400,7 @@ function bendAroundSun(
 // ── Segment-4 exponential-zoom constants. Computed once, at module load. ──
 // The finale's reference start: the Voyager-era Lab framing (LAB_CAM) the galaxy's
 // scale was tuned to — its distance and ¾ direction. (The finale now opens on the Parker
-// Solar Probe's close-up and pulls back out to the solar-system framing — PARKER_CAM.pullOut.)
+// Solar Probe's close-up and pulls back out to the solar-system framing — segment 4, leg 1.)
 const _gStartVec = [
   LAB_CAM.offset[0] - LAB_CAM.look[0],
   LAB_CAM.offset[1] - LAB_CAM.look[1],
@@ -504,7 +504,9 @@ const CameraRig = ({
     const voyage = clamp01(useVoyageScroll.getState().progress);
 
     // ── Segment 1: Saturn → wide sun-centred view ──
-    const fly = Math.pow(clamp01(voyage / VOYAGE.flyoutEnd), FLYOUT.ease);
+    // The story's standard curve (P27-77): it leaves the Saturn slowly, speeds up, and
+    // settles on the wide view — where the dive then starts from rest.
+    const fly = storyEase(clamp01(voyage / VOYAGE.flyoutEnd));
     let px = lerp(a.x, 0, fly);
     let py = lerp(a.y, FLYOUT.rise, fly);
     let pz = lerp(a.z + CAMERA.z, CAMERA.z + FLYOUT.distance, fly);
@@ -513,15 +515,15 @@ const CameraRig = ({
     let lz = lerp(a.z, SUNPOS[2], fly);
 
     // ── Segment 2: wide → Earth dive (fly to the LIVE orbiting Earth) ──
-    // easeInOutCubic → the camera eases out of the wide view and GLIDES TO REST
-    // as the Earth fills the frame (velocity → 0 at arrival), so it settles
+    // The story's standard curve (storyEase) → the camera eases out of the wide view and
+    // GLIDES TO REST as the Earth fills the frame (velocity → 0 at arrival), so it settles
     // smoothly into the dwell instead of slamming to a stop.
     // The real-size Earth is tiny, so the distance to it closes as a steady ZOOM
     // (EARTH_CAM.steadyZoom): along the same straight path, the remaining distance
     // shrinks by the same factor each step instead of at a constant speed.
     const ap = remap01(voyage, VOYAGE.flyoutEnd, 1);
     if (ap > 0) {
-      const apE = easeInOutCubic(ap);
+      const apE = storyEase(ap); // the story's standard curve (P27-77)
       const e = useEarthAnchor.getState();
       const [ox, oy, oz] = EARTH_CAM.offset;
       // The straight path: from the wide view (segment 1) to the arrival pose.
@@ -575,7 +577,7 @@ const CameraRig = ({
       // 1. Pull back from the Earth pose (segment 2): a steady zoom out — the distance
       //    from the Earth grows by the same factor each step (the Earth arrival, reversed).
       const home: [number, number, number] = [px, py, pz];
-      const back = easeInOutCubicTo(remap01(lab, C.pullBack[0], C.pullBack[1]), C.pullBackArrive);
+      const back = storyEase(remap01(lab, C.pullBack[0], C.pullBack[1])); // the standard curve (P27-77)
       const dE0 = Math.max(Math.hypot(px - earth.x, py - earth.y, pz - earth.z), 1e-3);
       const dE1 = Math.hypot(over[0] - earth.x, over[1] - earth.y, over[2] - earth.z);
       const dE = dE0 * Math.pow(dE1 / dE0, back);
@@ -639,7 +641,7 @@ const CameraRig = ({
     const galaxy = clamp01(useGalaxyScroll.getState().progress);
     let framing = 0; // how much the galaxy framing applies (the leg-2 pan, below)
     // After landing: the gentle drift back before the Contact form (eased).
-    const drift = easeInOutCubic(clamp01(useGalaxyScroll.getState().drift));
+    const drift = storyEase(clamp01(useGalaxyScroll.getState().drift));
     const driftScale = 1 + (1 / (1 - GALAXY_ZOOM.driftBack) - 1) * drift;
     if (galaxy > 0) {
       const z = galaxy;
@@ -651,10 +653,10 @@ const CameraRig = ({
         // Leg 1: the Lab's zoom into the probe, reversed — the camera backs straight away
         // from the real-size probe toward the finale's solar-system framing (the Sun
         // centred, from the ¾ side), swinging off the close-up side as it departs; its
-        // distance follows PARKER_CAM.pullOut (slow → fast through the empty stretch →
-        // normal once the solar system is back), the aim sliding from the probe to the
-        // Sun with the distance flown (the view holds still — no turn in place). The
-        // probe flies with the system, so its framing does too.
+        // distance grows in log space on the story's standard curve (P27-77: slow → fast
+        // through the empty stretch → slow onto the system), the aim sliding from the
+        // probe to the Sun with the distance flown (the view holds still — no turn in
+        // place). The probe flies with the system, so its framing does too.
         const C = PARKER_CAM;
         const [sx, sy, sz] = sun;
         const pk = useParkerAnchor.getState();
@@ -671,13 +673,8 @@ const CameraRig = ({
         fx /= d1;
         fy /= d1;
         fz /= d1;
-        const d = Math.exp(
-          monotoneCurve(
-            z,
-            C.pullOut.map((k) => k[0]),
-            C.pullOut.map((k) => Math.log(k[1] ?? d1)),
-          ),
-        );
+        const dStart = C.distance * METRE; // the close-up
+        const d = Math.exp(lerp(Math.log(dStart), Math.log(d1), storyEase(z / ps)));
         const close = parkerViewDir(_closeDir, pk.x, pk.y, pk.z, sun);
         const e = remap01(z, C.pullOutSwing[0], C.pullOutSwing[1]);
         const sw = e * e * (3 - 2 * e);
@@ -693,7 +690,6 @@ const CameraRig = ({
         // When the probe is on the far side of the Sun, the way out bends round it.
         bendAroundSun([pk.x, pk.y, pk.z], frame, clamp01(d / d1), EARTH_CAM.sunClear, cam, true);
         [px, py, pz] = cam;
-        const dStart = C.pullOut[0][1] ?? 0;
         const flown = clamp01((d - dStart) / (d1 - dStart));
         _fromDir.set(lerp(pk.x, sx, flown) - px, lerp(pk.y, sy, flown) - py, lerp(pk.z, sz, flown) - pz).normalize();
         lx = px + _fromDir.x;

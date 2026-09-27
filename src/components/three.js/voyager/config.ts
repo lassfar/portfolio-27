@@ -1,3 +1,5 @@
+import { labAt } from "#/components/three.js/star/config";
+
 /**
  * The Lab · Voyager 1 — the story beat after the Earth arrival.
  *
@@ -59,13 +61,14 @@ export const LAB_CAM = {
 } as const;
 
 /**
- * Lab sub-phases, in `useLabScroll` progress (0..1 over the appended Lab scroll). You
- * leave the Earth and fly to the Parker Solar Probe (its camera timings live in
- * parker/config.ts PARKER_CAM).
+ * Lab sub-phases, in `useLabScroll` progress (0..1 over the appended Lab scroll), set
+ * from scroll % into the Lab (labAt) so the trip keeps its length whatever the
+ * close-up's pause. You leave the Earth and fly to the Parker Solar Probe (its camera
+ * timings live in parker/config.ts PARKER_CAM).
  */
 export const LAB = {
-  earthFadeEnd: 0.16, // the Earth's pins, daylight and drag hand off as you leave it
-  revealStart: 0.45, // (the retired Voyager's fade-in)
-  revealEnd: 0.7,
-  recordLabelAt: 0.9, // you've arrived: the close-up (its drag orbit, the assistant's rest window)
+  earthFadeEnd: labAt(224), // the Earth's pins, daylight and drag hand off as you leave it
+  revealStart: labAt(630), // (the retired Voyager's fade-in)
+  revealEnd: labAt(980),
+  recordLabelAt: labAt(1260), // you've arrived: the close-up (its drag orbit, the assistant's rest window)
 } as const;

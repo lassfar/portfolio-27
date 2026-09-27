@@ -21,7 +21,7 @@ const lerp = (a: number, b: number, t: number) => a + (b - a) * t;
 const jp = (x: number) => x * JOURNEY.journeyEnd; // journey progress (the About block) → mp
 const voyageAt = (v: number) =>
   lerp(JOURNEY.flyAwayStart, JOURNEY.voyageEnd, v);
-const labAt = (l: number) =>
+const labMp = (l: number) =>
   lerp(JOURNEY.earthDwellEnd, JOURNEY.galaxyStart, l);
 const [solarRestStart, solarRestEnd] = solarRestRange();
 
@@ -64,8 +64,8 @@ export const PHASE_STOPS: readonly PhaseStop[] = [
   {
     id: "lab", // the Parker Solar Probe's close-up
     name: title("lab"),
-    window: [labAt(LAB.recordLabelAt), JOURNEY.galaxyStart],
-    target: labAt(0.95),
+    window: [labMp(LAB.recordLabelAt), JOURNEY.galaxyStart],
+    target: labMp((LAB.recordLabelAt + 1) / 2), // the middle of the close-up's pause
   },
   {
     id: "way-out", // the finale's rest on the whole solar system
