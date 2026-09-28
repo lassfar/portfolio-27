@@ -4,6 +4,7 @@ import LabExperiments from "#/components/pages/home/lab/LabExperiments";
 import StoryTimeline from "#/components/pages/home/timeline/StoryTimeline";
 import StoryTitle from "#/components/pages/home/timeline/StoryTitle";
 import NavAssistant from "#/components/pages/home/phase-nav/NavAssistant";
+import PerfHud from "#/components/three.js/scene/PerfHud";
 
 export default function Home() {
   return (
@@ -28,6 +29,9 @@ export default function Home() {
 
       {/* The navigation assistant: a glowing orb that opens into the next chapter's button. */}
       <NavAssistant />
+
+      {/* ?perf only: live FPS and a per-chapter performance report. */}
+      <PerfHud />
     </main>
   );
 }

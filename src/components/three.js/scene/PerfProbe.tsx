@@ -4,28 +4,29 @@ import { useFrame, useThree } from "@react-three/fiber";
 import { lazy, Suspense, useEffect, useMemo, useRef } from "react";
 import { journeyAtGalaxy } from "#/components/three.js/galaxy/pace";
 import { journeyTrigger } from "#/stores/journeyTrigger";
+import { useJourneyScroll } from "#/stores/useJourneyScroll";
 import { jumpToJourney, jumpToVoyage } from "./devPanel";
+import {
+  buildReport,
+  perfMode,
+  recordFrame,
+  recordLongTask,
+  resetRecords,
+  setGpuReader,
+} from "./perfReport";
 
 /**
  * Dev-only performance probe, for measuring what each beat of the journey costs.
  * Invisible to visitors — it only mounts with a query flag (like `?gui`):
  *   • `?perf` — records every frame's renderer totals (draw calls, points, triangles,
  *     lines, compiled programs) and timings into a ring buffer, and exposes
- *     `window.__p27perf` (stats, long frames, jump-to-beat helpers) for test scripts;
+ *     `window.__p27perf` (stats, long frames, jump-to-beat helpers) for test scripts.
+ *     It also files each frame under its chapter (perfReport) for the PerfHud's report;
  *   • `?perf=overlay` — shows r3f-perf's live overlay (FPS, GPU time, calls) instead.
  * (Never both: each resets the renderer's counters.)
  */
 
 const Perf = lazy(() => import("r3f-perf").then((m) => ({ default: m.Perf })));
-
-type Mode = "off" | "probe" | "overlay";
-
-function perfMode(): Mode {
-  if (typeof window === "undefined") return "off";
-  const flag = new URLSearchParams(window.location.search).get("perf");
-  if (flag === null || flag === "0") return "off";
-  return flag === "overlay" ? "overlay" : "probe";
-}
 
 const PerfProbe = () => {
   const mode = useMemo(perfMode, []);
@@ -67,6 +68,9 @@ declare global {
       jump: (mp: number) => void;
       jumpVoyage: (v: number) => void;
       jumpGalaxy: (g: number) => void;
+      /** The per-chapter report (Markdown), and its reset. */
+      report: () => string;
+      reset: () => void;
     };
   }
 }
@@ -114,10 +118,37 @@ const Probe = () => {
       jump: jumpToJourney,
       jumpVoyage: jumpToVoyage,
       jumpGalaxy: (g: number) => jumpToJourney(journeyAtGalaxy(g)),
+      report: () => buildReport("manual"),
+      reset: resetRecords,
     };
+
+    // The GPU's real name (e.g. "Iris Xe" vs "UHD", and the ANGLE backend on Windows).
+    const ctx = gl.getContext();
+    const debug = ctx.getExtension("WEBGL_debug_renderer_info");
+    const renderer = String(
+      ctx.getParameter(debug ? debug.UNMASKED_RENDERER_WEBGL : ctx.RENDERER),
+    );
+    setGpuReader(() => ({
+      renderer,
+      pixelRatio: gl.getPixelRatio(),
+      width: gl.domElement.width,
+      height: gl.domElement.height,
+    }));
+
+    // Main-thread tasks over 50 ms: the hitches (shader compiles, particle builds).
+    const longTasks =
+      PerformanceObserver.supportedEntryTypes?.includes("longtask")
+        ? new PerformanceObserver((list) =>
+            list.getEntries().forEach((e) => recordLongTask(e.duration)),
+          )
+        : null;
+    longTasks?.observe({ type: "longtask" });
+
     return () => {
       gl.info.autoReset = autoReset;
       delete window.__p27perf;
+      setGpuReader(null);
+      longTasks?.disconnect();
     };
   }, [gl]);
 
@@ -131,8 +162,10 @@ const Probe = () => {
   useFrame(() => {
     const now = performance.now();
     const r = gl.info.render;
+    const frameMs = lastEnd.current ? now - lastEnd.current : 0;
+    recordFrame(frameMs, r.calls, r.points, useJourneyScroll.getState().progress);
     ring.current[head.current] = {
-      frameMs: lastEnd.current ? now - lastEnd.current : 0,
+      frameMs,
       cpuMs: now - frameStart.current,
       calls: r.calls,
       points: r.points,
