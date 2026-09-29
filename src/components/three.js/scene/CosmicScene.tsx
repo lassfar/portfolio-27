@@ -68,6 +68,7 @@ import { useJourneyScroll } from "#/stores/useJourneyScroll";
 import { useLabStore } from "#/stores/useLabStore";
 import { storyEase } from "./storyMotion";
 import { onPerformanceChange, PERFORMANCE, PERFORMANCE_DEFAULTS } from "./performance";
+import { precompile, setWarmUpTarget, whenIdle } from "./warmUp";
 import { setScrollLock } from "#/stores/scrollLock";
 
 /**
@@ -217,6 +218,7 @@ const CosmicScene = () => {
 
         <BloomController bloom={bloom} veil={veil} highlightsRef={highlightsRef} />
         <Multisampling composerRef={composerRef} />
+        <ShaderWarmUp composerRef={composerRef} />
         <CameraRig starfieldRef={starfieldRef} />
         <InteractionLock />
         <RenderPause composerRef={composerRef} />
@@ -887,6 +889,31 @@ const RenderPause = ({
     pause.current.drawOnce = true;
   }, [size]);
 
+  return null;
+};
+
+/** At the latest this long after load, the background compile starts anyway. */
+const WARM_UP_TIMEOUT_MS = 3000;
+
+/**
+ * Compiles every shader in the scene in the background soon after load (P27-78), hidden
+ * ones too (the Lab's probe, the orbit lines…), so no chapter stalls on its first frame
+ * (see warmUp). In production it also skips three's per-shader error checks, which read
+ * back each program's logs on first use.
+ */
+const ShaderWarmUp = ({
+  composerRef,
+}: {
+  composerRef: RefObject<EffectComposerImpl | null>;
+}) => {
+  const gl = useThree((s) => s.gl);
+  const scene = useThree((s) => s.scene);
+  const camera = useThree((s) => s.camera);
+  useEffect(() => {
+    if (process.env.NODE_ENV === "production") gl.debug.checkShaderErrors = false;
+    setWarmUpTarget(() => composerRef.current?.inputBuffer ?? null);
+    return whenIdle(() => void precompile(gl, scene, camera), WARM_UP_TIMEOUT_MS);
+  }, [gl, scene, camera, composerRef]);
   return null;
 };
 

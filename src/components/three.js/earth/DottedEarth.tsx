@@ -27,6 +27,7 @@ import { earthApproach, earthOwnsDrag, probeOwnsDrag, dragMode } from "./interac
 import { useLabScroll } from "#/stores/useLabScroll";
 import { LAB } from "#/components/three.js/voyager/config";
 import EarthPins from "./EarthPins";
+import { precompile } from "#/components/three.js/scene/warmUp";
 
 type Props = {
   animate?: boolean;
@@ -70,6 +71,12 @@ const DottedEarth = ({ animate = true, interactive = true }: Props) => {
 
   // ── Build the dot field once the land mask has loaded ──────────────────────
   const [buffers, setBuffers] = useState<DotBuffers | null>(null);
+  const scene = useThree((s) => s.scene);
+  // The dots mount once the land mask has loaded: compile them then, in the
+  // background, not on the frame the Earth first shows (P27-78).
+  useEffect(() => {
+    if (buffers && tiltRef.current) void precompile(gl, tiltRef.current, camera, scene);
+  }, [buffers, gl, camera, scene]);
   useEffect(() => {
     let cancelled = false;
     const img = new Image();
