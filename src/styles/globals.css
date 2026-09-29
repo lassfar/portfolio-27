@@ -85,6 +85,14 @@
     opacity: 0.8;
   }
 }
+/* The Craft's twinkling stars — paused while the Craft is hidden (P27-78): CSS
+   animations keep running under visibility: hidden. */
+.home-craft__twinkle {
+  animation: twinkle var(--twinkle-dur) ease-in-out var(--twinkle-delay) infinite;
+}
+.home-craft.is-dormant .home-craft__twinkle {
+  animation-play-state: paused;
+}
 
 /* Contact: a soft dark vignette behind the form, so the text reads over the blurred
    galaxy while it still glows all around. */
@@ -326,6 +334,10 @@
 }
 .story-timeline.is-pulse .story-timeline__star.is-current .story-timeline__glyph {
   animation: story-timeline-breathe 3.2s ease-in-out infinite;
+}
+/* Paused while the timeline is hidden (P27-78): the drop-shadow repaints every frame. */
+.story-timeline.is-pulse:not(.is-shown) .story-timeline__star.is-current .story-timeline__glyph {
+  animation-play-state: paused;
 }
 @keyframes story-timeline-breathe {
   50% {
@@ -595,6 +607,14 @@
       0 0 22px 7px var(--na-mid-hi),
       0 0 52px 18px var(--na-halo-hi);
   }
+}
+/* Paused while it can't be seen — hidden, or opened into the button (P27-78): its
+   glow repaints every frame. */
+.nav-assistant:not(.is-visible) .nav-assistant__glow,
+.nav-assistant:not(.is-visible) .nav-assistant__glow::after,
+.nav-assistant.is-open .nav-assistant__glow,
+.nav-assistant.is-open .nav-assistant__glow::after {
+  animation-play-state: paused;
 }
 /* The ring bounces out into the halo and settles back as the orb breathes. */
 @keyframes nav-assistant-ring {

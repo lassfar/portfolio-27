@@ -148,7 +148,11 @@ export default function useCosmicJourney(refs: CosmicJourneyRefs): void {
         const fade = easeInOut(remap01(mp, JOURNEY.craftFadeStart, JOURNEY.craftFadeEnd));
         craft.style.transform = `translateY(${(1 - cover) * 100}%)`;
         craft.style.opacity = String(1 - fade);
-        craft.style.visibility = cover > 0.001 && fade < 0.999 ? "visible" : "hidden";
+        const visible = cover > 0.001 && fade < 0.999;
+        craft.style.visibility = visible ? "visible" : "hidden";
+        // Hidden, its twinkling stars pause (P27-78): CSS animations keep running under
+        // visibility: hidden.
+        craft.classList.toggle("is-dormant", !visible);
       };
 
       // ── Contact: after a pause on the full galaxy, the block fades + slides in

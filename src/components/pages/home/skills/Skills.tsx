@@ -1,6 +1,6 @@
 "use client";
 
-import { RefObject, useEffect, useMemo, useState } from "react";
+import { CSSProperties, RefObject, useEffect, useMemo, useState } from "react";
 import gsap from "gsap";
 import clsx from "clsx";
 
@@ -187,17 +187,20 @@ const Skills = ({ overlayRef, reduced = false }: Props) => {
         {stars.map((s, i) => (
           <span
             key={i}
-            className="absolute rounded-full"
-            style={{
-              left: `${s.left}%`,
-              top: `${s.top}%`,
-              width: s.size,
-              height: s.size,
-              background: s.color,
-              boxShadow: `0 0 ${s.glow}px ${s.color}`,
-              opacity: 0.5,
-              animation: `twinkle ${s.dur}s ease-in-out ${s.delay}s infinite`,
-            }}
+            className="home-craft__twinkle absolute rounded-full"
+            style={
+              {
+                left: `${s.left}%`,
+                top: `${s.top}%`,
+                width: s.size,
+                height: s.size,
+                background: s.color,
+                boxShadow: `0 0 ${s.glow}px ${s.color}`,
+                opacity: 0.5,
+                "--twinkle-dur": `${s.dur}s`,
+                "--twinkle-delay": `${s.delay}s`,
+              } as CSSProperties
+            }
           />
         ))}
       </div>
