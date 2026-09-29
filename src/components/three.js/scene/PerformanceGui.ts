@@ -32,6 +32,7 @@ export function buildPerformancePanel(gui: GUI) {
     .add(PERFORMANCE, "aboutBlur", { "CSS (old)": "css", "3D": "3d" })
     .name("blur behind About")
     .onChange(apply);
+  gui.add(PERFORMANCE, "hideInvisible").name("hide invisible objects").onChange(apply);
 
   const actions = {
     restore: () => {

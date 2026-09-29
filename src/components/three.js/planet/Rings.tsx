@@ -9,6 +9,7 @@ import { remap01 } from "#/components/three.js/star/utils";
 import { FLYOUT, GROWTH, RING, RING_PALETTE, SCATTER } from "./config";
 import { VOYAGE } from "#/components/three.js/solar/config";
 import { SIMPLEX_NOISE } from "./shaders";
+import { PERFORMANCE } from "#/components/three.js/scene/performance";
 
 type Props = {
   /** Particle count (set adaptively by the parent for perf). */
@@ -111,6 +112,11 @@ const Rings = ({ count = RING.count, animate = true }: Props) => {
     // Fade the rings out with the body as we dive to Earth (opacity, not scale).
     const earthFade = remap01(voyage, VOYAGE.earthFadeStart, VOYAGE.earthFadeEnd);
     m.uniforms.uOpacity.value = remap01(progress, 0.0, 0.15) * (1.0 - earthFade);
+    // Gone for good once the Earth dive has faded it (P27-78): skip it entirely. (Its
+    // invisible grains before the burst still write depth — part of the explosion's look.)
+    if (pointsRef.current) {
+      pointsRef.current.visible = !(PERFORMANCE.hideInvisible && earthFade >= 1);
+    }
     // Fly-out: thin the ring a little with distance, in lockstep with the body.
     m.uniforms.uThin.value = FLYOUT.thinMax * voyage;
   });

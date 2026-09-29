@@ -12,6 +12,7 @@ import { circleOutline, orbitOutline } from "./orbits";
 import { ORBIT_PRIORITY, usePlanetTuning } from "./planetTuning";
 import { siblingReveal } from "./reveal";
 import { flyingSunPos } from "#/components/three.js/galaxy/spin";
+import { PERFORMANCE } from "#/components/three.js/scene/performance";
 
 type Props = {
   animate?: boolean;
@@ -89,10 +90,15 @@ const OrbitRing = ({ outline }: { outline: () => Float32Array }) => {
   useEffect(() => () => geometry.dispose(), [geometry]);
 
   useFrame(() => {
-    if (lineRef.current) lineRef.current.visible = SOLAR.ring.visible;
+    const reveal = siblingReveal();
+    // Skipped entirely while faded out (P27-78), not drawn at opacity 0.
+    if (lineRef.current) {
+      lineRef.current.visible =
+        SOLAR.ring.visible && (!PERFORMANCE.hideInvisible || reveal > 0);
+    }
     if (!matRef.current || !SOLAR.ring.visible) return;
     matRef.current.color.set(SOLAR.ring.color);
-    matRef.current.opacity = SOLAR.ring.opacity * siblingReveal();
+    matRef.current.opacity = SOLAR.ring.opacity * reveal;
   });
 
   return (

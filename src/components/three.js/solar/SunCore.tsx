@@ -16,6 +16,7 @@ import {
 import { SIMPLEX_NOISE } from "#/components/three.js/planet/shaders";
 import { useDrawGate } from "#/components/three.js/scene/useDrawGate";
 import { SUN, SUN_CORE } from "./config";
+import { PERFORMANCE } from "#/components/three.js/scene/performance";
 
 type Props = {
   count: number;
@@ -169,6 +170,8 @@ const SunCore = ({ count, version, animate, time, reveal, renderOrder }: Props) 
       haloMatRef.current.opacity = reveal.value * SUN_CORE.haloStrength;
       haloMatRef.current.color.set(SUN_CORE.haloTint);
     }
+    // Skipped entirely while the Sun is faded out (P27-78), not drawn at opacity 0.
+    if (haloRef.current) haloRef.current.visible = !PERFORMANCE.hideInvisible || reveal.value > 0;
   });
 
   return (

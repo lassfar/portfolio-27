@@ -22,6 +22,7 @@ export type PerformanceSettings = {
   pauseCovered: boolean;
   blurQuality: BlurQuality;
   aboutBlur: AboutBlur;
+  hideInvisible: boolean;
 };
 
 export const PERFORMANCE: PerformanceSettings = {
@@ -29,6 +30,7 @@ export const PERFORMANCE: PerformanceSettings = {
   pauseCovered: true, // skip drawing under the opaque Craft overlay and the Lightbox
   blurQuality: "light", // was "heavy": 10 blur steps at ½ resolution
   aboutBlur: "3d", // was "css": a 64 px blur of the live canvas in the compositor
+  hideInvisible: true, // skip the rings, orbit lines and Sun halo at opacity 0
 };
 
 /** The code defaults, for "restore defaults". */
@@ -40,6 +42,7 @@ const CHOICES: { [K in keyof PerformanceSettings]: readonly PerformanceSettings[
   pauseCovered: [true, false],
   blurQuality: ["heavy", "light"],
   aboutBlur: ["css", "3d"],
+  hideInvisible: [true, false],
 };
 
 const STORAGE_KEY = "p27.performance";
