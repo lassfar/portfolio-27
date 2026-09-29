@@ -1,5 +1,6 @@
 import { STORY_CHAPTERS } from "#/components/pages/home/timeline/config";
 import { chapterAt } from "#/components/pages/home/timeline/layout";
+import { PERFORMANCE } from "./performance";
 
 /**
  * The `?perf` measurements, per chapter of the story (P27-78): every frame's time, draw
@@ -141,6 +142,9 @@ export function buildReport(label: string): string {
     `- Canvas: ${gpu ? `${gpu.width}×${gpu.height} px at pixel ratio ${gpu.pixelRatio}` : "unknown"}; screen ${screen.width}×${screen.height} at devicePixelRatio ${window.devicePixelRatio}`,
     `- CPU threads: ${nav.hardwareConcurrency ?? "?"}; memory: ${nav.deviceMemory ?? "?"} GB`,
     `- Browser: ${navigator.userAgent}`,
+    `- Settings: ${Object.entries(PERFORMANCE)
+      .map(([key, value]) => `${key} ${value}`)
+      .join(", ")}`,
     "",
     `| Chapter | Seconds | Avg FPS | p50 ms | p95 ms | Worst ms | Frames > ${SLOW_MS} ms | Long tasks (ms) | Draw calls | Points |`,
     "|---|---|---|---|---|---|---|---|---|---|",

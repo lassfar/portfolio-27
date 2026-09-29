@@ -2,7 +2,11 @@
 
 import { Canvas, useFrame, useThree } from "@react-three/fiber";
 import { EffectComposer } from "@react-three/postprocessing";
-import { BlendFunction, BloomEffect } from "postprocessing";
+import {
+  BlendFunction,
+  BloomEffect,
+  EffectComposer as EffectComposerImpl,
+} from "postprocessing";
 import { ReactNode, RefObject, useEffect, useMemo, useRef } from "react";
 import { Euler, Group, PerspectiveCamera, Vector3 } from "three";
 import Universe from "#/components/three.js/star/Universe";
@@ -62,6 +66,7 @@ import { useParkerAnchor } from "#/stores/useParkerAnchor";
 import { useGalleryStore } from "#/stores/useGalleryStore";
 import { useLabStore } from "#/stores/useLabStore";
 import { storyEase } from "./storyMotion";
+import { onPerformanceChange, PERFORMANCE, PERFORMANCE_DEFAULTS } from "./performance";
 import { setScrollLock } from "#/stores/scrollLock";
 
 /**
@@ -119,6 +124,7 @@ const CosmicScene = () => {
   // Blurs + dims the scene behind the Contact form (see VeilPass).
   const veil = useMemo(() => new VeilPass(), []);
   useEffect(() => () => veil.dispose(), [veil]);
+  const composerRef = useRef<EffectComposerImpl>(null);
   // The starfield group — CameraRig pins it to the camera each frame (see below),
   // so it's shared between Universe (which rotates it) and CameraRig.
   const starfieldRef = useRef<Group>(null);
@@ -138,7 +144,8 @@ const CosmicScene = () => {
         }}
         dpr={[1, 1.5]}
         // (No canvas antialiasing: only the composer's final full-screen pass reaches
-        // the canvas; the composer smooths the scene itself, 8× multisampled.)
+        // the canvas; the composer smooths the scene itself, multisampled — see
+        // Multisampling below.)
         gl={{ antialias: false, alpha: true }}
       >
         {/* Starfield + star: drag-rotates, scroll zooms + bursts the star. */}
@@ -195,7 +202,9 @@ const CosmicScene = () => {
           the real Sun sits in one of its arms — our "You are here". */}
         <Galaxy animate={animate} />
 
-        <EffectComposer>
+        {/* multisampling stays a constant: changing this prop would rebuild the
+          composer (leaking its buffers); live changes go through Multisampling. */}
+        <EffectComposer ref={composerRef} multisampling={PERFORMANCE_DEFAULTS.msaa}>
           {/* First, so the effects pass after it still writes the final (encoded) output. */}
           <primitive object={veil} dispose={null} />
           <primitive object={bloom} dispose={null} />
@@ -205,6 +214,7 @@ const CosmicScene = () => {
         </EffectComposer>
 
         <BloomController bloom={bloom} veil={veil} highlightsRef={highlightsRef} />
+        <Multisampling composerRef={composerRef} />
         <CameraRig starfieldRef={starfieldRef} />
         <InteractionLock />
         {/* Dev-only (?perf / ?perf=overlay) — renders nothing otherwise. */}
@@ -800,6 +810,29 @@ const InteractionLock = () => {
       setScrollLock("panel", false);
     };
   }, [gl]);
+  return null;
+};
+
+/**
+ * The composer's multisampling follows `PERFORMANCE.msaa` (P27-78): 4× by default — the
+ * soft dots smooth their own edges, and 8× cost a lot of memory bandwidth on integrated
+ * GPUs for no visible gain. postprocessing's setter re-allocates the scene buffers.
+ */
+const Multisampling = ({
+  composerRef,
+}: {
+  composerRef: RefObject<EffectComposerImpl | null>;
+}) => {
+  useEffect(() => {
+    const sync = () => {
+      const composer = composerRef.current;
+      if (composer && composer.multisampling !== PERFORMANCE.msaa) {
+        composer.multisampling = PERFORMANCE.msaa;
+      }
+    };
+    sync();
+    return onPerformanceChange(sync);
+  }, [composerRef]);
   return null;
 };
 

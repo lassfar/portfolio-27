@@ -10,16 +10,18 @@ import { buildParkerPanel } from "#/components/three.js/parker/ParkerGui";
 import { buildTimelinePanel } from "#/components/pages/home/timeline/TimelineGui";
 import { buildPhaseNavPanel } from "#/components/pages/home/phase-nav/PhaseNavGui";
 import { buildStoryMotionPanel } from "#/components/three.js/scene/StoryMotionGui";
+import { buildPerformancePanel } from "#/components/three.js/scene/PerformanceGui";
 import { GALAXY, GALAXY_FX, GALAXY_SPACE, updateGalaxyPlacement } from "./config";
 import { journeyAtGalaxy } from "./pace";
 import { galaxyTuningSnapshot, rebuildGalaxy, resetGalaxyTuning } from "./tuning";
 
 /**
- * Dev tuning panel — eight sections: the STARS (star/StarsGui.ts), the SUN
- * (solar/SunGui.ts), the PLANETS (solar/PlanetGui.ts), the PARKER SOLAR PROBE
- * (parker/ParkerGui.ts), the STORY TIMELINE (pages/home/timeline/TimelineGui.ts), the
- * GALAXY finale, the NAVIGATION ASSISTANT (pages/home/phase-nav/PhaseNavGui.ts) and the
- * STORY MOTION curve (scene/StoryMotionGui.ts).
+ * Dev tuning panel — nine sections: the PERFORMANCE switches (scene/PerformanceGui.ts),
+ * the STARS (star/StarsGui.ts), the SUN (solar/SunGui.ts), the PLANETS
+ * (solar/PlanetGui.ts), the PARKER SOLAR PROBE (parker/ParkerGui.ts), the STORY TIMELINE
+ * (pages/home/timeline/TimelineGui.ts), the GALAXY finale, the NAVIGATION ASSISTANT
+ * (pages/home/phase-nav/PhaseNavGui.ts) and the STORY MOTION curve
+ * (scene/StoryMotionGui.ts).
  *
  * The galaxy section is the same lil-gui panel (folders + labels)
  * as `docs/prototypes/galaxy-realistic.html` and `galaxy-zoom-realistic.html`, driving
@@ -50,6 +52,7 @@ const GalaxyGui = () => {
     import("three/examples/jsm/libs/lil-gui.module.min.js").then(({ GUI }) => {
       if (cancelled) return;
       panel = new GUI({ title: "Tuning (dev)", width: 310 });
+      buildPerformancePanel(panel.addFolder("⚡ Performance"));
       const stars = panel.addFolder("✧ Stars");
       buildStarsPanel(stars);
       const sun = panel.addFolder("☀ Sun");
