@@ -88,14 +88,33 @@ function makeLayer(rnd: () => number) {
       sed.push(rnd());
       rn.push(Math.min(1, Math.max(0, rNorm)));
     },
-    geom() {
+    /**
+     * @param shuffled put the points in a random (seeded) order, so any first N of them
+     *   are an even sample of the whole layer (the glow's quality tiers draw half).
+     */
+    geom(shuffled = false) {
+      const n = scl.length;
+      const order = Array.from({ length: n }, (_, i) => i);
+      if (shuffled) {
+        for (let i = n - 1; i > 0; i--) {
+          const j = Math.floor(rnd() * (i + 1));
+          [order[i], order[j]] = [order[j], order[i]];
+        }
+      }
+      const attribute = (values: number[], size: number) => {
+        const out = new Float32Array(n * size);
+        order.forEach((from, to) => {
+          for (let k = 0; k < size; k++) out[to * size + k] = values[from * size + k];
+        });
+        return new Float32BufferAttribute(out, size);
+      };
       const g = new BufferGeometry();
-      g.setAttribute("position", new Float32BufferAttribute(pos, 3));
-      g.setAttribute("aColor", new Float32BufferAttribute(col, 3));
-      g.setAttribute("aScale", new Float32BufferAttribute(scl, 1));
-      g.setAttribute("aBright", new Float32BufferAttribute(bri, 1));
-      g.setAttribute("aSeed", new Float32BufferAttribute(sed, 1));
-      g.setAttribute("aRadiusNorm", new Float32BufferAttribute(rn, 1));
+      g.setAttribute("position", attribute(pos, 3));
+      g.setAttribute("aColor", attribute(col, 3));
+      g.setAttribute("aScale", attribute(scl, 1));
+      g.setAttribute("aBright", attribute(bri, 1));
+      g.setAttribute("aSeed", attribute(sed, 1));
+      g.setAttribute("aRadiusNorm", attribute(rn, 1));
       return g;
     },
   };
@@ -438,5 +457,6 @@ export function buildGalaxyLayers(count: number, aux = 1): GalaxyLayers {
     );
   }
 
-  return { stars: S.geom(), knots: K.geom(), glow: G.geom(), dust: D.geom() };
+  // (Glow is additive, so its order changes nothing on screen.)
+  return { stars: S.geom(), knots: K.geom(), glow: G.geom(true), dust: D.geom() };
 }

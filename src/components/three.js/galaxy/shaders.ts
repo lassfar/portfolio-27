@@ -55,7 +55,7 @@ void main(){
  */
 export const GLOW_VERT = /* glsl */ `
 ${SHEAR}
-uniform float uGlowSize, uNearA, uNearB, uEdgeSoft;
+uniform float uGlowSize, uNearA, uNearB, uEdgeSoft, uGlowMaxPx;
 varying vec3 vColor;
 varying float vNear;
 void main(){
@@ -66,7 +66,7 @@ void main(){
   vNear = smoothstep(uNearA, uNearB, dist);
   // Faded-out sprites get no size at all → no fill cost near the camera.
   float size = uGlowSize * aScale * (1.0 + 0.9 * edge);
-  gl_PointSize = vNear < 0.004 ? 0.0 : min(size * uPixelRatio / dist, 200.0 * uPixelRatio);
+  gl_PointSize = vNear < 0.004 ? 0.0 : min(size * uPixelRatio / dist, uGlowMaxPx * uPixelRatio);
   gl_Position = projectionMatrix * mv;
 }
 `;

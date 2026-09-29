@@ -25,7 +25,15 @@ import {
 import { clamp01, easeInOutCubic, easeOutCubic, remap01 } from "#/components/three.js/star/utils";
 import { useGalaxyScroll } from "#/stores/useGalaxyScroll";
 import { SCENE_MOTION_PRIORITY } from "#/components/three.js/solar/planetTuning";
-import { GALAXY, GALAXY_CENTER, GALAXY_FX, GALAXY_SCALE, GALAXY_SPACE, GALAXY_TILT } from "./config";
+import {
+  GALAXY,
+  GALAXY_CENTER,
+  GALAXY_FX,
+  GALAXY_SCALE,
+  GALAXY_SPACE,
+  GALAXY_TILT,
+  GLOW_QUALITY,
+} from "./config";
 import { buildGalaxyLayers, GalaxyLayers } from "./buildGalaxy";
 import { galaxyTuning } from "./tuning";
 import { advanceSolarFly, galaxyCenterPos, galaxyDrag, updateGalaxyDrag } from "./spin";
@@ -36,6 +44,8 @@ import SpaceStars from "./SpaceStars";
 import DistantGalaxies from "./DistantGalaxies";
 import { GalaxyBloom } from "./GalaxyBloom";
 import { precompile, whenIdle } from "#/components/three.js/scene/warmUp";
+import { QUALITY_STEPS } from "#/components/three.js/scene/quality";
+import { useQuality } from "#/stores/useQuality";
 import {
   COMPOSITE_FRAG,
   COMPOSITE_VERT,
@@ -159,6 +169,7 @@ const Galaxy = ({ animate = true }: { animate?: boolean }) => {
           uGlowSize: { value: GALAXY.glowSize * GALAXY_SCALE },
           uGlowAmt: { value: GALAXY.glowAmount },
           uEdgeSoft: { value: GALAXY.edgeSoftness },
+          uGlowMaxPx: { value: GLOW_QUALITY.fullMaxPx },
         },
         vertexShader: GLOW_VERT,
         fragmentShader: GLOW_FRAG,
@@ -280,7 +291,16 @@ const Galaxy = ({ animate = true }: { animate?: boolean }) => {
       m.uniforms.uTwinkleAmt.value = GALAXY.twinkleAmount;
     }
     materials.knots.uniforms.uBoost.value = GALAXY.knotBrightness;
-    materials.glow.uniforms.uGlowAmt.value = GALAXY.glowAmount;
+    // The quality tiers' "light" glow: a share of the sprites (shuffled, so an even
+    // sample), each brighter by as much, and a smaller size cap.
+    const lightGlow = QUALITY_STEPS[useQuality.getState().step].glow === "light";
+    const glowShare = lightGlow ? GLOW_QUALITY.lightShare : 1;
+    const glowGeometry = glowPts.current?.geometry;
+    if (glowGeometry) {
+      glowGeometry.setDrawRange(0, Math.round(glowGeometry.attributes.position.count * glowShare));
+    }
+    materials.glow.uniforms.uGlowMaxPx.value = lightGlow ? GLOW_QUALITY.lightMaxPx : GLOW_QUALITY.fullMaxPx;
+    materials.glow.uniforms.uGlowAmt.value = GALAXY.glowAmount / glowShare;
     materials.glow.uniforms.uGlowSize.value = GALAXY.glowSize * GALAXY_SCALE;
     materials.glow.uniforms.uEdgeSoft.value = GALAXY.edgeSoftness;
     materials.dust.uniforms.uDustOpacity.value = GALAXY.dustOpacity;

@@ -142,6 +142,18 @@ export const GALAXY = {
  * blob). The soft highlight roll-off blends in over `fxIn` (the galaxy's own reveal),
  * so every earlier beat is untouched (see BloomController).
  */
+/**
+ * The soft glow at each quality (P27-78). Its sprites are the finale's main cost (big,
+ * additive, heavily overlapping), so on the lowest quality steps it draws only a share
+ * of them, each brighter by as much, with a smaller size cap: about half the overdraw
+ * for a similar glow. Mutable (live-tunable).
+ */
+export const GLOW_QUALITY = {
+  fullMaxPx: 200, // sprite size cap (px × pixel ratio) at full quality
+  lightShare: 0.5, // "light": the share of sprites drawn…
+  lightMaxPx: 120, // …and their size cap
+};
+
 export const GALAXY_FX = {
   fxIn: [0.44, 0.82] as [number, number],
   // Layer switches (the prototypes' "Compare" panel).
