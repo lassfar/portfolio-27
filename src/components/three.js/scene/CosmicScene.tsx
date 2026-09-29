@@ -10,7 +10,7 @@ import {
 import { ReactNode, RefObject, useEffect, useMemo, useRef } from "react";
 import { Euler, Group, PerspectiveCamera, Vector3 } from "three";
 import Universe from "#/components/three.js/star/Universe";
-import { BLOOM, CAMERA, JOURNEY, PARTICLES } from "#/components/three.js/star/config";
+import { BLOOM, CAMERA, JOURNEY, mpAt, PARTICLES } from "#/components/three.js/star/config";
 import {
   clamp01,
   easeInOutCubic,
@@ -64,6 +64,7 @@ import { useSaturnAnchor } from "#/stores/useSaturnAnchor";
 import { useEarthAnchor } from "#/stores/useEarthAnchor";
 import { useParkerAnchor } from "#/stores/useParkerAnchor";
 import { useGalleryStore } from "#/stores/useGalleryStore";
+import { useJourneyScroll } from "#/stores/useJourneyScroll";
 import { useLabStore } from "#/stores/useLabStore";
 import { storyEase } from "./storyMotion";
 import { onPerformanceChange, PERFORMANCE, PERFORMANCE_DEFAULTS } from "./performance";
@@ -217,6 +218,7 @@ const CosmicScene = () => {
         <Multisampling composerRef={composerRef} />
         <CameraRig starfieldRef={starfieldRef} />
         <InteractionLock />
+        <RenderPause composerRef={composerRef} />
         {/* Dev-only (?perf / ?perf=overlay) — renders nothing otherwise. */}
         <PerfProbe />
       </Canvas>
@@ -810,6 +812,80 @@ const InteractionLock = () => {
       setScrollLock("panel", false);
     };
   }, [gl]);
+  return null;
+};
+
+/** Scroll (in master progress) the pause stays clear of the Craft's edges: ~10% of a screen. */
+const COVER_MARGIN = mpAt(10);
+/** The Lightbox's fade-in (its `duration-300`): pause only once it fully covers. */
+const LIGHTBOX_FADE_MS = 300;
+
+/**
+ * Skips drawing while the 3D is fully covered (P27-78, `PERFORMANCE.pauseCovered`): under
+ * the opaque Craft overlay, and under the Lightbox (95% opaque) once it has faded in.
+ * Only the GPU work stops — the composer's render is skipped, so the canvas keeps its
+ * last frame, while every useFrame (orbits, anchors, labels) and the clock run on. (Not
+ * R3F's frameloop: switching it resets the clock, so the planets would jump.) It resumes
+ * a little before the Craft uncovers the canvas, so the first frame you see is fresh,
+ * and draws one frame on resize (a resize clears the canvas).
+ */
+const RenderPause = ({
+  composerRef,
+}: {
+  composerRef: RefObject<EffectComposerImpl | null>;
+}) => {
+  const size = useThree((s) => s.size);
+  const pause = useRef({ paused: false, drawOnce: false });
+
+  useEffect(() => {
+    const composer = composerRef.current;
+    if (!composer) return;
+    const original = composer.render;
+    composer.render = (deltaTime?: number) => {
+      const p = pause.current;
+      if (p.paused && !p.drawOnce) return;
+      p.drawOnce = false;
+      original.call(composer, deltaTime);
+    };
+
+    let lightboxCovers = false;
+    let lightboxTimer = 0;
+    const update = () => {
+      const mp = useJourneyScroll.getState().progress;
+      const craftCovers =
+        mp > JOURNEY.craftCoverEnd + COVER_MARGIN && mp < JOURNEY.craftFadeStart - COVER_MARGIN;
+      pause.current.paused = PERFORMANCE.pauseCovered && (craftCovers || lightboxCovers);
+    };
+    const onGallery = () => {
+      const open = useGalleryStore.getState().lightboxIndex !== null;
+      window.clearTimeout(lightboxTimer);
+      if (!open) lightboxCovers = false;
+      else if (!lightboxCovers) {
+        lightboxTimer = window.setTimeout(() => {
+          lightboxCovers = true;
+          update();
+        }, LIGHTBOX_FADE_MS);
+      }
+      update();
+    };
+
+    update();
+    const unsubscribe = [
+      useJourneyScroll.subscribe(update),
+      useGalleryStore.subscribe(onGallery),
+      onPerformanceChange(update),
+    ];
+    return () => {
+      unsubscribe.forEach((u) => u());
+      window.clearTimeout(lightboxTimer);
+      composer.render = original;
+    };
+  }, [composerRef]);
+
+  useEffect(() => {
+    pause.current.drawOnce = true;
+  }, [size]);
+
   return null;
 };
 

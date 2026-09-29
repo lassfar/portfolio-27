@@ -23,6 +23,7 @@ export function buildPerformancePanel(gui: GUI) {
     .add(PERFORMANCE, "msaa", { "8× (old)": 8, "4×": 4, "2×": 2, off: 0 })
     .name("multisampling")
     .onChange(apply);
+  gui.add(PERFORMANCE, "pauseCovered").name("pause while covered").onChange(apply);
 
   const actions = {
     restore: () => {

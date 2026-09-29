@@ -13,10 +13,12 @@ export type Msaa = 0 | 2 | 4 | 8;
 
 export type PerformanceSettings = {
   msaa: Msaa;
+  pauseCovered: boolean;
 };
 
 export const PERFORMANCE: PerformanceSettings = {
   msaa: 4, // was 8 (the library default); soft dots smooth their own edges
+  pauseCovered: true, // skip drawing under the opaque Craft overlay and the Lightbox
 };
 
 /** The code defaults, for "restore defaults". */
@@ -25,6 +27,7 @@ export const PERFORMANCE_DEFAULTS: Readonly<PerformanceSettings> = { ...PERFORMA
 /** The values each switch accepts; anything else found in storage is ignored. */
 const CHOICES: { [K in keyof PerformanceSettings]: readonly PerformanceSettings[K][] } = {
   msaa: [0, 2, 4, 8],
+  pauseCovered: [true, false],
 };
 
 const STORAGE_KEY = "p27.performance";
