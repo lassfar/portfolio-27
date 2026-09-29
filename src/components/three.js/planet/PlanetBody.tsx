@@ -12,6 +12,7 @@ import { FLYOUT, GROWTH, LIGHT, PLANET, PLANET_PALETTE, SCATTER } from "./config
 import { PLANET_STYLE, SOLAR, VOYAGE } from "#/components/three.js/solar/config";
 import { SIMPLEX_NOISE } from "./shaders";
 import { useDrawGate } from "#/components/three.js/scene/useDrawGate";
+import { pointPixelRatio } from "#/components/three.js/scene/quality";
 
 type Props = {
   /** Particle count (set adaptively by the parent for perf). */
@@ -144,6 +145,8 @@ const PlanetBody = ({ count = PLANET.count, animate = true }: Props) => {
   useFrame((state, delta) => {
     const m = materialRef.current;
     if (!m) return;
+    // Dots keep their on-screen size at any canvas resolution (the quality tiers).
+    m.uniforms.uPixelRatio.value = pointPixelRatio(state.viewport.dpr);
     if (animate) m.uniforms.uTime.value += delta;
     // Assembly + fade-in are both driven by the shared progress, so the planet
     // is invisible during the star phase (progress 0), fades in as the star

@@ -7,6 +7,7 @@ import { STARFIELD } from "./config";
 import { clamp01, remap01 } from "./utils";
 import { useGalaxyScroll } from "#/stores/useGalaxyScroll";
 import { useDrawGate } from "#/components/three.js/scene/useDrawGate";
+import { pointPixelRatio } from "#/components/three.js/scene/quality";
 
 /** Galaxy-beat window over which this near, camera-pinned field fades out, leaving
  *  only the galaxy's own (world-fixed) stars as the space around you. It lingers
@@ -111,9 +112,11 @@ const Starfield = ({ count = STARFIELD.count, animate = true }: Props) => {
 
   // Only the twinkle animates here; the parent (Universe) owns the rotation so
   // the whole cosmos turns together.
-  useFrame((_, delta) => {
+  useFrame((state, delta) => {
     if (!materialRef.current) return;
     const u = materialRef.current.uniforms;
+    // Dots keep their on-screen size at any canvas resolution (the quality tiers).
+    u.uPixelRatio.value = pointPixelRatio(state.viewport.dpr);
     if (animate) u.uTime.value += delta;
     // Live values (the dev panel tunes STARFIELD in place).
     const S = STARFIELD.sparkle;

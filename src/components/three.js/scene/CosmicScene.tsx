@@ -69,6 +69,7 @@ import { useLabStore } from "#/stores/useLabStore";
 import { storyEase } from "./storyMotion";
 import { onPerformanceChange, PERFORMANCE, PERFORMANCE_DEFAULTS } from "./performance";
 import { precompile, setWarmUpTarget, whenIdle } from "./warmUp";
+import { MAX_DPR } from "./quality";
 import { setScrollLock } from "#/stores/scrollLock";
 
 /**
@@ -144,7 +145,7 @@ const CosmicScene = () => {
           near: 0.1,
           far: 2800,
         }}
-        dpr={[1, 1.5]}
+        dpr={[1, MAX_DPR]}
         // (No canvas antialiasing: only the composer's final full-screen pass reaches
         // the canvas; the composer smooths the scene itself, multisampled — see
         // Multisampling below.)

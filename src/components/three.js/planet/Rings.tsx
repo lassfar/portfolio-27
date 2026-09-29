@@ -10,6 +10,7 @@ import { FLYOUT, GROWTH, RING, RING_PALETTE, SCATTER } from "./config";
 import { VOYAGE } from "#/components/three.js/solar/config";
 import { SIMPLEX_NOISE } from "./shaders";
 import { PERFORMANCE } from "#/components/three.js/scene/performance";
+import { pointPixelRatio } from "#/components/three.js/scene/quality";
 
 type Props = {
   /** Particle count (set adaptively by the parent for perf). */
@@ -100,9 +101,11 @@ const Rings = ({ count = RING.count, animate = true }: Props) => {
     []
   );
 
-  useFrame((_, delta) => {
+  useFrame((state, delta) => {
     const m = materialRef.current;
     if (!m) return;
+    // Dots keep their on-screen size at any canvas resolution (the quality tiers).
+    m.uniforms.uPixelRatio.value = pointPixelRatio(state.viewport.dpr);
     if (animate) m.uniforms.uTime.value += delta;
     // Assembly + fade-in driven by the shared progress (hidden during the star
     // phase, fades in as the star bursts, then assembles into the ring).

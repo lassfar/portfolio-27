@@ -28,6 +28,7 @@ import { useLabScroll } from "#/stores/useLabScroll";
 import { LAB } from "#/components/three.js/voyager/config";
 import EarthPins from "./EarthPins";
 import { precompile } from "#/components/three.js/scene/warmUp";
+import { pointPixelRatio } from "#/components/three.js/scene/quality";
 
 type Props = {
   animate?: boolean;
@@ -270,6 +271,8 @@ const DottedEarth = ({ animate = true, interactive = true }: Props) => {
       coreMatRef.current.opacity = r;
     }
     if (dotMatRef.current) {
+      // Dots keep their on-screen size at any canvas resolution (the quality tiers).
+      dotMatRef.current.uniforms.uPixelRatio.value = pointPixelRatio(state.viewport.dpr);
       dotMatRef.current.uniforms.uReveal.value = r;
       if (animate) dotMatRef.current.uniforms.uTime.value += delta; // twinkle
       // Light from the ACTUAL sun: direction Earth → sun, in view space.

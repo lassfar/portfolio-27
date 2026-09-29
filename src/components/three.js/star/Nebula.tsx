@@ -15,6 +15,7 @@ import {
 } from "./config";
 import { remap01 } from "./utils";
 import { useDrawGate } from "#/components/three.js/scene/useDrawGate";
+import { pointPixelRatio } from "#/components/three.js/scene/quality";
 
 type Props = {
   /** Particle count (set adaptively by the parent for perf). */
@@ -125,9 +126,11 @@ const Nebula = ({ count = PARTICLES.count, animate = true }: Props) => {
     []
   );
 
-  useFrame((_, delta) => {
+  useFrame((state, delta) => {
     if (!materialRef.current) return;
     const u = materialRef.current.uniforms;
+    // Dots keep their on-screen size at any canvas resolution (the quality tiers).
+    u.uPixelRatio.value = pointPixelRatio(state.viewport.dpr);
     if (animate) u.uTime.value += delta;
 
     const progress = useHeroScroll.getState().progress;
