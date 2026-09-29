@@ -99,6 +99,18 @@ export class VeilEffect extends Effect {
     this.uniforms.get("blurBuffer")!.value = blur.target.texture;
   }
 
+  /**
+   * Run both blurs once, ahead of the first veil (P27-78): their shaders compile and
+   * their buffers are allocated now, not on the frame the About or the Contact starts.
+   */
+  warmUp(renderer: WebGLRenderer, inputBuffer: WebGLRenderTarget) {
+    const previous = renderer.getRenderTarget();
+    for (const blur of Object.values(this.blurs)) {
+      blur.pass.render(renderer, inputBuffer, blur.target);
+    }
+    renderer.setRenderTarget(previous);
+  }
+
   override initialize(renderer: WebGLRenderer, alpha: boolean, frameBufferType: number) {
     for (const blur of Object.values(this.blurs)) {
       blur.pass.initialize(renderer, alpha, frameBufferType);

@@ -5,6 +5,7 @@ import { RefObject, useEffect, useMemo, useRef } from "react";
 import {
   AddEquation,
   AdditiveBlending,
+  Camera,
   Color,
   CustomBlending,
   Group,
@@ -18,11 +19,11 @@ import {
   Scene,
   ShaderMaterial,
   Vector2,
+  WebGLRenderer,
   WebGLRenderTarget,
 } from "three";
 import { clamp01, easeInOutCubic, easeOutCubic, remap01 } from "#/components/three.js/star/utils";
 import { useGalaxyScroll } from "#/stores/useGalaxyScroll";
-import { useLabScroll } from "#/stores/useLabScroll";
 import { SCENE_MOTION_PRIORITY } from "#/components/three.js/solar/planetTuning";
 import { GALAXY, GALAXY_CENTER, GALAXY_FX, GALAXY_SCALE, GALAXY_SPACE, GALAXY_TILT } from "./config";
 import { buildGalaxyLayers, GalaxyLayers } from "./buildGalaxy";
@@ -34,6 +35,7 @@ import GalaxySparkles from "./GalaxySparkles";
 import SpaceStars from "./SpaceStars";
 import DistantGalaxies from "./DistantGalaxies";
 import { GalaxyBloom } from "./GalaxyBloom";
+import { precompile, whenIdle } from "#/components/three.js/scene/warmUp";
 import {
   COMPOSITE_FRAG,
   COMPOSITE_VERT,
@@ -91,7 +93,6 @@ const Galaxy = ({ animate = true }: { animate?: boolean }) => {
   const compositeRef = useRef<Mesh>(null);
   const gl = useThree((s) => s.gl);
   const camera = useThree((s) => s.camera);
-  const mainScene = useThree((s) => s.scene);
   const dpr = useThree((s) => s.viewport.dpr);
 
   const isSmall = typeof window !== "undefined" && window.innerWidth < 768;
@@ -335,18 +336,30 @@ const Galaxy = ({ animate = true }: { animate?: boolean }) => {
   const bufferSize = useMemo(() => new Vector2(), []);
   const savedClear = useMemo(() => new Color(), []);
   const inverseDrag = useMemo(() => new Quaternion(), []);
-  const warmed = useRef(false);
+  // The warm-up, once, soon after load (P27-78) — so the galaxy's first appearance in
+  // the finale doesn't stall (it used to wait for mid-Lab and compile in one go). Its
+  // shaders compile in the background (the composite is in the main scene, compiled with
+  // it); once they're ready, one frame sizes and allocates its buffer, runs its bloom
+  // once and uploads its layers to the GPU (drawn with zero points) — all offscreen.
+  const warmUp = useRef<"waiting" | "compiling" | "ready" | "done">("waiting");
+  useEffect(
+    () =>
+      whenIdle(() => {
+        warmUp.current = "compiling";
+        void precompile(gl, galaxyScene, camera).then(() => {
+          warmUp.current = "ready";
+        });
+      }, WARM_UP_TIMEOUT_MS),
+    [gl, galaxyScene, camera],
+  );
   useFrame(() => {
-    // Once, midway through the Lab (well before the galaxy first shows), compile the
-    // galaxy's shaders — so its first appearance doesn't stutter. They're compiled with
-    // its render target bound (the variant they're drawn with), all offscreen: nothing
-    // on screen changes. (Jumping straight into the finale compiles on first use, as before.)
-    if (!warmed.current && useLabScroll.getState().progress > 0.5) {
-      warmed.current = true;
+    if (warmUp.current === "ready") {
+      warmUp.current = "done";
       gl.getDrawingBufferSize(bufferSize);
       if (target.width !== bufferSize.x || target.height !== bufferSize.y) {
         target.setSize(bufferSize.x, bufferSize.y);
       }
+      gl.initRenderTarget(target);
       const prevTarget = gl.getRenderTarget();
       const prevAlpha = gl.getClearAlpha();
       const prevAutoClear = gl.autoClear;
@@ -354,9 +367,8 @@ const Galaxy = ({ animate = true }: { animate?: boolean }) => {
       gl.setRenderTarget(target);
       gl.setClearColor(0x000000, 0);
       gl.autoClear = false;
-      gl.compile(galaxyScene, camera);
-      if (compositeRef.current) gl.compile(compositeRef.current, camera, mainScene);
-      bloom.render(gl, target); // its passes compile on first use
+      uploadLayers(gl, galaxyScene, camera);
+      bloom.render(gl, target); // allocates its buffers, compiles its passes
       gl.setRenderTarget(prevTarget);
       gl.setClearColor(savedClear, prevAlpha);
       gl.autoClear = prevAutoClear;
@@ -452,3 +464,33 @@ const Galaxy = ({ animate = true }: { animate?: boolean }) => {
 };
 
 export default Galaxy;
+
+/** At the latest this long after load, the galaxy's warm-up starts anyway. */
+const WARM_UP_TIMEOUT_MS = 4000;
+
+/**
+ * Draw everything in `scene` once with zero points — shown and unculled for that one
+ * draw — so its buffers upload to the GPU now rather than on its first real frame.
+ */
+function uploadLayers(gl: WebGLRenderer, scene: Scene, camera: Camera) {
+  const restore: (() => void)[] = [];
+  scene.traverse((object) => {
+    const { visible, frustumCulled } = object;
+    object.visible = true;
+    object.frustumCulled = false;
+    restore.push(() => {
+      object.visible = visible;
+      object.frustumCulled = frustumCulled;
+    });
+    const geometry = (object as Mesh).geometry;
+    if (geometry?.isBufferGeometry) {
+      const count = geometry.drawRange.count;
+      geometry.drawRange.count = 0;
+      restore.push(() => {
+        geometry.drawRange.count = count;
+      });
+    }
+  });
+  gl.render(scene, camera);
+  restore.forEach((undo) => undo());
+}

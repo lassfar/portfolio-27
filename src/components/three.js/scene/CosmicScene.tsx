@@ -218,7 +218,7 @@ const CosmicScene = () => {
 
         <BloomController bloom={bloom} veil={veil} highlightsRef={highlightsRef} />
         <Multisampling composerRef={composerRef} />
-        <ShaderWarmUp composerRef={composerRef} />
+        <ShaderWarmUp composerRef={composerRef} veil={veil} />
         <CameraRig starfieldRef={starfieldRef} />
         <InteractionLock />
         <RenderPause composerRef={composerRef} />
@@ -898,13 +898,16 @@ const WARM_UP_TIMEOUT_MS = 3000;
 /**
  * Compiles every shader in the scene in the background soon after load (P27-78), hidden
  * ones too (the Lab's probe, the orbit lines…), so no chapter stalls on its first frame
- * (see warmUp). In production it also skips three's per-shader error checks, which read
- * back each program's logs on first use.
+ * (see warmUp); then runs the veil's blurs once, so their shaders and buffers are ready
+ * before the About. (The galaxy warms its own layer.) In production it also skips
+ * three's per-shader error checks, which read back each program's logs on first use.
  */
 const ShaderWarmUp = ({
   composerRef,
+  veil,
 }: {
   composerRef: RefObject<EffectComposerImpl | null>;
+  veil: VeilEffect;
 }) => {
   const gl = useThree((s) => s.gl);
   const scene = useThree((s) => s.scene);
@@ -912,8 +915,18 @@ const ShaderWarmUp = ({
   useEffect(() => {
     if (process.env.NODE_ENV === "production") gl.debug.checkShaderErrors = false;
     setWarmUpTarget(() => composerRef.current?.inputBuffer ?? null);
-    return whenIdle(() => void precompile(gl, scene, camera), WARM_UP_TIMEOUT_MS);
-  }, [gl, scene, camera, composerRef]);
+    let cancelled = false;
+    const cancelIdle = whenIdle(() => {
+      void precompile(gl, scene, camera).then(() => {
+        const composer = composerRef.current;
+        if (!cancelled && composer) veil.warmUp(gl, composer.inputBuffer);
+      });
+    }, WARM_UP_TIMEOUT_MS);
+    return () => {
+      cancelled = true;
+      cancelIdle();
+    };
+  }, [gl, scene, camera, composerRef, veil]);
   return null;
 };
 
