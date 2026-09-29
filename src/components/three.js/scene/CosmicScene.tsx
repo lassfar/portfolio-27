@@ -51,7 +51,7 @@ import {
   GALAXY_ZOOM,
 } from "#/components/three.js/galaxy/config";
 import { SoftHighlights, SoftHighlightsEffect } from "./SoftHighlights";
-import { VeilPass } from "./VeilPass";
+import { VeilEffect } from "./VeilEffect";
 import { cosmicVeil } from "#/stores/cosmicVeil";
 import { flyingSunPos, galaxyCenterPos } from "#/components/three.js/galaxy/spin";
 import { frameGalaxy } from "#/components/three.js/galaxy/framing";
@@ -122,8 +122,8 @@ const CosmicScene = () => {
     return effect;
   }, []);
   useEffect(() => () => bloom.dispose(), [bloom]);
-  // Blurs + dims the scene behind the Contact form (see VeilPass).
-  const veil = useMemo(() => new VeilPass(), []);
+  // Blurs + dims the scene behind the Contact form (see VeilEffect).
+  const veil = useMemo(() => new VeilEffect(), []);
   useEffect(() => () => veil.dispose(), [veil]);
   const composerRef = useRef<EffectComposerImpl>(null);
   // The starfield group — CameraRig pins it to the camera each frame (see below),
@@ -206,7 +206,8 @@ const CosmicScene = () => {
         {/* multisampling stays a constant: changing this prop would rebuild the
           composer (leaking its buffers); live changes go through Multisampling. */}
         <EffectComposer ref={composerRef} multisampling={PERFORMANCE_DEFAULTS.msaa}>
-          {/* First, so the effects pass after it still writes the final (encoded) output. */}
+          {/* First, so the veil applies before the bloom + highlights in the one merged
+            effect pass. */}
           <primitive object={veil} dispose={null} />
           <primitive object={bloom} dispose={null} />
           {/* The galaxy finale's camera-like highlight roll-off (strength ramped by
@@ -920,7 +921,7 @@ const Multisampling = ({
  * For the galaxy finale it ramps in the soft highlight roll-off over
  * `GALAXY_FX.fxIn` (the galaxy's reveal), so every earlier beat is untouched. (The
  * galaxy's bloom is its own — see galaxy/GalaxyBloom.) And it drives the Contact
- * veil (VeilPass), which is switched off entirely while there's nothing to veil.
+ * veil (VeilEffect), which skips its blur while there's nothing to veil.
  */
 const BloomController = ({
   bloom,
@@ -928,15 +929,16 @@ const BloomController = ({
   highlightsRef,
 }: {
   bloom: BloomEffect;
-  veil: VeilPass;
+  veil: VeilEffect;
   highlightsRef: RefObject<SoftHighlightsEffect | null>;
 }) => {
   useFrame(() => {
     // The Contact veil (written by the journey). `contactDim` is a screen-value
-    // brightness; the pass works in linear light.
-    veil.veil = cosmicVeil.contact;
-    veil.enabled = cosmicVeil.contact > 0.001; // not the last pass → safe to skip (no copy)
-    veil.dim = Math.pow(JOURNEY.contactDim, 2.2);
+    // brightness; the effect works in linear light.
+    const contact = cosmicVeil.contact;
+    veil.quality = PERFORMANCE.blurQuality;
+    veil.veil = contact;
+    veil.dim = lerp(1, Math.pow(JOURNEY.contactDim, 2.2), contact);
     veil.spread = JOURNEY.contactBlur;
     if (highlightsRef.current) {
       highlightsRef.current.knee = GALAXY_FX.highlightKnee; // live-tunable (GalaxyGui)

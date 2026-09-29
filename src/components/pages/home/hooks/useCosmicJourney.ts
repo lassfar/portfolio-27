@@ -103,7 +103,7 @@ export default function useCosmicJourney(refs: CosmicJourneyRefs): void {
 
       // ── The cosmos behind the overlays: blurred + dimmed under the About (a CSS
       //    filter on the canvas) and under the Contact (inside WebGL — the scene's
-      //    VeilPass: Chrome sometimes painted the CSS-filtered canvas black there).
+      //    VeilEffect: Chrome sometimes painted the CSS-filtered canvas black there).
       //    Each passes its own 0..1 veil; they never overlap. ─────────────────────
       const renderCosmos = (aboutVeil: number, contactVeil: number) => {
         cosmicVeil.contact = contactVeil;

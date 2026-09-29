@@ -306,7 +306,7 @@ export const JOURNEY = {
   contactEnd: mpAt(SCROLL.contactEnd),
   // The galaxy stays a recognisable soft BACKDROP behind the form: a light blur (a
   // heavy one, like The Maker's, averages its fine dots into a flat haze) and a mild
-  // dim — done in WebGL (scene/VeilPass); a soft vignette behind the form keeps the
+  // dim — done in WebGL (scene/VeilEffect); a soft vignette behind the form keeps the
   // text readable (Contact.tsx).
   contactBlur: 1.6, // how far the blur spreads behind the form (1 = the kernel's default)
   contactDim: 0.68, // brightness multiplier on the cosmos behind the form (screen values)

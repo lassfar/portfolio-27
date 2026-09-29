@@ -11,14 +11,19 @@
 /** Multisampling (edge smoothing) of the composer's scene buffer; 0 = off. */
 export type Msaa = 0 | 2 | 4 | 8;
 
+/** The veil's blur behind the overlays: the original Kawase blur, or a lighter one. */
+export type BlurQuality = "heavy" | "light";
+
 export type PerformanceSettings = {
   msaa: Msaa;
   pauseCovered: boolean;
+  blurQuality: BlurQuality;
 };
 
 export const PERFORMANCE: PerformanceSettings = {
   msaa: 4, // was 8 (the library default); soft dots smooth their own edges
   pauseCovered: true, // skip drawing under the opaque Craft overlay and the Lightbox
+  blurQuality: "light", // was "heavy": 10 blur steps at ½ resolution
 };
 
 /** The code defaults, for "restore defaults". */
@@ -28,6 +33,7 @@ export const PERFORMANCE_DEFAULTS: Readonly<PerformanceSettings> = { ...PERFORMA
 const CHOICES: { [K in keyof PerformanceSettings]: readonly PerformanceSettings[K][] } = {
   msaa: [0, 2, 4, 8],
   pauseCovered: [true, false],
+  blurQuality: ["heavy", "light"],
 };
 
 const STORAGE_KEY = "p27.performance";

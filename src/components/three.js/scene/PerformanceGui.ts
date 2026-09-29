@@ -24,6 +24,10 @@ export function buildPerformancePanel(gui: GUI) {
     .name("multisampling")
     .onChange(apply);
   gui.add(PERFORMANCE, "pauseCovered").name("pause while covered").onChange(apply);
+  gui
+    .add(PERFORMANCE, "blurQuality", { "heavy (old)": "heavy", light: "light" })
+    .name("blur behind Contact")
+    .onChange(apply);
 
   const actions = {
     restore: () => {
