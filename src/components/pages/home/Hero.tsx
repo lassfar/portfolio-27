@@ -146,7 +146,7 @@ const Hero = () => {
     >
       {/* Full-bleed unified cosmos (starfield + star + Saturn), behind content.
           Blurred + dimmed at the end of the journey for the About reveal. */}
-      <div className="home-hero__canvas absolute inset-0 z-0 will-change-[filter]">
+      <div className="home-hero__canvas absolute inset-0 z-0">
         <CosmicScene />
       </div>
 

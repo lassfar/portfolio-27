@@ -14,16 +14,21 @@ export type Msaa = 0 | 2 | 4 | 8;
 /** The veil's blur behind the overlays: the original Kawase blur, or a lighter one. */
 export type BlurQuality = "heavy" | "light";
 
+/** The About's backdrop blur: the original CSS filter on the canvas, or inside WebGL. */
+export type AboutBlur = "css" | "3d";
+
 export type PerformanceSettings = {
   msaa: Msaa;
   pauseCovered: boolean;
   blurQuality: BlurQuality;
+  aboutBlur: AboutBlur;
 };
 
 export const PERFORMANCE: PerformanceSettings = {
   msaa: 4, // was 8 (the library default); soft dots smooth their own edges
   pauseCovered: true, // skip drawing under the opaque Craft overlay and the Lightbox
   blurQuality: "light", // was "heavy": 10 blur steps at ½ resolution
+  aboutBlur: "3d", // was "css": a 64 px blur of the live canvas in the compositor
 };
 
 /** The code defaults, for "restore defaults". */
@@ -34,6 +39,7 @@ const CHOICES: { [K in keyof PerformanceSettings]: readonly PerformanceSettings[
   msaa: [0, 2, 4, 8],
   pauseCovered: [true, false],
   blurQuality: ["heavy", "light"],
+  aboutBlur: ["css", "3d"],
 };
 
 const STORAGE_KEY = "p27.performance";

@@ -26,7 +26,11 @@ export function buildPerformancePanel(gui: GUI) {
   gui.add(PERFORMANCE, "pauseCovered").name("pause while covered").onChange(apply);
   gui
     .add(PERFORMANCE, "blurQuality", { "heavy (old)": "heavy", light: "light" })
-    .name("blur behind Contact")
+    .name("blur quality (Contact, About)")
+    .onChange(apply);
+  gui
+    .add(PERFORMANCE, "aboutBlur", { "CSS (old)": "css", "3D": "3d" })
+    .name("blur behind About")
     .onChange(apply);
 
   const actions = {

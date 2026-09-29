@@ -932,14 +932,24 @@ const BloomController = ({
   veil: VeilEffect;
   highlightsRef: RefObject<SoftHighlightsEffect | null>;
 }) => {
-  useFrame(() => {
-    // The Contact veil (written by the journey). `contactDim` is a screen-value
-    // brightness; the effect works in linear light.
-    const contact = cosmicVeil.contact;
+  useFrame(({ gl }) => {
+    // The veils (written by the journey). The dims are screen-value brightnesses; the
+    // effect works in linear light.
     veil.quality = PERFORMANCE.blurQuality;
-    veil.veil = contact;
-    veil.dim = lerp(1, Math.pow(JOURNEY.contactDim, 2.2), contact);
-    veil.spread = JOURNEY.contactBlur;
+    const about = PERFORMANCE.aboutBlur === "3d" ? cosmicVeil.about : 0;
+    if (about > 0.001) {
+      // Behind the About: the look of its original CSS filter — a blur growing to
+      // `revealBlur` CSS px, dimmed to `revealDim` — faded in over the first quarter
+      // (the blur buffer is lower-res, so it can't start at full strength).
+      veil.veil = Math.min(1, about * 4);
+      veil.radius = JOURNEY.revealBlur * gl.getPixelRatio() * about;
+      veil.dim = Math.pow(1 - (1 - JOURNEY.revealDim) * about, 2.2);
+    } else {
+      const contact = cosmicVeil.contact;
+      veil.veil = contact;
+      veil.dim = lerp(1, Math.pow(JOURNEY.contactDim, 2.2), contact);
+      veil.spread = JOURNEY.contactBlur;
+    }
     if (highlightsRef.current) {
       highlightsRef.current.knee = GALAXY_FX.highlightKnee; // live-tunable (GalaxyGui)
       const galaxy = clamp01(useGalaxyScroll.getState().progress);

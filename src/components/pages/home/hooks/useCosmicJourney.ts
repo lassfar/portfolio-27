@@ -10,6 +10,7 @@ import { useVoyageScroll } from "#/stores/useVoyageScroll";
 import { useLabScroll } from "#/stores/useLabScroll";
 import { useJourneyScroll } from "#/stores/useJourneyScroll";
 import { storyEase } from "#/components/three.js/scene/storyMotion";
+import { onPerformanceChange, PERFORMANCE } from "#/components/three.js/scene/performance";
 import { useGalaxyScroll } from "#/stores/useGalaxyScroll";
 import { journeyTrigger } from "#/stores/journeyTrigger";
 import { cosmicVeil } from "#/stores/cosmicVeil";
@@ -101,18 +102,26 @@ export default function useCosmicJourney(refs: CosmicJourneyRefs): void {
         contactRef.current?.querySelectorAll<HTMLElement>(".home-contact__piece") ?? []
       );
 
-      // ── The cosmos behind the overlays: blurred + dimmed under the About (a CSS
-      //    filter on the canvas) and under the Contact (inside WebGL — the scene's
-      //    VeilEffect: Chrome sometimes painted the CSS-filtered canvas black there).
-      //    Each passes its own 0..1 veil; they never overlap. ─────────────────────
+      // ── The cosmos behind the overlays: blurred + dimmed under the About and the
+      //    Contact, inside WebGL (the scene's VeilEffect: Chrome sometimes painted the
+      //    CSS-filtered canvas black, and a CSS blur of the live canvas costs a full-
+      //    screen blur every frame). Each passes its own 0..1 veil; they never overlap.
+      //    `PERFORMANCE.aboutBlur` "css" brings back the About's original CSS filter,
+      //    promoted (will-change) only while it's on. ────────────────────────────
+      let lastVeils: [number, number] = [0, 0];
       const renderCosmos = (aboutVeil: number, contactVeil: number) => {
+        lastVeils = [aboutVeil, contactVeil];
+        cosmicVeil.about = aboutVeil;
         cosmicVeil.contact = contactVeil;
         if (!cosmos) return;
-        const blur = JOURNEY.revealBlur * aboutVeil;
-        const dim = 1 - (1 - JOURNEY.revealDim) * aboutVeil;
-        cosmos.style.filter =
-          blur > 0 || dim < 1 ? `blur(${blur}px) brightness(${dim})` : "none";
+        const css = PERFORMANCE.aboutBlur === "css" ? aboutVeil : 0;
+        const blur = JOURNEY.revealBlur * css;
+        const dim = 1 - (1 - JOURNEY.revealDim) * css;
+        const on = blur > 0 || dim < 1;
+        cosmos.style.filter = on ? `blur(${blur}px) brightness(${dim})` : "none";
+        cosmos.style.willChange = on ? "filter" : "auto";
       };
+      const stopRestyle = onPerformanceChange(() => renderCosmos(...lastVeils));
 
       // ── About reveal/exit (deterministic, reversible) — returns its veil ──────
       const renderAbout = (p: number) => {
@@ -302,7 +311,9 @@ export default function useCosmicJourney(refs: CosmicJourneyRefs): void {
       );
 
       return () => {
+        stopRestyle();
         journeyTrigger.current = null;
+        cosmicVeil.about = 0;
         cosmicVeil.contact = 0;
         setStar(0);
         setAbout(0);
