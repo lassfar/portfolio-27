@@ -1,5 +1,6 @@
 import { STORY_CHAPTERS } from "#/components/pages/home/timeline/config";
 import { chapterAt } from "#/components/pages/home/timeline/layout";
+import { useQuality } from "#/stores/useQuality";
 import { PERFORMANCE } from "./performance";
 
 /**
@@ -56,7 +57,13 @@ type ChapterRecord = {
 const empty = (): ChapterRecord => ({ frameMs: [], calls: 0, points: 0, longTasks: 0, longTaskMs: 0 });
 
 let records: ChapterRecord[] = STORY_CHAPTERS.map(empty);
+let recordsFrom = 0; // ms (performance.now) when the records started
 let current = 0;
+
+/** The quality tiers' log: where they started (and why), then every step since. */
+type QualityChange = { at: number; chapter: string; from: number; to: number; fps: number };
+let qualityStart: { step: number; gpu: string } | null = null;
+let qualityChanges: QualityChange[] = [];
 let readGpu: (() => GpuInfo) | null = null;
 
 /** File one frame under the chapter at master progress `mp`. */
@@ -80,6 +87,16 @@ export function recordLongTask(ms: number): void {
 
 export function resetRecords(): void {
   records = STORY_CHAPTERS.map(empty);
+  qualityChanges = [];
+  recordsFrom = performance.now();
+}
+
+export function recordQualityStart(step: number, gpu: string): void {
+  qualityStart = { step, gpu };
+}
+
+export function recordQualityChange(from: number, to: number, fps: number): void {
+  qualityChanges.push({ at: performance.now(), chapter: STORY_CHAPTERS[current].name, from, to, fps });
 }
 
 export function setGpuReader(read: (() => GpuInfo) | null): void {
@@ -145,6 +162,14 @@ export function buildReport(label: string): string {
     `- Settings: ${Object.entries(PERFORMANCE)
       .map(([key, value]) => `${key} ${value}`)
       .join(", ")}`,
+    `- Quality: started at step ${qualityStart?.step ?? "?"} (${qualityStart?.gpu ?? "?"} GPU); now step ${useQuality.getState().step}`,
+    `- Quality changes: ${
+      qualityChanges.length
+        ? qualityChanges
+            .map((c) => `${fixed((c.at - recordsFrom) / 1000)} s, ${c.chapter}: ${c.from} → ${c.to} (${fixed(c.fps)} FPS)`)
+            .join("; ")
+        : "none"
+    }`,
     "",
     `| Chapter | Seconds | Avg FPS | p50 ms | p95 ms | Worst ms | Frames > ${SLOW_MS} ms | Long tasks (ms) | Draw calls | Points |`,
     "|---|---|---|---|---|---|---|---|---|---|",

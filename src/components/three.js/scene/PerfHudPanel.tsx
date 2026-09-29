@@ -6,6 +6,8 @@ import { useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { glideToJourney, stopGlide } from "#/components/pages/home/scroll/glide";
 import { useJourneyScroll } from "#/stores/useJourneyScroll";
+import { useQuality } from "#/stores/useQuality";
+import { QUALITY_STEPS } from "./quality";
 import { jumpToJourney } from "./devPanel";
 import {
   buildReport,
@@ -21,7 +23,7 @@ const POLL_MS = 500;
 
 type Tour = "idle" | "starting" | "running" | "done" | "stopped";
 
-type Live = { fps: number; worst: number; chapter: string; gpu: GpuInfo | null };
+type Live = { fps: number; worst: number; chapter: string; quality: string; gpu: GpuInfo | null };
 
 const TOUR_NOTE: Record<Tour, string> = {
   idle: `Tour: the whole story in ${TOUR_SECONDS} s (don't touch)`,
@@ -60,6 +62,7 @@ const PerfHudPanel = () => {
         fps: s?.fps ?? 0,
         worst: s?.frameMsMax ?? 0,
         chapter: currentChapterName(),
+        quality: `${useQuality.getState().step} ${QUALITY_STEPS[useQuality.getState().step].name}`,
         gpu: gpuInfo(),
       });
       // The tour ends when its glide does: at the end of the story, or cut short by input.
@@ -115,6 +118,7 @@ const PerfHudPanel = () => {
       {open && (
         <>
           <div className="perf-hud__chapter">{live?.chapter}</div>
+          <div className="perf-hud__quality">quality {live?.quality}</div>
           <div className="perf-hud__gpu truncate" title={gpu?.renderer}>
             {gpu?.renderer ?? "GPU: waiting for the scene…"}
           </div>

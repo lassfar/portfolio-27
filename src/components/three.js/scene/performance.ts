@@ -17,7 +17,11 @@ export type BlurQuality = "heavy" | "light";
 /** The About's backdrop blur: the original CSS filter on the canvas, or inside WebGL. */
 export type AboutBlur = "css" | "3d";
 
+/** The quality tiers: automatic (from the measured FPS), or pinned to a step (0 = high … 4 = low). */
+export type QualityChoice = "auto" | 0 | 1 | 2 | 3 | 4;
+
 export type PerformanceSettings = {
+  quality: QualityChoice;
   msaa: Msaa;
   pauseCovered: boolean;
   blurQuality: BlurQuality;
@@ -26,6 +30,7 @@ export type PerformanceSettings = {
 };
 
 export const PERFORMANCE: PerformanceSettings = {
+  quality: "auto",
   msaa: 4, // was 8 (the library default); soft dots smooth their own edges
   pauseCovered: true, // skip drawing under the opaque Craft overlay and the Lightbox
   blurQuality: "light", // was "heavy": 10 blur steps at ½ resolution
@@ -38,6 +43,7 @@ export const PERFORMANCE_DEFAULTS: Readonly<PerformanceSettings> = { ...PERFORMA
 
 /** The values each switch accepts; anything else found in storage is ignored. */
 const CHOICES: { [K in keyof PerformanceSettings]: readonly PerformanceSettings[K][] } = {
+  quality: ["auto", 0, 1, 2, 3, 4],
   msaa: [0, 2, 4, 8],
   pauseCovered: [true, false],
   blurQuality: ["heavy", "light"],

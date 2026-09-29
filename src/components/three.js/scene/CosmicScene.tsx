@@ -69,7 +69,10 @@ import { useLabStore } from "#/stores/useLabStore";
 import { storyEase } from "./storyMotion";
 import { onPerformanceChange, PERFORMANCE, PERFORMANCE_DEFAULTS } from "./performance";
 import { precompile, setWarmUpTarget, whenIdle } from "./warmUp";
-import { MAX_DPR } from "./quality";
+import { gpuClass, gpuRenderer, LOWEST_STEP, QUALITY_STEPS, startStep } from "./quality";
+import { createQualityController, type QualityController } from "./qualityController";
+import { recordQualityChange, recordQualityStart } from "./perfReport";
+import { useQuality } from "#/stores/useQuality";
 import { setScrollLock } from "#/stores/scrollLock";
 
 /**
@@ -95,6 +98,9 @@ const CosmicScene = () => {
   const ringCount = isSmall ? RING.countMobile : RING.count;
 
   const highlightsRef = useRef<SoftHighlightsEffect>(null);
+  // The quality tiers lower the canvas's pixel ratio on slow GPUs (QualityMonitor). It
+  // has to be the Canvas prop: R3F re-applies that prop whenever the Canvas renders.
+  const maxDpr = useQuality((s) => QUALITY_STEPS[s.step].maxDpr);
   // The site bloom, created here and handed to the composer as-is (not through
   // @react-three/postprocessing's <Bloom>: that wrapper JSON-stringifies its props,
   // and under React 19 `ref` is a prop — once it holds the live effect, whose
@@ -145,7 +151,7 @@ const CosmicScene = () => {
           near: 0.1,
           far: 2800,
         }}
-        dpr={[1, MAX_DPR]}
+        dpr={[1, maxDpr]}
         // (No canvas antialiasing: only the composer's final full-screen pass reaches
         // the canvas; the composer smooths the scene itself, multisampled — see
         // Multisampling below.)
@@ -219,6 +225,8 @@ const CosmicScene = () => {
 
         <BloomController bloom={bloom} veil={veil} highlightsRef={highlightsRef} />
         <Multisampling composerRef={composerRef} />
+        <ComposerResize composerRef={composerRef} />
+        <QualityMonitor />
         <ShaderWarmUp composerRef={composerRef} veil={veil} />
         <CameraRig starfieldRef={starfieldRef} />
         <InteractionLock />
@@ -819,6 +827,9 @@ const InteractionLock = () => {
   return null;
 };
 
+/** Whether RenderPause is skipping the draw (shared with the QualityMonitor). */
+const renderPause = { paused: false, drawOnce: false };
+
 /** Scroll (in master progress) the pause stays clear of the Craft's edges: ~10% of a screen. */
 const COVER_MARGIN = mpAt(10);
 /** The Lightbox's fade-in (its `duration-300`): pause only once it fully covers. */
@@ -839,16 +850,14 @@ const RenderPause = ({
   composerRef: RefObject<EffectComposerImpl | null>;
 }) => {
   const size = useThree((s) => s.size);
-  const pause = useRef({ paused: false, drawOnce: false });
 
   useEffect(() => {
     const composer = composerRef.current;
     if (!composer) return;
     const original = composer.render;
     composer.render = (deltaTime?: number) => {
-      const p = pause.current;
-      if (p.paused && !p.drawOnce) return;
-      p.drawOnce = false;
+      if (renderPause.paused && !renderPause.drawOnce) return;
+      renderPause.drawOnce = false;
       original.call(composer, deltaTime);
     };
 
@@ -858,7 +867,7 @@ const RenderPause = ({
       const mp = useJourneyScroll.getState().progress;
       const craftCovers =
         mp > JOURNEY.craftCoverEnd + COVER_MARGIN && mp < JOURNEY.craftFadeStart - COVER_MARGIN;
-      pause.current.paused = PERFORMANCE.pauseCovered && (craftCovers || lightboxCovers);
+      renderPause.paused = PERFORMANCE.pauseCovered && (craftCovers || lightboxCovers);
     };
     const onGallery = () => {
       const open = useGalleryStore.getState().lightboxIndex !== null;
@@ -887,7 +896,7 @@ const RenderPause = ({
   }, [composerRef]);
 
   useEffect(() => {
-    pause.current.drawOnce = true;
+    renderPause.drawOnce = true;
   }, [size]);
 
   return null;
@@ -944,13 +953,79 @@ const Multisampling = ({
   useEffect(() => {
     const sync = () => {
       const composer = composerRef.current;
-      if (composer && composer.multisampling !== PERFORMANCE.msaa) {
-        composer.multisampling = PERFORMANCE.msaa;
-      }
+      // The quality tiers turn it off on slow GPUs.
+      const msaa = QUALITY_STEPS[useQuality.getState().step].msaa ? PERFORMANCE.msaa : 0;
+      if (composer && composer.multisampling !== msaa) composer.multisampling = msaa;
     };
     sync();
-    return onPerformanceChange(sync);
+    const unsubscribe = [onPerformanceChange(sync), useQuality.subscribe(sync)];
+    return () => unsubscribe.forEach((u) => u());
   }, [composerRef]);
+  return null;
+};
+
+/**
+ * When the quality tiers change the canvas's pixel ratio, resize the composer's buffers
+ * to match: by itself it only follows the canvas's CSS size.
+ */
+const ComposerResize = ({
+  composerRef,
+}: {
+  composerRef: RefObject<EffectComposerImpl | null>;
+}) => {
+  const dpr = useThree((s) => s.viewport.dpr);
+  const get = useThree((s) => s.get);
+  const applied = useRef(dpr);
+  useEffect(() => {
+    if (dpr === applied.current) return;
+    applied.current = dpr;
+    const { size } = get();
+    composerRef.current?.setSize(size.width, size.height);
+  }, [dpr, get, composerRef]);
+  return null;
+};
+
+/**
+ * The automatic quality tiers (P27-78): start from a guess by GPU (integrated one step
+ * lower), then measure every frame and step the quality down quickly or back up slowly
+ * to hold 60 FPS (see qualityController). Frames drawn while the render is paused are
+ * cheap, so they don't count. The dev panel's "quality" switch pins a step instead.
+ */
+const QualityMonitor = () => {
+  const gl = useThree((s) => s.gl);
+  const controller = useRef<QualityController | null>(null);
+
+  useEffect(() => {
+    const renderer = gpuRenderer(gl);
+    const start = startStep(renderer);
+    recordQualityStart(start, gpuClass(renderer));
+    const apply = () => {
+      const pinned = PERFORMANCE.quality;
+      if (pinned !== "auto") {
+        controller.current = null;
+        useQuality.getState().setStep(pinned);
+      } else if (!controller.current) {
+        controller.current = createQualityController(start, LOWEST_STEP, performance.now());
+        useQuality.getState().setStep(start);
+      }
+    };
+    apply();
+    const unsubscribe = onPerformanceChange(apply);
+    return () => {
+      unsubscribe();
+      controller.current = null;
+    };
+  }, [gl]);
+
+  useFrame((_, delta) => {
+    const c = controller.current;
+    if (!c || renderPause.paused || document.hidden) return;
+    const from = c.step;
+    const next = c.sample(delta * 1000, performance.now());
+    if (next === null) return;
+    recordQualityChange(from, next, c.fps);
+    useQuality.getState().setStep(next);
+  });
   return null;
 };
 

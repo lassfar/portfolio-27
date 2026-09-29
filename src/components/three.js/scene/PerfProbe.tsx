@@ -14,6 +14,7 @@ import {
   resetRecords,
   setGpuReader,
 } from "./perfReport";
+import { gpuRenderer } from "./quality";
 
 /**
  * Dev-only performance probe, for measuring what each beat of the journey costs.
@@ -123,11 +124,7 @@ const Probe = () => {
     };
 
     // The GPU's real name (e.g. "Iris Xe" vs "UHD", and the ANGLE backend on Windows).
-    const ctx = gl.getContext();
-    const debug = ctx.getExtension("WEBGL_debug_renderer_info");
-    const renderer = String(
-      ctx.getParameter(debug ? debug.UNMASKED_RENDERER_WEBGL : ctx.RENDERER),
-    );
+    const renderer = gpuRenderer(gl);
     setGpuReader(() => ({
       renderer,
       pixelRatio: gl.getPixelRatio(),

@@ -1,4 +1,6 @@
 import type { GUI } from "three/examples/jsm/libs/lil-gui.module.min.js";
+import { useQuality } from "#/stores/useQuality";
+import { QUALITY_STEPS } from "./quality";
 import {
   loadSavedPerformance,
   notifyPerformance,
@@ -19,6 +21,19 @@ export function buildPerformancePanel(gui: GUI) {
     notifyPerformance();
   };
 
+  const steps = Object.fromEntries(QUALITY_STEPS.map((s, i) => [`${i} ${s.name}`, i]));
+  gui
+    .add(PERFORMANCE, "quality", { auto: "auto", ...steps })
+    .name("quality (tiers)")
+    .onChange(apply);
+  // Read-only: the step the scene is at now.
+  const now = {
+    get step() {
+      const step = useQuality.getState().step;
+      return `${step} ${QUALITY_STEPS[step].name}`;
+    },
+  };
+  gui.add(now, "step").name("↳ now").disable().listen();
   gui
     .add(PERFORMANCE, "msaa", { "8× (old)": 8, "4×": 4, "2×": 2, off: 0 })
     .name("multisampling")
