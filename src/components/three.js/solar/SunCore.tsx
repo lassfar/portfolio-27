@@ -17,6 +17,7 @@ import { SIMPLEX_NOISE } from "#/components/three.js/planet/shaders";
 import { useDrawGate } from "#/components/three.js/scene/useDrawGate";
 import { SUN, SUN_CORE } from "./config";
 import { PERFORMANCE } from "#/components/three.js/scene/performance";
+import { setHexIfChanged } from "#/components/three.js/scene/colorCache";
 
 type Props = {
   count: number;
@@ -156,10 +157,10 @@ const SunCore = ({ count, version, animate, time, reveal, renderOrder }: Props) 
     u.uCoronaFlicker.value = SUN_CORE.coronaFlicker;
     u.uBodyAmount.value = SUN_CORE.bodyStrength;
     u.uCoronaAmount.value = SUN_CORE.coronaStrength;
-    u.uCore.value.set(SUN_CORE.core);
-    u.uMid.value.set(SUN_CORE.mid);
-    u.uEdge.value.set(SUN_CORE.edge);
-    u.uCorona.value.set(SUN_CORE.corona);
+    setHexIfChanged(u.uCore.value, SUN_CORE.core);
+    setHexIfChanged(u.uMid.value, SUN_CORE.mid);
+    setHexIfChanged(u.uEdge.value, SUN_CORE.edge);
+    setHexIfChanged(u.uCorona.value, SUN_CORE.corona);
     u.uSplit.value = SUN_CORE.gradientSplit;
     if (animate && !SUN.paused && pointsRef.current) pointsRef.current.rotation.y += delta * SUN_CORE.spin;
     if (haloRef.current) {
@@ -168,7 +169,7 @@ const SunCore = ({ count, version, animate, time, reveal, renderOrder }: Props) 
     }
     if (haloMatRef.current) {
       haloMatRef.current.opacity = reveal.value * SUN_CORE.haloStrength;
-      haloMatRef.current.color.set(SUN_CORE.haloTint);
+      setHexIfChanged(haloMatRef.current.color, SUN_CORE.haloTint);
     }
     // Skipped entirely while the Sun is faded out (P27-78), not drawn at opacity 0.
     if (haloRef.current) haloRef.current.visible = !PERFORMANCE.hideInvisible || reveal.value > 0;

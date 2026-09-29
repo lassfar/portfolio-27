@@ -13,6 +13,7 @@ import { ORBIT_PRIORITY, usePlanetTuning } from "./planetTuning";
 import { siblingReveal } from "./reveal";
 import { flyingSunPos } from "#/components/three.js/galaxy/spin";
 import { PERFORMANCE } from "#/components/three.js/scene/performance";
+import { setHexIfChanged } from "#/components/three.js/scene/colorCache";
 
 type Props = {
   animate?: boolean;
@@ -97,7 +98,7 @@ const OrbitRing = ({ outline }: { outline: () => Float32Array }) => {
         SOLAR.ring.visible && (!PERFORMANCE.hideInvisible || reveal > 0);
     }
     if (!matRef.current || !SOLAR.ring.visible) return;
-    matRef.current.color.set(SOLAR.ring.color);
+    setHexIfChanged(matRef.current.color, SOLAR.ring.color);
     matRef.current.opacity = SOLAR.ring.opacity * reveal;
   });
 

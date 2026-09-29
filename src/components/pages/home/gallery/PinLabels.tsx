@@ -32,6 +32,16 @@ const PinLabels = () => {
     // Each label's last shown state — its opacity / pointer-events are only written
     // when it changes (the positions are still written every frame while shown).
     const shownBefore: Record<string, boolean> = {};
+    // Each label's size, measured once (P27-78): the text never changes, and reading
+    // it every frame forced a layout. Measured again after a resize or the fonts load.
+    const sizes: Record<string, { w: number; h: number }> = {};
+    const sizeOf = (id: string, el: HTMLButtonElement) =>
+      (sizes[id] ??= { w: el.offsetWidth, h: el.offsetHeight });
+    const remeasure = () => {
+      for (const id of Object.keys(sizes)) delete sizes[id];
+    };
+    window.addEventListener("resize", remeasure);
+    void document.fonts?.ready.then(remeasure);
     const setShown = (id: string, el: HTMLButtonElement, shown: boolean) => {
       if (shownBefore[id] === shown) return;
       shownBefore[id] = shown;
@@ -56,8 +66,7 @@ const PinLabels = () => {
         if (!el) continue;
         const s = pinScreen[loc.id];
         if (s && s.shown) {
-          const w = el.offsetWidth;
-          const h = el.offsetHeight;
+          const { w, h } = sizeOf(loc.id, el);
           // Anchor to the requested side of the pin head so clustered labels
           // fan out rather than stack on the same point.
           const left =
@@ -101,6 +110,7 @@ const PinLabels = () => {
     };
     pinLabels.update = update;
     return () => {
+      window.removeEventListener("resize", remeasure);
       if (pinLabels.update === update) pinLabels.update = null;
     };
   }, []);

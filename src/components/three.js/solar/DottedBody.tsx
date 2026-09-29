@@ -22,6 +22,7 @@ import { PLANET_LOD, PLANET_STYLE, PlanetLook, SATURN_LOOK, SOLAR_MOBILE_SCALE }
 import { PLANET_FRAG, PLANET_VERT } from "./planetShaders";
 import { planetInspect, usePlanetTuning } from "./planetTuning";
 import { useDrawGate } from "#/components/three.js/scene/useDrawGate";
+import { setHexIfChanged } from "#/components/three.js/scene/colorCache";
 
 /** What a dotted body needs (a planet or a moon). Mutable: the dev panel tunes it. */
 export type BodyShape = {
@@ -178,7 +179,16 @@ const DottedBody = ({ body, animate, reveal, spinRate, spinAngle, children }: Pr
     const [sx, sy, sz] = flyingSunPos();
     u.uSunPos.value.set(sx, sy, sz);
     // For the dev panel's inspect camera.
-    if (bodyRef.current) planetInspect.bodies[body.id] = { object: bodyRef.current, size: body.size };
+    // (Updated in place, not a new object every frame — P27-78.)
+    if (bodyRef.current) {
+      const inspect = planetInspect.bodies[body.id];
+      if (inspect) {
+        inspect.object = bodyRef.current;
+        inspect.size = body.size;
+      } else {
+        planetInspect.bodies[body.id] = { object: bodyRef.current, size: body.size };
+      }
+    }
 
     // Faded out: nothing else to update — its dots and core draw nothing. (Its clock and
     // spin above keep running, so it comes back exactly as it would have.)
@@ -237,13 +247,13 @@ const DottedBody = ({ body, animate, reveal, spinRate, spinAngle, children }: Pr
     const edge = Math.min(Math.max((radiusPx - 15) / 45, 0), 1);
     u.uRimAmount.value = edge * edge * (3 - 2 * edge);
     u.uGradient.value = L.gradient ? 1 : 0;
-    u.uDeep.value.set(L.deep);
+    setHexIfChanged(u.uDeep.value, L.deep);
     u.uAmbient.value = PLANET_STYLE.ambient;
-    u.uBase.value.set(L.base);
-    u.uDark.value.set(L.dark);
-    u.uLight.value.set(L.light);
-    u.uAccent.value.set(L.accent);
-    u.uSpotColor.value.set(L.spot.color);
+    setHexIfChanged(u.uBase.value, L.base);
+    setHexIfChanged(u.uDark.value, L.dark);
+    setHexIfChanged(u.uLight.value, L.light);
+    setHexIfChanged(u.uAccent.value, L.accent);
+    setHexIfChanged(u.uSpotColor.value, L.spot.color);
     u.uBands.value = L.bands;
     u.uBandContrast.value = L.bandContrast;
     u.uBandWarp.value = L.bandWarp;
@@ -265,8 +275,8 @@ const DottedBody = ({ body, animate, reveal, spinRate, spinAngle, children }: Pr
       coreRef.current.scale.setScalar(body.size * (1 - (saturn ? saturn.shellJitter : PLANET_STYLE.shellJitter) / 2) * 0.98);
       const c = coreMaterial.uniforms;
       c.uOpacity.value = u.uReveal.value;
-      c.uColor.value.set(L.base);
-      c.uCoreColor.value.set(PLANET_STYLE.coreColor);
+      setHexIfChanged(c.uColor.value, L.base);
+      setHexIfChanged(c.uCoreColor.value, PLANET_STYLE.coreColor);
       c.uTint.value = PLANET_STYLE.coreTint;
       c.uSunPos.value.copy(u.uSunPos.value);
       c.uAmbient.value = PLANET_STYLE.ambient;

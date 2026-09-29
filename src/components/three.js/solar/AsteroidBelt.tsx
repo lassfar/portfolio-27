@@ -9,6 +9,7 @@ import { systemTime } from "./orbits";
 import { usePlanetTuning } from "./planetTuning";
 import { siblingReveal } from "./reveal";
 import { useDrawGate } from "#/components/three.js/scene/useDrawGate";
+import { setHexIfChanged } from "#/components/three.js/scene/colorCache";
 
 const DEG = Math.PI / 180;
 
@@ -101,7 +102,7 @@ const AsteroidBelt = () => {
     u.uPixelRatio.value = state.viewport.dpr;
     u.uReveal.value = siblingReveal();
     u.uBrightness.value = ASTEROIDS.brightness;
-    u.uColor.value.set(ASTEROIDS.color);
+    setHexIfChanged(u.uColor.value, ASTEROIDS.color);
     if (pointsRef.current) pointsRef.current.visible = ASTEROIDS.show;
   });
 

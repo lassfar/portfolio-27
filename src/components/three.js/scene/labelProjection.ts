@@ -9,6 +9,25 @@ import type { Camera, Object3D, Vector3 } from "three";
  */
 export const LABEL_PRIORITY = 0.9;
 
+let rect: DOMRect | null = null;
+let rectCanvas: HTMLCanvasElement | null = null;
+let rectFrame = NaN;
+
+/**
+ * The canvas's rect, read once per frame (P27-78): every label projected in the same
+ * frame shares it. (`document.timeline.currentTime` is the frame's timestamp, the same
+ * for every callback in it.)
+ */
+function canvasRect(canvas: HTMLCanvasElement): DOMRect {
+  const frame = Number(document.timeline.currentTime);
+  if (!rect || rectCanvas !== canvas || rectFrame !== frame) {
+    rect = canvas.getBoundingClientRect();
+    rectCanvas = canvas;
+    rectFrame = frame;
+  }
+  return rect;
+}
+
 /**
  * Project `object`'s world position to viewport CSS px — where a `position: fixed`
  * label should go — measured on the canvas itself (so it holds wherever the canvas
@@ -23,7 +42,7 @@ export function projectToViewport(
 ): boolean {
   camera.updateMatrixWorld(); // the camera moved this frame; its matrices catch up at render
   object.getWorldPosition(out).project(camera);
-  const r = canvas.getBoundingClientRect();
+  const r = canvasRect(canvas);
   const z = out.z;
   out.set(r.left + (out.x * 0.5 + 0.5) * r.width, r.top + (-out.y * 0.5 + 0.5) * r.height, z);
   return z < 1;

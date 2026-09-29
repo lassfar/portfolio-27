@@ -19,6 +19,7 @@ import { sunReturn } from "./reveal";
 import { DOT_FRAG, DOT_VERT } from "./sunShaders";
 import SunCore from "./SunCore";
 import { useSunTuning } from "./tuning";
+import { setHexIfChanged } from "#/components/three.js/scene/colorCache";
 
 type Props = {
   animate?: boolean;
@@ -150,9 +151,9 @@ const Sun = ({ animate = true }: Props) => {
       u.uSplit.value = SUN.gradientSplit;
       u.uBrightness.value = SUN.brightness;
       u.uSoftness.value = SUN.dotSoftness;
-      u.uCore.value.set(SUN.core);
-      u.uMid.value.set(SUN.mid);
-      u.uEdge.value.set(SUN.edge);
+      setHexIfChanged(u.uCore.value, SUN.core);
+      setHexIfChanged(u.uMid.value, SUN.mid);
+      setHexIfChanged(u.uEdge.value, SUN.edge);
     }
     const voyage = useVoyageScroll.getState().progress;
     // Fade in with the system, then fade OUT as we dive to Earth — then fade BACK in as

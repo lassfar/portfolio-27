@@ -108,6 +108,15 @@ const Pin = ({
       VOYAGE.flyoutEnd,
       1
     );
+    // Hide the pins as the Earth fades out into the Lab beat.
+    const labFade = remap01(clamp01(useLabScroll.getState().progress), 0, LAB.earthFadeEnd);
+    // Away from the Earth (most of the page) they're hidden: skip the rest, and the
+    // label projection with its layout read (P27-78).
+    if (approach <= 0.55 || labFade >= 0.999) {
+      groupRef.current.visible = false;
+      if (pinScreen[loc.id]?.shown !== false) pinScreen[loc.id] = { x: 0, y: 0, shown: false };
+      return;
+    }
     // Front/back cull: the pin's outward normal vs. the direction to the camera.
     groupRef.current.getWorldPosition(worldPos.current);
     const a = useEarthAnchor.getState();
@@ -117,9 +126,7 @@ const Pin = ({
     viewDir.current.copy(camera.position).sub(worldPos.current).normalize();
     const front = normal.current.dot(viewDir.current) > 0.05;
 
-    // Hide the pins as the Earth fades out into the Lab beat.
-    const labFade = remap01(clamp01(useLabScroll.getState().progress), 0, LAB.earthFadeEnd);
-    groupRef.current.visible = approach > 0.55 && front && labFade < 0.999;
+    groupRef.current.visible = front;
 
     // Publish the head's screen position for the DOM label overlay. The label
     // shows only once the Earth is in full view (EARTH.pinLabelsAt) and the pin
