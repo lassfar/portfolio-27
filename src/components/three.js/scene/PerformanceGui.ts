@@ -50,6 +50,7 @@ export function buildPerformancePanel(gui: GUI) {
   gui.add(PERFORMANCE, "hideInvisible").name("hide invisible objects").onChange(apply);
   gui.add(PERFORMANCE, "planetDotLimit").name("planet dot limit").onChange(apply);
   gui.add(PERFORMANCE, "saturnLod").name("Saturn LOD").onChange(apply);
+  gui.add(PERFORMANCE, "burstFade").name("burst debris fade").onChange(apply);
 
   const actions = {
     restore: () => {

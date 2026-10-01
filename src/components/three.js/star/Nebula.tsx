@@ -14,6 +14,7 @@ import {
   ZOOM,
 } from "./config";
 import { remap01 } from "./utils";
+import { PERFORMANCE } from "#/components/three.js/scene/performance";
 import { useDrawGate } from "#/components/three.js/scene/useDrawGate";
 import { pointPixelRatio } from "#/components/three.js/scene/quality";
 
@@ -116,6 +117,8 @@ const Nebula = ({ count = PARTICLES.count, animate = true }: Props) => {
       uTurbulence: { value: PARTICLES.turbulence },
       uExplosion: { value: 0 },
       uOpacity: { value: 1 },
+      uNearA: { value: PARTICLES.nearFade[0] }, // the near fade (set each frame)
+      uNearB: { value: PARTICLES.nearFade[1] },
       uPixelRatio: {
         value:
           typeof window !== "undefined"
@@ -131,6 +134,11 @@ const Nebula = ({ count = PARTICLES.count, animate = true }: Props) => {
     const u = materialRef.current.uniforms;
     // Dots keep their on-screen size at any canvas resolution (the quality tiers).
     u.uPixelRatio.value = pointPixelRatio(state.viewport.dpr);
+    // The debris fades out just before the camera ("burst debris fade"); off, the fade
+    // sits behind the camera, so nothing fades.
+    const nearFade = PERFORMANCE.burstFade;
+    u.uNearA.value = nearFade ? PARTICLES.nearFade[0] : -2;
+    u.uNearB.value = nearFade ? PARTICLES.nearFade[1] : -1;
     if (animate) u.uTime.value += delta;
 
     const progress = useHeroScroll.getState().progress;
@@ -290,6 +298,7 @@ float snoise(vec3 v){
 const VERTEX_SHADER = /* glsl */ `
 uniform float uTime;
 uniform float uSize;
+uniform float uNearA, uNearB; // the near fade (camera distance)
 uniform float uPixelRatio;
 uniform float uTurbulence;
 uniform float uExplosion;   // 0 = intact, 1 = fully burst
@@ -298,6 +307,7 @@ attribute float aScale;
 attribute float aSeed;
 varying vec3 vColor;
 varying float vTwinkle;
+varying float vNear;
 
 // Burst magnitudes at full explosion (from config.PARTICLES).
 const float EXPLODE_DISTANCE = ${PARTICLES.explodeDistance.toFixed(2)};
@@ -331,7 +341,9 @@ void main(){
   float tw = 0.5 + 0.5 * sin(uTime * 1.8 + aSeed * 6.2831);
   vTwinkle = tw;
 
-  gl_PointSize = uSize * aScale * (0.55 + tw * 0.6) * uPixelRatio / -mvPosition.z;
+  // Just before the camera it fades out; gone, it gets no size at all → no pixel cost.
+  vNear = smoothstep(uNearA, uNearB, -mvPosition.z);
+  gl_PointSize = vNear < 0.004 ? 0.0 : uSize * aScale * (0.55 + tw * 0.6) * uPixelRatio / -mvPosition.z;
   gl_Position = projectionMatrix * mvPosition;
 }
 `;
@@ -341,13 +353,14 @@ precision highp float;
 uniform float uOpacity;
 varying vec3 vColor;
 varying float vTwinkle;
+varying float vNear;
 
 void main(){
   float d = length(gl_PointCoord - 0.5);
   if (d > 0.5) discard;
   float a = smoothstep(0.5, 0.0, d);
   a = pow(a, 1.6);
-  gl_FragColor = vec4(vColor, a * (0.45 + vTwinkle * 0.55) * uOpacity);
+  gl_FragColor = vec4(vColor, a * (0.45 + vTwinkle * 0.55) * uOpacity * vNear);
 }
 `;
 

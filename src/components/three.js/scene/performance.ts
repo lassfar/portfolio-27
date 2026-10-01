@@ -29,6 +29,7 @@ export type PerformanceSettings = {
   hideInvisible: boolean;
   planetDotLimit: boolean;
   saturnLod: boolean;
+  burstFade: boolean;
 };
 
 export const PERFORMANCE: PerformanceSettings = {
@@ -40,6 +41,7 @@ export const PERFORMANCE: PerformanceSettings = {
   hideInvisible: true, // skip the rings, orbit lines and Sun halo at opacity 0
   planetDotLimit: true, // a small planet draws no more dots than its disc can show
   saturnLod: true, // Saturn and its rings do the same (they always drew every dot)
+  burstFade: true, // the burst's debris fades out just before the camera
 };
 
 /** The code defaults, for "restore defaults". */
@@ -55,6 +57,7 @@ const CHOICES: { [K in keyof PerformanceSettings]: readonly PerformanceSettings[
   hideInvisible: [true, false],
   planetDotLimit: [true, false],
   saturnLod: [true, false],
+  burstFade: [true, false],
 };
 
 const STORAGE_KEY = "p27.performance";

@@ -59,6 +59,9 @@ export const PARTICLES = {
   turbulence: 0.28,
   explodeDistance: 3.5, // how far particles fly outward at full burst
   explodeScatter: 2.0, // extra turbulent scatter at full burst
+  // The debris fades out between these distances from the camera (world units) as it
+  // flies past (P27-78): up close each dot would grow to ~140 px and cost the most.
+  nearFade: [0.4, 1.2],
 } as const;
 
 /** Mutable: the dev panel (`?gui` → ✧ Stars) tunes it live. */
