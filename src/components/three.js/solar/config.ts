@@ -268,7 +268,10 @@ export const PLANET_STYLE = {
  *     pack closer (up to `farCoverage`), so a small disc still reads round and solid;
  *   • up close, a dot is never bigger than `maxDotRel` of the body's on-screen
  *     diameter, so small bodies (Mercury, the moons) stay finely dotted too;
- *   • past its budget (`count`), the dots grow so it stays covered.
+ *   • past its budget (`count`), the dots grow so it stays covered;
+ *   • a small disc never draws more than `maxDotsPerPx` dots per pixel it covers (the
+ *     "planet dot limit", P27-78): beyond that they only pile up on the same pixels
+ *     (Jupiter's wide view drew ~80k dots for a ~70 px disc).
  * Dots entering or leaving fade. Mutable: the dev panel tunes it.
  */
 export const PLANET_LOD = {
@@ -280,6 +283,7 @@ export const PLANET_LOD = {
   farCoverage: 6.95, // …up to this coverage (a far disc ~96–98% filled)
   minDots: 190, // even a speck keeps this many (so it reads solid)
   fadeBand: 0.13, // share of the drawn dots that fade in / out at the edge of the count
+  maxDotsPerPx: 3, // most dots per device pixel of the visible disc (~95% filled)
 };
 
 /**

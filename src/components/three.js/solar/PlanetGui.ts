@@ -85,6 +85,7 @@ export function buildPlanetPanel(gui: GUI) {
   fLod.add(PLANET_LOD, "farCoverage", 0.5, 8, 0.05).name("…up to coverage");
   fLod.add(PLANET_LOD, "minDots", 1, 500, 1).name("fewest dots (a speck)");
   fLod.add(PLANET_LOD, "fadeBand", 0, 0.6, 0.01).name("fade band");
+  fLod.add(PLANET_LOD, "maxDotsPerPx", 0.5, 10, 0.1).name("most dots per pixel (limit)");
 
   const fBelt = gui.addFolder("Asteroid belt");
   fBelt.add(ASTEROIDS, "show").name("show");

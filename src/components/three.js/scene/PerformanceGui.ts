@@ -48,6 +48,7 @@ export function buildPerformancePanel(gui: GUI) {
     .name("blur behind About")
     .onChange(apply);
   gui.add(PERFORMANCE, "hideInvisible").name("hide invisible objects").onChange(apply);
+  gui.add(PERFORMANCE, "planetDotLimit").name("planet dot limit").onChange(apply);
 
   const actions = {
     restore: () => {

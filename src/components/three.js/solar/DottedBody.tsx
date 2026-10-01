@@ -23,6 +23,7 @@ import { PLANET_FRAG, PLANET_VERT } from "./planetShaders";
 import { planetInspect, usePlanetTuning } from "./planetTuning";
 import { useDrawGate } from "#/components/three.js/scene/useDrawGate";
 import { setHexIfChanged } from "#/components/three.js/scene/colorCache";
+import { PERFORMANCE } from "#/components/three.js/scene/performance";
 
 /** What a dotted body needs (a planet or a moon). Mutable: the dev panel tunes it. */
 export type BodyShape = {
@@ -226,8 +227,12 @@ const DottedBody = ({ body, animate, reveal, spinRate, spinAngle, children }: Pr
     const dots = Math.min(Math.max(wanted, lod.minDots), budget);
     // Past its budget (very close), the dots grow so the surface stays covered.
     if (wanted > dots) dotPx *= Math.sqrt(wanted / dots);
-    geometry.setDrawRange(0, Math.min(budget, Math.ceil(dots * (1 + lod.fadeBand))));
-    u.uLodCount.value = dots;
+    // The dot limit: no more dots than its disc can show (both halves; the far one is
+    // skipped in the shader). Their size stays: fewer, not bigger.
+    const limit = lod.maxDotsPerPx * Math.PI * (radiusPx * state.viewport.dpr) ** 2 * 2;
+    const drawn = PERFORMANCE.planetDotLimit ? Math.min(dots, Math.max(limit, lod.minDots)) : dots;
+    geometry.setDrawRange(0, Math.min(budget, Math.ceil(drawn * (1 + lod.fadeBand))));
+    u.uLodCount.value = drawn;
     u.uLodFade.value = lod.fadeBand;
     u.uSize.value = dotPx * dist * (body.highlight ? 11 / 9 : 1);
 
