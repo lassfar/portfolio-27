@@ -6,8 +6,8 @@ import { Color, NormalBlending, Points, ShaderMaterial } from "three";
 import { useAboutScroll } from "#/stores/useAboutScroll";
 import { useVoyageScroll } from "#/stores/useVoyageScroll";
 import { remap01 } from "#/components/three.js/star/utils";
-import { FLYOUT, GROWTH, RING, RING_PALETTE, SCATTER } from "./config";
-import { VOYAGE } from "#/components/three.js/solar/config";
+import { FLYOUT, GROWTH, RING, RING_PALETTE, SCATTER, saturnLod } from "./config";
+import { PLANET_LOD, VOYAGE } from "#/components/three.js/solar/config";
 import { SIMPLEX_NOISE } from "./shaders";
 import { PERFORMANCE } from "#/components/three.js/scene/performance";
 import { pointPixelRatio } from "#/components/three.js/scene/quality";
@@ -91,6 +91,8 @@ const Rings = ({ count = RING.count, animate = true }: Props) => {
             : 1.5,
       },
       uOpacity: { value: 1 },
+      uLodCount: { value: 1e9 }, // level of detail: Saturn's share (every dot until set each frame)
+      uLodFade: { value: PLANET_LOD.fadeBand },
       uForm: { value: 0 }, // 0 = dispersed, 1 = assembled into the ring
       uScatterDrift: { value: SCATTER.drift },
       uStagger: { value: SCATTER.stagger },
@@ -120,6 +122,11 @@ const Rings = ({ count = RING.count, animate = true }: Props) => {
     if (pointsRef.current) {
       pointsRef.current.visible = !(PERFORMANCE.hideInvisible && earthFade >= 1);
     }
+    // Level of detail: the same share of dots as Saturn itself (P27-78).
+    const drawn = count * saturnLod.share;
+    pointsRef.current?.geometry.setDrawRange(0, Math.min(count, Math.ceil(drawn * (1 + PLANET_LOD.fadeBand))));
+    m.uniforms.uLodCount.value = drawn;
+    m.uniforms.uLodFade.value = PLANET_LOD.fadeBand;
     // Fly-out: thin the ring a little with distance, in lockstep with the body.
     m.uniforms.uThin.value = FLYOUT.thinMax * voyage;
   });
@@ -199,6 +206,8 @@ uniform float uScatterDrift;
 uniform float uStagger;
 uniform float uStartScale;   // ring scale at the start of construction
 uniform float uOvershoot;    // how far past full size it pops before settling
+uniform float uLodCount, uLodFade; // level of detail: dots drawn + the fading share
+varying float vLod;
 attribute vec3 aColor;
 attribute float aScale;
 attribute float aSeed;
@@ -212,6 +221,9 @@ ${SIMPLEX_NOISE}
 void main(){
   vColor = aColor;
   vSeed = aSeed;
+  // Level of detail: the dots past uLodCount fade out over the next uLodFade share.
+  float index = float(gl_VertexID);
+  vLod = clamp((uLodCount * (1.0 + uLodFade) - index) / max(uLodCount * uLodFade, 1.0), 0.0, 1.0);
 
   // In-plane shimmer (x/z only) — particles drift and sparkle within the ring
   // plane, so it stays flat and refined (no vertical waving).
@@ -257,6 +269,7 @@ uniform float uThin;         // 0 = full ring, 1 = fully thinned (fly-away)
 varying vec3 vColor;
 varying float vTwinkle;
 varying float vSeed;
+varying float vLod;
 
 void main(){
   // Fly-away thinning: drop a growing fraction of ring grains by seed.
@@ -265,6 +278,6 @@ void main(){
   float d = length(gl_PointCoord - 0.5);
   if (d > 0.5) discard;
   float a = smoothstep(0.5, 0.12, d);
-  gl_FragColor = vec4(vColor * (0.7 + vTwinkle * 0.5), a * uOpacity);
+  gl_FragColor = vec4(vColor * (0.7 + vTwinkle * 0.5), a * uOpacity * vLod);
 }
 `;

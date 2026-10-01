@@ -28,6 +28,7 @@ export type PerformanceSettings = {
   aboutBlur: AboutBlur;
   hideInvisible: boolean;
   planetDotLimit: boolean;
+  saturnLod: boolean;
 };
 
 export const PERFORMANCE: PerformanceSettings = {
@@ -38,6 +39,7 @@ export const PERFORMANCE: PerformanceSettings = {
   aboutBlur: "3d", // was "css": a 64 px blur of the live canvas in the compositor
   hideInvisible: true, // skip the rings, orbit lines and Sun halo at opacity 0
   planetDotLimit: true, // a small planet draws no more dots than its disc can show
+  saturnLod: true, // Saturn and its rings do the same (they always drew every dot)
 };
 
 /** The code defaults, for "restore defaults". */
@@ -52,6 +54,7 @@ const CHOICES: { [K in keyof PerformanceSettings]: readonly PerformanceSettings[
   aboutBlur: ["css", "3d"],
   hideInvisible: [true, false],
   planetDotLimit: [true, false],
+  saturnLod: [true, false],
 };
 
 const STORAGE_KEY = "p27.performance";

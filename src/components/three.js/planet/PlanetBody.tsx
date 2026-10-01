@@ -2,17 +2,29 @@
 
 import { useFrame } from "@react-three/fiber";
 import { useMemo, useRef } from "react";
-import { Color, Mesh, MeshBasicMaterial, NormalBlending, Points, ShaderMaterial, Vector3 } from "three";
+import {
+  Color,
+  Mesh,
+  MeshBasicMaterial,
+  NormalBlending,
+  PerspectiveCamera,
+  Points,
+  ShaderMaterial,
+  Vector3,
+} from "three";
 import { useAboutScroll } from "#/stores/useAboutScroll";
 import { useSaturnAnchor } from "#/stores/useSaturnAnchor";
 import { useVoyageScroll } from "#/stores/useVoyageScroll";
 import { easeInOutCubic, remap01 } from "#/components/three.js/star/utils";
 import { flyingSunPos } from "#/components/three.js/galaxy/spin";
-import { FLYOUT, GROWTH, LIGHT, PLANET, PLANET_PALETTE, SCATTER } from "./config";
-import { PLANET_STYLE, SOLAR, VOYAGE } from "#/components/three.js/solar/config";
+import { FLYOUT, GROWTH, LIGHT, PLANET, PLANET_PALETTE, SCATTER, saturnLod } from "./config";
+import { PLANET_LOD, PLANET_STYLE, SOLAR, VOYAGE } from "#/components/three.js/solar/config";
+import { PERFORMANCE } from "#/components/three.js/scene/performance";
 import { SIMPLEX_NOISE } from "./shaders";
 import { useDrawGate } from "#/components/three.js/scene/useDrawGate";
 import { pointPixelRatio } from "#/components/three.js/scene/quality";
+
+const _center = new Vector3(); // scratch (level of detail)
 
 type Props = {
   /** Particle count (set adaptively by the parent for perf). */
@@ -141,6 +153,8 @@ const PlanetBody = ({ count = PLANET.count, animate = true }: Props) => {
       uCullBack: { value: 0 }, // 1 = drop the dots hidden behind the core (set below)
       uCoreRadius: { value: PLANET.radius * PLANET.coreScale * 0.98 }, // (a hair inside)
       uCamLocal: { value: new Vector3() }, // the camera, in the planet's own space
+      uLodCount: { value: 1e9 }, // level of detail (every dot until set each frame)
+      uLodFade: { value: PLANET_LOD.fadeBand },
     }),
     []
   );
@@ -169,6 +183,26 @@ const PlanetBody = ({ count = PLANET.count, animate = true }: Props) => {
       pointsRef.current.updateWorldMatrix(true, false);
       pointsRef.current.worldToLocal(m.uniforms.uCamLocal.value.copy(state.camera.position));
     }
+
+    // Level of detail, once assembled (P27-78): like the planets, no more dots than its
+    // disc can show on screen (PLANET_LOD.maxDotsPerPx), so a small, far Saturn draws a
+    // fraction of its dots. The rings follow the same share.
+    let drawn = count;
+    const points = pointsRef.current;
+    if (PERFORMANCE.saturnLod && progress >= 0.999 && points) {
+      const cam = state.camera as PerspectiveCamera;
+      points.updateWorldMatrix(true, false);
+      const worldRadius = PLANET.radius * points.matrixWorld.getMaxScaleOnAxis();
+      const dist = Math.max(points.getWorldPosition(_center).distanceTo(cam.position), worldRadius * 1.05);
+      const focal = state.size.height / 2 / Math.tan((cam.fov * Math.PI) / 360);
+      const radiusPx = (worldRadius * focal) / dist;
+      const limit = PLANET_LOD.maxDotsPerPx * Math.PI * (radiusPx * state.viewport.dpr) ** 2 * 2;
+      drawn = Math.min(count, Math.max(limit, PLANET_LOD.minDots));
+    }
+    points?.geometry.setDrawRange(0, Math.min(count, Math.ceil(drawn * (1 + PLANET_LOD.fadeBand))));
+    m.uniforms.uLodCount.value = drawn;
+    m.uniforms.uLodFade.value = PLANET_LOD.fadeBand;
+    saturnLod.share = drawn / count;
     // Fly-out: thin the cloud a little as the camera flies away (a proxy for
     // distance), capped so the hero Saturn stays legible and never vanishes.
     // Reverses cleanly on scroll-up.
@@ -297,6 +331,8 @@ uniform float uOvershoot;    // how far past full size it pops before settling
 uniform float uCullBack;     // 1 = drop the dots hidden behind the core
 uniform float uCoreRadius;
 uniform vec3 uCamLocal;      // the camera, in the planet's own space
+uniform float uLodCount, uLodFade; // level of detail: dots drawn + the fading share
+varying float vLod;
 attribute vec3 aColor;
 attribute float aScale;
 attribute float aSeed;
@@ -314,6 +350,9 @@ void main(){
   vColor = aColor;
   vSeed = aSeed;
   vHalo = aHalo;
+  // Level of detail: the dots past uLodCount fade out over the next uLodFade share.
+  float index = float(gl_VertexID);
+  vLod = clamp((uLodCount * (1.0 + uLodFade) - index) / max(uLodCount * uLodFade, 1.0), 0.0, 1.0);
 
   vec3 nrm = normalize(position);
   vec3 p = position;
@@ -411,6 +450,7 @@ varying float vBright;
 varying float vRim;
 varying float vSeed;
 varying float vHalo;
+varying float vLod;
 
 void main(){
   // Fly-away thinning: drop a growing fraction of dots (by per-particle seed) so
@@ -427,7 +467,7 @@ void main(){
   float surfaceFade = 1.0 - rimMask * vSeed * 0.85;
 
   // Halo particles are uniformly faint dust.
-  float alpha = a * mix(surfaceFade, uHaloOpacity, vHalo) * uOpacity;
+  float alpha = a * mix(surfaceFade, uHaloOpacity, vHalo) * uOpacity * vLod;
   if (alpha < 0.003) discard;
 
   gl_FragColor = vec4(vColor * vBright, alpha);

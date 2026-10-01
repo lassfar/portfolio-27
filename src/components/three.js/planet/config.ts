@@ -142,6 +142,13 @@ export const SATURN = {
 // scrubs and reverses cleanly. Built as a scalable camera path so a galaxy zoom
 // can nest on top later.
 
+/**
+ * Saturn's level of detail (P27-78): the share of its dots drawn this frame — fewer as
+ * it shrinks on screen, like the planets. Written by PlanetBody each frame, read by the
+ * rings, so both thin out together.
+ */
+export const saturnLod = { share: 1 };
+
 export const FLYOUT = {
   distance: 30, // world units the camera pulls back (+z) over the voyage
   rise: 16, // world units the camera rises (+y) over the voyage — the cinematic
