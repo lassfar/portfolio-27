@@ -39,7 +39,6 @@ uniform vec4 uSpot; // latitude (rad), longitude (rad), half-height (rad), stren
 uniform float uSpotAspect;
 varying vec3 vColor;
 varying float vSeed;
-varying float vHidden;
 varying float vRim;
 varying float vLod;
 varying float vDust;
@@ -113,7 +112,6 @@ void main(){
     gl_PointSize = 0.0;
     vColor = vec3(0.0);
     vSeed = 0.0;
-    vHidden = 1.0;
     vRim = 0.0;
     vLod = 0.0;
     vDust = 0.0;
@@ -142,10 +140,8 @@ void main(){
   r = mix(r, uRadius * (1.0 + pow(rand(id, 7u), 1.5) * uDustReach), dust);
   r += dust * snoise(home * 2.2 + vec3(uTime * 0.08)) * uDustBreath * uRadius;
 
-  // Its colour comes from its home, so the pattern rides with it…
-  vec3 c = surface(home, uTime);
-  // …as it streams east-west with its belt's jet (alternating belt to belt), keeping
-  // its latitude: the belts flow.
+  // It streams east-west with its belt's jet (alternating belt to belt), keeping its
+  // latitude: the belts flow.
   float jet = uTime * uFlow * sin(asin(home.y) * max(uBands, 1.0));
   float cj = cos(jet);
   float sj = sin(jet);
@@ -157,7 +153,17 @@ void main(){
   float facing = dot(n, toCam);
   // Only the hemisphere facing the camera is drawn (the back one sits behind the core).
   // (The haze reaches past the silhouette, so its back half shows beyond the limb.)
-  vHidden = step(facing, mix(-0.05, -0.6, dust));
+  // A hidden dot is dropped right here: no colour noise, no pixels (P27-78).
+  if (facing < mix(-0.05, -0.6, dust)) {
+    gl_Position = vec4(2.0, 2.0, 2.0, 1.0); // off-screen (clipped)
+    gl_PointSize = 0.0;
+    vColor = vec3(0.0);
+    vSeed = 0.0;
+    vRim = 0.0;
+    return;
+  }
+  // Its colour comes from its home, so the pattern rides with it as it streams.
+  vec3 c = surface(home, uTime);
   // The Saturn's grainy edge: near the rim, dots drift outward (and fade, by seed).
   float rim = smoothstep(uRimStart, 1.0, 1.0 - abs(facing)) * uRimAmount * (1.0 - dust);
   vRim = rim;
@@ -183,13 +189,12 @@ precision highp float;
 uniform float uReveal, uThin, uBoost, uSoftness;
 varying vec3 vColor;
 varying float vSeed;
-varying float vHidden;
 varying float vRim;
 varying float vLod;
 varying float vDust;
 uniform float uDustOpacity;
 void main(){
-  if (vSeed < uThin || vHidden > 0.5) discard;
+  if (vSeed < uThin) discard;
   float d = length(gl_PointCoord - 0.5);
   if (d > 0.5) discard;
   float a = smoothstep(0.5, 0.5 - uSoftness, d) * uReveal * vLod; // soft round dots

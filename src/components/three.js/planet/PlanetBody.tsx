@@ -138,6 +138,9 @@ const PlanetBody = ({ count = PLANET.count, animate = true }: Props) => {
       uStartScale: { value: GROWTH.startScale },
       uOvershoot: { value: GROWTH.overshoot },
       uThin: { value: 0 }, // 0 = full cloud, 1 = fully thinned away (fly-away)
+      uCullBack: { value: 0 }, // 1 = drop the dots hidden behind the core (set below)
+      uCoreRadius: { value: PLANET.radius * PLANET.coreScale * 0.98 }, // (a hair inside)
+      uCamLocal: { value: new Vector3() }, // the camera, in the planet's own space
     }),
     []
   );
@@ -158,6 +161,14 @@ const PlanetBody = ({ count = PLANET.count, animate = true }: Props) => {
     // (opacity, NOT scale — the planet keeps its size and just fades away).
     const earthFade = remap01(voyage, VOYAGE.earthFadeStart, VOYAGE.earthFadeEnd);
     m.uniforms.uOpacity.value = remap01(progress, 0.0, 0.15) * (1.0 - earthFade);
+    // Formed, with its core opaque: the dots behind the core are dropped in the vertex
+    // shader (P27-78), tested against the camera in the planet's own space.
+    const formed = progress >= 0.999 && m.uniforms.uOpacity.value >= 0.999;
+    m.uniforms.uCullBack.value = formed ? 1 : 0;
+    if (formed && pointsRef.current) {
+      pointsRef.current.updateWorldMatrix(true, false);
+      pointsRef.current.worldToLocal(m.uniforms.uCamLocal.value.copy(state.camera.position));
+    }
     // Fly-out: thin the cloud a little as the camera flies away (a proxy for
     // distance), capped so the hero Saturn stays legible and never vanishes.
     // Reverses cleanly on scroll-up.
@@ -283,6 +294,9 @@ uniform float uScatterDrift;
 uniform float uStagger;
 uniform float uStartScale;   // planet scale at the start of construction
 uniform float uOvershoot;    // how far past full size it pops before settling
+uniform float uCullBack;     // 1 = drop the dots hidden behind the core
+uniform float uCoreRadius;
+uniform vec3 uCamLocal;      // the camera, in the planet's own space
 attribute vec3 aColor;
 attribute float aScale;
 attribute float aSeed;
@@ -319,6 +333,25 @@ void main(){
   float ca = cos(zonal);
   float sa = sin(zonal);
   p.xz = mat2(ca, -sa, sa, ca) * p.xz;
+
+  // Formed, with its core opaque: a dot the core hides from the camera (its sight line
+  // crosses the core first) is dropped here, before the rest of its noise and any
+  // pixel work (P27-78). The grainy edge (its dots get pushed out below) is kept.
+  if (uCullBack > 0.5 && rim < uRimStart) {
+    vec3 ray = p - uCamLocal;
+    float a = dot(ray, ray);
+    float b = 2.0 * dot(uCamLocal, ray);
+    float c = dot(uCamLocal, uCamLocal) - uCoreRadius * uCoreRadius;
+    float disc = b * b - 4.0 * a * c;
+    if (disc > 0.0) {
+      float hit = (-b - sqrt(disc)) / (2.0 * a);
+      if (hit > 0.0 && hit < 1.0) {
+        gl_Position = vec4(2.0, 2.0, 2.0, 1.0); // off-screen (clipped)
+        gl_PointSize = 0.0;
+        return;
+      }
+    }
+  }
 
   // A sliver of radial breathing keeps the surface alive (halo breathes more).
   float n = snoise(position * 2.2 + vec3(t));
