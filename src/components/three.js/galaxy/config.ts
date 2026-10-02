@@ -13,7 +13,6 @@
  * climbing above the disc (`GALAXY_ZOOM.endDir`), not from tilting the geometry.
  */
 
-import { Euler, Vector3 } from "three";
 import { SUNPOS } from "#/components/three.js/solar/config";
 
 // `GALAXY` and `GALAXY_FX` are deliberately MUTABLE: the values below are the
@@ -256,9 +255,6 @@ export const GALAXY_TILT: [number, number, number] = [0, 0, 0];
  */
 export const GALAXY_CENTER: [number, number, number] = [0, 0, 0];
 
-const _armOffset = new Vector3();
-const _tiltEuler = new Euler();
-
 /**
  * Recompute the tilt, the Sun's arm radius and the galaxy centre from `GALAXY`
  * (inclination, roll, disc radius), in place — so a live change of the pose keeps the
@@ -269,12 +265,14 @@ export function updateGalaxyPlacement() {
   GALAXY_TILT[0] = (Math.PI / 180) * (90 - GALAXY.inclination);
   GALAXY_TILT[1] = 0;
   GALAXY_TILT[2] = (Math.PI / 180) * GALAXY.roll;
-  _armOffset
-    .set(GALAXY_PLACEMENT.sunArmRadius, 0, 0)
-    .applyEuler(_tiltEuler.set(GALAXY_TILT[0], GALAXY_TILT[1], GALAXY_TILT[2]));
-  GALAXY_CENTER[0] = SUNPOS[0] - _armOffset.x;
-  GALAXY_CENTER[1] = SUNPOS[1] - _armOffset.y;
-  GALAXY_CENTER[2] = SUNPOS[2] - _armOffset.z;
+  // The arm offset (r, 0, 0) turned by the tilt: the first column of three's XYZ Euler
+  // rotation, in plain maths, so this eagerly loaded config never pulls three.js into
+  // the page's first download (P27-78).
+  const [x, y, z] = GALAXY_TILT;
+  const r = GALAXY_PLACEMENT.sunArmRadius;
+  GALAXY_CENTER[0] = SUNPOS[0] - r * Math.cos(y) * Math.cos(z);
+  GALAXY_CENTER[1] = SUNPOS[1] - r * (Math.cos(x) * Math.sin(z) + Math.sin(x) * Math.sin(y) * Math.cos(z));
+  GALAXY_CENTER[2] = SUNPOS[2] - r * (Math.sin(x) * Math.sin(z) - Math.cos(x) * Math.sin(y) * Math.cos(z));
 }
 updateGalaxyPlacement();
 
