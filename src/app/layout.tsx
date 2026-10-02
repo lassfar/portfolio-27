@@ -1,17 +1,7 @@
 import type { Metadata } from "next";
-import { Geist, Geist_Mono } from "next/font/google";
 import SmoothScrollProvider from "#/components/providers/SmoothScrollProvider";
 import "#/styles/globals.css";
-
-const geistSans = Geist({
-  variable: "--font-geist-sans",
-  subsets: ["latin"],
-});
-
-const geistMono = Geist_Mono({
-  variable: "--font-geist-mono",
-  subsets: ["latin"],
-});
+import { greatVibes, kronaOne } from "./fonts";
 
 export const metadata: Metadata = {
   title: "Aymane Lassfar — Frontend Developer",
@@ -29,11 +19,13 @@ export default function RootLayout({
     // inject attributes on <html>/<body> before React hydrates, which would
     // otherwise trip a hydration mismatch. This suppresses ONLY these root
     // elements' own attribute diffs — it does not mask real app mismatches.
-    <html lang="en" suppressHydrationWarning>
-      <body
-        suppressHydrationWarning
-        className={`${geistSans.variable} ${geistMono.variable} antialiased dark`}
-      >
+    // The fonts' variables sit on <html>: the @theme tokens that use them live on :root.
+    <html
+      lang="en"
+      suppressHydrationWarning
+      className={`${greatVibes.variable} ${kronaOne.variable}`}
+    >
+      <body suppressHydrationWarning className="antialiased dark">
         <SmoothScrollProvider>{children}</SmoothScrollProvider>
       </body>
     </html>
