@@ -120,11 +120,28 @@ function makeLayer(rnd: () => number) {
   };
 }
 
+/** Loop rounds per step when built in steps (see buildGalaxyLayerSteps). */
+const BUILD_STEP = 1500;
+
 /**
  * @param count star-dot count (desktop / mobile)
  * @param aux   density factor for the soft glow + disc dust patches (1 desktop)
  */
 export function buildGalaxyLayers(count: number, aux = 1): GalaxyLayers {
+  const steps = buildGalaxyLayerSteps(count, aux);
+  for (;;) {
+    const step = steps.next();
+    if (step.done) return step.value;
+  }
+}
+
+/**
+ * The same build in small steps (P27-78): it pauses every BUILD_STEP loop rounds, so the
+ * scene's build queue can spread it over idle time. The pauses never change the random
+ * sequence, so the galaxy is identical.
+ */
+export function* buildGalaxyLayerSteps(count: number, aux = 1): Generator<undefined, GalaxyLayers> {
+  let rounds = 0;
   const rnd = mulberry32(GALAXY.seed);
   const gauss = (sigma: number) => {
     const u = 1 - rnd();
@@ -201,6 +218,7 @@ export function buildGalaxyLayers(count: number, aux = 1): GalaxyLayers {
   // 1 — bulge: old, creamy, smooth, dense toward the centre
   const nBulge = Math.round(N * 0.11);
   for (let i = 0; i < nBulge; i++) {
+    if (++rounds % BUILD_STEP === 0) yield;
     const r = G_.bulgeRadius * Math.pow(rnd(), 1.8);
     const d = unitDir();
     c = _c.copy(CREAM).lerp(C.peach, Math.pow(r / G_.bulgeRadius, 0.8) * 0.7);
@@ -210,6 +228,7 @@ export function buildGalaxyLayers(count: number, aux = 1): GalaxyLayers {
   // 2 — between the arms: old, dim, neutral (NOT blue — that's the young arms)
   const nDisc = Math.round(N * 0.22);
   for (let i = 0; i < nDisc; i++) {
+    if (++rounds % BUILD_STEP === 0) yield;
     const r = sampleRadius();
     const phi = rnd() * TAU;
     const y = gauss(hz(r));
@@ -226,6 +245,7 @@ export function buildGalaxyLayers(count: number, aux = 1): GalaxyLayers {
   const nArm = Math.round(N * 0.5);
   const maxTries = nArm * 4;
   for (let got = 0, tries = 0; got < nArm && tries < maxTries; ) {
+    if (++rounds % BUILD_STEP === 0) yield;
     tries++;
     const r = sampleRadius();
     const k = Math.floor(rnd() * G_.armCount);
@@ -255,6 +275,7 @@ export function buildGalaxyLayers(count: number, aux = 1): GalaxyLayers {
   // 4 — faint round halo (depth)
   const nHalo = Math.round(N * 0.05);
   for (let i = 0; i < nHalo; i++) {
+    if (++rounds % BUILD_STEP === 0) yield;
     const r = RMAX * (0.6 + 0.7 * Math.pow(rnd(), 2));
     const d = unitDir();
     c = _c.copy(C.coreWhite).lerp(C.lbabyBlue, rnd()).lerp(NEUTRAL, 0.3);
@@ -317,6 +338,7 @@ export function buildGalaxyLayers(count: number, aux = 1): GalaxyLayers {
   const nArmGlow = Math.round(5200 * aux);
   const maxGlowTries = Math.round(20000 * aux);
   for (let gArm = 0, gTries = 0; gArm < nArmGlow && gTries < maxGlowTries; ) {
+    if (++rounds % BUILD_STEP === 0) yield;
     // arm glow
     gTries++;
     const r = sampleRadius();
@@ -340,6 +362,7 @@ export function buildGalaxyLayers(count: number, aux = 1): GalaxyLayers {
   }
   const nDiscGlow = Math.round(1600 * aux);
   for (let i = 0; i < nDiscGlow; i++) {
+    if (++rounds % BUILD_STEP === 0) yield;
     // faint disc glow
     const r = sampleRadius();
     const phi = rnd() * TAU;
@@ -353,6 +376,7 @@ export function buildGalaxyLayers(count: number, aux = 1): GalaxyLayers {
   // strand, short "feathers" crossing the arm, plus patchy dust across the disc.
   for (let k = 0; k < G_.armCount; k++) {
     for (let r = 1.0; r < RMAX * 0.97; r += 0.022) {
+      if (++rounds % BUILD_STEP === 0) yield;
       const n = fbm(r * 1.6 + k * 9.1, k * 3.3 + 0.5);
       if (n < G_.dustBreak) continue; // gaps in the lane
       const strength = smoothstep(G_.dustBreak, G_.dustBreak + 0.25, n);
@@ -415,6 +439,7 @@ export function buildGalaxyLayers(count: number, aux = 1): GalaxyLayers {
   }
   const nPatches = Math.round(G_.dustPatches * aux);
   for (let i = 0; i < nPatches; i++) {
+    if (++rounds % BUILD_STEP === 0) yield;
     // patchy dust across the disc
     const r = sampleRadius();
     const phi = rnd() * TAU;
@@ -432,6 +457,7 @@ export function buildGalaxyLayers(count: number, aux = 1): GalaxyLayers {
   // the density of the deep field around the galaxy.
   const nOuter = Math.round(N * G_.outerStars);
   for (let i = 0; i < nOuter; i++) {
+    if (++rounds % BUILD_STEP === 0) yield;
     const r = RMAX * (0.85 - 0.24 * Math.log(1 - rnd() * 0.94)); // 0.85 → ~1.5 RMAX
     const phi = rnd() * TAU;
     const y = gauss(hz(r) * (1.6 + (r / RMAX) * 1.4)); // puffier out here
@@ -458,5 +484,12 @@ export function buildGalaxyLayers(count: number, aux = 1): GalaxyLayers {
   }
 
   // (Glow is additive, so its order changes nothing on screen.)
-  return { stars: S.geom(), knots: K.geom(), glow: G.geom(true), dust: D.geom() };
+  // (The geometries copy every point: a pause between them. Glow is additive, so its
+  // shuffled order changes nothing on screen.)
+  const stars = S.geom();
+  yield;
+  const knots = K.geom();
+  const glow = G.geom(true);
+  yield;
+  return { stars, knots, glow, dust: D.geom() };
 }

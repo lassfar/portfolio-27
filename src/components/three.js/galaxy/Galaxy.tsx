@@ -5,7 +5,6 @@ import { RefObject, useEffect, useMemo, useRef } from "react";
 import {
   AddEquation,
   AdditiveBlending,
-  Camera,
   Color,
   CustomBlending,
   Group,
@@ -19,7 +18,6 @@ import {
   Scene,
   ShaderMaterial,
   Vector2,
-  WebGLRenderer,
   WebGLRenderTarget,
 } from "three";
 import { clamp01, easeInOutCubic, easeOutCubic, remap01 } from "#/components/three.js/star/utils";
@@ -34,7 +32,8 @@ import {
   GALAXY_TILT,
   GLOW_QUALITY,
 } from "./config";
-import { buildGalaxyLayers, GalaxyLayers } from "./buildGalaxy";
+import { buildGalaxyLayers, buildGalaxyLayerSteps, GalaxyLayers } from "./buildGalaxy";
+import { journeyAtGalaxy } from "./pace";
 import { galaxyTuning } from "./tuning";
 import { advanceSolarFly, galaxyCenterPos, galaxyDrag, updateGalaxyDrag } from "./spin";
 import { SKY_END_VIEW } from "./sky";
@@ -43,7 +42,8 @@ import GalaxySparkles from "./GalaxySparkles";
 import SpaceStars from "./SpaceStars";
 import DistantGalaxies from "./DistantGalaxies";
 import { GalaxyBloom } from "./GalaxyBloom";
-import { precompile, whenIdle } from "#/components/three.js/scene/warmUp";
+import { precompile, preupload, whenIdle } from "#/components/three.js/scene/warmUp";
+import { sceneBuilds } from "#/components/three.js/scene/sceneBuilds";
 import { QUALITY_STEPS } from "#/components/three.js/scene/quality";
 import { useQuality } from "#/stores/useQuality";
 import {
@@ -118,6 +118,45 @@ const Galaxy = ({ animate = true }: { animate?: boolean }) => {
   const knotPts = useRef<Points>(null);
   const layersRef = useRef<GalaxyLayers | null>(null);
   const builtVersion = useRef(-1);
+  const starCount = isSmall ? GALAXY.countMobile : GALAXY.count;
+  // Put freshly built layers on their points (disposing the ones they replace).
+  const swapLayers = (next: GalaxyLayers) => {
+    const old = layersRef.current;
+    const pairs: [RefObject<Points | null>, GalaxyLayers[keyof GalaxyLayers]][] = [
+      [glowPts, next.glow],
+      [starPts, next.stars],
+      [dustPts, next.dust],
+      [knotPts, next.knots],
+    ];
+    for (const [ref, geometry] of pairs) {
+      if (!ref.current) continue;
+      if (!old) ref.current.geometry.dispose(); // R3F's empty placeholder
+      ref.current.geometry = geometry;
+    }
+    if (old) [old.stars, old.knots, old.glow, old.dust].forEach((g) => g.dispose());
+    layersRef.current = next;
+  };
+  const swapRef = useRef(swapLayers);
+  swapRef.current = swapLayers;
+  // Its ~103k points are built in idle time, in story order (P27-78): the galaxy only
+  // shows in the finale, so they needn't hold up the first frame (they used to be built
+  // on it). The same points, built in steps.
+  useEffect(() => {
+    const version = galaxyTuning.shapeVersion;
+    const built: { layers?: GalaxyLayers } = {};
+    return sceneBuilds.add({
+      name: "Galaxy",
+      neededAt: journeyAtGalaxy(GALAXY_SPACE.starsIn[0]),
+      steps: (function* () {
+        built.layers = yield* buildGalaxyLayerSteps(starCount, aux);
+      })(),
+      onDone: () => {
+        if (!built.layers) return;
+        swapRef.current(built.layers);
+        builtVersion.current = version;
+      },
+    });
+  }, [starCount, aux]);
   useEffect(
     () => () => {
       const L = layersRef.current;
@@ -262,23 +301,10 @@ const Galaxy = ({ animate = true }: { animate?: boolean }) => {
     // the CameraRig reads the same value.
     updateGalaxyDrag();
 
-    // (Re)build the layers on first frame, and whenever a shape value was tuned.
-    if (builtVersion.current !== galaxyTuning.shapeVersion) {
-      const old = layersRef.current;
-      const next = buildGalaxyLayers(isSmall ? GALAXY.countMobile : GALAXY.count, aux);
-      const pairs: [RefObject<Points | null>, GalaxyLayers[keyof GalaxyLayers]][] = [
-        [glowPts, next.glow],
-        [starPts, next.stars],
-        [dustPts, next.dust],
-        [knotPts, next.knots],
-      ];
-      for (const [ref, geometry] of pairs) {
-        if (!ref.current) continue;
-        if (!old) ref.current.geometry.dispose(); // R3F's empty placeholder
-        ref.current.geometry = geometry;
-      }
-      if (old) [old.stars, old.knots, old.glow, old.dust].forEach((g) => g.dispose());
-      layersRef.current = next;
+    // A shape value tuned in the dev panel rebuilds the layers at once. (Their first
+    // build runs in idle time: see the effect above.)
+    if (layersRef.current && builtVersion.current !== galaxyTuning.shapeVersion) {
+      swapLayers(buildGalaxyLayers(starCount, aux));
       builtVersion.current = galaxyTuning.shapeVersion;
     }
 
@@ -296,8 +322,9 @@ const Galaxy = ({ animate = true }: { animate?: boolean }) => {
     const lightGlow = QUALITY_STEPS[useQuality.getState().step].glow === "light";
     const glowShare = lightGlow ? GLOW_QUALITY.lightShare : 1;
     const glowGeometry = glowPts.current?.geometry;
-    if (glowGeometry) {
-      glowGeometry.setDrawRange(0, Math.round(glowGeometry.attributes.position.count * glowShare));
+    const glowCount = glowGeometry?.attributes.position?.count; // (none until it's built)
+    if (glowGeometry && glowCount !== undefined) {
+      glowGeometry.setDrawRange(0, Math.round(glowCount * glowShare));
     }
     materials.glow.uniforms.uGlowMaxPx.value = lightGlow ? GLOW_QUALITY.lightMaxPx : GLOW_QUALITY.fullMaxPx;
     materials.glow.uniforms.uGlowAmt.value = GALAXY.glowAmount / glowShare;
@@ -373,7 +400,8 @@ const Galaxy = ({ animate = true }: { animate?: boolean }) => {
     [gl, galaxyScene, camera],
   );
   useFrame(() => {
-    if (warmUp.current === "ready") {
+    // (It waits for the layers' build, so they upload too.)
+    if (warmUp.current === "ready" && layersRef.current) {
       warmUp.current = "done";
       gl.getDrawingBufferSize(bufferSize);
       if (target.width !== bufferSize.x || target.height !== bufferSize.y) {
@@ -387,7 +415,7 @@ const Galaxy = ({ animate = true }: { animate?: boolean }) => {
       gl.setRenderTarget(target);
       gl.setClearColor(0x000000, 0);
       gl.autoClear = false;
-      uploadLayers(gl, galaxyScene, camera);
+      preupload(gl, galaxyScene, camera);
       bloom.render(gl, target); // allocates its buffers, compiles its passes
       gl.setRenderTarget(prevTarget);
       gl.setClearColor(savedClear, prevAlpha);
@@ -487,30 +515,3 @@ export default Galaxy;
 
 /** At the latest this long after load, the galaxy's warm-up starts anyway. */
 const WARM_UP_TIMEOUT_MS = 4000;
-
-/**
- * Draw everything in `scene` once with zero points — shown and unculled for that one
- * draw — so its buffers upload to the GPU now rather than on its first real frame.
- */
-function uploadLayers(gl: WebGLRenderer, scene: Scene, camera: Camera) {
-  const restore: (() => void)[] = [];
-  scene.traverse((object) => {
-    const { visible, frustumCulled } = object;
-    object.visible = true;
-    object.frustumCulled = false;
-    restore.push(() => {
-      object.visible = visible;
-      object.frustumCulled = frustumCulled;
-    });
-    const geometry = (object as Mesh).geometry;
-    if (geometry?.isBufferGeometry) {
-      const count = geometry.drawRange.count;
-      geometry.drawRange.count = 0;
-      restore.push(() => {
-        geometry.drawRange.count = count;
-      });
-    }
-  });
-  gl.render(scene, camera);
-  restore.forEach((undo) => undo());
-}

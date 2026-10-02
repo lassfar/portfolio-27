@@ -17,10 +17,50 @@ import { GALAXY_SPACE } from "./config";
 import { mulberry32, SKY_RADIUS } from "./sky";
 import { galaxyTuning } from "./tuning";
 import { SPACE_STAR_FRAG, SPACE_STAR_VERT } from "./shaders";
+import { journeyAtGalaxy } from "./pace";
+import { sceneBuilds } from "#/components/three.js/scene/sceneBuilds";
 
 // Real stellar tints (blue-white → white → warm), with a touch of the brand peach.
 const TINTS = ["#ffffff", "#eaf1ff", "#cfe0ff", "#c5e0ff", "#fff4e6", "#ffe3c7", "#ffc896"];
 const TINT_WEIGHTS = [0.24, 0.2, 0.16, 0.12, 0.12, 0.1, 0.06];
+
+/** Stars built per step of the build queue. */
+const BUILD_STEP = 5000;
+
+/** The deep-space stars, built in steps (they pause every BUILD_STEP stars). */
+function* buildStars(count: number): Generator<undefined, BufferGeometry> {
+  const rnd = mulberry32(31);
+  const tints = TINTS.map((hex) => new Color().setStyle(hex, LinearSRGBColorSpace)); // raw screen values
+  const total = TINT_WEIGHTS.reduce((a, b) => a + b, 0);
+  const pos = new Float32Array(count * 3);
+  const col = new Float32Array(count * 3);
+  const scl = new Float32Array(count);
+  const bri = new Float32Array(count);
+  for (let i = 0; i < count; i++) {
+    const u = rnd() * 2 - 1;
+    const th = rnd() * Math.PI * 2;
+    const s = Math.sqrt(1 - u * u);
+    pos[i * 3] = s * Math.cos(th) * SKY_RADIUS;
+    pos[i * 3 + 1] = u * SKY_RADIUS;
+    pos[i * 3 + 2] = s * Math.sin(th) * SKY_RADIUS;
+    let pick = rnd() * total;
+    let k = 0;
+    while (k < TINTS.length - 1 && (pick -= TINT_WEIGHTS[k]) > 0) k++;
+    col[i * 3] = tints[k].r;
+    col[i * 3 + 1] = tints[k].g;
+    col[i * 3 + 2] = tints[k].b;
+    const standout = rnd() < 0.04;
+    scl[i] = standout ? 1.5 + rnd() * 0.6 : 0.8 + rnd() * 0.45;
+    bri[i] = standout ? 0.6 + rnd() * 0.4 : 0.18 + 0.5 * Math.pow(rnd(), 1.6);
+    if ((i + 1) % BUILD_STEP === 0) yield;
+  }
+  const g = new BufferGeometry();
+  g.setAttribute("position", new Float32BufferAttribute(pos, 3));
+  g.setAttribute("aColor", new Float32BufferAttribute(col, 3));
+  g.setAttribute("aScale", new Float32BufferAttribute(scl, 1));
+  g.setAttribute("aBright", new Float32BufferAttribute(bri, 1));
+  return g;
+}
 
 /**
  * The deep field: thousands of tiny, faint, far-away stars all around the galaxy —
@@ -35,39 +75,27 @@ const SpaceStars = () => {
   const isSmall = typeof window !== "undefined" && window.innerWidth < 768;
 
   const builtVersion = useRef(-1);
-  const buildGeometry = () => {
-    const rnd = mulberry32(31);
-    const count = isSmall ? GALAXY_SPACE.starCountMobile : GALAXY_SPACE.starCount;
-    const tints = TINTS.map((hex) => new Color().setStyle(hex, LinearSRGBColorSpace)); // raw screen values
-    const total = TINT_WEIGHTS.reduce((a, b) => a + b, 0);
-    const pos = new Float32Array(count * 3);
-    const col = new Float32Array(count * 3);
-    const scl = new Float32Array(count);
-    const bri = new Float32Array(count);
-    for (let i = 0; i < count; i++) {
-      const u = rnd() * 2 - 1;
-      const th = rnd() * Math.PI * 2;
-      const s = Math.sqrt(1 - u * u);
-      pos[i * 3] = s * Math.cos(th) * SKY_RADIUS;
-      pos[i * 3 + 1] = u * SKY_RADIUS;
-      pos[i * 3 + 2] = s * Math.sin(th) * SKY_RADIUS;
-      let pick = rnd() * total;
-      let k = 0;
-      while (k < TINTS.length - 1 && (pick -= TINT_WEIGHTS[k]) > 0) k++;
-      col[i * 3] = tints[k].r;
-      col[i * 3 + 1] = tints[k].g;
-      col[i * 3 + 2] = tints[k].b;
-      const standout = rnd() < 0.04;
-      scl[i] = standout ? 1.5 + rnd() * 0.6 : 0.8 + rnd() * 0.45;
-      bri[i] = standout ? 0.6 + rnd() * 0.4 : 0.18 + 0.5 * Math.pow(rnd(), 1.6);
-    }
-    const g = new BufferGeometry();
-    g.setAttribute("position", new Float32BufferAttribute(pos, 3));
-    g.setAttribute("aColor", new Float32BufferAttribute(col, 3));
-    g.setAttribute("aScale", new Float32BufferAttribute(scl, 1));
-    g.setAttribute("aBright", new Float32BufferAttribute(bri, 1));
-    return g;
-  };
+  const count = isSmall ? GALAXY_SPACE.starCountMobile : GALAXY_SPACE.starCount;
+  // Built in idle time, in story order (P27-78): these stars only show in the finale.
+  // A shape tuned in the dev panel rebuilds them at once (in the frame, below).
+  useEffect(() => {
+    const version = galaxyTuning.shapeVersion;
+    const built: { geometry?: BufferGeometry } = {};
+    return sceneBuilds.add({
+      name: "Deep-space stars",
+      neededAt: journeyAtGalaxy(GALAXY_SPACE.starsIn[0]),
+      steps: (function* () {
+        built.geometry = yield* buildStars(count);
+      })(),
+      onDone: () => {
+        const points = ref.current;
+        if (!points || !built.geometry) return;
+        points.geometry.dispose();
+        points.geometry = built.geometry;
+        builtVersion.current = version;
+      },
+    });
+  }, [count]);
   useEffect(() => () => ref.current?.geometry.dispose(), []);
 
   const material = useMemo(
@@ -93,9 +121,12 @@ const SpaceStars = () => {
   useFrame(() => {
     const points = ref.current;
     if (!points) return;
-    if (builtVersion.current !== galaxyTuning.shapeVersion) {
+    if (builtVersion.current >= 0 && builtVersion.current !== galaxyTuning.shapeVersion) {
       const old = points.geometry;
-      points.geometry = buildGeometry();
+      const steps = buildStars(count);
+      let step = steps.next();
+      while (!step.done) step = steps.next();
+      points.geometry = step.value;
       old.dispose();
       builtVersion.current = galaxyTuning.shapeVersion;
     }
