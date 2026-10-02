@@ -1,8 +1,10 @@
 "use client";
 
 import { useFrame } from "@react-three/fiber";
-import { useMemo, useRef } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import {
+  BufferAttribute,
+  BufferGeometry,
   Color,
   Mesh,
   MeshBasicMaterial,
@@ -23,8 +25,114 @@ import { PERFORMANCE } from "#/components/three.js/scene/performance";
 import { SIMPLEX_NOISE } from "./shaders";
 import { useDrawGate } from "#/components/three.js/scene/useDrawGate";
 import { pointPixelRatio } from "#/components/three.js/scene/quality";
+import { sceneBuilds } from "#/components/three.js/scene/sceneBuilds";
+import { JOURNEY } from "#/components/three.js/star/config";
 
 const _center = new Vector3(); // scratch (level of detail)
+
+/** Saturn's dots, as flat arrays (one entry per dot, ×3 for vectors). */
+type SaturnDots = {
+  positions: Float32Array;
+  colors: Float32Array;
+  scales: Float32Array;
+  seeds: Float32Array;
+  halos: Float32Array; // 0 = surface, 1 = dust halo
+  scatters: Float32Array; // dispersed-in-space home
+};
+
+/** Dots built per step of the build queue (~a fraction of a ms each). */
+const BUILD_STEP = 2000;
+/** Where the planet first shows: as it starts assembling (master progress). */
+const SATURN_SHOWS_AT = JOURNEY.assembleStart * JOURNEY.journeyEnd;
+
+function allocateDots(count: number): SaturnDots {
+  return {
+    positions: new Float32Array(count * 3),
+    colors: new Float32Array(count * 3),
+    scales: new Float32Array(count),
+    seeds: new Float32Array(count),
+    halos: new Float32Array(count),
+    scatters: new Float32Array(count * 3),
+  };
+}
+
+/** Build the dots into `out`, pausing every BUILD_STEP dots (see sceneBuilds). */
+function* buildDots(count: number, out: SaturnDots) {
+  const { positions, colors, scales, seeds, halos, scatters } = out;
+  const c = new Color();
+  const light = new Color(PLANET_PALETTE.bandLight);
+  const mid = new Color(PLANET_PALETTE.bandMid);
+  const dark = new Color(PLANET_PALETTE.bandDark);
+  const deep = new Color(PLANET_PALETTE.bandDeep);
+  const pole = new Color(PLANET_PALETTE.pole);
+
+  for (let i = 0; i < count; i++) {
+    // Uniform random direction on the unit sphere.
+    const u = Math.random() * 2 - 1;
+    const theta = Math.random() * Math.PI * 2;
+    const s = Math.sqrt(1 - u * u);
+    const dx = s * Math.cos(theta);
+    const dy = u; // latitude axis (-1 = south pole, +1 = north pole)
+    const dz = s * Math.sin(theta);
+
+    // A fraction of particles form a faint dust halo just outside the
+    // surface; the rest are the grainy surface shell itself.
+    const isHalo = Math.random() < PLANET.haloFraction;
+    const radius = isHalo
+      ? PLANET.radius * (1 + Math.pow(Math.random(), 1.5) * PLANET.haloThickness)
+      : PLANET.radius * (1 + (Math.random() - 0.5) * PLANET.shellJitter);
+    halos[i] = isHalo ? 1 : 0;
+
+    positions[i * 3] = dx * radius;
+    positions[i * 3 + 1] = dy * radius;
+    positions[i * 3 + 2] = dz * radius;
+
+    // Wavy latitude bands: longitude warps the stripe a little (gas-giant
+    // churn) and a sine carves the alternating bands.
+    const wave = Math.sin(theta * 3.0) * PLANET.bandWaviness;
+    const stripe = Math.sin(dy * PLANET.bandFrequency + wave) * 0.5 + 0.5; // 0..1
+
+    // Three-way warm ramp: deep → dark → mid → light across the stripe.
+    if (stripe < 0.25) {
+      c.copy(deep).lerp(dark, stripe / 0.25);
+    } else if (stripe < 0.55) {
+      c.copy(dark).lerp(mid, (stripe - 0.25) / 0.3);
+    } else {
+      c.copy(mid).lerp(light, (stripe - 0.55) / 0.45);
+    }
+
+    // Blue-grey polar caps.
+    const polar = smoothstep(0.55, 0.92, Math.abs(dy));
+    c.lerp(pole, polar * 0.8);
+
+    // Per-particle brightness jitter → "noisy" grain.
+    const j = 0.82 + Math.random() * 0.32;
+    colors[i * 3] = c.r * j;
+    colors[i * 3 + 1] = c.g * j;
+    colors[i * 3 + 2] = c.b * j;
+
+    scales[i] = 0.6 + Math.random() * 0.8;
+    seeds[i] = Math.random();
+
+    // Dispersed home: a random point in a wide box filling the view.
+    scatters[i * 3] = (Math.random() - 0.5) * SCATTER.spread[0];
+    scatters[i * 3 + 1] = (Math.random() - 0.5) * SCATTER.spread[1];
+    scatters[i * 3 + 2] = (Math.random() - 0.5) * SCATTER.spread[2];
+
+    if ((i + 1) % BUILD_STEP === 0) yield;
+  }
+}
+
+function toGeometry(dots: SaturnDots): BufferGeometry {
+  const g = new BufferGeometry();
+  g.setAttribute("position", new BufferAttribute(dots.positions, 3));
+  g.setAttribute("aColor", new BufferAttribute(dots.colors, 3));
+  g.setAttribute("aScale", new BufferAttribute(dots.scales, 1));
+  g.setAttribute("aSeed", new BufferAttribute(dots.seeds, 1));
+  g.setAttribute("aHalo", new BufferAttribute(dots.halos, 1));
+  g.setAttribute("aScatter", new BufferAttribute(dots.scatters, 3));
+  return g;
+}
 
 type Props = {
   /** Particle count (set adaptively by the parent for perf). */
@@ -50,77 +158,22 @@ const PlanetBody = ({ count = PLANET.count, animate = true }: Props) => {
   const coreRef = useRef<Mesh>(null); // the solid core under the dots
   const coreMatRef = useRef<MeshBasicMaterial>(null);
 
-  const { positions, colors, scales, seeds, halos, scatters } = useMemo(() => {
-    const positions = new Float32Array(count * 3);
-    const colors = new Float32Array(count * 3);
-    const scales = new Float32Array(count);
-    const seeds = new Float32Array(count);
-    const halos = new Float32Array(count); // 0 = surface, 1 = dust halo
-    const scatters = new Float32Array(count * 3); // dispersed-in-space home
-
-    const c = new Color();
-    const light = new Color(PLANET_PALETTE.bandLight);
-    const mid = new Color(PLANET_PALETTE.bandMid);
-    const dark = new Color(PLANET_PALETTE.bandDark);
-    const deep = new Color(PLANET_PALETTE.bandDeep);
-    const pole = new Color(PLANET_PALETTE.pole);
-
-    for (let i = 0; i < count; i++) {
-      // Uniform random direction on the unit sphere.
-      const u = Math.random() * 2 - 1;
-      const theta = Math.random() * Math.PI * 2;
-      const s = Math.sqrt(1 - u * u);
-      const dx = s * Math.cos(theta);
-      const dy = u; // latitude axis (-1 = south pole, +1 = north pole)
-      const dz = s * Math.sin(theta);
-
-      // A fraction of particles form a faint dust halo just outside the
-      // surface; the rest are the grainy surface shell itself.
-      const isHalo = Math.random() < PLANET.haloFraction;
-      const radius = isHalo
-        ? PLANET.radius * (1 + Math.pow(Math.random(), 1.5) * PLANET.haloThickness)
-        : PLANET.radius * (1 + (Math.random() - 0.5) * PLANET.shellJitter);
-      halos[i] = isHalo ? 1 : 0;
-
-      positions[i * 3] = dx * radius;
-      positions[i * 3 + 1] = dy * radius;
-      positions[i * 3 + 2] = dz * radius;
-
-      // Wavy latitude bands: longitude warps the stripe a little (gas-giant
-      // churn) and a sine carves the alternating bands.
-      const wave = Math.sin(theta * 3.0) * PLANET.bandWaviness;
-      const stripe = Math.sin(dy * PLANET.bandFrequency + wave) * 0.5 + 0.5; // 0..1
-
-      // Three-way warm ramp: deep → dark → mid → light across the stripe.
-      if (stripe < 0.25) {
-        c.copy(deep).lerp(dark, stripe / 0.25);
-      } else if (stripe < 0.55) {
-        c.copy(dark).lerp(mid, (stripe - 0.25) / 0.3);
-      } else {
-        c.copy(mid).lerp(light, (stripe - 0.55) / 0.45);
-      }
-
-      // Blue-grey polar caps.
-      const polar = smoothstep(0.55, 0.92, Math.abs(dy));
-      c.lerp(pole, polar * 0.8);
-
-      // Per-particle brightness jitter → "noisy" grain.
-      const j = 0.82 + Math.random() * 0.32;
-      colors[i * 3] = c.r * j;
-      colors[i * 3 + 1] = c.g * j;
-      colors[i * 3 + 2] = c.b * j;
-
-      scales[i] = 0.6 + Math.random() * 0.8;
-      seeds[i] = Math.random();
-
-      // Dispersed home: a random point in a wide box filling the view.
-      scatters[i * 3] = (Math.random() - 0.5) * SCATTER.spread[0];
-      scatters[i * 3 + 1] = (Math.random() - 0.5) * SCATTER.spread[1];
-      scatters[i * 3 + 2] = (Math.random() - 0.5) * SCATTER.spread[2];
-    }
-
-    return { positions, colors, scales, seeds, halos, scatters };
+  // Its 70k dots are built in idle time, in story order (P27-78): the planet only shows
+  // ~2 screens into the page, so they needn't hold up the first frame. Until then an
+  // empty geometry stands in (it draws nothing).
+  const placeholder = useMemo(() => new BufferGeometry(), []);
+  const [geometry, setGeometry] = useState<BufferGeometry | null>(null);
+  useEffect(() => {
+    const dots = allocateDots(count);
+    return sceneBuilds.add({
+      name: "Saturn",
+      neededAt: SATURN_SHOWS_AT,
+      steps: buildDots(count, dots),
+      onDone: () => setGeometry(toGeometry(dots)),
+    });
   }, [count]);
+  useEffect(() => () => geometry?.dispose(), [geometry]);
+  useEffect(() => () => placeholder.dispose(), [placeholder]);
 
   const uniforms = useMemo(
     () => ({
@@ -238,51 +291,7 @@ const PlanetBody = ({ count = PLANET.count, animate = true }: Props) => {
         <sphereGeometry args={[1, 48, 32]} />
         <meshBasicMaterial ref={coreMatRef} color={PLANET.coreColor} transparent depthWrite opacity={0} />
       </mesh>
-      <points ref={pointsRef}>
-        <bufferGeometry>
-          <bufferAttribute
-            attach="attributes-position"
-            count={count}
-            array={positions}
-            itemSize={3}
-            args={[positions, 3]}
-          />
-          <bufferAttribute
-            attach="attributes-aColor"
-            count={count}
-            array={colors}
-            itemSize={3}
-            args={[colors, 3]}
-          />
-          <bufferAttribute
-            attach="attributes-aScale"
-            count={count}
-            array={scales}
-            itemSize={1}
-            args={[scales, 1]}
-          />
-          <bufferAttribute
-            attach="attributes-aSeed"
-            count={count}
-            array={seeds}
-            itemSize={1}
-            args={[seeds, 1]}
-          />
-          <bufferAttribute
-            attach="attributes-aHalo"
-            count={count}
-            array={halos}
-            itemSize={1}
-            args={[halos, 1]}
-          />
-          <bufferAttribute
-            attach="attributes-aScatter"
-            count={count}
-            array={scatters}
-            itemSize={3}
-            args={[scatters, 3]}
-          />
-        </bufferGeometry>
+      <points ref={pointsRef} geometry={geometry ?? placeholder}>
         <shaderMaterial
           ref={materialRef}
           transparent

@@ -58,6 +58,10 @@ const Nebula = ({ count = PARTICLES.count, animate = true }: Props) => {
     const c = new Color();
     const blue = new Color(NEBULA_PALETTE.blue);
     const peach = new Color(NEBULA_PALETTE.gasWarm);
+    // Parsed once, not per dot (P27-78: 50k hex parses were a visible part of the load).
+    const coreCenter = new Color(NEBULA_PALETTE.coreCenter);
+    const innerShell = new Color(NEBULA_PALETTE.innerShell);
+    const gasHot = new Color(NEBULA_PALETTE.gasHot);
 
     for (let i = 0; i < count; i++) {
       const roll = Math.random();
@@ -78,17 +82,17 @@ const Nebula = ({ count = PARTICLES.count, animate = true }: Props) => {
         // Core — light-blue center deepening to blue at the edge.
         radius = Math.pow(Math.random(), 2.0) * 0.5;
         const edgeness = radius / 0.5; // 0 center → 1 core edge
-        c.set(NEBULA_PALETTE.coreCenter).lerp(blue, Math.pow(edgeness, 0.6));
+        c.copy(coreCenter).lerp(blue, Math.pow(edgeness, 0.6));
         scale = 0.7 + Math.random() * 0.4;
       } else if (roll < INNER_FRACTION) {
         // Inner shell — the blue radial field, fading outward.
         radius = 0.55 + Math.random() * 0.9;
-        c.set(NEBULA_PALETTE.innerShell).lerp(blue, Math.random() * 0.4);
+        c.copy(innerShell).lerp(blue, Math.random() * 0.4);
         scale = 0.65 + Math.random() * 0.55;
       } else {
         // Outer gas — red → peach, diffuse.
         radius = 1.2 + Math.random() * 1.5;
-        c.set(NEBULA_PALETTE.gasHot).lerp(peach, Math.random());
+        c.copy(gasHot).lerp(peach, Math.random());
         scale = 0.6 + Math.random() * 0.6;
       }
 
