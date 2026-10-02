@@ -3,6 +3,8 @@
 import { useFrame, useThree } from "@react-three/fiber";
 import { useEffect, useMemo, useRef, useState } from "react";
 import {
+  BufferAttribute,
+  BufferGeometry,
   Color,
   Group,
   Mesh,
@@ -19,7 +21,7 @@ import {
 import { clamp01, damp, easeInOutCubic, lerp, remap01 } from "#/components/three.js/star/utils";
 import { useEarthAnchor } from "#/stores/useEarthAnchor";
 import { useSceneRotation } from "#/stores/useSceneRotation";
-import { SUNPOS } from "#/components/three.js/solar/config";
+import { SOLAR, SUNPOS } from "#/components/three.js/solar/config";
 import { earthReveal } from "#/components/three.js/solar/reveal";
 import { EARTH } from "./config";
 import { directionToUV } from "./utils";
@@ -27,7 +29,10 @@ import { earthApproach, earthOwnsDrag, probeOwnsDrag, dragMode } from "./interac
 import { useLabScroll } from "#/stores/useLabScroll";
 import { LAB } from "#/components/three.js/voyager/config";
 import EarthPins from "./EarthPins";
-import { precompile } from "#/components/three.js/scene/warmUp";
+import { preupload, whenIdle } from "#/components/three.js/scene/warmUp";
+import { sceneBuilds } from "#/components/three.js/scene/sceneBuilds";
+import { useJourneyScroll } from "#/stores/useJourneyScroll";
+import { JOURNEY } from "#/components/three.js/star/config";
 import { pointPixelRatio } from "#/components/three.js/scene/quality";
 
 type Props = {
@@ -47,6 +52,126 @@ type DotBuffers = {
 };
 
 const DEG = Math.PI / 180;
+
+/** Candidates tried per step of the build queue (~a fraction of a ms each). */
+const BUILD_STEP = 2000;
+/** At the latest this long after load, the land mask starts loading anyway (ms). */
+const MASK_IDLE_TIMEOUT_MS = 2000;
+/** …or as soon as the journey gets this close to the Earth (a jump right after load). */
+const MASK_AHEAD_MP = 0.1;
+/** Where the Earth first shows: as the system fades in on the voyage (master progress). */
+const EARTH_SHOWS_AT =
+  JOURNEY.flyAwayStart + SOLAR.revealStart * (JOURNEY.voyageEnd - JOURNEY.flyAwayStart);
+
+type LandMask = { data: Uint8ClampedArray; width: number; height: number };
+
+/** The land mask's pixels, decoded off the main thread where the browser can. */
+async function loadMask(url: string): Promise<LandMask | null> {
+  try {
+    const image = await createImageBitmap(await (await fetch(url)).blob());
+    const canvas = document.createElement("canvas");
+    canvas.width = image.width;
+    canvas.height = image.height;
+    const ctx = canvas.getContext("2d", { willReadFrequently: true });
+    if (!ctx) return null;
+    ctx.drawImage(image, 0, 0);
+    image.close();
+    return { data: ctx.getImageData(0, 0, canvas.width, canvas.height).data, width: canvas.width, height: canvas.height };
+  } catch {
+    return null;
+  }
+}
+
+function allocateDots(count: number): DotBuffers {
+  return {
+    positions: new Float32Array(count * 3),
+    colors: new Float32Array(count * 3),
+    scales: new Float32Array(count),
+    seeds: new Float32Array(count),
+    oceanDensity: 1,
+  };
+}
+
+/** Sample the dots from the mask into `out`, pausing every BUILD_STEP tries (see sceneBuilds). */
+function* sampleDots(count: number, mask: LandMask, out: DotBuffers) {
+  const { positions, colors, scales, seeds } = out;
+  const { data, width, height } = mask;
+  const land = new Color(EARTH.landColor);
+  const ocean = new Color(EARTH.oceanColor);
+  const c = new Color();
+
+  // Fill the field with rejection sampling: LAND candidates are always kept,
+  // OCEAN candidates are mostly dropped (EARTH.oceanDensity) — so far more of
+  // the dots pack onto the continents and the map reads clearly.
+  let i = 0;
+  let guard = 0;
+  let oceanTries = 0; // ocean candidates (∝ the ocean's share of the surface)
+  let oceanKept = 0;
+  const maxTries = count * 40;
+  while (i < count && guard < maxTries) {
+    guard++;
+    if (guard % BUILD_STEP === 0) yield;
+    // Random uniform direction on the sphere (grainy, like the Saturn) rather
+    // than an even Fibonacci lattice — no visible moiré spirals.
+    const uu = Math.random() * 2 - 1;
+    const theta = Math.random() * Math.PI * 2;
+    const s = Math.sqrt(1 - uu * uu);
+    const x = s * Math.cos(theta);
+    const y = uu;
+    const z = s * Math.sin(theta);
+
+    const [u, v] = directionToUV(x, y, z);
+    const px = Math.min(
+      width - 1,
+      Math.max(0, Math.round(u * width))
+    );
+    const py = Math.min(
+      height - 1,
+      Math.max(0, Math.round(v * height))
+    );
+    const isLand =
+      data[(py * width + px) * 4] / 255 < EARTH.landThreshold; // dark = land
+
+    // Bias toward land: keep every land dot, drop most ocean dots.
+    if (!isLand) oceanTries++;
+    if (!isLand && Math.random() > EARTH.oceanDensity) continue;
+    if (!isLand) oceanKept++;
+
+    // Tiny radial shell jitter → grainy, dotty surface (like the Saturn shell).
+    const rr =
+      EARTH.radius * (1 + (Math.random() - 0.5) * EARTH.shellJitter);
+    positions[i * 3] = x * rr;
+    positions[i * 3 + 1] = y * rr;
+    positions[i * 3 + 2] = z * rr;
+
+    // Per-particle brightness jitter → the noisy grain the Saturn has.
+    const j = 0.82 + Math.random() * 0.32;
+    c.copy(isLand ? land : ocean).multiplyScalar(
+      (isLand ? EARTH.landBright : EARTH.oceanBright) * j
+    );
+    colors[i * 3] = c.r;
+    colors[i * 3 + 1] = c.g;
+    colors[i * 3 + 2] = c.b;
+
+    // Land grains thicker than ocean → the continents read solid + prominent.
+    scales[i] =
+      (isLand ? EARTH.landDotScale : EARTH.oceanDotScale) *
+      (0.7 + Math.random() * 0.6);
+    seeds[i] = Math.random();
+    i++;
+  }
+  // The ocean's share of the dots ÷ its share of the surface.
+  out.oceanDensity = oceanTries > 0 && i > 0 ? oceanKept / i / (oceanTries / guard) : 1;
+}
+
+function toGeometry(dots: DotBuffers): BufferGeometry {
+  const g = new BufferGeometry();
+  g.setAttribute("position", new BufferAttribute(dots.positions, 3));
+  g.setAttribute("aColor", new BufferAttribute(dots.colors, 3));
+  g.setAttribute("aScale", new BufferAttribute(dots.scales, 1));
+  g.setAttribute("aSeed", new BufferAttribute(dots.seeds, 1));
+  return g;
+}
 
 /**
  * The interactive Earth — a dense sphere of dots coloured per-dot from a real
@@ -70,103 +195,48 @@ const DottedEarth = ({ animate = true, interactive = true }: Props) => {
   const isSmall = typeof window !== "undefined" && window.innerWidth < 768;
   const count = isSmall ? EARTH.dotCountMobile : EARTH.dotCount;
 
-  // ── Build the dot field once the land mask has loaded ──────────────────────
-  const [buffers, setBuffers] = useState<DotBuffers | null>(null);
-  const scene = useThree((s) => s.scene);
-  // The dots mount once the land mask has loaded: compile them then, in the
-  // background, not on the frame the Earth first shows (P27-78).
-  useEffect(() => {
-    if (buffers && tiltRef.current) void precompile(gl, tiltRef.current, camera, scene);
-  }, [buffers, gl, camera, scene]);
+  // ── The dot field: built from the land mask in idle time, in story order (P27-78) ──
+  // The mask loads once the page is idle (not with the first frame), then the dots are
+  // sampled in small steps by the scene's build queue — done long before the Earth
+  // first shows. Until then an empty geometry stands in (it draws nothing).
+  const placeholder = useMemo(() => new BufferGeometry(), []);
+  const [built, setBuilt] = useState<{ geometry: BufferGeometry; oceanDensity: number } | null>(null);
   useEffect(() => {
     let cancelled = false;
-    const img = new Image();
-    img.src = EARTH.maskUrl;
-    img.onload = () => {
-      if (cancelled) return;
-      const cv = document.createElement("canvas");
-      cv.width = img.width;
-      cv.height = img.height;
-      const ctx = cv.getContext("2d");
-      if (!ctx) return;
-      ctx.drawImage(img, 0, 0);
-      const data = ctx.getImageData(0, 0, cv.width, cv.height).data;
-
-      const positions = new Float32Array(count * 3);
-      const colors = new Float32Array(count * 3);
-      const scales = new Float32Array(count);
-      const seeds = new Float32Array(count);
-      const land = new Color(EARTH.landColor);
-      const ocean = new Color(EARTH.oceanColor);
-      const c = new Color();
-
-      // Fill the field with rejection sampling: LAND candidates are always kept,
-      // OCEAN candidates are mostly dropped (EARTH.oceanDensity) — so far more of
-      // the dots pack onto the continents and the map reads clearly.
-      let i = 0;
-      let guard = 0;
-      let oceanTries = 0; // ocean candidates (∝ the ocean's share of the surface)
-      let oceanKept = 0;
-      const maxTries = count * 40;
-      while (i < count && guard < maxTries) {
-        guard++;
-        // Random uniform direction on the sphere (grainy, like the Saturn) rather
-        // than an even Fibonacci lattice — no visible moiré spirals.
-        const uu = Math.random() * 2 - 1;
-        const theta = Math.random() * Math.PI * 2;
-        const s = Math.sqrt(1 - uu * uu);
-        const x = s * Math.cos(theta);
-        const y = uu;
-        const z = s * Math.sin(theta);
-
-        const [u, v] = directionToUV(x, y, z);
-        const px = Math.min(
-          cv.width - 1,
-          Math.max(0, Math.round(u * cv.width))
-        );
-        const py = Math.min(
-          cv.height - 1,
-          Math.max(0, Math.round(v * cv.height))
-        );
-        const isLand =
-          data[(py * cv.width + px) * 4] / 255 < EARTH.landThreshold; // dark = land
-
-        // Bias toward land: keep every land dot, drop most ocean dots.
-        if (!isLand) oceanTries++;
-        if (!isLand && Math.random() > EARTH.oceanDensity) continue;
-        if (!isLand) oceanKept++;
-
-        // Tiny radial shell jitter → grainy, dotty surface (like the Saturn shell).
-        const rr =
-          EARTH.radius * (1 + (Math.random() - 0.5) * EARTH.shellJitter);
-        positions[i * 3] = x * rr;
-        positions[i * 3 + 1] = y * rr;
-        positions[i * 3 + 2] = z * rr;
-
-        // Per-particle brightness jitter → the noisy grain the Saturn has.
-        const j = 0.82 + Math.random() * 0.32;
-        c.copy(isLand ? land : ocean).multiplyScalar(
-          (isLand ? EARTH.landBright : EARTH.oceanBright) * j
-        );
-        colors[i * 3] = c.r;
-        colors[i * 3 + 1] = c.g;
-        colors[i * 3 + 2] = c.b;
-
-        // Land grains thicker than ocean → the continents read solid + prominent.
-        scales[i] =
-          (isLand ? EARTH.landDotScale : EARTH.oceanDotScale) *
-          (0.7 + Math.random() * 0.6);
-        seeds[i] = Math.random();
-        i++;
-      }
-      // The ocean's share of the dots ÷ its share of the surface.
-      const oceanDensity = oceanTries > 0 && i > 0 ? oceanKept / i / (oceanTries / guard) : 1;
-      setBuffers({ positions, colors, scales, seeds, oceanDensity });
+    let started = false;
+    let cancelJob = () => {};
+    const start = () => {
+      if (started) return;
+      started = true;
+      void loadMask(EARTH.maskUrl).then((mask) => {
+        if (cancelled || !mask) return;
+        const dots = allocateDots(count);
+        cancelJob = sceneBuilds.add({
+          name: "Earth",
+          neededAt: EARTH_SHOWS_AT,
+          steps: sampleDots(count, mask, dots),
+          onDone: () => setBuilt({ geometry: toGeometry(dots), oceanDensity: dots.oceanDensity }),
+        });
+      });
     };
+    const cancelIdle = whenIdle(start, MASK_IDLE_TIMEOUT_MS);
+    const near = (mp: number) => mp >= EARTH_SHOWS_AT - MASK_AHEAD_MP;
+    if (near(useJourneyScroll.getState().progress)) start();
+    const unsubscribe = useJourneyScroll.subscribe((s) => near(s.progress) && start());
     return () => {
       cancelled = true;
+      cancelIdle();
+      unsubscribe();
+      cancelJob();
     };
   }, [count]);
+  useEffect(() => () => built?.geometry.dispose(), [built]);
+  useEffect(() => () => placeholder.dispose(), [placeholder]);
+  // Its group stays hidden until the Earth shows: upload the new dots to the GPU now,
+  // not on that frame.
+  useEffect(() => {
+    if (built && tiltRef.current) preupload(gl, tiltRef.current, camera);
+  }, [built, gl, camera]);
 
   const uniforms = useMemo(
     () => ({
@@ -292,14 +362,14 @@ const DottedEarth = ({ animate = true, interactive = true }: Props) => {
       // last one drawn there, so draw just enough to keep every pixel covered — at
       // least EARTH.lod.perPixel per pixel in open ocean. Full field from ~14 px on.
       const points = pointsRef.current;
-      if (points && buffers && r > 0.001) {
+      if (points && built && r > 0.001) {
         const cam = state.camera as PerspectiveCamera;
         const dist = Math.max(points.getWorldPosition(earthPos).distanceTo(cam.position), EARTH.radius * 1.05);
         const focal = state.size.height / 2 / Math.tan((cam.fov * DEG) / 2);
         const radiusPx = (EARTH.radius * focal) / dist;
         const dots = Math.min(
           count,
-          (EARTH.lod.perPixel * 4 * Math.PI * radiusPx * radiusPx) / buffers.oceanDensity
+          (EARTH.lod.perPixel * 4 * Math.PI * radiusPx * radiusPx) / built.oceanDensity
         );
         points.geometry.setDrawRange(0, Math.min(count, Math.ceil(dots * (1 + EARTH.lod.fadeBand))));
         dotMatRef.current.uniforms.uLodCount.value = dots;
@@ -360,38 +430,7 @@ const DottedEarth = ({ animate = true, interactive = true }: Props) => {
               <meshBasicMaterial ref={coreMatRef} color={EARTH.coreColor} transparent depthWrite opacity={0} />
             </mesh>
 
-            {buffers && (
-              <points ref={pointsRef} renderOrder={2}>
-                <bufferGeometry>
-                  <bufferAttribute
-                    attach="attributes-position"
-                    count={count}
-                    array={buffers.positions}
-                    itemSize={3}
-                    args={[buffers.positions, 3]}
-                  />
-                  <bufferAttribute
-                    attach="attributes-aColor"
-                    count={count}
-                    array={buffers.colors}
-                    itemSize={3}
-                    args={[buffers.colors, 3]}
-                  />
-                  <bufferAttribute
-                    attach="attributes-aScale"
-                    count={count}
-                    array={buffers.scales}
-                    itemSize={1}
-                    args={[buffers.scales, 1]}
-                  />
-                  <bufferAttribute
-                    attach="attributes-aSeed"
-                    count={count}
-                    array={buffers.seeds}
-                    itemSize={1}
-                    args={[buffers.seeds, 1]}
-                  />
-                </bufferGeometry>
+            <points ref={pointsRef} renderOrder={2} geometry={built?.geometry ?? placeholder}>
                 <shaderMaterial
                   ref={dotMatRef}
                   transparent
@@ -403,7 +442,6 @@ const DottedEarth = ({ animate = true, interactive = true }: Props) => {
                   fragmentShader={FRAGMENT_SHADER}
                 />
               </points>
-            )}
 
             {/* Geo photo-pins — stick to the surface as the globe spins. */}
             <EarthPins />

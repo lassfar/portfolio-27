@@ -1,4 +1,4 @@
-import type { Camera, Object3D, Scene, WebGLRenderer, WebGLRenderTarget } from "three";
+import { WebGLRenderTarget, type BufferGeometry, type Camera, type Mesh, type Object3D, type Scene, type WebGLRenderer } from "three";
 
 /**
  * Background shader compiles (P27-78). A shader compiled on the frame it first draws
@@ -35,6 +35,43 @@ export function precompile(
     () => undefined,
     () => undefined,
   );
+}
+
+let uploadTarget: WebGLRenderTarget | null = null;
+
+/**
+ * Upload `object`'s buffers to the GPU now: draw it once, offscreen, with zero points —
+ * shown and unculled for that one draw. An object that stays hidden until later (the
+ * Earth, the galaxy) would otherwise upload them on the frame it first shows.
+ */
+export function preupload(gl: WebGLRenderer, object: Object3D, camera: Camera): void {
+  const restore: (() => void)[] = [];
+  object.traverse((o) => {
+    const { visible, frustumCulled } = o;
+    o.visible = true;
+    o.frustumCulled = false;
+    restore.push(() => {
+      o.visible = visible;
+      o.frustumCulled = frustumCulled;
+    });
+    const geometry: BufferGeometry | undefined = (o as Mesh).geometry;
+    if (geometry?.isBufferGeometry) {
+      const count = geometry.drawRange.count;
+      geometry.drawRange.count = 0;
+      restore.push(() => {
+        geometry.drawRange.count = count;
+      });
+    }
+  });
+  uploadTarget ??= new WebGLRenderTarget(1, 1);
+  const previous = gl.getRenderTarget();
+  const autoClear = gl.autoClear;
+  gl.setRenderTarget(uploadTarget);
+  gl.autoClear = false;
+  gl.render(object, camera);
+  gl.setRenderTarget(previous);
+  gl.autoClear = autoClear;
+  restore.forEach((undo) => undo());
 }
 
 /** Run `fn` when the browser is idle (at the latest after `timeout` ms). Returns the cancel. */
