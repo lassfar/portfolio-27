@@ -389,8 +389,8 @@ const DottedEarth = ({ animate = true, interactive = true }: Props) => {
         }
       }
     }
-    yaw.current = damp(yaw.current, targetYaw.current, EARTH.dragDamping);
-    pitch.current = damp(pitch.current, targetPitch.current, EARTH.dragDamping);
+    yaw.current = damp(yaw.current, targetYaw.current, EARTH.dragDamping, delta);
+    pitch.current = damp(pitch.current, targetPitch.current, EARTH.dragDamping, delta);
     if (spinRef.current)
       spinRef.current.rotation.set(pitch.current, yaw.current, 0);
 

@@ -165,9 +165,9 @@ const ParkerProbe = () => {
   }, [gl]);
 
   // Ease the turn toward the drag (before the CameraRig reads it).
-  useFrame(() => {
-    parkerOrbit.yaw = damp(parkerOrbit.yaw, orbitTarget.current.yaw, ROTATION.damping);
-    parkerOrbit.pitch = damp(parkerOrbit.pitch, orbitTarget.current.pitch, ROTATION.damping);
+  useFrame((_, delta) => {
+    parkerOrbit.yaw = damp(parkerOrbit.yaw, orbitTarget.current.yaw, ROTATION.damping, delta);
+    parkerOrbit.pitch = damp(parkerOrbit.pitch, orbitTarget.current.pitch, ROTATION.damping, delta);
   });
 
   const glow = useMemo(() => makeGlow(PARKER_VIEW.markerColor), []);

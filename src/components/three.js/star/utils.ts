@@ -19,14 +19,26 @@ export const remap01 = (
 ): number => clamp01((value - inMin) / (inMax - inMin));
 
 /**
- * Ease `current` toward `target` by `factor` (0..1) — a simple per-frame
- * damping. Higher factor = snappier; lower = more glide/lag.
+ * The frame rate the damping factors were tuned at (P27-78): the feel judged on the dev
+ * server (~85 FPS on a 120 Hz screen). Mutable: the dev panel ("〰 Story motion") tunes it.
+ */
+export const DAMPING = { referenceFps: 85 };
+
+/**
+ * Ease `current` toward `target`: `factor` (0..1) is the share of the gap closed per
+ * frame at DAMPING.referenceFps. Higher = snappier; lower = more glide/lag.
+ *
+ * Time-based (P27-78): it closes the same share per second at any frame rate (`delta`,
+ * the frame's seconds), so motion feels the same on a 30, 60 or 120 Hz screen. (It used
+ * to step per frame: half as fast at 30 FPS, twice at 120.)
  */
 export const damp = (
   current: number,
   target: number,
-  factor: number
-): number => current + (target - current) * factor;
+  factor: number,
+  delta: number
+): number =>
+  current + (target - current) * (1 - Math.pow(1 - factor, delta * DAMPING.referenceFps));
 
 /** Linear interpolation between `a` and `b` by `t` (0..1). */
 export const lerp = (a: number, b: number, t: number): number =>

@@ -129,12 +129,14 @@ const Universe = ({ animate = true, count, starfieldRef }: Props) => {
     currentRot.current.x = damp(
       currentRot.current.x,
       targetRot.current.x,
-      ROTATION.damping
+      ROTATION.damping,
+      delta
     );
     currentRot.current.y = damp(
       currentRot.current.y,
       targetRot.current.y,
-      ROTATION.damping
+      ROTATION.damping,
+      delta
     );
 
     // One-time intro spin (horizontal). Its progress + easing are driven by the
@@ -155,7 +157,8 @@ const Universe = ({ animate = true, count, starfieldRef }: Props) => {
     scrollYaw.current = damp(
       scrollYaw.current,
       targetScrollYaw,
-      JOURNEY.scrollSpinDamping
+      JOURNEY.scrollSpinDamping,
+      delta
     );
 
     // Resolve the deterministic scroll/intro turn to Saturn's canonical pose as
@@ -187,7 +190,7 @@ const Universe = ({ animate = true, count, starfieldRef }: Props) => {
     // solar system's orbits included, sees this frame's rotation.)
   }, SCENE_MOTION_PRIORITY);
 
-  useFrame(() => {
+  useFrame((_, delta) => {
     // ── Scroll zoom: center → grow → fly through camera (the burst itself
     //    lives in the nebula's shader) ──
     const progress = useHeroScroll.getState().progress;
@@ -203,9 +206,9 @@ const Universe = ({ animate = true, count, starfieldRef }: Props) => {
     const flying = remap01(progress, ZOOM.flyStart, 1);
     const targetZ = flying * flying * ZOOM.flyDistance;
 
-    zoomScale.current = damp(zoomScale.current, targetScale, ZOOM.damping);
-    zoomY.current = damp(zoomY.current, targetY, ZOOM.damping);
-    zoomZ.current = damp(zoomZ.current, targetZ, ZOOM.damping);
+    zoomScale.current = damp(zoomScale.current, targetScale, ZOOM.damping, delta);
+    zoomY.current = damp(zoomY.current, targetY, ZOOM.damping, delta);
+    zoomZ.current = damp(zoomZ.current, targetZ, ZOOM.damping, delta);
     if (nebulaZoomRef.current) {
       nebulaZoomRef.current.scale.setScalar(zoomScale.current);
       nebulaZoomRef.current.position.set(0, zoomY.current, zoomZ.current);

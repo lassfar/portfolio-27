@@ -106,12 +106,14 @@ const Planet = ({
       currentRot.current.x = damp(
         currentRot.current.x,
         targetRot.current.x,
-        ROTATION.damping
+        ROTATION.damping,
+        delta
       );
       currentRot.current.y = damp(
         currentRot.current.y,
         targetRot.current.y,
-        ROTATION.damping
+        ROTATION.damping,
+        delta
       );
     } else {
       // Shared scene: mirror the already-resolved scene rotation exactly, so

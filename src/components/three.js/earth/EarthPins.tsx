@@ -101,7 +101,7 @@ const Pin = ({
 
   // After the camera has moved this frame (LABEL_PRIORITY), so the pin's culling and
   // its label follow exactly what's drawn.
-  useFrame((state) => {
+  useFrame((state, delta) => {
     if (!groupRef.current) return;
     const approach = remap01(
       clamp01(useVoyageScroll.getState().progress),
@@ -141,7 +141,7 @@ const Pin = ({
     }
 
     const target = hovered ? 1.35 : 1;
-    scale.current = damp(scale.current, target, 0.2);
+    scale.current = damp(scale.current, target, 0.2, delta);
     if (headRef.current) headRef.current.scale.setScalar(scale.current);
     if (glowRef.current) {
       // (elapsedTime, not getElapsedTime(): that call resets the clock mid-frame and
