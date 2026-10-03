@@ -234,6 +234,7 @@ const Galaxy = ({ animate = true }: { animate?: boolean }) => {
       }),
     };
   }, [shared]);
+  const starMaterials = useMemo(() => [materials.stars, materials.knots], [materials]); // (not a new array each frame)
   useEffect(
     () => () => Object.values(materials).forEach((m) => m.dispose()),
     [materials]
@@ -312,7 +313,7 @@ const Galaxy = ({ animate = true }: { animate?: boolean }) => {
     shared.uDiff.value = GALAXY.differential;
     shared.uNearA.value = GALAXY.nearFadeStart * GALAXY_SCALE;
     shared.uNearB.value = Math.max(GALAXY.nearFadeEnd, GALAXY.nearFadeStart + 0.1) * GALAXY_SCALE;
-    for (const m of [materials.stars, materials.knots]) {
+    for (const m of starMaterials) {
       m.uniforms.uSize.value = GALAXY.uSize;
       m.uniforms.uTwinkleAmt.value = GALAXY.twinkleAmount;
     }

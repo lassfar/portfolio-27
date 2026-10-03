@@ -67,6 +67,7 @@ import { useGalleryStore } from "#/stores/useGalleryStore";
 import { useJourneyScroll } from "#/stores/useJourneyScroll";
 import { useLabStore } from "#/stores/useLabStore";
 import { storyEase } from "./storyMotion";
+import { monotoneCurve } from "./monotoneCurve";
 import { onPerformanceChange, PERFORMANCE, PERFORMANCE_DEFAULTS } from "./performance";
 import { precompile, setWarmUpTarget, whenIdle } from "./warmUp";
 import { gpuClass, gpuRenderer, LOWEST_STEP, QUALITY_STEPS, startStep } from "./quality";
@@ -387,7 +388,10 @@ function bendAroundSun(
   const closest = Math.hypot(cx, cy, cz);
   if (closest < clear && along > 0 && along < 1) {
     const inv = closest > 1e-3 ? 1 / closest : 0;
-    const [nx, ny, nz] = closest > 1e-3 ? [cx * inv, cy * inv, cz * inv] : [0, 1, 0];
+    const away = closest > 1e-3;
+    const nx = away ? cx * inv : 0;
+    const ny = away ? cy * inv : 1;
+    const nz = away ? cz * inv : 0;
     // (u/along)^m · ((1−u)/(1−along))² — flat at the start, 1 at `along`, 0 on arrival
     // (fromClose: a smoothstep on either side of `along`).
     const t = u < along ? u / along : (1 - u) / (1 - along);
@@ -452,6 +456,27 @@ const _closeDir = new Vector3(); // the Parker close-up's direction (scratch)
 const _fromDir = new Vector3(); // the Lab turn's view directions (scratch)
 const _toDir = new Vector3();
 
+// The rig's path points, reused every frame instead of allocated (P27-78).
+type Point3 = [number, number, number];
+const _pathFrom: Point3 = [0, 0, 0];
+const _pathTo: Point3 = [0, 0, 0];
+const _bent: Point3 = [0, 0, 0];
+const _over: Point3 = [0, 0, 0];
+const _home: Point3 = [0, 0, 0];
+const _labCam: Point3 = [0, 0, 0];
+const _probe: Point3 = [0, 0, 0];
+const _frame: Point3 = [0, 0, 0];
+const _outCam: Point3 = [0, 0, 0];
+const _keyX: number[] = []; // the Lab zoom's keyframes: progress…
+const _keyLogD: number[] = []; // …and log distance
+
+function set3(out: Point3, x: number, y: number, z: number): Point3 {
+  out[0] = x;
+  out[1] = y;
+  out[2] = z;
+  return out;
+}
+
 /**
  * Turn the unit view direction `from` toward `to` by the share `t`, at a steady
  * angular rate (a true rotation, not a slide of the aim point). Writes into `from`.
@@ -466,50 +491,6 @@ function turnToward(from: Vector3, to: Vector3, t: number) {
   const a = Math.sin((1 - t) * angle) / sin;
   const b = Math.sin(t * angle) / sin;
   return from.multiplyScalar(a).addScaledVector(to, b).normalize();
-}
-
-/**
- * A smooth curve through the points (xs, ys) that never overshoots them (monotone
- * cubic, Fritsch–Carlson): its slope is continuous, and 0 at both ends — so a motion
- * driven by it speeds up and slows down gently between keyframes, and starts and stops
- * at rest.
- */
-function monotoneCurve(x: number, xs: readonly number[], ys: readonly number[]): number {
-  const n = xs.length;
-  if (x <= xs[0]) return ys[0];
-  if (x >= xs[n - 1]) return ys[n - 1];
-  const d: number[] = [];
-  for (let i = 0; i < n - 1; i++) d.push((ys[i + 1] - ys[i]) / (xs[i + 1] - xs[i]));
-  const m: number[] = [0];
-  for (let i = 1; i < n - 1; i++) m.push(d[i - 1] * d[i] <= 0 ? 0 : (d[i - 1] + d[i]) / 2);
-  m.push(0);
-  for (let i = 0; i < n - 1; i++) {
-    if (d[i] === 0) {
-      m[i] = 0;
-      m[i + 1] = 0;
-      continue;
-    }
-    const a = m[i] / d[i];
-    const b = m[i + 1] / d[i];
-    const s2 = a * a + b * b;
-    if (s2 > 9) {
-      const k = 3 / Math.sqrt(s2);
-      m[i] = k * a * d[i];
-      m[i + 1] = k * b * d[i];
-    }
-  }
-  let k = 0;
-  while (x > xs[k + 1]) k++;
-  const h = xs[k + 1] - xs[k];
-  const t = (x - xs[k]) / h;
-  const t2 = t * t;
-  const t3 = t2 * t;
-  return (
-    (2 * t3 - 3 * t2 + 1) * ys[k] +
-    (t3 - 2 * t2 + t) * h * m[k] +
-    (-2 * t3 + 3 * t2) * ys[k + 1] +
-    (t3 - t2) * h * m[k + 1]
-  );
 }
 
 /** The Lab overview's direction from the Sun: the voyage's wide view (angled from above). */
@@ -571,8 +552,8 @@ const CameraRig = ({
 
       // The Earth is the 3rd planet, close to the Sun: when it's behind the Sun, the
       // straight path would fly through it — so it bends round the Sun (bendAroundSun).
-      const bent: [number, number, number] = [px, py, pz];
-      bendAroundSun([ax, ay, az], [bx, by, bz], u, EARTH_CAM.sunClear, bent);
+      const bent = set3(_bent, px, py, pz);
+      bendAroundSun(set3(_pathFrom, ax, ay, az), set3(_pathTo, bx, by, bz), u, EARTH_CAM.sunClear, bent);
       [px, py, pz] = bent;
     }
 
@@ -593,20 +574,21 @@ const CameraRig = ({
       const sun = flyingSunPos();
       const earth = useEarthAnchor.getState();
       // The overview: the Sun centred, angled from above.
-      const over: [number, number, number] = [
+      const over = set3(
+        _over,
         sun[0] + _overDir.x * C.overview,
         sun[1] + _overDir.y * C.overview,
         sun[2] + _overDir.z * C.overview,
-      ];
+      );
       // 1. Pull back from the Earth pose (segment 2): a steady zoom out — the distance
       //    from the Earth grows by the same factor each step (the Earth arrival, reversed).
-      const home: [number, number, number] = [px, py, pz];
+      const home = set3(_home, px, py, pz);
       const back = storyEase(remap01(lab, C.pullBack[0], C.pullBack[1])); // the standard curve (P27-77)
       const dE0 = Math.max(Math.hypot(px - earth.x, py - earth.y, pz - earth.z), 1e-3);
       const dE1 = Math.hypot(over[0] - earth.x, over[1] - earth.y, over[2] - earth.z);
       const dE = dE0 * Math.pow(dE1 / dE0, back);
       const u = clamp01((dE - dE0) / (dE1 - dE0 || 1));
-      const cam: [number, number, number] = [lerp(px, over[0], u), lerp(py, over[1], u), lerp(pz, over[2], u)];
+      const cam = set3(_labCam, lerp(px, over[0], u), lerp(py, over[1], u), lerp(pz, over[2], u));
       bendAroundSun(home, over, u, EARTH_CAM.sunClear, cam);
       // 3. The zoom into the probe, setting off from the overview as the pull-back arrives.
       const keys = C.zoomKeys;
@@ -619,13 +601,13 @@ const CameraRig = ({
         fx /= d0;
         fy /= d0;
         fz /= d0;
-        const d = Math.exp(
-          monotoneCurve(
-            lab,
-            keys.map((k) => k[0]),
-            keys.map((k) => Math.log(k[1] ?? d0)),
-          ),
-        );
+        _keyX.length = keys.length;
+        _keyLogD.length = keys.length;
+        for (let i = 0; i < keys.length; i++) {
+          _keyX[i] = keys[i][0];
+          _keyLogD[i] = Math.log(keys[i][1] ?? d0);
+        }
+        const d = Math.exp(monotoneCurve(lab, _keyX, _keyLogD));
         const close = parkerViewDir(_closeDir, pk.x, pk.y, pk.z, sun);
         const e = remap01(lab, C.swing[0], C.swing[1]);
         const sw = e * e * (3 - 2 * e); // the swing to the close-up side, over the arrival
@@ -685,11 +667,12 @@ const CameraRig = ({
         const [sx, sy, sz] = sun;
         const pk = useParkerAnchor.getState();
         const dFrame = G_D_START * Math.pow(G_Z_RATIO, ps);
-        const frame: [number, number, number] = [
+        const frame = set3(
+          _frame,
           sx + G_START_DIR[0] * dFrame,
           sy + G_START_DIR[1] * dFrame,
           sz + G_START_DIR[2] * dFrame,
-        ];
+        );
         let fx = frame[0] - pk.x;
         let fy = frame[1] - pk.y;
         let fz = frame[2] - pk.z;
@@ -706,13 +689,9 @@ const CameraRig = ({
         let dy = lerp(close.y, fy, sw);
         let dz = lerp(close.z, fz, sw);
         const dl = Math.hypot(dx, dy, dz) || 1;
-        const cam: [number, number, number] = [
-          pk.x + (dx / dl) * d,
-          pk.y + (dy / dl) * d,
-          pk.z + (dz / dl) * d,
-        ];
+        const cam = set3(_outCam, pk.x + (dx / dl) * d, pk.y + (dy / dl) * d, pk.z + (dz / dl) * d);
         // When the probe is on the far side of the Sun, the way out bends round it.
-        bendAroundSun([pk.x, pk.y, pk.z], frame, clamp01(d / d1), EARTH_CAM.sunClear, cam, true);
+        bendAroundSun(set3(_probe, pk.x, pk.y, pk.z), frame, clamp01(d / d1), EARTH_CAM.sunClear, cam, true);
         [px, py, pz] = cam;
         const flown = clamp01((d - dStart) / (d1 - dStart));
         _fromDir.set(lerp(pk.x, sx, flown) - px, lerp(pk.y, sy, flown) - py, lerp(pk.z, sz, flown) - pz).normalize();

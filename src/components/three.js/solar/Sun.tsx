@@ -129,6 +129,7 @@ const Sun = ({ animate = true }: Props) => {
       });
     return { far: dots(-1), near: dots(1) };
   }, [shared]);
+  const dotMaterials = useMemo(() => [materials.far, materials.near], [materials]); // (not a new array each frame)
   useEffect(() => () => Object.values(materials).forEach((m) => m.dispose()), [materials]);
   // While the Sun is faded out (before the voyage, the Earth, the Lab) its dots output
   // nothing — skip the draws.
@@ -139,7 +140,7 @@ const Sun = ({ animate = true }: Props) => {
     if (animate && !SUN.paused) shared.uTime.value += delta;
     shared.uRadius.value = SUN.radius;
     // Live values (the dev panel tunes SUN in place).
-    for (const m of [materials.far, materials.near]) {
+    for (const m of dotMaterials) {
       const u = m.uniforms;
       u.uPixelRatio.value = dpr;
       u.uSpin.value = SUN.spin;
