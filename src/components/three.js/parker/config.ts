@@ -137,19 +137,26 @@ export const PARKER_FOCUS = {
 
 /**
  * Parker's journey line (P27-72): its real path from the Earth — the 2018 launch, the 7
- * Venus flybys, down to today's orbit — drawn as the Lab pulls back to the inner solar
- * system, NASA-Eyes style: a thin line, dots + labels at the launch and the flybys.
+ * Venus flybys, down to today's orbit — drawn over the whole Lab trip, NASA-Eyes style:
+ * a thin line, dots + labels at the launch and the flybys, and a dot at its tip telling
+ * how close it has come to the Sun. Its story: it never flies straight at the Sun — it
+ * loops, and every loop takes it a little closer (the Lab's caption).
  * Mutable: the dev panel (✦ Parker Solar Probe → Journey line) tunes it.
  */
 export const PARKER_JOURNEY = {
-  // The line draws itself over this stretch of the Lab (in step with the solar system
-  // fading back in), from the launch to today, complete as the camera reaches the overview.
-  draw: [labAt(70), labAt(420)] as [number, number],
+  // The line draws itself over this stretch of the Lab, on the story's standard curve:
+  // from the launch as you leave the Earth, to today — the probe — as you arrive there
+  // (the zoom's last key).
+  draw: [0, PARKER_CAM.zoomKeys[PARKER_CAM.zoomKeys.length - 1][0]] as [number, number],
   color: "#ffa14a", // --color-peach
   opacity: 0.55,
   dotPx: 5, // the markers' size (CSS px)
   labels: true,
-  // The 7 Venus flybys, by month (their closest approaches, from JPL Horizons; they
-  // match NASA's dates: 3 Oct 2018 … 6 Nov 2024).
-  flybys: ["Oct 2018", "Dec 2019", "Jul 2020", "Feb 2021", "Oct 2021", "Aug 2023", "Nov 2024"],
+  // The tip's label ({km}: millions of km from the Sun's surface): the closest it has
+  // come yet, and once it reaches its record (6.1, since Dec 2024)…
+  closer: "closest yet · {km} million km",
+  record: "{km} million km — closer than anything we've ever built",
+  // The Lab's caption shows over this stretch (fading in and out over `captionFade`).
+  caption: [labAt(300), labAt(680)] as [number, number],
+  captionFade: labAt(60),
 };

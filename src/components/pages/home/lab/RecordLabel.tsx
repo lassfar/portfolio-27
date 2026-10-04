@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect, useRef } from "react";
-import { journeyScreen } from "#/components/three.js/parker/journeyScreen";
 import { recordLabel, recordScreen } from "#/components/three.js/voyager/recordScreen";
 import { useLabStore } from "#/stores/useLabStore";
 
@@ -14,13 +13,12 @@ import { useLabStore } from "#/stores/useLabStore";
  * the card in the very frame it's drawn — positioned imperatively (transform +
  * opacity), so nothing re-renders per frame. It sits under the side panels (z-45 < the
  * panels' z-50). Clicking it opens the experiments panel — the same seam the Earth pins
- * use to open the gallery. At the end of its journey line it reads "· Today" (P27-72).
+ * use to open the gallery.
  */
 const RecordLabel = () => {
   const ref = useRef<HTMLButtonElement>(null);
   const cardText = useRef<HTMLSpanElement>(null);
   const probeText = useRef<HTMLSpanElement>(null);
-  const todayText = useRef<HTMLSpanElement>(null);
 
   useEffect(() => {
     let before = ""; // opacity / pointer-events / text only change with it
@@ -29,8 +27,7 @@ const RecordLabel = () => {
       if (!el) return;
       const s = recordScreen;
       if (s.shown) el.style.transform = `translate(calc(${s.x}px - 50%), calc(${s.y}px - 220%))`;
-      const today = journeyScreen.today;
-      const state = `${s.shown}:${s.text}:${today}`;
+      const state = `${s.shown}:${s.text}`;
       if (state === before) return;
       before = state;
       // From afar it names the probe (not clickable); once there, the memory card opens the Lab.
@@ -41,7 +38,6 @@ const RecordLabel = () => {
       el.setAttribute("aria-label", card ? "Open Parker's memory card — the Lab experiments" : "The Parker Solar Probe");
       if (cardText.current) cardText.current.hidden = !card;
       if (probeText.current) probeText.current.hidden = card;
-      if (todayText.current) todayText.current.hidden = card || !today;
     };
     recordLabel.update = update;
     return () => {
@@ -63,10 +59,6 @@ const RecordLabel = () => {
       <span ref={cardText}>◉ Memory card — open the Lab</span>
       <span ref={probeText} hidden>
         Parker Solar Probe
-        <span ref={todayText} hidden className="text-peach">
-          {" "}
-          · Today
-        </span>
       </span>
     </button>
   );

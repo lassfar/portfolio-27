@@ -65,6 +65,12 @@ export function parkerRadius(au: number): number {
 /** Today's Julian date, from the real clock. */
 export const julianNow = (): number => Date.now() / 86400000 + 2440587.5;
 
+/** The probe's real distance from the Sun's centre (AU) at `jd`. */
+export function parkerDistance(jd: number = julianNow()): number {
+  const M = (O.meanAnomaly + O.meanMotion * (jd - O.epochJD)) * DEG;
+  return O.a * (1 - O.e * Math.cos(eccentricAnomaly(M, O.e)));
+}
+
 /**
  * Where the probe is right now (display coordinates relative to the Sun, like
  * `orbitPositionAt` — turned by the same frame, so it lines up with the planets), at

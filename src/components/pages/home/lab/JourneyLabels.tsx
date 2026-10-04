@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect, useRef } from "react";
-import { PARKER_JOURNEY } from "#/components/three.js/parker/config";
 import { journeyLabels, journeyScreen } from "#/components/three.js/parker/journeyScreen";
 
 /** Gap (px) kept between labels that would otherwise overlap. */
@@ -9,23 +8,32 @@ const LABEL_GAP = 4;
 /** How far above its dot a label sits (px, to its bottom edge). */
 const OFFSET_Y = 7;
 /** The markers: the launch, then the 7 Venus flybys. */
-const COUNT = 1 + PARKER_JOURNEY.flybys.length;
+const COUNT = journeyScreen.markers.length;
 
-/** A spot's label for the markers reached there (bits of `here`): short, and on hover. */
+/**
+ * A spot's label for the markers reached there (bits of `here`): short, and on hover
+ * how close its loops reach the Sun — each Venus flyby nudging them a little closer.
+ */
 function texts(here: number): { short: string; long: string } {
-  if (here & 1) return { short: "Launch", long: "Launch · Aug 2018" };
+  const reach = journeyScreen.reach;
+  if (here & 1) {
+    return { short: "Launch", long: reach[0] ? `Launch · ${reach[0]} million km from the Sun` : "Launch" };
+  }
   const flybys: number[] = [];
   for (let n = 1; n < COUNT; n++) if (here & (1 << n)) flybys.push(n);
-  const dates = flybys.map((n) => PARKER_JOURNEY.flybys[n - 1]).join(", ");
-  return flybys.length > 1
-    ? { short: `Venus ${flybys.join(" · ")}`, long: `Venus flybys ${flybys.join(" & ")} · ${dates}` }
-    : { short: `Venus ${flybys[0]}`, long: `Venus flyby ${flybys[0]} · ${dates}` };
+  const last = flybys[flybys.length - 1];
+  const name = flybys.length > 1 ? `Venus flybys ${flybys.join(" & ")}` : `Venus flyby ${last}`;
+  return {
+    short: `Venus ${flybys.join(" · ")}`,
+    long: reach[last] ? `${name} · loops now reach ${reach[last]} million km` : name,
+  };
 }
 
 /**
  * The labels on Parker's journey line (P27-72): "Launch" on the Earth's orbit and
- * "Venus n" at the flybys, each appearing as the line reaches it — a spot it passes
- * again names both ("Venus 1 · 2"), and the dates show on hover. The 3D line publishes
+ * "Venus n" at the flybys, each appearing as the line passes it — a spot it passes
+ * again names both ("Venus 1 · 2"), how close its loops reach on hover — and how close
+ * its tip has come to the Sun yet, riding it. The 3D line publishes
  * the markers' projected screen positions to `journeyScreen` once the camera has moved,
  * then calls our `update` in that same step (`journeyLabels`), so each label moves with
  * its dot in the very frame it's drawn — positioned imperatively (transform + opacity),
@@ -37,6 +45,7 @@ const JourneyLabels = () => {
   const refs = useRef<(HTMLSpanElement | null)[]>([]);
   const shortRefs = useRef<(HTMLSpanElement | null)[]>([]);
   const longRefs = useRef<(HTMLSpanElement | null)[]>([]);
+  const tipRef = useRef<HTMLSpanElement>(null);
 
   useEffect(() => {
     // Each label's last shown state and text — only written when they change.
@@ -44,7 +53,14 @@ const JourneyLabels = () => {
     const hereBefore: number[] = [];
     // Each label's size, measured when its text changes (not every frame: that forces a layout).
     const sizes: ({ w: number; h: number } | undefined)[] = [];
-    const remeasure = () => sizes.fill(undefined);
+    // The tip's label: the same, for its text.
+    let tipShown = false;
+    let tipText = "";
+    let tipSize: { w: number; h: number } | undefined;
+    const remeasure = () => {
+      sizes.fill(undefined);
+      tipSize = undefined;
+    };
     window.addEventListener("resize", remeasure);
     void document.fonts?.ready.then(remeasure);
     const boxes: { el: HTMLSpanElement; cx: number; left: number; top: number; w: number; h: number }[] = [];
@@ -71,9 +87,29 @@ const JourneyLabels = () => {
         const { w, h } = (sizes[i] ??= { w: el.offsetWidth, h: el.offsetHeight });
         boxes.push({ el, cx: s.x, left: s.x - w / 2, top: s.y - h - OFFSET_Y, w, h });
       });
+      const tip = journeyScreen.tip;
+      const tipEl = tipRef.current;
+      if (tipEl) {
+        if (tip.text !== tipText) {
+          // Its digits are tabular: it only needs measuring again when its length changes.
+          if (tip.text.length !== tipText.length) tipSize = undefined;
+          tipText = tip.text;
+          tipEl.textContent = tip.text;
+        }
+        if (tip.shown !== tipShown) {
+          tipShown = tip.shown;
+          tipEl.style.opacity = tip.shown ? "1" : "0";
+        }
+        if (tip.shown) {
+          const { w, h } = (tipSize ??= { w: tipEl.offsetWidth, h: tipEl.offsetHeight });
+          // Kept in place (it moves every frame): the others make way for it.
+          boxes.push({ el: tipEl, cx: tip.x, left: tip.x - w / 2, top: tip.y - h - OFFSET_Y, w, h });
+        }
+      }
 
-      // 2. De-overlap: keep the lowest label in place, lift any that collide above it.
-      boxes.sort((a, b) => b.top - a.top);
+      // 2. De-overlap: keep the tip's and then the lowest labels in place, lift any that
+      //    collide above them.
+      boxes.sort((a, b) => (a.el === tipEl ? -1 : b.el === tipEl ? 1 : b.top - a.top));
       for (let i = 1; i < boxes.length; i++) {
         const cur = boxes[i];
         for (let j = 0; j < i; j++) {
@@ -127,6 +163,12 @@ const JourneyLabels = () => {
           </span>
         );
       })}
+      <span
+        ref={tipRef}
+        aria-hidden="true"
+        className="pointer-events-none fixed left-0 top-0 z-[45] whitespace-nowrap rounded-full bg-rich-black/70 px-2 py-0.5 text-[10px] font-light tabular-nums tracking-wide text-peach opacity-0 ring-1 ring-peach/30 transition-opacity duration-300"
+        style={{ willChange: "transform, opacity" }}
+      />
     </>
   );
 };

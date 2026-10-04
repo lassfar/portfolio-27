@@ -2,7 +2,17 @@ import { readFileSync } from "node:fs";
 import { Vector3 } from "three";
 import { describe, expect, it } from "vitest";
 import { EARTH_ELEMENTS, orbitRadius } from "#/components/three.js/solar/config";
-import { buildJourney, journeyPoint, journeyRadius, pointsUpTo, type JourneyData, type JourneyLine } from "./journey";
+import {
+  buildJourney,
+  closestAt,
+  journeyPoint,
+  journeyRadius,
+  journeyTipAt,
+  millionKmFromSun,
+  pointsUpTo,
+  type JourneyData,
+  type JourneyLine,
+} from "./journey";
 import { PARKER_ORBIT, parkerOffset } from "./orbit";
 
 const data: JourneyData = JSON.parse(
@@ -55,5 +65,45 @@ describe("Parker's journey line", () => {
     expect(end.distanceTo(parkerOffset(new Vector3(), now))).toBeLessThan(1e-4);
     expect(pointsUpTo(line, -1)).toBe(0);
     expect(pointsUpTo(line, line.today)).toBe(line.count);
+  });
+
+  it("moves its tip smoothly from the launch to the probe today", () => {
+    const now = data.endJD + 30;
+    const line = build(now);
+    const tip = new Vector3();
+    const start = new Vector3().fromArray(line.positions, 0);
+    const end = new Vector3().fromArray(line.positions, (line.count - 1) * 3);
+    journeyTipAt(line, 0, tip);
+    expect(tip.distanceTo(start)).toBeLessThan(1e-6);
+    expect(journeyTipAt(line, line.today, tip)).toBe(line.count);
+    expect(tip.distanceTo(end)).toBeLessThan(1e-6);
+    // No jumps: its biggest move over a step in time shrinks with the step.
+    const biggestMove = (step: number) => {
+      const last = new Vector3();
+      let most = 0;
+      journeyTipAt(line, 0, last);
+      for (let day = step; day <= line.today; day += step) {
+        most = Math.max(most, journeyTipAt(line, day, tip) && tip.distanceTo(last));
+        last.copy(tip);
+      }
+      return most;
+    };
+    expect(biggestMove(0.02)).toBeLessThan(biggestMove(0.2) / 5);
+  });
+
+  it("gets closer to the Sun loop by loop, never farther, as NASA reports", () => {
+    const line = build(data.endJD + 30);
+    let last = Infinity;
+    for (let day = 0; day <= line.today; day += 0.25) {
+      const c = closestAt(line, day);
+      expect(c).toBeLessThanOrEqual(last);
+      last = c;
+    }
+    // From the surface: ~151 million km at the launch (the Earth), 24.1 after the first
+    // loop, 6.1 — its record — since Dec 2024.
+    expect(millionKmFromSun(closestAt(line, 0))).toBe("150");
+    expect(millionKmFromSun(closestAt(line, data.perihelia[0].day))).toBe("24.1");
+    expect(millionKmFromSun(closestAt(line, line.today))).toBe("6.1");
+    expect(data.perihelia).toHaveLength(29);
   });
 });

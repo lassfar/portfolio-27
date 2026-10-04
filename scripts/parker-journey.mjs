@@ -3,8 +3,9 @@
  * Builds public/data/parker-journey.json (P27-72): the Parker Solar Probe's real path
  * from its launch (12 Aug 2018) to the epoch of PARKER_ORBIT (20 Sep 2026), from NASA
  * JPL Horizons — heliocentric, ecliptic J2000, in AU — plus its 7 Venus flybys (each at
- * its closest approach to Venus). After that epoch the scene continues the line live
- * from PARKER_ORBIT, so the two meet exactly.
+ * its closest approach to Venus) and each loop's closest pass to the Sun (its
+ * perihelion, refined to the minute). After that epoch the scene continues the line
+ * live from PARKER_ORBIT, so the two meet exactly.
  *
  * Run once (it needs the network): `node scripts/parker-journey.mjs`. The output is
  * committed; the site never calls Horizons.
@@ -49,6 +50,7 @@ async function vectors(body, start, stop, step) {
 }
 
 const dist = (a, b) => Math.hypot(a.x - b.x, a.y - b.y, a.z - b.z);
+const radius = (p) => Math.hypot(p.x, p.y, p.z);
 
 /**
  * Ramer–Douglas–Peucker with a RELATIVE tolerance (a share of the distance from the
@@ -96,6 +98,16 @@ for (let i = 1; i < gaps.length - 1; i++) {
 }
 const flybys = minima.map((i) => parker[i]);
 
+// Each loop's closest pass to the Sun: the 6-hour samples miss it by up to ~0.3 million
+// km (it passes at ~190 km/s), so each is refined from minute-by-minute vectors.
+const perihelia = [];
+for (let i = 1; i < parker.length - 1; i++) {
+  const r = radius(parker[i]);
+  if (!(r < radius(parker[i - 1]) && r <= radius(parker[i + 1]))) continue;
+  const fine = await vectors("-96", `JD${parker[i - 1].jd}`, `JD${parker[i + 1].jd}`, "1 m");
+  perihelia.push(fine.reduce((best, p) => (radius(p) < radius(best) ? p : best)));
+}
+
 // The path starts at the Earth, at launch.
 const launch = { jd: LAUNCH_JD, x: earthAtLaunch.x, y: earthAtLaunch.y, z: earthAtLaunch.z };
 const path = [launch, ...parker];
@@ -113,6 +125,8 @@ const data = {
     day: round(p.jd - LAUNCH_JD, 2),
     at: [round(p.x, 4), round(p.y, 4), round(p.z, 4)],
   })),
+  // Each loop's perihelion: its day since the launch and its distance from the Sun's centre (AU).
+  perihelia: perihelia.map((p) => ({ day: round(p.jd - LAUNCH_JD, 3), au: round(radius(p), 6) })),
 };
 
 await mkdir(new URL("../public/data/", import.meta.url), { recursive: true });
@@ -120,4 +134,6 @@ await writeFile(OUT, JSON.stringify(data));
 const date = (jd) => new Date((jd - 2440587.5) * 86400000).toISOString().slice(0, 10);
 console.log(`points: ${kept.length} (from ${path.length}); flybys: ${flybys.length}`);
 flybys.forEach((p, k) => console.log(`  Venus ${k + 1}: ${date(p.jd)}  (${(gaps[minima[k]] * 149597870.7).toFixed(0)} km)`));
+console.log(`perihelia: ${perihelia.length}`);
+perihelia.forEach((p, k) => console.log(`  ${k + 1}: ${date(p.jd)}  ${((radius(p) * 149597870.7 - 695700) / 1e6).toFixed(2)} million km from the surface`));
 console.log(`wrote ${OUT.pathname} (${JSON.stringify(data).length} bytes)`);

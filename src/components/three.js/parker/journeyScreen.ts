@@ -18,8 +18,11 @@ export type JourneyMarkerScreen = {
 
 export const journeyScreen = {
   markers: Array.from({ length: 8 }, (_, i): JourneyMarkerScreen => ({ x: 0, y: 0, shown: false, here: 1 << i })),
-  /** The line has reached today (the probe's label then reads "· Today"). */
-  today: false,
+  /** The line's tip while it draws: its dot's label, how close it has come to the Sun. */
+  tip: { x: 0, y: 0, shown: false, text: "" },
+  /** How close each marker's loops reach (millions of km, set once built): the launch
+   *  (the Earth), then the loops after each flyby. */
+  reach: [] as string[],
 };
 
 /** The DOM overlay's per-frame update — set by JourneyLabels, called by the line. */
