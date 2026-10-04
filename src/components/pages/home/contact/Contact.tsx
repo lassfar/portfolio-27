@@ -110,8 +110,8 @@ const Contact = ({ overlayRef, reduced }: ContactProps) => {
             "max-w-xl mb-8 sm:mb-10"
           )}
         >
-          Voyager carries a message for whoever finds it. This one&rsquo;s mine
-          &mdash; leave yours, and I&rsquo;ll write back.
+          Parker carries over a million names toward the Sun. Leave yours
+          here, and I&rsquo;ll write back.
         </p>
 
         <div className="relative w-full">

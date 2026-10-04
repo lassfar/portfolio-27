@@ -49,13 +49,13 @@ function buildPanel(gui: GUI) {
 
   const fJump = gui.addFolder("Jump to");
   const jumps = {
-    voyager: () => jumpToGalaxy(0),
+    probe: () => jumpToGalaxy(0),
     solar: () => jumpToGalaxy(0.44),
     inside: () => jumpToGalaxy(0.68),
     galaxy: () => jumpToGalaxy(1),
     contact: () => jumpToJourney(1),
   };
-  fJump.add(jumps, "voyager").name("leaving the Voyager (0%)");
+  fJump.add(jumps, "probe").name("leaving the probe (0%)");
   fJump.add(jumps, "solar").name("the solar system (44%)");
   fJump.add(jumps, "inside").name("inside the galaxy (68%)");
   fJump.add(jumps, "galaxy").name("the full galaxy (100%)");
@@ -149,7 +149,7 @@ function buildPanel(gui: GUI) {
       "regenerate"
     );
 
-  const fTime = gui.addFolder("Scroll timing (0 = Voyager → 1 = full galaxy)");
+  const fTime = gui.addFolder("Scroll timing (0 = the probe → 1 = full galaxy)");
   fTime.add(G, "revealStart", 0, 1, 0.01).name("galaxy fades in from");
   fTime.add(G, "revealEnd", 0, 1, 0.01).name("…fully visible at");
   fTime.add(G.coreGlowIn, "0", 0, 1, 0.01).name("core glow from");
