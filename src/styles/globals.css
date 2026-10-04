@@ -148,6 +148,17 @@
   }
 }
 
+/* ── Parker's journey labels on touch screens (P27-31) ─────────────────────────────────
+   No hover there: a tapped label (JourneyLabels sets `data-open`) shows its full text. */
+@media (hover: none) {
+  .journey-label[data-open] .journey-label__short {
+    display: none;
+  }
+  .journey-label[data-open] .journey-label__long {
+    display: inline;
+  }
+}
+
 /* ── Story timeline (P27-73) ─────────────────────────────────────────────────────────
    A thin rail down one edge of the screen that fills with peach, one small four-point
    star per chapter (the site's sparkles). StoryTimelineRail places it (any edge or

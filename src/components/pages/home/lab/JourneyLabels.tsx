@@ -1,8 +1,8 @@
 "use client";
 
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, type MouseEvent } from "react";
 import { journeyLabels, journeyScreen } from "#/components/three.js/parker/journeyScreen";
-import { PHONE_QUERY, keepOnScreen } from "#/components/pages/home/labels/screenEdge";
+import { PHONE_QUERY, TOUCH_QUERY, keepOnScreen } from "#/components/pages/home/labels/screenEdge";
 
 /** Gap (px) kept between labels that would otherwise overlap. */
 const LABEL_GAP = 4;
@@ -52,6 +52,7 @@ const JourneyLabels = () => {
     // Each label's last shown state and text — only written when they change.
     const shownBefore: boolean[] = [];
     const hereBefore: number[] = [];
+    const openBefore: boolean[] = [];
     // Each label's size, measured when its text changes (not every frame: that forces a layout).
     const sizes: ({ w: number; h: number } | undefined)[] = [];
     // The tip's label: the same, for its text.
@@ -87,6 +88,13 @@ const JourneyLabels = () => {
           shownBefore[i] = s.shown;
           el.style.opacity = s.shown ? "1" : "0";
           el.style.pointerEvents = s.shown ? "auto" : "none";
+          if (!s.shown) delete el.dataset.open; // a hidden label closes
+        }
+        // Opened or closed by a tap (touch screens): its width changed.
+        const open = el.dataset.open !== undefined;
+        if (openBefore[i] !== open) {
+          openBefore[i] = open;
+          sizes[i] = undefined;
         }
         if (!s.shown) return;
         const { w, h } = (sizes[i] ??= { w: el.offsetWidth, h: el.offsetHeight });
@@ -137,6 +145,16 @@ const JourneyLabels = () => {
     };
   }, []);
 
+  // Touch screens have no hover: a tap opens a label's full text (one at a time), and
+  // closes it again. With a mouse, hover does it, as before.
+  const toggle = (e: MouseEvent<HTMLSpanElement>) => {
+    if (!window.matchMedia(TOUCH_QUERY).matches) return;
+    const label = e.currentTarget;
+    const opening = label.dataset.open === undefined;
+    for (const other of refs.current) if (other) delete other.dataset.open;
+    if (opening) label.dataset.open = "";
+  };
+
   return (
     <>
       {Array.from({ length: COUNT }, (_, i) => {
@@ -148,14 +166,15 @@ const JourneyLabels = () => {
               refs.current[i] = el;
             }}
             aria-hidden="true"
-            className="group pointer-events-none fixed left-0 top-0 z-[45] whitespace-nowrap rounded-full bg-rich-black/70 px-2 py-0.5 text-[10px] font-light tracking-wide text-light-peach/80 opacity-0 ring-1 ring-white/10 transition-[opacity,color] duration-300 hover:text-peach"
+            onClick={toggle}
+            className="journey-label group pointer-events-none fixed left-0 top-0 z-[45] whitespace-nowrap rounded-full bg-rich-black/70 px-2 py-0.5 text-[10px] font-light tracking-wide text-light-peach/80 opacity-0 ring-1 ring-white/10 transition-[opacity,color] duration-300 hover:text-peach"
             style={{ willChange: "transform, opacity" }}
           >
             <span
               ref={(el) => {
                 shortRefs.current[i] = el;
               }}
-              className="group-hover:hidden"
+              className="journey-label__short group-hover:hidden"
             >
               {t.short}
             </span>
@@ -163,7 +182,7 @@ const JourneyLabels = () => {
               ref={(el) => {
                 longRefs.current[i] = el;
               }}
-              className="hidden group-hover:inline"
+              className="journey-label__long hidden group-hover:inline"
             >
               {t.long}
             </span>
