@@ -15,6 +15,7 @@ import { useSceneRotation } from "#/stores/useSceneRotation";
 import { useSceneIntro } from "#/stores/useSceneIntro";
 import { dragMode } from "#/components/three.js/earth/interaction";
 import { SCENE_MOTION_PRIORITY } from "#/components/three.js/solar/planetTuning";
+import { createTouchAxisLock } from "#/components/three.js/scene/touchAxisLock";
 
 /**
  * The deterministic scroll/intro yaw the scene reaches by the time Saturn is
@@ -73,14 +74,21 @@ const Universe = ({ animate = true, count, starfieldRef }: Props) => {
   useEffect(() => {
     const el = gl.domElement;
     el.style.cursor = "grab";
+    // On touch, only a sideways swipe turns the space; up/down scrolls (P27-31).
+    const lock = createTouchAxisLock();
 
     const onDown = (e: PointerEvent) => {
       dragging.current = true;
       last.current = { x: e.clientX, y: e.clientY };
+      lock.start(e);
       el.style.cursor = "grabbing";
     };
     const onMove = (e: PointerEvent) => {
       if (!dragging.current) return;
+      if (!lock.allows(e)) {
+        last.current = { x: e.clientX, y: e.clientY };
+        return;
+      }
       // Stand down when THIS drag grabbed the globe, or orbits the camera round the
       // Parker Solar Probe (DottedEarth sets dragMode on pointer-down) — the space
       // must stay put. Otherwise ("scene") it rotates the whole cosmos here (the
@@ -107,10 +115,12 @@ const Universe = ({ animate = true, count, starfieldRef }: Props) => {
     el.addEventListener("pointerdown", onDown);
     window.addEventListener("pointermove", onMove);
     window.addEventListener("pointerup", onUp);
+    window.addEventListener("pointercancel", onUp); // the browser took the gesture over
     return () => {
       el.removeEventListener("pointerdown", onDown);
       window.removeEventListener("pointermove", onMove);
       window.removeEventListener("pointerup", onUp);
+      window.removeEventListener("pointercancel", onUp);
     };
   }, [gl]);
 

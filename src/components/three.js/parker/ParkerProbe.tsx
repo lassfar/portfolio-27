@@ -27,6 +27,7 @@ import { seg, type Vec3 } from "#/components/three.js/scene/strut";
 import { METRE, PARKER, PARKER_CAM, PARKER_VIEW } from "./config";
 import { parkerOrbit, parkerQuaternion, parkerSunDir } from "./pose";
 import { dragMode } from "#/components/three.js/earth/interaction";
+import { createTouchAxisLock } from "#/components/three.js/scene/touchAxisLock";
 
 // ── Its layout, in metres (local frame: +Y at the Sun, the craft in the shield's shade) ──
 const P = PARKER;
@@ -137,15 +138,18 @@ const ParkerProbe = () => {
   const drag = useRef<{ x: number; y: number } | null>(null);
   useEffect(() => {
     const el = gl.domElement;
+    // On touch, only a sideways swipe turns round the probe; up/down scrolls (P27-31).
+    const lock = createTouchAxisLock();
     const onDown = (e: PointerEvent) => {
       drag.current = { x: e.clientX, y: e.clientY };
+      lock.start(e);
     };
     const onMove = (e: PointerEvent) => {
       if (!drag.current) return;
       const dx = e.clientX - drag.current.x;
       const dy = e.clientY - drag.current.y;
       drag.current = { x: e.clientX, y: e.clientY };
-      if (dragMode.current !== "probe") return;
+      if (dragMode.current !== "probe" || !lock.allows(e)) return;
       orbitTarget.current.yaw -= dx * ROTATION.sensitivity;
       if (ROTATION.allowVerticalDrag) {
         orbitTarget.current.pitch = Math.max(-1.2, Math.min(1.2, orbitTarget.current.pitch + dy * ROTATION.sensitivity));
@@ -157,10 +161,12 @@ const ParkerProbe = () => {
     el.addEventListener("pointerdown", onDown);
     window.addEventListener("pointermove", onMove);
     window.addEventListener("pointerup", onUp);
+    window.addEventListener("pointercancel", onUp); // the browser took the gesture over
     return () => {
       el.removeEventListener("pointerdown", onDown);
       window.removeEventListener("pointermove", onMove);
       window.removeEventListener("pointerup", onUp);
+      window.removeEventListener("pointercancel", onUp);
     };
   }, [gl]);
 

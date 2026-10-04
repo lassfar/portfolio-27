@@ -34,6 +34,7 @@ import { sceneBuilds } from "#/components/three.js/scene/sceneBuilds";
 import { useJourneyScroll } from "#/stores/useJourneyScroll";
 import { JOURNEY } from "#/components/three.js/star/config";
 import { pointPixelRatio } from "#/components/three.js/scene/quality";
+import { createTouchAxisLock } from "#/components/three.js/scene/touchAxisLock";
 
 type Props = {
   animate?: boolean;
@@ -283,9 +284,12 @@ const DottedEarth = ({ animate = true, interactive = true }: Props) => {
   useEffect(() => {
     if (!interactive) return;
     const el = gl.domElement;
+    // On touch, only a sideways swipe turns the globe; up/down scrolls (P27-31).
+    const lock = createTouchAxisLock();
     const onDown = (e: PointerEvent) => {
       dragging.current = true;
       last.current = { x: e.clientX, y: e.clientY };
+      lock.start(e);
       // Decide what THIS drag controls: a ray through the pointer that hits the
       // globe (while the Earth is the focus) grabs the GLOBE; anything else grabs
       // the SCENE (empty space → the whole cosmos turns, Earth carried with it).
@@ -303,7 +307,7 @@ const DottedEarth = ({ animate = true, interactive = true }: Props) => {
       if (!dragging.current) return;
       // Spin the globe only when THIS drag grabbed it. Keep `last` fresh while
       // stood down (a scene drag) so nothing snaps if it ever changes hands.
-      if (dragMode.current !== "globe") {
+      if (dragMode.current !== "globe" || !lock.allows(e)) {
         last.current = { x: e.clientX, y: e.clientY };
         return;
       }
@@ -323,10 +327,12 @@ const DottedEarth = ({ animate = true, interactive = true }: Props) => {
     el.addEventListener("pointerdown", onDown);
     window.addEventListener("pointermove", onMove);
     window.addEventListener("pointerup", onUp);
+    window.addEventListener("pointercancel", onUp); // the browser took the gesture over
     return () => {
       el.removeEventListener("pointerdown", onDown);
       window.removeEventListener("pointermove", onMove);
       window.removeEventListener("pointerup", onUp);
+      window.removeEventListener("pointercancel", onUp);
     };
   }, [gl, interactive, camera, hit]);
 

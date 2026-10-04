@@ -103,6 +103,17 @@
 }
 
 
+/* ── The 3D scene on touch screens (P27-31) ────────────────────────────────────────────
+   ScrollSmoother's normalizeScroll leaves the page only horizontal native panning
+   (html: pan-x); `pan-y` here leaves the canvas none, so a sideways swipe reaches the
+   scene's drag (it turns Saturn, the Earth, the probe) while GSAP scrolls the up/down
+   ones itself (see scene/touchAxisLock). A mouse is unaffected. */
+@media (any-pointer: coarse) {
+  .home-hero__canvas {
+    touch-action: pan-y;
+  }
+}
+
 /* ── Story timeline (P27-73) ─────────────────────────────────────────────────────────
    A thin rail down one edge of the screen that fills with peach, one small four-point
    star per chapter (the site's sparkles). StoryTimelineRail places it (any edge or
