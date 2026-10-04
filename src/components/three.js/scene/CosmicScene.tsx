@@ -27,6 +27,7 @@ import {
 import SolarSystem from "#/components/three.js/solar/SolarSystem";
 import {
   EARTH_ELEMENTS,
+  EARTH_RADIUS,
   orbitPosition,
   SATURN_ORBIT_RADIUS,
   SOLAR,
@@ -480,6 +481,12 @@ const _keyLogD: number[] = []; // …and log distance
 const SATURN_SPAN = spanOf((RING.outer * SATURN.scale) / CAMERA.z, CAMERA.fov, 1.08);
 /** The camera stands back over Saturn's growth (its assembly's own curve, PlanetBody). */
 const SATURN_FIT_GROWN = 0.82;
+/** The Earth at its arrival (EARTH_CAM.offset), with room for its photo pins and their labels. */
+const EARTH_SPAN = spanOf(
+  Math.tan(Math.asin(EARTH_RADIUS / Math.hypot(...EARTH_CAM.offset))),
+  CAMERA.fov,
+  1.2,
+);
 
 function set3(out: Point3, x: number, y: number, z: number): Point3 {
   out[0] = x;
@@ -548,7 +555,12 @@ const CameraRig = ({
     if (ap > 0) {
       const apE = storyEase(ap); // the story's standard curve (P27-77)
       const e = useEarthAnchor.getState();
-      const [ox, oy, oz] = EARTH_CAM.offset;
+      // The arrival pose: farther back on a portrait screen, so the whole Earth fits
+      // (P27-31); the Lab's pull-back then sets off from wherever this lands.
+      const earthFit = portraitFit((camera as PerspectiveCamera).aspect, EARTH_SPAN);
+      const ox = EARTH_CAM.offset[0] * earthFit;
+      const oy = EARTH_CAM.offset[1] * earthFit;
+      const oz = EARTH_CAM.offset[2] * earthFit;
       // The straight path: from the wide view (segment 1) to the arrival pose.
       const ax = px;
       const ay = py;
