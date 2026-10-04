@@ -34,6 +34,9 @@ export default defineConfig({
       },
       {
         // Plain unit tests, no browser: the scene's pure logic (e.g. the quality tiers).
+        resolve: {
+          alias: [{ find: /^#\/(.*)$/, replacement: path.join(dirname, 'src/$1') }],
+        },
         test: {
           name: 'unit',
           environment: 'node',

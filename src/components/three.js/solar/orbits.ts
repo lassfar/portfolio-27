@@ -98,6 +98,17 @@ export function orbitPoint(el: OrbitElements, a: number, E: number, out: Vector3
   return out.set(X, Z, -Y);
 }
 
+/**
+ * A heliocentric ecliptic J2000 position (any unit) in the display axes, turned by the
+ * same FRAME as the planets' orbits, so it lines up with them (P27-72: Parker's real
+ * recorded path). The distance is left as is.
+ */
+export function eclipticToDisplay(x: number, y: number, z: number, out: Vector3): Vector3 {
+  const c = Math.cos(FRAME);
+  const s = Math.sin(FRAME);
+  return out.set(x * c - y * s, z, -(x * s + y * c));
+}
+
 /** A body's position (display, relative to the Sun) `t` seconds into the system's motion. */
 export function orbitPositionAt(el: OrbitElements, t: number, out: Vector3): Vector3 {
   const a = orbitRadius(el.au);
