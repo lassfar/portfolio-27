@@ -198,7 +198,7 @@ const Contact = ({ overlayRef, reduced }: ContactProps) => {
                 onClick={() => setStatus("idle")}
                 className={clsx(
                   labelClass,
-                  "mt-2 cursor-pointer hover:text-peach transition-colors"
+                  "tap-target max-sm:relative mt-2 cursor-pointer hover:text-peach transition-colors"
                 )}
               >
                 Write another
@@ -221,7 +221,7 @@ const Contact = ({ overlayRef, reduced }: ContactProps) => {
                 {...(link.external
                   ? { target: "_blank", rel: "noopener noreferrer" }
                   : {})}
-                className="hover:text-peach transition-colors duration-300"
+                className="tap-target max-sm:relative hover:text-peach transition-colors duration-300"
               >
                 {link.label}
               </a>

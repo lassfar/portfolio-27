@@ -61,6 +61,22 @@
   }
 }
 
+/* A tap area of at least 44×44px on phones (P27-31), invisible: an `::after` centred on
+   the element (which must be positioned). Nothing changes from `sm` up. */
+@utility tap-target {
+  @media (width < theme(--breakpoint-sm)) {
+    &::after {
+      content: "";
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      width: max(100%, 44px);
+      height: max(100%, 44px);
+      transform: translate(-50%, -50%);
+    }
+  }
+}
+
 @keyframes twinkle {
   0%,
   100% {

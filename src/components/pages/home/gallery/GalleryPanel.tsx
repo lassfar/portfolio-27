@@ -46,7 +46,7 @@ const GalleryPanel = () => {
               type="button"
               onClick={close}
               aria-label="Close gallery"
-              className="absolute right-6 top-8 grid h-10 w-10 place-items-center rounded-full text-lg text-white/50 ring-1 ring-white/10 transition hover:bg-white/5 hover:text-peach lg:right-10"
+              className="tap-target absolute right-6 top-8 grid h-10 w-10 place-items-center rounded-full text-lg text-white/50 ring-1 ring-white/10 transition hover:bg-white/5 hover:text-peach lg:right-10"
             >
               ✕
             </button>
