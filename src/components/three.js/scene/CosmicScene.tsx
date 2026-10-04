@@ -49,7 +49,9 @@ import Galaxy from "#/components/three.js/galaxy/Galaxy";
 import GalaxyGui from "#/components/three.js/galaxy/GalaxyGui";
 import PerfProbe from "./PerfProbe";
 import {
+  GALAXY,
   GALAXY_FX,
+  GALAXY_SCALE,
   GALAXY_ZOOM,
 } from "#/components/three.js/galaxy/config";
 import { SoftHighlights, SoftHighlightsEffect } from "./SoftHighlights";
@@ -481,6 +483,9 @@ const _keyLogD: number[] = []; // …and log distance
 const SATURN_SPAN = spanOf((RING.outer * SATURN.scale) / CAMERA.z, CAMERA.fov, 1.08);
 /** The camera stands back over Saturn's growth (its assembly's own curve, PlanetBody). */
 const SATURN_FIT_GROWN = 0.82;
+/** The whole galaxy in its full view (live: the dev panel tunes its size and distance). */
+const galaxySpan = () =>
+  spanOf((GALAXY.discRadius * GALAXY_SCALE) / (GALAXY_ZOOM.dEnd / GALAXY_ZOOM.endCloser), CAMERA.fov, 1.03);
 /** The Earth at its arrival (EARTH_CAM.offset), with room for its photo pins and their labels. */
 const EARTH_SPAN = spanOf(
   Math.tan(Math.asin(EARTH_RADIUS / Math.hypot(...EARTH_CAM.offset))),
@@ -679,6 +684,9 @@ const CameraRig = ({
     // After landing: the gentle drift back before the Contact form (eased).
     const drift = storyEase(clamp01(useGalaxyScroll.getState().drift));
     const driftScale = 1 + (1 / (1 - GALAXY_ZOOM.driftBack) - 1) * drift;
+    // On a portrait screen the full view stands farther back, so the whole spiral fits
+    // the width (P27-31); exactly 1 elsewhere. Built up over leg 2, like its framing.
+    const galaxyFit = portraitFit((camera as PerspectiveCamera).aspect, galaxySpan());
     if (galaxy > 0) {
       const z = galaxy;
       const ps = GALAXY_ZOOM.panSunEnd;
@@ -742,7 +750,7 @@ const CameraRig = ({
         lz = lerp(sz, cz, s);
         // …ending a little closer than the study framing (GALAXY_ZOOM.endCloser),
         // built up over this leg so the solar-system framing is unchanged.
-        const d2 = (dist / Math.pow(GALAXY_ZOOM.endCloser, e)) * driftScale;
+        const d2 = (dist / Math.pow(GALAXY_ZOOM.endCloser, e)) * driftScale * fitRamp(galaxyFit, s);
         let dx = lerp(G_START_DIR[0], G_END_DIR[0], s);
         let dy = lerp(G_START_DIR[1], G_END_DIR[1], s);
         let dz = lerp(G_START_DIR[2], G_END_DIR[2], s);
@@ -795,7 +803,7 @@ const CameraRig = ({
     camera.lookAt(lx, ly, lz);
     // Centre the whole galaxy on screen as it frames up (turns the camera slightly —
     // the pose is unchanged; the sky is kept in place — see galaxy/framing.ts).
-    frameGalaxy(camera as PerspectiveCamera, framing, driftScale);
+    frameGalaxy(camera as PerspectiveCamera, framing, driftScale * galaxyFit);
     // Pin the starfield to the camera in the SAME frame the camera moves (this
     // rig runs last), so the stars sit at a constant distance and never lag — no
     // velocity-coupled size "pumping" as you scroll.
