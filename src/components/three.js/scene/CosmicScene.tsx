@@ -29,6 +29,8 @@ import {
   EARTH_ELEMENTS,
   EARTH_RADIUS,
   orbitPosition,
+  orbitRadius,
+  PLANETS,
   SATURN_ORBIT_RADIUS,
   SOLAR,
   SUNPOS,
@@ -483,6 +485,13 @@ const _keyLogD: number[] = []; // …and log distance
 const SATURN_SPAN = spanOf((RING.outer * SATURN.scale) / CAMERA.z, CAMERA.fov, 1.08);
 /** The camera stands back over Saturn's growth (its assembly's own curve, PlanetBody). */
 const SATURN_FIT_GROWN = 0.82;
+/** The whole solar system at the finale's rest on it: out to its farthest orbit (aphelion). */
+const SYSTEM_SPAN = spanOf(
+  Math.max(...PLANETS.map(({ orbit }) => orbitRadius(orbit.au * (1 + orbit.e)))) /
+    (G_D_START * Math.pow(G_Z_RATIO, GALAXY_ZOOM.panSunEnd)),
+  CAMERA.fov,
+  1.05,
+);
 /** The whole galaxy in its full view (live: the dev panel tunes its size and distance). */
 const galaxySpan = () =>
   spanOf((GALAXY.discRadius * GALAXY_SCALE) / (GALAXY_ZOOM.dEnd / GALAXY_ZOOM.endCloser), CAMERA.fov, 1.03);
@@ -687,6 +696,8 @@ const CameraRig = ({
     // On a portrait screen the full view stands farther back, so the whole spiral fits
     // the width (P27-31); exactly 1 elsewhere. Built up over leg 2, like its framing.
     const galaxyFit = portraitFit((camera as PerspectiveCamera).aspect, galaxySpan());
+    // …and the rest on the whole solar system (leg 1's end), so its farthest orbit fits.
+    const systemFit = portraitFit((camera as PerspectiveCamera).aspect, SYSTEM_SPAN);
     if (galaxy > 0) {
       const z = galaxy;
       const ps = GALAXY_ZOOM.panSunEnd;
@@ -704,7 +715,7 @@ const CameraRig = ({
         const C = PARKER_CAM;
         const [sx, sy, sz] = sun;
         const pk = useParkerAnchor.getState();
-        const dFrame = G_D_START * Math.pow(G_Z_RATIO, ps);
+        const dFrame = G_D_START * Math.pow(G_Z_RATIO, ps) * systemFit;
         const frame = set3(
           _frame,
           sx + G_START_DIR[0] * dFrame,
@@ -750,7 +761,8 @@ const CameraRig = ({
         lz = lerp(sz, cz, s);
         // …ending a little closer than the study framing (GALAXY_ZOOM.endCloser),
         // built up over this leg so the solar-system framing is unchanged.
-        const d2 = (dist / Math.pow(GALAXY_ZOOM.endCloser, e)) * driftScale * fitRamp(galaxyFit, s);
+        // (From the solar system's fit at its start to the galaxy's: exactly 1 on landscape.)
+        const d2 = (dist / Math.pow(GALAXY_ZOOM.endCloser, e)) * driftScale * lerp(systemFit, galaxyFit, s);
         let dx = lerp(G_START_DIR[0], G_END_DIR[0], s);
         let dy = lerp(G_START_DIR[1], G_END_DIR[1], s);
         let dz = lerp(G_START_DIR[2], G_END_DIR[2], s);
