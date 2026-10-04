@@ -143,7 +143,7 @@ const StoryTimeline = () => {
       : index === 0
         ? 0
         : chapter.start + mpAt(TIMELINE.glideInside);
-    glideToJourney(mp, TIMELINE.glideSeconds);
+    glideToJourney(mp, TIMELINE.glideSeconds, undefined, "timeline");
   }, []);
 
   if (!mounted || reduced) return null;

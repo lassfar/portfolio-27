@@ -140,7 +140,7 @@ export const PARKER_FOCUS = {
  * Venus flybys, down to today's orbit — drawn over the whole Lab trip, NASA-Eyes style:
  * a thin line, dots + labels at the launch and the flybys, and a dot at its tip telling
  * how close it has come to the Sun. Its story: it never flies straight at the Sun — it
- * loops, and every loop takes it a little closer (the Lab's caption).
+ * loops, and every loop takes it a little closer (its story subtitle, STORY_SUBTITLES).
  * Mutable: the dev panel (✦ Parker Solar Probe → Journey line) tunes it.
  */
 export const PARKER_JOURNEY = {
@@ -156,7 +156,4 @@ export const PARKER_JOURNEY = {
   // come yet, and once it reaches its record (6.1, since Dec 2024)…
   closer: "closest yet · {km} million km",
   record: "{km} million km — closer than anything we've ever built",
-  // The Lab's caption shows over this stretch (fading in and out over `captionFade`).
-  caption: [labAt(300), labAt(680)] as [number, number],
-  captionFade: labAt(60),
 };

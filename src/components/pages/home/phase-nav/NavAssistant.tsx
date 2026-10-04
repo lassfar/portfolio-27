@@ -228,6 +228,7 @@ const NavAssistant = () => {
       stop.target,
       glideSeconds(stop.target - from),
       PHASE_NAV.ease,
+      "assistant",
     );
     close();
   };

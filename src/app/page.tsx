@@ -3,6 +3,7 @@ import EarthGallery from "#/components/pages/home/gallery/EarthGallery";
 import LabExperiments from "#/components/pages/home/lab/LabExperiments";
 import StoryTimeline from "#/components/pages/home/timeline/StoryTimeline";
 import StoryTitle from "#/components/pages/home/timeline/StoryTitle";
+import StorySubtitles from "#/components/pages/home/subtitles/StorySubtitles";
 import NavAssistant from "#/components/pages/home/phase-nav/NavAssistant";
 import PerfHud from "#/components/three.js/scene/PerfHud";
 
@@ -26,6 +27,9 @@ export default function Home() {
 
       {/* The story title: the current chapter, always visible on the left edge. */}
       <StoryTitle />
+
+      {/* The story's subtitles: a line in Aymane's voice on each part with no words of its own. */}
+      <StorySubtitles />
 
       {/* The navigation assistant: a glowing orb that opens into the next chapter's button. */}
       <NavAssistant />

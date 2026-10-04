@@ -83,7 +83,7 @@ const PerfHudPanel = () => {
     moveTour("starting");
     window.setTimeout(() => {
       resetRecords();
-      moveTour(glideToJourney(1, TOUR_SECONDS, "none") ? "running" : "stopped");
+      moveTour(glideToJourney(1, TOUR_SECONDS, "none", "tour") ? "running" : "stopped");
     }, TOUR_LEAD_MS);
   };
 
