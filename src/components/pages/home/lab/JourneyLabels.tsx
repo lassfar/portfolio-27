@@ -2,6 +2,7 @@
 
 import { useEffect, useRef } from "react";
 import { journeyLabels, journeyScreen } from "#/components/three.js/parker/journeyScreen";
+import { PHONE_QUERY, keepOnScreen } from "#/components/pages/home/labels/screenEdge";
 
 /** Gap (px) kept between labels that would otherwise overlap. */
 const LABEL_GAP = 4;
@@ -64,6 +65,10 @@ const JourneyLabels = () => {
     window.addEventListener("resize", remeasure);
     void document.fonts?.ready.then(remeasure);
     const boxes: { el: HTMLSpanElement; cx: number; left: number; top: number; w: number; h: number }[] = [];
+    // Phones keep each label on screen (P27-31); desktop places them as before.
+    const phone = window.matchMedia(PHONE_QUERY);
+    const leftOf = (x: number, w: number) => (phone.matches ? keepOnScreen(x - w / 2, w, x, window.innerWidth) : x - w / 2);
+    const centreOf = (x: number, left: number, w: number) => (phone.matches ? left + w / 2 : x);
 
     const update = () => {
       // 1. Read: the shown labels' desired boxes (centred above their dots).
@@ -85,7 +90,8 @@ const JourneyLabels = () => {
         }
         if (!s.shown) return;
         const { w, h } = (sizes[i] ??= { w: el.offsetWidth, h: el.offsetHeight });
-        boxes.push({ el, cx: s.x, left: s.x - w / 2, top: s.y - h - OFFSET_Y, w, h });
+        const left = leftOf(s.x, w);
+        boxes.push({ el, cx: centreOf(s.x, left, w), left, top: s.y - h - OFFSET_Y, w, h });
       });
       const tip = journeyScreen.tip;
       const tipEl = tipRef.current;
@@ -103,7 +109,8 @@ const JourneyLabels = () => {
         if (tip.shown) {
           const { w, h } = (tipSize ??= { w: tipEl.offsetWidth, h: tipEl.offsetHeight });
           // Kept in place (it moves every frame): the others make way for it.
-          boxes.push({ el: tipEl, cx: tip.x, left: tip.x - w / 2, top: tip.y - h - OFFSET_Y, w, h });
+          const left = leftOf(tip.x, w);
+          boxes.push({ el: tipEl, cx: centreOf(tip.x, left, w), left, top: tip.y - h - OFFSET_Y, w, h });
         }
       }
 

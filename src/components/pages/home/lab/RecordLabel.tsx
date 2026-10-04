@@ -3,6 +3,7 @@
 import { useEffect, useRef } from "react";
 import { recordLabel, recordScreen } from "#/components/three.js/voyager/recordScreen";
 import { useLabStore } from "#/stores/useLabStore";
+import { PHONE_QUERY, keepOnScreen } from "#/components/pages/home/labels/screenEdge";
 
 /**
  * The Lab's label (the `recordScreen` / `recordLabel` names date from the Voyager's
@@ -22,14 +23,28 @@ const RecordLabel = () => {
 
   useEffect(() => {
     let before = ""; // opacity / pointer-events / text only change with it
+    // Phones keep it on screen (P27-31), so they need its width: measured once per text
+    // (and after a resize). Desktop centres it on its point, as before.
+    const phone = window.matchMedia(PHONE_QUERY);
+    let width: number | undefined;
+    const remeasure = () => (width = undefined);
+    window.addEventListener("resize", remeasure);
     const update = () => {
       const el = ref.current;
       if (!el) return;
       const s = recordScreen;
-      if (s.shown) el.style.transform = `translate(calc(${s.x}px - 50%), calc(${s.y}px - 220%))`;
+      if (s.shown) {
+        if (phone.matches) {
+          const w = (width ??= el.offsetWidth);
+          el.style.transform = `translate(${keepOnScreen(s.x - w / 2, w, s.x, window.innerWidth)}px, calc(${s.y}px - 220%))`;
+        } else {
+          el.style.transform = `translate(calc(${s.x}px - 50%), calc(${s.y}px - 220%))`;
+        }
+      }
       const state = `${s.shown}:${s.text}`;
       if (state === before) return;
       before = state;
+      width = undefined; // its text may change below: measure it again
       // From afar it names the probe (not clickable); once there, the memory card opens the Lab.
       const card = s.text === "card";
       el.style.opacity = s.shown ? "1" : "0";
@@ -41,6 +56,7 @@ const RecordLabel = () => {
     };
     recordLabel.update = update;
     return () => {
+      window.removeEventListener("resize", remeasure);
       if (recordLabel.update === update) recordLabel.update = null;
     };
   }, []);

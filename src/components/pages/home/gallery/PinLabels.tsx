@@ -4,6 +4,7 @@ import { useEffect, useRef } from "react";
 import { PHOTO_LOCATIONS } from "#/components/three.js/earth/data";
 import { pinLabels, pinScreen } from "#/components/three.js/earth/pinScreen";
 import { useGalleryStore } from "#/stores/useGalleryStore";
+import { PHONE_QUERY, keepOnScreen } from "#/components/pages/home/labels/screenEdge";
 
 /** Gap (px) kept between labels that would otherwise overlap. */
 const LABEL_GAP = 6;
@@ -42,6 +43,7 @@ const PinLabels = () => {
     };
     window.addEventListener("resize", remeasure);
     void document.fonts?.ready.then(remeasure);
+    const phone = window.matchMedia(PHONE_QUERY); // phones keep each label on screen (P27-31)
     const setShown = (id: string, el: HTMLButtonElement, shown: boolean) => {
       if (shownBefore[id] === shown) return;
       shownBefore[id] = shown;
@@ -69,10 +71,11 @@ const PinLabels = () => {
           const { w, h } = sizeOf(loc.id, el);
           // Anchor to the requested side of the pin head so clustered labels
           // fan out rather than stack on the same point.
-          const left =
+          const anchored =
             (loc.labelAnchor ?? "top-left") === "top-right"
               ? s.x + OFFSET_X
               : s.x - w - OFFSET_X;
+          const left = phone.matches ? keepOnScreen(anchored, w, s.x, window.innerWidth) : anchored;
           const top = s.y - h - OFFSET_Y;
           boxes.push({ el, cx: left + w / 2, left, top, w, h });
           setShown(loc.id, el, true);
