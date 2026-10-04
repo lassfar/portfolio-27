@@ -300,7 +300,11 @@ const Skills = ({ overlayRef, reduced = false }: Props) => {
             <text
               key={n.id}
               suppressHydrationWarning
-              className="skill-label"
+              className={clsx(
+                "skill-label",
+                n.labelDy > 0 && "skill-label--below",
+                n.bridge && "skill-label--bridge",
+              )}
               x={n.x}
               y={n.y + n.labelDy}
               fill="var(--color-light-baby-blue)"

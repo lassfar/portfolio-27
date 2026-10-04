@@ -114,6 +114,24 @@
   }
 }
 
+/* ── The Craft's constellation on phones (P27-31) ──────────────────────────────────────
+   Its SVG scales with the screen (600 units wide), so its 11.5-unit labels render at
+   ~6–8px on a phone. Below `sm`: a size in SVG units that renders ~10.5–11.5px from
+   320 to 639px wide (CSS can't divide by the screen's width, so a straight line close
+   to 6600 / (vw − 32)), meeting the labels' own size at `sm`. Labels under their dot
+   hang from their point, so the bigger text doesn't grow up into it. */
+@media (width < 40rem) {
+  .skill-label {
+    font-size: max(11.5px, calc(33px - 3.6vw));
+  }
+  .skill-label--bridge {
+    font-size: max(13px, calc((33px - 3.6vw) * 1.1304));
+  }
+  .skill-label--below {
+    dominant-baseline: hanging;
+  }
+}
+
 /* ── Story timeline (P27-73) ─────────────────────────────────────────────────────────
    A thin rail down one edge of the screen that fills with peach, one small four-point
    star per chapter (the site's sparkles). StoryTimelineRail places it (any edge or
