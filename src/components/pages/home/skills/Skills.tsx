@@ -211,7 +211,8 @@ const Skills = ({ overlayRef, reduced = false }: Props) => {
           "home-skills__title skills__title",
           "font-great-vibes text-white text-center",
           "text-5xl sm:text-6xl md:text-7xl lg:text-8xl leading-none",
-          "relative z-10"
+          // Phones: clear of the story title (left) and the timeline (right).
+          "relative z-10 px-8 sm:px-0"
         )}
       >
         What I&rsquo;m <span className="text-peach">drawn to</span>
@@ -219,7 +220,7 @@ const Skills = ({ overlayRef, reduced = false }: Props) => {
       <p
         className={clsx(
           "home-skills__intro skills__intro",
-          "relative z-10 mt-5 mb-2 max-w-xl text-center",
+          "relative z-10 mt-5 mb-2 max-w-xl px-8 text-center sm:px-0",
           "text-white/60 font-light text-base sm:text-lg leading-relaxed"
         )}
       >

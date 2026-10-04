@@ -233,7 +233,8 @@ const Hero = () => {
             ? "relative z-20 min-h-screen"
             : "absolute inset-0 z-20 opacity-0 pointer-events-none",
           "flex flex-col items-center justify-center text-center",
-          "px-6"
+          // Phones: clear of the story title (left) and the timeline (right).
+          "px-12 sm:px-6"
         )}
       >
         <h2
