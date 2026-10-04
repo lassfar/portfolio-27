@@ -68,6 +68,7 @@ import { useGalleryStore } from "#/stores/useGalleryStore";
 import { useJourneyScroll } from "#/stores/useJourneyScroll";
 import { useLabStore } from "#/stores/useLabStore";
 import { storyEase } from "./storyMotion";
+import { fitRamp, portraitFit, spanOf } from "./portraitFit";
 import { monotoneCurve } from "./monotoneCurve";
 import { onPerformanceChange, PERFORMANCE, PERFORMANCE_DEFAULTS } from "./performance";
 import { precompile, setWarmUpTarget, whenIdle } from "./warmUp";
@@ -473,6 +474,13 @@ const _outCam: Point3 = [0, 0, 0];
 const _keyX: number[] = []; // the Lab zoom's keyframes: progress…
 const _keyLogD: number[] = []; // …and log distance
 
+// Fitting the subjects on portrait screens (scene/portraitFit, P27-31): each one's span,
+// as framed today, with a little room around it.
+/** Saturn and its rings, framed from CAMERA.z. */
+const SATURN_SPAN = spanOf((RING.outer * SATURN.scale) / CAMERA.z, CAMERA.fov, 1.08);
+/** The camera stands back over Saturn's growth (its assembly's own curve, PlanetBody). */
+const SATURN_FIT_GROWN = 0.82;
+
 function set3(out: Point3, x: number, y: number, z: number): Point3 {
   out[0] = x;
   out[1] = y;
@@ -514,10 +522,17 @@ const CameraRig = ({
     // ── Segment 1: Saturn → wide sun-centred view ──
     // The story's standard curve (P27-77): it leaves the Saturn slowly, speeds up, and
     // settles on the wide view — where the dive then starts from rest.
+    // On a portrait screen the camera stands back as Saturn forms (along its growth
+    // curve), so it and its rings fit the width (P27-31); exactly 1 elsewhere.
+    const grown = remap01(useAboutScroll.getState().progress, 0, SATURN_FIT_GROWN);
+    const saturnFit = fitRamp(
+      portraitFit((camera as PerspectiveCamera).aspect, SATURN_SPAN),
+      grown * grown * (3 - 2 * grown),
+    );
     const fly = storyEase(clamp01(voyage / VOYAGE.flyoutEnd));
     let px = lerp(a.x, 0, fly);
     let py = lerp(a.y, FLYOUT.rise, fly);
-    let pz = lerp(a.z + CAMERA.z, CAMERA.z + FLYOUT.distance, fly);
+    let pz = lerp(a.z + CAMERA.z * saturnFit, CAMERA.z + FLYOUT.distance, fly);
     let lx = lerp(a.x, SUNPOS[0], fly);
     let ly = lerp(a.y, SUNPOS[1], fly);
     let lz = lerp(a.z, SUNPOS[2], fly);
