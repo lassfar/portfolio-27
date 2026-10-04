@@ -29,21 +29,31 @@ function canvasRect(canvas: HTMLCanvasElement): DOMRect {
 }
 
 /**
- * Project `object`'s world position to viewport CSS px — where a `position: fixed`
- * label should go — measured on the canvas itself (so it holds wherever the canvas
- * sits and whatever the mobile address bar does). `out` receives x, y and the
- * projected depth z. Returns false when the point is behind the camera.
+ * Project a world-space point to viewport CSS px — where a `position: fixed` label
+ * should go — measured on the canvas itself (so it holds wherever the canvas sits and
+ * whatever the mobile address bar does). `out` receives x, y and the projected depth z
+ * (`point` may be `out`). Returns false when the point is behind the camera.
  */
+export function projectPointToViewport(
+  point: Vector3,
+  camera: Camera,
+  canvas: HTMLCanvasElement,
+  out: Vector3
+): boolean {
+  camera.updateMatrixWorld(); // the camera moved this frame; its matrices catch up at render
+  out.copy(point).project(camera);
+  const r = canvasRect(canvas);
+  const z = out.z;
+  out.set(r.left + (out.x * 0.5 + 0.5) * r.width, r.top + (-out.y * 0.5 + 0.5) * r.height, z);
+  return z < 1;
+}
+
+/** The same for an object's world position. */
 export function projectToViewport(
   object: Object3D,
   camera: Camera,
   canvas: HTMLCanvasElement,
   out: Vector3
 ): boolean {
-  camera.updateMatrixWorld(); // the camera moved this frame; its matrices catch up at render
-  object.getWorldPosition(out).project(camera);
-  const r = canvasRect(canvas);
-  const z = out.z;
-  out.set(r.left + (out.x * 0.5 + 0.5) * r.width, r.top + (-out.y * 0.5 + 0.5) * r.height, z);
-  return z < 1;
+  return projectPointToViewport(object.getWorldPosition(out), camera, canvas, out);
 }

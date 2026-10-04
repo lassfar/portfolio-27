@@ -134,3 +134,22 @@ export const PARKER_FOCUS = {
   fadeSun: true,
   fadeSystem: true, // the planets, moons, orbit lines, the asteroid belt and the Earth
 };
+
+/**
+ * Parker's journey line (P27-72): its real path from the Earth — the 2018 launch, the 7
+ * Venus flybys, down to today's orbit — drawn as the Lab pulls back to the inner solar
+ * system, NASA-Eyes style: a thin line, dots + labels at the launch and the flybys.
+ * Mutable: the dev panel (✦ Parker Solar Probe → Journey line) tunes it.
+ */
+export const PARKER_JOURNEY = {
+  // The line draws itself over this stretch of the Lab (in step with the solar system
+  // fading back in), from the launch to today, complete as the camera reaches the overview.
+  draw: [labAt(70), labAt(420)] as [number, number],
+  color: "#ffa14a", // --color-peach
+  opacity: 0.55,
+  dotPx: 5, // the markers' size (CSS px)
+  labels: true,
+  // The 7 Venus flybys, by month (their closest approaches, from JPL Horizons; they
+  // match NASA's dates: 3 Oct 2018 … 6 Nov 2024).
+  flybys: ["Oct 2018", "Dec 2019", "Jul 2020", "Feb 2021", "Oct 2021", "Aug 2023", "Nov 2024"],
+};

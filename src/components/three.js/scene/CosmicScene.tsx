@@ -39,6 +39,7 @@ import EarthMoon from "#/components/three.js/solar/EarthMoon";
 import DottedEarth from "#/components/three.js/earth/DottedEarth";
 import { EARTH_CAM } from "#/components/three.js/earth/config";
 import ParkerProbe from "#/components/three.js/parker/ParkerProbe";
+import ParkerJourney from "#/components/three.js/parker/ParkerJourney";
 import { LAB_CAM } from "#/components/three.js/voyager/config";
 import { parkerOffset } from "#/components/three.js/parker/orbit";
 import { parkerViewDir } from "#/components/three.js/parker/pose";
@@ -203,6 +204,8 @@ const CosmicScene = () => {
         />
         <ParkerMember />
         <ParkerProbe />
+        {/* Its journey since the 2018 launch, drawn as the Lab pulls back (P27-72). */}
+        <ParkerJourney />
 
         {/* The Galaxy finale — ONE exponential pull-out (CameraRig segment 4). The
           camera backs off the Parker Solar Probe; the REAL solar system (Sun + planets, above)

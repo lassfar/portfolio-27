@@ -2,12 +2,13 @@
 
 import { useEffect, useState } from "react";
 import { createPortal } from "react-dom";
+import JourneyLabels from "./JourneyLabels";
 import RecordLabel from "./RecordLabel";
 import ExperimentsPanel from "./ExperimentsPanel";
 
 /**
- * Mounts the DOM overlays for The Lab (the Parker Solar Probe) — the memory-card
- * label + the experiments side panel — that the craft's memory card opens.
+ * Mounts the DOM overlays for The Lab (the Parker Solar Probe) — its journey line's
+ * labels, the memory-card label + the experiments side panel that the card opens.
  *
  * Rendered through a PORTAL to `document.body` for the same reason as the Earth
  * gallery: the app tree lives inside ScrollSmoother's `#smooth-content`, which is
@@ -22,6 +23,7 @@ const LabExperiments = () => {
 
   return createPortal(
     <>
+      <JourneyLabels />
       <RecordLabel />
       <ExperimentsPanel />
     </>,
