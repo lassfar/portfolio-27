@@ -156,6 +156,11 @@
    and glow turning peach. It moves with `translate` / `scale` — never `transform`, which
    the scene labels' positions own — on `::before` (`tap-target` owns `::after`). The
    element must be positioned. */
+/* The keyboard focus ring of the glass controls and the cards. */
+@utility focus-ring {
+  @apply focus-visible:outline-2 focus-visible:outline-offset-3 focus-visible:outline-peach/70;
+}
+
 @utility glass {
   @apply bg-rich-black/55 bg-linear-to-b from-white/9 to-white/2 shadow-glass inset-shadow-glass inset-ring inset-ring-white/8 backdrop-blur-md backdrop-saturate-150;
 }
@@ -167,7 +172,7 @@
   transition-duration: 420ms, 420ms, 300ms, 300ms, 300ms, 300ms;
   transition-timing-function: var(--ease-spring), var(--ease-spring), ease, ease, ease, ease;
   @apply hover:-translate-y-0.5 hover:scale-103 hover:inset-shadow-glass-lit hover:inset-ring-peach/45 hover:shadow-glow;
-  @apply focus-visible:-translate-y-0.5 focus-visible:scale-103 focus-visible:inset-shadow-glass-lit focus-visible:inset-ring-peach/45 focus-visible:shadow-glow focus-visible:outline-2 focus-visible:outline-offset-3 focus-visible:outline-peach/70;
+  @apply focus-ring focus-visible:-translate-y-0.5 focus-visible:scale-103 focus-visible:inset-shadow-glass-lit focus-visible:inset-ring-peach/45 focus-visible:shadow-glow;
   @apply active:translate-y-0 active:scale-96 active:duration-120;
   /* The light: its position comes from the pointer (JS), hence the arbitrary gradient. */
   @apply before:pointer-events-none before:absolute before:inset-0 before:-z-1 before:rounded-[inherit] before:bg-radial-[120px_circle_at_var(--mx,50%)_var(--my,-30%)] before:from-white/26 before:to-transparent before:to-60% before:opacity-0 before:transition-opacity before:duration-300 hover:before:opacity-100 focus-visible:before:opacity-100;
