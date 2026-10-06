@@ -1,6 +1,5 @@
 import Hero from "#/components/pages/home/Hero";
-import EarthGallery from "#/components/pages/home/gallery/EarthGallery";
-import LabExperiments from "#/components/pages/home/lab/LabExperiments";
+import SceneOverlays from "#/components/pages/home/panel/SceneOverlays";
 import StoryTimeline from "#/components/pages/home/timeline/StoryTimeline";
 import StoryTitle from "#/components/pages/home/timeline/StoryTitle";
 import StorySubtitles from "#/components/pages/home/subtitles/StorySubtitles";
@@ -16,11 +15,9 @@ export default function Home() {
           the interactive Earth. */}
       <Hero />
 
-      {/* Fixed DOM overlays (crisp media) opened by the Earth photo-pins. */}
-      <EarthGallery />
-
-      {/* Fixed DOM overlays for The Lab — opened by the Parker Solar Probe's memory card. */}
-      <LabExperiments />
+      {/* The scene's labels and the panel they open: a place's photos (the Earth's pins),
+          the Lab (Parker's memory card) — with the photo viewer. */}
+      <SceneOverlays />
 
       {/* The story timeline: a rail on the left with one star per chapter. */}
       <StoryTimeline />

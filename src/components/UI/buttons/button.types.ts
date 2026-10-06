@@ -1,4 +1,4 @@
-import { ButtonHTMLAttributes, ReactNode } from "react";
+import { ButtonHTMLAttributes, ReactNode, Ref } from "react";
 import type { LucideIcon } from "lucide-react";
 
 export interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
@@ -15,6 +15,7 @@ export interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
 export type TooltipAlign = "end" | "center";
 
 export interface IconButtonProps extends Omit<ButtonHTMLAttributes<HTMLButtonElement>, "children"> {
+  ref?: Ref<HTMLButtonElement>;
   /** The Lucide glyph, imported from `lucide-react`. */
   icon: LucideIcon;
   /** Its accessible name (the button shows only the icon). */

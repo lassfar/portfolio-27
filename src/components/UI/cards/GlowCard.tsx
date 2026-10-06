@@ -3,7 +3,7 @@ import { pointerLight } from "#/components/UI/glass/pointerLight";
 import type { GlowCardProps, GlowCardSize } from "#/components/UI/cards/card.types";
 
 const RADIUS: Record<GlowCardSize, string> = {
-  md: "rounded-2xl",
+  md: "rounded-xl sm:rounded-2xl",
   sm: "rounded-xl",
 };
 
@@ -24,7 +24,7 @@ const EDGE =
  * hover with `group-hover/card:`). With `onClick` it's a button (zooms in, e.g. to a
  * photo); without, a plain card.
  */
-const GlowCard = ({ size = "md", className, children, onClick, type = "button", ...props }: GlowCardProps) => {
+const GlowCard = ({ size = "md", className, style, children, onClick, type = "button", ...props }: GlowCardProps) => {
   const shell = clsx(
     "group/card relative isolate block w-full text-left transition-[translate] duration-550 ease-out-quint hover:-translate-y-1 motion-reduce:transition-none",
     RADIUS[size],
@@ -46,6 +46,7 @@ const GlowCard = ({ size = "md", className, children, onClick, type = "button", 
       type={type}
       onClick={onClick}
       onPointerMove={pointerLight}
+      style={style}
       className={clsx(
         shell,
         "focus-ring cursor-zoom-in focus-visible:-translate-y-1 active:-translate-y-0.5 active:duration-200",
@@ -54,7 +55,7 @@ const GlowCard = ({ size = "md", className, children, onClick, type = "button", 
       {content}
     </button>
   ) : (
-    <div onPointerMove={pointerLight} className={shell}>
+    <div onPointerMove={pointerLight} className={shell} style={style}>
       {content}
     </div>
   );

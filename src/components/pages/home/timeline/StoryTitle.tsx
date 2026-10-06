@@ -3,9 +3,11 @@
 import { useGSAP } from "@gsap/react";
 import gsap from "gsap";
 import { SplitText } from "gsap/all";
+import clsx from "clsx";
 import { useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { useJourneyScroll } from "#/stores/useJourneyScroll";
+import { STEP_BACK_IN_FULL_VIEW } from "#/components/pages/home/panel/layout";
 import { STORY_CHAPTERS } from "./config";
 import { chapterAt } from "./layout";
 
@@ -57,7 +59,7 @@ const StoryTitle = () => {
   if (!mounted || reduced) return null;
 
   return createPortal(
-    <div ref={root} className="story-title" aria-hidden="true">
+    <div ref={root} className={clsx("story-title", STEP_BACK_IN_FULL_VIEW)} aria-hidden="true">
       <span className="story-title__rule" />
       <span ref={label} className="story-title__label" />
       <span className="story-title__dot" />

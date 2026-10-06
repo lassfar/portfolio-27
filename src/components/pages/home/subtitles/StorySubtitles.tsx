@@ -7,6 +7,7 @@ import { useGlide } from "#/stores/useGlide";
 import { useJourneyScroll } from "#/stores/useJourneyScroll";
 import { mpAt } from "#/components/three.js/star/config";
 import AccentText from "#/components/UI/text/AccentText";
+import { STEP_BACK_IN_FULL_VIEW } from "#/components/pages/home/panel/layout";
 import { STORY_SUBTITLES, SUBTITLE_PACE, SUBTITLE_PLACEMENT, nextSubtitle } from "./config";
 import type { SubtitlePlacement } from "./subtitles.types";
 
@@ -98,7 +99,7 @@ const StorySubtitles = () => {
   if (!mounted || reduced) return null;
 
   return createPortal(
-    <div className="story-subtitles">
+    <div className={clsx("story-subtitles", STEP_BACK_IN_FULL_VIEW)}>
       <p className="sr-only" aria-live="polite">
         {active >= 0 ? STORY_SUBTITLES[active].line.replaceAll("*", "") : ""}
       </p>

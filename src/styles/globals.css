@@ -29,12 +29,15 @@
   --text-2xs--line-height: 1rem;
   --text-quote: 1.375rem; /* 22px */
   --text-quote--line-height: 1.55;
+  --text-quote-long: 1.0625rem; /* 17px: a long quote */
+  --text-quote-long--line-height: 1.7;
   --text-display-sm: 3.375rem; /* 54px */
   --text-display-sm--line-height: 1.04;
   --text-display: 5.25rem; /* 84px */
   --text-display--line-height: 1.04;
   --leading-display: 1.04;
   --tracking-eyebrow: 0.3em;
+  --tracking-eyebrow-sm: 0.22em; /* smaller eyebrows (the side panel, phones) */
 
   --container-panel: 70rem; /* the full view's column (1120px) */
   --container-panel-head: 47.5rem; /* its header (760px) */
@@ -284,7 +287,7 @@
    tooltips toward the inside of the screen. */
 .story-timeline {
   position: fixed;
-  z-index: 40; /* under the labels (z-45) and the side panels (z-50) */
+  z-index: 40; /* under the labels (z-45) and the panel (z-50) */
   opacity: 0;
   visibility: hidden;
   transition:
@@ -604,7 +607,7 @@
   position: fixed;
   top: 50%;
   left: 16px;
-  z-index: 30; /* under the timeline (40), the labels (45) and the side panels (50) */
+  z-index: 30; /* under the timeline (40), the labels (45) and the panel (50) */
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -662,7 +665,7 @@
   position: fixed;
   bottom: 44px;
   left: 50%;
-  z-index: 40; /* under the labels (z-45) and the side panels (z-50) */
+  z-index: 40; /* under the labels (z-45) and the panel (z-50) */
   width: 0;
   height: 0;
   opacity: 0;

@@ -1,6 +1,6 @@
 import type { ButtonHTMLAttributes, ReactNode } from "react";
 
-/** The card's corner: `md` in the full view, `sm` in the side panel and on phones. */
+/** The card's corner: `md` in the full view (`sm` on phones), `sm` in the side panel. */
 export type GlowCardSize = "md" | "sm";
 
 export interface GlowCardProps

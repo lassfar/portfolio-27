@@ -83,7 +83,7 @@ const Lightbox = () => {
             </>
           )}
 
-          <MediaFull item={item} />
+          <MediaFull item={item} index={index ?? 0} />
 
           <div className="mt-6 flex flex-col items-center gap-2 px-8 text-center">
             {item.caption && (

@@ -9,6 +9,7 @@ import {
 } from "#/components/pages/home/scroll/glide";
 import { useJourneyScroll } from "#/stores/useJourneyScroll";
 import { useTimelineTuning } from "#/stores/useTimelineTuning";
+import { STEP_BACK_IN_FULL_VIEW } from "#/components/pages/home/panel/layout";
 import { PHASE_STOPS } from "#/components/pages/home/phase-nav/config";
 import { STORY_CHAPTERS, TIMELINE } from "./config";
 import { chapterAt, chapterPositions, fillAt, railLayout } from "./layout";
@@ -148,8 +149,10 @@ const StoryTimeline = () => {
 
   if (!mounted || reduced) return null;
 
+  // (A wrapper steps it back in the full view: the rail's own CSS sets its opacity.)
   return createPortal(
-    <StoryTimelineRail
+    <div className={STEP_BACK_IN_FULL_VIEW}>
+      <StoryTimelineRail
       chapters={STORY_CHAPTERS}
       positions={positions}
       current={current}
@@ -159,7 +162,8 @@ const StoryTimeline = () => {
       phone={phone}
       toast={toast}
       onSelect={glideTo}
-    />,
+      />
+    </div>,
     document.body,
   );
 };
