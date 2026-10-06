@@ -1,5 +1,5 @@
 import clsx from "clsx";
-import React, { RefObject } from "react";
+import { RefObject } from "react";
 
 type HalfSunShapeProps = {
   className?: string;

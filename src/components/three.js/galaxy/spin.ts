@@ -114,7 +114,6 @@ const _dragPrev = new Quaternion();
 const _dragStep = new Quaternion();
 const _dragEuler = new Euler();
 const _identity = new Quaternion();
-const _orbit = new Quaternion();
 const _up = new Vector3(0, 1, 0);
 let _hasPrev = false;
 let _prevE = 0;

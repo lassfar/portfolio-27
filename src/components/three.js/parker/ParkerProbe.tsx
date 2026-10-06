@@ -14,13 +14,12 @@ import {
   SpriteMaterial,
   Vector3,
 } from "three";
-import { clamp01, damp, remap01 } from "#/components/three.js/star/utils";
+import { clamp01, damp } from "#/components/three.js/star/utils";
 import { ROTATION, labAt } from "#/components/three.js/star/config";
 import { useLabScroll } from "#/stores/useLabScroll";
 import { useGalaxyScroll } from "#/stores/useGalaxyScroll";
 import { useParkerAnchor } from "#/stores/useParkerAnchor";
 import { flyingSunPos } from "#/components/three.js/galaxy/spin";
-import { LAB } from "#/components/three.js/voyager/config";
 import { recordLabel, recordScreen } from "#/components/three.js/voyager/recordScreen";
 import { LABEL_PRIORITY, projectToViewport } from "#/components/three.js/scene/labelProjection";
 import { seg, type Vec3 } from "#/components/three.js/scene/strut";

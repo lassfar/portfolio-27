@@ -1,7 +1,6 @@
 "use client";
 
 import { CSSProperties, RefObject, useEffect, useMemo, useState } from "react";
-import gsap from "gsap";
 import clsx from "clsx";
 import Swash from "#/components/UI/swash/Swash";
 import DisplayTitle from "#/components/UI/text/DisplayTitle";

@@ -1,4 +1,3 @@
-import clsx from "clsx";
 import { usePanelStore, type PanelView } from "#/stores/usePanelStore";
 import PanelHeader from "#/components/pages/home/panel/PanelHeader";
 import { findPlace, placeHeader } from "#/components/pages/home/panel/content";
