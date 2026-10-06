@@ -38,6 +38,11 @@ const SmoothScrollProvider = ({ children }: Props) => {
       smooth: 1.2, // seconds it takes to "catch up" to the scroll position
       effects: true, // enable data-speed / data-lag parallax
       normalizeScroll: true, // smooth out mobile address-bar jumps
+      // On focus it scrolls to the focused element if it's off screen — only for the page's
+      // own content: the overlays portalled outside it (the panel, the photo viewer) are
+      // fixed, so a control still sliding in (a panel's Close) mustn't scroll the story.
+      onFocusIn: (_: ScrollSmoother, e: Event) =>
+        e.target instanceof Node && contentRef.current?.contains(e.target) === true,
     });
 
     return () => smoother.kill();
