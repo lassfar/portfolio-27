@@ -10,9 +10,10 @@ import {
 import { ReactNode, RefObject, useEffect, useMemo, useRef } from "react";
 import { Euler, Group, PerspectiveCamera, Vector3 } from "three";
 import Universe from "#/components/three.js/star/Universe";
-import { BLOOM, CAMERA, JOURNEY, mpAt, PARTICLES } from "#/components/three.js/star/config";
+import { BLOOM, CAMERA, JOURNEY, mpAt, PANEL_VEIL, PARTICLES } from "#/components/three.js/star/config";
 import {
   clamp01,
+  damp,
   easeInOutCubic,
   lerp,
   remap01,
@@ -1067,8 +1068,9 @@ const QualityMonitor = () => {
  *
  * For the galaxy finale it ramps in the soft highlight roll-off over
  * `GALAXY_FX.fxIn` (the galaxy's reveal), so every earlier beat is untouched. (The
- * galaxy's bloom is its own — see galaxy/GalaxyBloom.) And it drives the Contact
- * veil (VeilEffect), which skips its blur while there's nothing to veil.
+ * galaxy's bloom is its own — see galaxy/GalaxyBloom.) And it drives the veils
+ * (VeilEffect) — the About's, the panel's full view (P27-80) and the Contact's, the
+ * strongest one showing — which skip their blur while there's nothing to veil.
  */
 const BloomController = ({
   bloom,
@@ -1079,11 +1081,18 @@ const BloomController = ({
   veil: VeilEffect;
   highlightsRef: RefObject<SoftHighlightsEffect | null>;
 }) => {
-  useFrame(({ gl }) => {
+  const panelVeil = useRef(0); // eased toward cosmicVeil.panel
+  useFrame(({ gl }, delta) => {
     // The veils (written by the journey). The dims are screen-value brightnesses; the
     // effect works in linear light.
     veil.quality = PERFORMANCE.blurQuality;
     const about = PERFORMANCE.aboutBlur === "3d" ? cosmicVeil.about : 0;
+    const target = cosmicVeil.panel;
+    panelVeil.current =
+      Math.abs(target - panelVeil.current) < 0.001
+        ? target
+        : damp(panelVeil.current, target, PANEL_VEIL.damping, delta);
+    const panel = panelVeil.current;
     if (about > 0.001) {
       // Behind the About: the look of its original CSS filter — a blur growing to
       // `revealBlur` CSS px, dimmed to `revealDim` — faded in over the first quarter
@@ -1091,6 +1100,11 @@ const BloomController = ({
       veil.veil = Math.min(1, about * 4);
       veil.radius = JOURNEY.revealBlur * gl.getPixelRatio() * about;
       veil.dim = Math.pow(1 - (1 - JOURNEY.revealDim) * about, 2.2);
+    } else if (panel > cosmicVeil.contact) {
+      // Behind the panel's full view: the same kind of veil, lighter (PANEL_VEIL).
+      veil.veil = Math.min(1, panel * 4);
+      veil.radius = PANEL_VEIL.blur * gl.getPixelRatio() * panel;
+      veil.dim = Math.pow(1 - (1 - PANEL_VEIL.dim) * panel, 2.2);
     } else {
       const contact = cosmicVeil.contact;
       veil.veil = contact;

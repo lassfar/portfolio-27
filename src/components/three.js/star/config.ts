@@ -315,6 +315,17 @@ export const JOURNEY = {
   contactDim: 0.68, // brightness multiplier on the cosmos behind the form (screen values)
 } as const;
 
+/**
+ * The scene behind the panel's full view (P27-80): blurred and dimmed like the Maker's
+ * backdrop — in WebGL (scene/VeilEffect), eased in and out as the full view opens and
+ * closes (the side panel leaves the scene as it is).
+ */
+export const PANEL_VEIL = {
+  blur: 22, // CSS px of blur on the cosmos
+  dim: 0.46, // brightness multiplier on the cosmos (screen values)
+  damping: 0.1, // how quickly it eases toward veiled / clear (per frame at 60fps)
+} as const;
+
 /** Camera-less "zoom": centering, growing and the fly-through (Universe). */
 export const ZOOM = {
   centerStart: 0.24,

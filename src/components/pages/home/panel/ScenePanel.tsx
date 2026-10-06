@@ -3,6 +3,7 @@
 import clsx from "clsx";
 import { useEffect, useId, useRef, type Ref } from "react";
 import { selectIsOpen, usePanelStore, type PanelView } from "#/stores/usePanelStore";
+import { cosmicVeil } from "#/stores/cosmicVeil";
 import PlaceContent from "#/components/pages/home/gallery/PlaceContent";
 import LabContent from "#/components/pages/home/lab/LabContent";
 import PanelControls from "./PanelControls";
@@ -50,14 +51,17 @@ const ScenePanel = ({ ref }: { ref?: Ref<HTMLElement> }) => {
   const scroll = useRef<HTMLDivElement>(null);
   const { frame, morphing } = usePanelFrame(scroll);
 
+  // The full view veils the scene (WebGL) and the story's overlays step back (`panel-full:`).
   useEffect(() => {
     const root = document.documentElement;
     if (open) root.dataset.panel = view;
     else delete root.dataset.panel;
+    cosmicVeil.panel = open && view === "full" ? 1 : 0;
   }, [open, view]);
   useEffect(
     () => () => {
       delete document.documentElement.dataset.panel;
+      cosmicVeil.panel = 0;
     },
     [],
   );
