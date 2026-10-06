@@ -1,4 +1,5 @@
 import type { ComponentProps } from "react";
+import type { LucideIcon } from "lucide-react";
 
 export const TEXT_LINK_VARIANTS = ["plain", "caps"] as const;
 /** `plain`: a quiet link in a list (Contact's links); `caps`: a quiet action under a form ("Write another"). */
@@ -7,7 +8,9 @@ export type TextLinkVariant = (typeof TEXT_LINK_VARIANTS)[number];
 /** The link's own props; the rest go to its `<a>` or `<button>`. */
 export interface TextLinkOwnProps {
   variant?: TextLinkVariant;
-  /** Opens in a new tab (another site). */
+  /** A Lucide icon before its text (Contact's Mail, GitHub, LinkedIn). */
+  icon?: LucideIcon;
+  /** Opens in a new tab (another site): a small ↗ after its text says so, and screen readers hear it. */
   external?: boolean;
   /** Places it. */
   className?: string;

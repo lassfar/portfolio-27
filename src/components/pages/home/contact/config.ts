@@ -1,3 +1,5 @@
+import { Mail } from "lucide-react";
+import { GitHub, LinkedIn } from "#/components/UI/icons/brands";
 import { ContactLink } from "#/components/pages/home/contact/contact.types";
 
 /** Where messages go (and the "Email" link). */
@@ -5,9 +7,9 @@ export const CONTACT_EMAIL = "aymanelassfar@outlook.com";
 
 /** The quiet row of links under the form. */
 export const CONTACT_LINKS: ContactLink[] = [
-  { label: "Email", href: `mailto:${CONTACT_EMAIL}` },
-  { label: "GitHub", href: "https://github.com/lassfar", external: true },
-  { label: "LinkedIn", href: "https://www.linkedin.com/in/aymanelassfar/", external: true },
+  { label: "Email", href: `mailto:${CONTACT_EMAIL}`, icon: Mail },
+  { label: "GitHub", href: "https://github.com/lassfar", icon: GitHub, external: true },
+  { label: "LinkedIn", href: "https://www.linkedin.com/in/aymanelassfar/", icon: LinkedIn, external: true },
 ];
 
 /**

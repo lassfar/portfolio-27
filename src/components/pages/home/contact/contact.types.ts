@@ -1,3 +1,4 @@
+import type { LucideIcon } from "lucide-react";
 import { RefObject } from "react";
 
 export type ContactProps = {
@@ -17,6 +18,8 @@ export type ContactMessage = {
 export type ContactLink = {
   label: string;
   href: string;
+  /** Before its label (P27-81). */
+  icon: LucideIcon;
   /** Opens in a new tab (profiles) — not for `mailto:`. */
   external?: boolean;
 };

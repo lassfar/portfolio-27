@@ -2,7 +2,7 @@
 
 import clsx from "clsx";
 import { FormEvent, useRef, useState } from "react";
-import { Send } from "lucide-react";
+import { PenLine, Send } from "lucide-react";
 import Button from "#/components/UI/buttons/Button";
 import Field from "#/components/UI/forms/Field";
 import TextLink from "#/components/UI/links/TextLink";
@@ -173,7 +173,7 @@ const Contact = ({ overlayRef, reduced }: ContactProps) => {
               <p className="text-white/75 font-light text-base sm:text-lg max-w-md">
                 Your message is on its way. I&rsquo;ll write back soon.
               </p>
-              <TextLink variant="caps" onClick={() => setStatus("idle")} className="mt-2">
+              <TextLink variant="caps" icon={PenLine} onClick={() => setStatus("idle")} className="mt-2">
                 Write another
               </TextLink>
             </div>
@@ -189,7 +189,7 @@ const Contact = ({ overlayRef, reduced }: ContactProps) => {
         >
           {CONTACT_LINKS.map((link) => (
             <li key={link.label}>
-              <TextLink href={link.href} external={link.external}>
+              <TextLink href={link.href} icon={link.icon} external={link.external}>
                 {link.label}
               </TextLink>
             </li>
