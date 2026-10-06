@@ -11,7 +11,7 @@ import { ButtonProps } from "#/components/UI/buttons/button.types";
 const Button = ({
   label = "Button",
   size = "medium",
-  state = "default", // not yet implemented (P27-34)
+  state, // not yet implemented (P27-34): kept out of the button's attributes
   variant = "primary",
   type = "button",
   icon,

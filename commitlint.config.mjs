@@ -1,5 +1,5 @@
 /** @type {import('@commitlint/types').UserConfig} */
-export default {
+const config = {
   parserPreset: {
     parserOpts: {
       // Expected formats:
@@ -32,3 +32,5 @@ export default {
     "subject-case": [2, "always", "sentence-case"],
   },
 };
+
+export default config;
