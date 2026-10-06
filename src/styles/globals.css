@@ -16,6 +16,8 @@
   --color-light-peach: #ffe3c7;
   --color-peach: #ffa14a;
   --color-dark-peach: #ef7d14;
+  /* The tooltips' text (UI/Tooltip): a part of the page can tune it (the timeline's dev panel). */
+  --color-tooltip: var(--color-light-peach);
 
   /* ── Liquid glass, scene labels and panels (P27-80) ───────────────────────────── */
   --font-quote: Georgia, "Times New Roman", serif; /* the panels' opening quote mark */
@@ -511,84 +513,6 @@
   transform: translate(-50%, -50%) scale(1);
 }
 
-/* The tooltip and the name-on-change pill: the Lab label's look (RecordLabel). */
-.story-timeline__tip,
-.story-timeline__toast {
-  position: absolute;
-  top: 50%;
-  padding: 6px 12px;
-  border-radius: 9999px;
-  font-family: var(--font-sans);
-  font-size: 11px;
-  font-weight: 300;
-  line-height: 1;
-  letter-spacing: 0.025em;
-  white-space: nowrap;
-  color: var(--tl-tip-color);
-  background: color-mix(in srgb, var(--color-rich-black) 85%, transparent);
-  box-shadow: 0 0 0 1px rgb(255 255 255 / 0.1);
-  backdrop-filter: blur(12px);
-  opacity: 0;
-  transform: var(--tl-tip-from);
-  transition:
-    opacity 0.18s ease,
-    transform 0.18s ease;
-  pointer-events: none;
-}
-.story-timeline__star:is(:hover, :focus-visible) .story-timeline__tip,
-.story-timeline__toast.is-on {
-  opacity: 1;
-  transform: var(--tl-tip-to);
-}
-/* Which side they open on: into the screen, away from the edge (tip-*, from the position). */
-.story-timeline.tip-right {
-  --tl-tip-from: translate(-4px, -50%);
-  --tl-tip-to: translate(0, -50%);
-}
-.story-timeline.tip-left {
-  --tl-tip-from: translate(4px, -50%);
-  --tl-tip-to: translate(0, -50%);
-}
-.story-timeline.tip-below {
-  --tl-tip-from: translate(-50%, -4px);
-  --tl-tip-to: translate(-50%, 0);
-}
-.story-timeline.tip-above {
-  --tl-tip-from: translate(-50%, 4px);
-  --tl-tip-to: translate(-50%, 0);
-}
-.tip-right .story-timeline__tip {
-  top: 50%;
-  left: calc(100% + 6px);
-}
-.tip-left .story-timeline__tip {
-  top: 50%;
-  right: calc(100% + 6px);
-}
-.tip-below .story-timeline__tip {
-  top: calc(100% + 6px);
-  left: 50%;
-}
-.tip-above .story-timeline__tip {
-  bottom: calc(100% + 6px);
-  left: 50%;
-}
-.tip-right .story-timeline__toast {
-  left: 30px;
-}
-.tip-left .story-timeline__toast {
-  right: 30px;
-}
-.tip-below .story-timeline__toast {
-  top: 30px;
-}
-.tip-above .story-timeline__toast {
-  bottom: 30px;
-}
-.story-timeline.is-phone .story-timeline__tip {
-  display: none;
-}
-
 /* ── The story title (P27-76) ─────────────────────────────────────────────────────────
    The current chapter's title on the left edge, always visible: a thin rule, the title
    in wide-tracked capitals reading bottom → top (-90°), a peach dot. */
@@ -682,10 +606,10 @@
   background: none;
   cursor: pointer;
   transform: translate(-50%, -50%);
-  transition: transform 0.35s ease;
 }
-.nav-assistant__orb:is(:hover, :focus-visible) {
-  transform: translate(-50%, -50%) scale(1.3);
+/* It grows on hover / focus by its glow, so its tooltip (in the button) doesn't grow with it. */
+.nav-assistant__orb:is(:hover, :focus-visible) .nav-assistant__glow {
+  scale: 1.3;
 }
 .nav-assistant__orb:focus-visible {
   outline: none;
@@ -694,12 +618,7 @@
   border-color: var(--color-peach);
   box-shadow: 0 0 0 2px color-mix(in srgb, var(--color-peach) 35%, transparent);
 }
-/* Touch: no hover, so no tooltip; a bigger tap target. */
-@media (hover: none) {
-  .nav-assistant__tip {
-    display: none;
-  }
-}
+/* Touch: a bigger tap target. */
 @media (pointer: coarse) {
   .nav-assistant__orb {
     width: 48px;
@@ -727,6 +646,7 @@
     0 0 14px 4px color-mix(in srgb, var(--color-peach) 55%, transparent),
     0 0 32px 10px color-mix(in srgb, var(--color-dark-peach) 22%, transparent);
   animation: nav-assistant-breathe 3.6s ease-in-out infinite;
+  transition: scale 0.35s ease;
 }
 .nav-assistant__glow::after {
   content: "";
@@ -769,35 +689,6 @@
     box-shadow: 0 0 14px var(--na-ring-glow-hi);
     animation-timing-function: cubic-bezier(0.34, 1.3, 0.64, 1); /* back in, settling */
   }
-}
-/* "Next chapter": the site's tooltip pill, above the orb on hover / focus. */
-.nav-assistant__tip {
-  position: absolute;
-  bottom: 26px;
-  left: 0;
-  padding: 6px 12px;
-  border-radius: 9999px;
-  font-family: var(--font-sans);
-  font-size: 11px;
-  font-weight: 300;
-  line-height: 1;
-  letter-spacing: 0.025em;
-  white-space: nowrap;
-  color: var(--color-light-peach);
-  background: color-mix(in srgb, var(--color-rich-black) 85%, transparent);
-  box-shadow: 0 0 0 1px rgb(255 255 255 / 0.1);
-  backdrop-filter: blur(12px);
-  opacity: 0;
-  transform: translate(-50%, 4px);
-  transition:
-    opacity 0.2s ease,
-    transform 0.2s ease;
-  pointer-events: none;
-}
-.nav-assistant:not(.is-open) .nav-assistant__orb:is(:hover, :focus-visible) + .nav-assistant__tip {
-  opacity: 1;
-  transform: translate(-50%, 0);
-  transition-delay: 0.8s; /* shows after a short hover; hides at once */
 }
 /* The pill that grows out of the orb (GSAP sets its size, colour and glow). */
 .nav-assistant__shell {

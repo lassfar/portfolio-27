@@ -1,5 +1,7 @@
 import clsx from "clsx";
 import type { CSSProperties } from "react";
+import Tooltip from "#/components/UI/tooltip/Tooltip";
+import type { TooltipSide } from "#/components/UI/tooltip/tooltip.types";
 import { TIMELINE } from "./config";
 import { railLayout } from "./layout";
 import type { StoryTimelineColor, StoryTimelineRailProps } from "./StoryTimeline.types";
@@ -17,7 +19,7 @@ const railVars = (horizontal: boolean): CSSProperties =>
     "--tl-length": `${TIMELINE.railLength}${horizontal ? "vw" : "vh"}`,
     "--tl-color": tone(TIMELINE.color, TIMELINE.customColor),
     "--tl-rail-color": tone(TIMELINE.railColor, TIMELINE.customRailColor),
-    "--tl-tip-color": tone(TIMELINE.tipColor, TIMELINE.customTipColor),
+    "--color-tooltip": tone(TIMELINE.tipColor, TIMELINE.customTipColor), // its tooltips' text
     "--tl-rail": `${TIMELINE.railWidth}px`,
     "--tl-star": `${TIMELINE.starSize}px`,
     "--tl-current": `${TIMELINE.currentSize}px`,
@@ -26,6 +28,14 @@ const railVars = (horizontal: boolean): CSSProperties =>
     "--tl-upcoming-alpha": TIMELINE.upcomingAlpha,
     "--tl-dim": TIMELINE.dimOpacity,
   }) as CSSProperties;
+
+/** The name pill's spot: 24px into the screen from the rail (it opens 6px past it, like a tooltip). */
+const PILL_SPOT: Record<TooltipSide, string> = {
+  right: "left-6",
+  left: "right-6",
+  below: "top-6",
+  above: "bottom-6",
+};
 
 /**
  * The story timeline's look: a thin rail on any edge or corner of the screen
@@ -58,7 +68,6 @@ const StoryTimelineRail = ({
     className={clsx(
       "story-timeline",
       horizontal ? "is-horizontal" : "is-vertical",
-      `tip-${tip}`,
       `shape-${TIMELINE.shape}`,
       TIMELINE.upcoming === "hollow" && "is-hollow",
       shown && "is-shown",
@@ -80,25 +89,25 @@ const StoryTimelineRail = ({
         <li key={chapter.id} className="story-timeline__item" style={{ [along]: `${positions[i] * 100}%` }}>
           <button
             type="button"
-            className={clsx("story-timeline__star", i < current && "is-passed", i === current && "is-current")}
+            className={clsx("story-timeline__star group/tip", i < current && "is-passed", i === current && "is-current")}
             aria-label={chapter.name}
             aria-current={i === current ? "step" : undefined}
             onClick={() => onSelect?.(i)}
           >
             <span className="story-timeline__glyph" aria-hidden="true" />
-            <span className="story-timeline__tip" aria-hidden="true">
-              {chapter.name}
-            </span>
+            {!phone && <Tooltip side={tip}>{chapter.name}</Tooltip>}
           </button>
         </li>
       ))}
     </ol>
+    {/* The chapter's name as it changes, by its star. */}
     <div
-      className={clsx("story-timeline__toast", toast?.on && "is-on")}
+      className={clsx("absolute size-0", PILL_SPOT[tip])}
       style={{ [along]: `${(positions[toast?.index ?? current] ?? 0) * 100}%` }}
-      aria-live="polite"
     >
-      {toast ? chapters[toast.index]?.name : ""}
+      <Tooltip side={tip} open={toast?.on ?? false} live>
+        {toast ? chapters[toast.index]?.name : ""}
+      </Tooltip>
     </div>
   </nav>
   );

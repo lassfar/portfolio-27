@@ -7,6 +7,7 @@ import { SplitText } from "gsap/all";
 import { useEffect, useRef, useState, type CSSProperties } from "react";
 import { createPortal } from "react-dom";
 import Button from "#/components/UI/buttons/Button";
+import Tooltip from "#/components/UI/tooltip/Tooltip";
 import {
   glideToJourney,
   stopGlideOnInput,
@@ -247,17 +248,18 @@ const NavAssistant = () => {
       <button
         ref={orb}
         type="button"
-        className="nav-assistant__orb"
+        className="nav-assistant__orb group/tip"
         aria-label={stop ? `Next chapter: ${stop.name}` : "Next chapter"}
         aria-expanded={open}
         tabIndex={visible && !open ? 0 : -1}
         onClick={() => openButton()}
       >
         <span className="nav-assistant__glow" />
+        {/* After a short hover, until the button grows out of the orb. */}
+        <Tooltip side="above" delayed open={open ? false : undefined}>
+          Next chapter
+        </Tooltip>
       </button>
-      <span className="nav-assistant__tip" aria-hidden="true">
-        Next chapter
-      </span>
       <div ref={shell} className="nav-assistant__shell" aria-hidden="true" />
       <div ref={reveal} className="nav-assistant__reveal" aria-hidden={!open}>
         <Button

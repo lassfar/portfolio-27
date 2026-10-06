@@ -1,11 +1,12 @@
 import type { CSSProperties } from "react";
+import type { TooltipSide } from "#/components/UI/tooltip/tooltip.types";
 import type { StoryChapter, StoryTimelineTuning } from "./StoryTimeline.types";
 
 /** The rail's direction, placement on screen, and the side its tooltips open on. */
 export type RailLayout = {
   horizontal: boolean;
   /** Tooltips + the name pill open toward the inside of the screen. */
-  tip: "right" | "left" | "below" | "above";
+  tip: TooltipSide;
   place: CSSProperties;
 };
 

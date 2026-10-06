@@ -1,5 +1,6 @@
 import { ButtonHTMLAttributes, ReactNode, Ref } from "react";
 import type { LucideIcon } from "lucide-react";
+import type { TooltipAlign } from "#/components/UI/tooltip/tooltip.types";
 
 export interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
   label: string;
@@ -11,9 +12,6 @@ export interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
   onClick?: () => void;
 }
 
-/** Where an IconButton's tooltip sits under it: flush with its right edge, or centred. */
-export type TooltipAlign = "end" | "center";
-
 export interface IconButtonProps extends Omit<ButtonHTMLAttributes<HTMLButtonElement>, "children"> {
   ref?: Ref<HTMLButtonElement>;
   /** The Lucide glyph, imported from `lucide-react`. */
@@ -22,5 +20,6 @@ export interface IconButtonProps extends Omit<ButtonHTMLAttributes<HTMLButtonEle
   label: string;
   /** A short hint shown under it on hover / keyboard focus (e.g. "Close · Esc"). */
   tooltip?: string;
+  /** Where its tooltip sits under it: flush with its right edge (the default), centred… */
   tooltipAlign?: TooltipAlign;
 }
