@@ -3,9 +3,10 @@ import type { ReactNode } from "react";
 import type { PanelView } from "#/stores/usePanelStore";
 import AccentText from "#/components/UI/text/AccentText";
 import Tag from "#/components/UI/tags/Tag";
-import Swash from "./Swash";
+import Swash from "#/components/UI/swash/Swash";
+import { TITLE_SWASH } from "#/components/pages/home/swashes";
 import { isLongQuote } from "./content";
-import { RISE, riseAt } from "./layout";
+import { RISE } from "./layout";
 import type { PanelHeaderModel } from "./panel.types";
 
 type HeaderSlots = {
@@ -22,7 +23,7 @@ const HEADER: Record<PanelView, HeaderSlots> = {
   full: {
     root: "flex max-w-panel-head flex-col items-center text-center",
     title: "mt-3.5 max-w-[13ch] text-balance text-display-sm sm:mt-5 sm:text-display",
-    swash: "h-5.5 w-45 sm:h-7.5 sm:w-75",
+    swash: "mt-0.5 w-45 sm:w-75",
     quote: "mt-4.5 max-w-[34ch] text-balance text-lg sm:mt-6 sm:text-quote",
     longQuote: "mt-4.5 max-w-[46ch] text-balance text-base leading-relaxed sm:mt-6 sm:text-quote-long",
     tags: "mt-5 justify-center gap-2 sm:mt-7 sm:gap-2.5",
@@ -30,7 +31,7 @@ const HEADER: Record<PanelView, HeaderSlots> = {
   side: {
     root: "flex w-full flex-col items-start text-left",
     title: "mt-3.5 text-pretty text-4xl leading-display sm:text-5xl",
-    swash: "h-5.5 w-45 sm:w-50",
+    swash: "mt-0.5 w-45 sm:w-50",
     quote: "mt-4.5 text-pretty text-base leading-relaxed",
     longQuote: "mt-4.5 text-pretty text-sm leading-relaxed",
     tags: "mt-5 justify-start gap-2",
@@ -49,31 +50,28 @@ export interface PanelHeaderProps {
 /**
  * A panel's header (P27-80), the same for a place and the Lab: the title in Great Vibes
  * with its key word in peach, a swash drawing itself in, the story as a short quote, and
- * glass tags. Its parts rise in one after another. (Its eyebrow is in the panel's top
- * bar: PanelEyebrow.)
+ * glass tags. Its parts (`RISE`) rise in, and its swash draws, in the panel's entrance
+ * timeline (ScenePanel).
  */
 const PanelHeader = ({ view, model, titleId, children }: PanelHeaderProps) => {
   const slots = HEADER[view];
   return (
     <header className={slots.root}>
       <h2
+        {...RISE}
         id={titleId}
         tabIndex={-1} // focus lands here when the place it was in is swapped (usePanelFrame)
         data-focus-key="title"
-        className={clsx(RISE, "pb-[0.06em] font-great-vibes font-normal text-white outline-hidden", slots.title)}
-        style={riseAt(1)}
+        className={clsx("pb-[0.06em] font-great-vibes font-normal text-white outline-hidden", slots.title)}
       >
         <AccentText text={model.title} />
       </h2>
-      <Swash className={clsx(RISE, slots.swash)} style={riseAt(2)} />
+      {/* It rises and draws in the panel's entrance timeline (ScenePanel). */}
+      <Swash {...TITLE_SWASH.panel} draw="cue" className={slots.swash} />
       {model.blurb && (
         <p
-          className={clsx(
-            RISE,
-            "font-light text-white/84",
-            isLongQuote(model.blurb) ? slots.longQuote : slots.quote,
-          )}
-          style={riseAt(3)}
+          {...RISE}
+          className={clsx("font-light text-white/84", isLongQuote(model.blurb) ? slots.longQuote : slots.quote)}
         >
           {/* The opening mark hangs a little low, like a printed quote (its own size: hence em). */}
           <span aria-hidden="true" className="mr-1.5 align-[-0.38em] font-quote text-[2em] leading-0 text-peach">
@@ -82,7 +80,7 @@ const PanelHeader = ({ view, model, titleId, children }: PanelHeaderProps) => {
           {model.blurb}
         </p>
       )}
-      <div className={clsx(RISE, "flex flex-wrap", slots.tags)} style={riseAt(4)}>
+      <div {...RISE} className={clsx("flex flex-wrap", slots.tags)}>
         {model.tags.map((tag) => (
           <Tag key={tag.label} icon={tag.icon}>
             {tag.label}

@@ -12,6 +12,8 @@ import { useGSAP } from "@gsap/react";
 import gsap from "gsap";
 import { ScrollSmoother, ScrollTrigger, SplitText } from "gsap/all";
 import clsx from "clsx";
+import Swash from "#/components/UI/swash/Swash";
+import { TITLE_SWASH } from "#/components/pages/home/swashes";
 import { useSceneIntro } from "#/stores/useSceneIntro";
 
 gsap.registerPlugin(useGSAP, ScrollTrigger, ScrollSmoother, SplitText);
@@ -243,12 +245,18 @@ const Hero = () => {
             "home-about__title",
             "font-great-vibes text-white",
             "text-6xl sm:text-7xl md:text-8xl lg:text-9xl leading-none",
-            "mb-8 sm:mb-10"
+            "mb-1"
           )}
         >
           <span>Small,</span> <span>Patient</span>{" "}
           <span className="text-peach">Details</span>
         </h2>
+        {/* Its swash draws in once the title has written in (useCosmicJourney). */}
+        <Swash
+          {...TITLE_SWASH.maker}
+          draw={reduced ? "mount" : "cue"}
+          className="mb-7 w-56 sm:mb-9 sm:w-72 md:w-110 lg:w-150"
+        />
 
         <div className="max-w-2xl space-y-5 sm:space-y-6">
           <p

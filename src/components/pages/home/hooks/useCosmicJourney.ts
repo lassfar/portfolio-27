@@ -19,8 +19,14 @@ import { clamp01, remap01 } from "#/components/three.js/star/utils";
 import { addTextsScrollWriteIn } from "#/components/hooks/motions/texts/textsScrollWriteInMotion";
 import { addConstellationAssembly } from "#/components/pages/home/skills/Skills";
 import { galaxyProgressAt } from "#/components/three.js/galaxy/pace";
+import { addSwashDraw } from "#/components/UI/swash/drawSwash";
 
 gsap.registerPlugin(useGSAP, ScrollTrigger, SplitText);
+
+/** How far into its reveal (0..1) the Contact block is fully in (then its pieces rise in). */
+const CONTACT_BLOCK_IN = 0.45;
+/** A title's swash starts drawing this long (s) before its last letters have settled. */
+const SWASH_OVERLAP = 0.3;
 
 export type CosmicJourneyRefs = {
   containerRef: RefObject<HTMLDivElement | null>;
@@ -160,7 +166,7 @@ export default function useCosmicJourney(refs: CosmicJourneyRefs): void {
       //    after another. Returns its veil for the cosmos. ─────────────────────────
       const renderContact = (mp: number) => {
         const c = remap01(mp, JOURNEY.contactStart, JOURNEY.contactEnd);
-        const enterLin = remap01(c, 0, 0.45);
+        const enterLin = remap01(c, 0, CONTACT_BLOCK_IN);
         const enter = easeOut(enterLin);
         const block = contactRef.current;
         if (block) {
@@ -182,20 +188,23 @@ export default function useCosmicJourney(refs: CosmicJourneyRefs): void {
       renderCosmos(renderAbout(0), renderContact(0));
       renderCraft(0);
 
-      // Paused, one-shot per-character write-ins for the two big overlay titles
-      // (the Hero motion), toggled by progress rather than scrubbed.
+      // Paused, one-shot per-character write-ins for the three overlay titles
+      // (the Hero motion), toggled by progress rather than scrubbed: a timeline each,
+      // whose last step draws the swash under the title (P27-83: `[data-swash]`, right
+      // after it), as the letters settle — it plays and reverses with the title.
       const makeTitleWriteIn = (el: HTMLElement | null) => {
         if (!el) return null;
         const split = new SplitText(el, { type: "words,chars" });
-        const tween = gsap.from(split.chars, {
+        const timeline = gsap.timeline({ paused: true }).from(split.chars, {
           opacity: 0,
           y: 24,
           stagger: 0.03,
           duration: 0.6,
           ease: "power3.out",
-          paused: true,
         });
-        return { split, tween, shown: false };
+        const swash = el.nextElementSibling?.matches("[data-swash]") ? el.nextElementSibling : null;
+        addSwashDraw(timeline, swash, `-=${SWASH_OVERLAP}`);
+        return { split, timeline, shown: false };
       };
       const aboutTitle = makeTitleWriteIn(aboutTitleRef.current);
       const craftTitle = makeTitleWriteIn(
@@ -212,10 +221,10 @@ export default function useCosmicJourney(refs: CosmicJourneyRefs): void {
         if (!t) return;
         if (past && !t.shown) {
           t.shown = true;
-          t.tween.play();
+          t.timeline.play();
         } else if (!past && t.shown) {
           t.shown = false;
-          t.tween.reverse();
+          t.timeline.reverse();
         }
       };
 
@@ -328,12 +337,10 @@ export default function useCosmicJourney(refs: CosmicJourneyRefs): void {
         setGalaxyDrift(0);
         descSplits.forEach((s) => s.revert());
         contactIntroSplits.forEach((s) => s.revert());
-        aboutTitle?.tween.kill();
-        aboutTitle?.split.revert();
-        craftTitle?.tween.kill();
-        craftTitle?.split.revert();
-        contactTitle?.tween.kill();
-        contactTitle?.split.revert();
+        for (const t of [aboutTitle, craftTitle, contactTitle]) {
+          t?.timeline.kill();
+          t?.split.revert();
+        }
       };
     },
     { scope: containerRef }

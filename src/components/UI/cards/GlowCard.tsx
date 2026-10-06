@@ -17,6 +17,14 @@ const HIGHLIGHT =
 const EDGE =
   "pointer-events-none absolute inset-0 z-3 rounded-[inherit] inset-ring inset-ring-white/6 transition-shadow duration-500 ease-out-quint group-hover/card:inset-shadow-edge group-hover/card:inset-ring-peach/50 group-focus-visible/card:inset-shadow-edge group-focus-visible/card:inset-ring-peach/50";
 
+/** The `data-*` attributes among a card's props (they're strings in the markup). */
+const dataAttributes = (props: object): Record<`data-${string}`, string> =>
+  Object.fromEntries(
+    Object.entries(props)
+      .filter(([name]) => name.startsWith("data-"))
+      .map(([name, value]) => [name, String(value)]),
+  );
+
 /**
  * A card with the liquid-glass hover (Storybook: UI/GlowCard, P27-80): it lifts (no
  * scale), a blurred peach glow behind it and a soft light over it follow the pointer, and
@@ -55,7 +63,8 @@ const GlowCard = ({ size = "md", className, style, children, onClick, type = "bu
       {content}
     </button>
   ) : (
-    <div onPointerMove={pointerLight} className={shell} style={style}>
+    // (Its data attributes too, e.g. `data-rise`: the rest of the props are a button's.)
+    <div {...dataAttributes(props)} onPointerMove={pointerLight} className={shell} style={style}>
       {content}
     </div>
   );

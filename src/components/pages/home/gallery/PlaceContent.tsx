@@ -2,7 +2,7 @@ import clsx from "clsx";
 import { usePanelStore, type PanelView } from "#/stores/usePanelStore";
 import PanelHeader from "#/components/pages/home/panel/PanelHeader";
 import { findPlace, placeHeader } from "#/components/pages/home/panel/content";
-import { MEDIA, RISE, RISE_AFTER_HEADER, riseAt } from "#/components/pages/home/panel/layout";
+import { MEDIA } from "#/components/pages/home/panel/layout";
 import MediaCard from "./MediaCard";
 import PlaceChips from "./PlaceChips";
 import PlaceStepper from "./PlaceStepper";
@@ -32,7 +32,7 @@ const PlaceContent = ({ id, view, titleId }: { id: string; view: PanelView; titl
   return (
     <>
       <PanelHeader view={view} model={placeHeader(loc)} titleId={titleId}>
-        <PlaceChips view={view} currentId={id} onPick={openPlace} className={RISE} style={riseAt(5)} />
+        <PlaceChips view={view} currentId={id} onPick={openPlace} />
       </PanelHeader>
       <div className={MEDIA[view]}>
         <div className={GRID[view]}>
@@ -43,8 +43,7 @@ const PlaceContent = ({ id, view, titleId }: { id: string; view: PanelView; titl
               index={i}
               name={`${loc.place} ${String(i + 1).padStart(2, "0")}`}
               size={view === "full" ? "md" : "sm"}
-              className={clsx(RISE, CARD[view])}
-              style={riseAt(RISE_AFTER_HEADER + i)}
+              className={CARD[view]}
               onOpen={() => openPhoto(i)}
             />
           ))}

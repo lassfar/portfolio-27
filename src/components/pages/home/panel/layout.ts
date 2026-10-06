@@ -1,4 +1,3 @@
-import type { CSSProperties } from "react";
 import type { PanelView } from "#/stores/usePanelStore";
 
 /**
@@ -6,16 +5,14 @@ import type { PanelView } from "#/stores/usePanelStore";
  * the side panel differ (typed maps, picked by the panel's view).
  */
 
-/** A part rising in as the panel opens (its delay from `riseAt`). */
-export const RISE = "motion-safe:animate-rise";
+/**
+ * A part of the panel's entrance: marked parts rise in one after another, in page order,
+ * on one GSAP timeline (ScenePanel, useRiseInMotion). Spread it on the part.
+ */
+export const RISE = { "data-rise": "" } as const;
 
-/** Each part rises 60ms after the one before it (capped, so long lists don't wait). */
-export const riseAt = (order: number): CSSProperties => ({
-  animationDelay: `${Math.min(order, 12) * 60}ms`,
-});
-
-/** The header's parts take the first rises (the eyebrow, title, swash, quote, tags, places). */
-export const RISE_AFTER_HEADER = 6;
+/** A swash starts drawing this long after it starts rising in (it's on its way up by then). */
+export const DRAW_AFTER_RISE = 0.18;
 
 /** The content's swap (another place, or the other view): it fades out first (usePanelFrame). */
 export const SWAP = "transition-[opacity,translate] duration-240 ease-out motion-reduce:transition-none";

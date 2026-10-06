@@ -2,7 +2,7 @@ import type { PanelView } from "#/stores/usePanelStore";
 import { EXPERIMENTS } from "#/components/three.js/voyager/data";
 import PanelHeader from "#/components/pages/home/panel/PanelHeader";
 import { labHeader } from "#/components/pages/home/panel/content";
-import { MEDIA, RISE, RISE_AFTER_HEADER, riseAt } from "#/components/pages/home/panel/layout";
+import { MEDIA } from "#/components/pages/home/panel/layout";
 import ExperimentCard from "./ExperimentCard";
 
 /** One column on a phone and three in the full view; two at the side. */
@@ -17,13 +17,11 @@ const LabContent = ({ view, titleId }: { view: PanelView; titleId: string }) => 
     <PanelHeader view={view} model={labHeader()} titleId={titleId} />
     <div className={MEDIA[view]}>
       <div className={GRID[view]}>
-        {EXPERIMENTS.map((experiment, i) => (
+        {EXPERIMENTS.map((experiment) => (
           <ExperimentCard
             key={experiment.id}
             experiment={experiment}
             view={view}
-            className={RISE}
-            style={riseAt(RISE_AFTER_HEADER + i)}
           />
         ))}
       </div>

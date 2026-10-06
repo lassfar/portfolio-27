@@ -57,8 +57,6 @@
 
   /* (No color-mix() / --alpha() inside these keyframes: the CSS pipeline drops it.) */
   --animate-breathe: breathe 2.8s ease-in-out infinite;
-  --animate-rise: rise 600ms var(--ease-out-quint) backwards;
-  --animate-draw: draw 1200ms var(--ease-out-quint) 300ms backwards;
 
   /* A scene label's ring, breathing out until the first panel opens. */
   @keyframes breathe {
@@ -73,20 +71,6 @@
     100% {
       opacity: 0;
       scale: 1.12;
-    }
-  }
-  /* A panel's parts rising in. It moves `translate`, not `transform`, and holds nothing
-     once done (fill: backwards), so the parts' own hover transitions stay smooth. */
-  @keyframes rise {
-    from {
-      opacity: 0;
-      translate: 0 14px;
-    }
-  }
-  /* A stroke drawing itself in (the path has pathLength=1 and a dash of 1). */
-  @keyframes draw {
-    from {
-      stroke-dashoffset: 1;
     }
   }
 }

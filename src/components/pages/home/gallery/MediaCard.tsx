@@ -6,6 +6,7 @@ import type { GlowCardSize } from "#/components/UI/cards/card.types";
 import Icon from "#/components/UI/icons/Icon";
 import type { MediaItem } from "#/components/three.js/earth/data";
 import { MediaThumb } from "./GalleryMedia";
+import { RISE } from "#/components/pages/home/panel/layout";
 
 export interface MediaCardProps {
   item: MediaItem;
@@ -26,6 +27,7 @@ export interface MediaCardProps {
  */
 const MediaCard = ({ item, index, name, size, className, style, onOpen }: MediaCardProps) => (
   <GlowCard
+    {...RISE}
     size={size}
     data-photo={index}
     aria-label={`Open ${item.caption ?? name}`}

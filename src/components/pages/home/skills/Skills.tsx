@@ -3,6 +3,8 @@
 import { CSSProperties, RefObject, useEffect, useMemo, useState } from "react";
 import gsap from "gsap";
 import clsx from "clsx";
+import Swash from "#/components/UI/swash/Swash";
+import { TITLE_SWASH } from "#/components/pages/home/swashes";
 
 /**
  * Skills — "The Craft" constellation, now an OVERLAY inside the shared cosmic
@@ -217,6 +219,12 @@ const Skills = ({ overlayRef, reduced = false }: Props) => {
       >
         What I&rsquo;m <span className="text-peach">drawn to</span>
       </h2>
+      {/* Its swash draws in once the title has written in (useCosmicJourney). */}
+      <Swash
+        {...TITLE_SWASH.craft}
+        draw={reduced ? "mount" : "cue"}
+        className="relative z-10 mt-1 w-48 sm:w-64 md:w-96 lg:w-120"
+      />
       <p
         className={clsx(
           "home-skills__intro skills__intro",

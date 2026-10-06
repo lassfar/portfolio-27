@@ -3,6 +3,7 @@ import type { CSSProperties } from "react";
 import GlowCard from "#/components/UI/cards/GlowCard";
 import type { Experiment } from "#/components/three.js/voyager/data";
 import type { PanelView } from "#/stores/usePanelStore";
+import { RISE } from "#/components/pages/home/panel/layout";
 
 const PAD: Record<PanelView, string> = { full: "p-6", side: "p-4" };
 const TITLE: Record<PanelView, string> = { full: "text-lg", side: "text-sm" };
@@ -22,7 +23,7 @@ const ExperimentCard = ({
   className?: string;
   style?: CSSProperties;
 }) => (
-  <GlowCard size={view === "full" ? "md" : "sm"} className={className} style={style}>
+  <GlowCard {...RISE} size={view === "full" ? "md" : "sm"} className={className} style={style}>
     <span
       className={clsx(
         "flex aspect-4/3 flex-col justify-end gap-1.5 bg-dark/45 bg-radial-[120%_90%_at_85%_0%] from-peach/12 to-transparent to-60%",

@@ -9,7 +9,9 @@ import LabContent from "#/components/pages/home/lab/LabContent";
 import PanelControls from "./PanelControls";
 import PanelEyebrow from "./PanelEyebrow";
 import { headerOf } from "./content";
-import { SWAP, SWAPPING } from "./layout";
+import { DRAW_AFTER_RISE, SWAP, SWAPPING } from "./layout";
+import useRiseInMotion from "#/components/hooks/motions/blocks/useRiseInMotion";
+import { addSwashDraw } from "#/components/UI/swash/drawSwash";
 import { PANEL_ID } from "./config";
 import { usePanelFrame } from "./usePanelFrame";
 
@@ -57,6 +59,19 @@ const ScenePanel = ({ ref }: { ref?: Ref<HTMLElement> }) => {
   const titleId = useId();
   const scroll = useRef<HTMLDivElement>(null);
   const { frame, morphing } = usePanelFrame(scroll);
+  const content = useRef<HTMLDivElement>(null);
+
+  // Its entrance, on each new content: one GSAP timeline — the parts (`RISE`) rise in one
+  // after another, and the swash draws as it rises.
+  useRiseInMotion({
+    scope: content,
+    selector: "[data-rise], [data-swash]",
+    extend: (timeline, riseAt) => {
+      const swash = content.current?.querySelector("[data-swash]") ?? null;
+      if (swash) addSwashDraw(timeline, swash, riseAt(swash) + DRAW_AFTER_RISE);
+    },
+    dependencies: [frame?.key],
+  });
   const eyebrow = frame ? headerOf(frame.content)?.eyebrow : undefined;
 
   // The full view veils the scene (WebGL) and the story's overlays step back (`panel-full:`).
@@ -93,7 +108,7 @@ const ScenePanel = ({ ref }: { ref?: Ref<HTMLElement> }) => {
       {/* The content scrolls under the buttons, softly faded at the panel's top edge. */}
       <div ref={scroll} className="min-h-0 flex-1 overflow-y-auto overscroll-contain scrollbar-thin mask-t-from-98%">
         {frame && (
-          <div key={frame.key} className={clsx(INNER[frame.view], SWAP, morphing && SWAPPING)}>
+          <div ref={content} key={frame.key} className={clsx(INNER[frame.view], SWAP, morphing && SWAPPING)}>
             {eyebrow && <PanelEyebrow view={frame.view} eyebrow={eyebrow} />}
             {frame.content.kind === "place" ? (
               <PlaceContent id={frame.content.id} view={frame.view} titleId={titleId} />

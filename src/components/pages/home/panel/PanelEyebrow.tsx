@@ -1,6 +1,6 @@
 import clsx from "clsx";
 import type { PanelView } from "#/stores/usePanelStore";
-import { RISE, riseAt } from "./layout";
+import { RISE } from "./layout";
 import type { PanelHeaderModel } from "./panel.types";
 
 type EyebrowSlots = { root: string; lead: string; trail: string };
@@ -38,12 +38,11 @@ const PanelEyebrow = ({ view, eyebrow }: PanelEyebrowProps) => {
   const slots = EYEBROW[view];
   return (
     <p
+      {...RISE}
       className={clsx(
-        RISE,
         "flex min-h-10 w-full items-center uppercase tabular-nums text-light-peach/62",
         slots.root,
       )}
-      style={riseAt(0)}
     >
       <span aria-hidden="true" className={clsx("h-px shrink-0 bg-linear-to-r from-transparent to-peach/80", slots.lead)} />
       <span className="shrink-0 whitespace-nowrap text-peach">{eyebrow.place}</span>

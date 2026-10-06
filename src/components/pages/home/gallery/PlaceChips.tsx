@@ -4,6 +4,7 @@ import Chip from "#/components/UI/tags/Chip";
 import { PHOTO_LOCATIONS } from "#/components/three.js/earth/data";
 import type { PanelView } from "#/stores/usePanelStore";
 import { shortName } from "#/components/pages/home/panel/content";
+import { RISE } from "#/components/pages/home/panel/layout";
 
 const ROW: Record<PanelView, string> = {
   full: "mt-6 justify-center sm:mt-8",
@@ -24,9 +25,9 @@ export interface PlaceChipsProps {
   style?: CSSProperties;
 }
 
-/** A panel's places as pills (P27-80): the one showing is filled peach; another opens there. */
+/** A panel's places as pills (P27-80): the one showing is filled peach; another opens there. A part of the panel's entrance (`RISE`). */
 const PlaceChips = ({ view, currentId, onPick, className, style }: PlaceChipsProps) => (
-  <nav aria-label="Places" className={clsx("flex flex-wrap items-center gap-2", ROW[view], className)} style={style}>
+  <nav {...RISE} aria-label="Places" className={clsx("flex flex-wrap items-center gap-2", ROW[view], className)} style={style}>
     <p className={clsx("text-3xs uppercase tracking-eyebrow text-white/36", LABEL[view])}>Places</p>
     {PHOTO_LOCATIONS.map((loc) => (
       <Chip

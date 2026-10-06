@@ -3,6 +3,8 @@
 import clsx from "clsx";
 import { FormEvent, useRef, useState } from "react";
 import Button from "#/components/UI/buttons/Button";
+import Swash from "#/components/UI/swash/Swash";
+import { TITLE_SWASH } from "#/components/pages/home/swashes";
 import {
   CONTACT_LINKS,
   CONTACT_SEND_DELAY_MS,
@@ -96,11 +98,13 @@ const Contact = ({ overlayRef, reduced }: ContactProps) => {
             "home-contact__title",
             "font-great-vibes text-white",
             "text-6xl sm:text-7xl md:text-8xl leading-none",
-            "mb-5 sm:mb-6"
+            "mb-1"
           )}
         >
           <span>Say</span> <span className="text-peach">Hello</span>
         </h2>
+        {/* Its swash draws in once the title has written in (useCosmicJourney). */}
+        <Swash {...TITLE_SWASH.contact} draw={reduced ? "mount" : "cue"} className="mb-4 w-48 sm:mb-5 sm:w-64" />
 
         <p
           className={clsx(
@@ -190,6 +194,7 @@ const Contact = ({ overlayRef, reduced }: ContactProps) => {
               <p className="font-great-vibes text-peach text-5xl sm:text-6xl leading-none">
                 Thank you
               </p>
+              <Swash {...TITLE_SWASH.contact} delay={0.3} className="-mt-2 w-40 sm:w-48" />
               <p className="text-white/75 font-light text-base sm:text-lg max-w-md">
                 Your message is on its way. I&rsquo;ll write back soon.
               </p>
