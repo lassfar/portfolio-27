@@ -1,4 +1,4 @@
-import { ButtonHTMLAttributes, ReactNode, Ref } from "react";
+import { ButtonHTMLAttributes, Ref } from "react";
 import type { LucideIcon } from "lucide-react";
 import type { TooltipAlign } from "#/components/UI/tooltip/tooltip.types";
 
@@ -8,13 +8,18 @@ export type ButtonVariant = (typeof BUTTON_VARIANTS)[number];
 export const BUTTON_SIZES = ["small", "medium", "large"] as const;
 export type ButtonSize = (typeof BUTTON_SIZES)[number];
 
+export const BUTTON_ICON_SLIDES = ["right", "down"] as const;
+/** Which way its icon slides on hover: along the label, or down (an arrow down). */
+export type ButtonIconSlide = (typeof BUTTON_ICON_SLIDES)[number];
+
 export interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
   label: string;
   size?: ButtonSize;
   state?: "default" | "text" | "filled";
   variant?: ButtonVariant;
-  /** A small trailing icon (e.g. "→"); it slides a little on hover. */
-  icon?: ReactNode;
+  /** A trailing Lucide icon, sized to the button; it slides a little on hover (`iconSlide`). */
+  icon?: LucideIcon;
+  iconSlide?: ButtonIconSlide;
   onClick?: () => void;
 }
 

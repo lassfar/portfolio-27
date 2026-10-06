@@ -2,8 +2,9 @@ import type { Meta, StoryObj } from "@storybook/nextjs-vite";
 import { expect, fn } from "storybook/test";
 
 import Gallery from "#/stories/Gallery";
+import { ICON_ARG_TYPE, SITE_ICONS } from "#/stories/icons";
 import Button from "./Button";
-import { BUTTON_SIZES, BUTTON_VARIANTS } from "./button.types";
+import { BUTTON_ICON_SLIDES, BUTTON_SIZES, BUTTON_VARIANTS } from "./button.types";
 
 const meta = {
   title: "UI/Button",
@@ -29,6 +30,8 @@ const meta = {
       description: "Interaction state — not yet implemented in component (P27-34)",
       table: { defaultValue: { summary: "default" } },
     },
+    icon: ICON_ARG_TYPE,
+    iconSlide: { control: "inline-radio", options: BUTTON_ICON_SLIDES },
   },
   args: { label: "To wander", onClick: fn() },
 } satisfies Meta<typeof Button>;
@@ -59,11 +62,12 @@ export const Sizes: Story = {
   render: (args) => <Gallery values={BUTTON_SIZES}>{(size) => <Button {...args} size={size} />}</Gallery>,
 };
 
-/** A trailing icon that slides a little on hover (the navigation assistant's "→"). */
+/** A trailing icon that slides a little on hover, the way it points (the next-chapter button's arrow down). */
 export const WithIcon: Story = {
-  args: { icon: "→" },
+  args: { label: "The Lab", icon: SITE_ICONS.ArrowDown, iconSlide: "down" },
   play: async ({ canvas }) => {
-    const icon = canvas.getByRole("button").querySelector(".ui-button__icon");
+    const icon = canvas.getByRole("button", { name: "The Lab" }).querySelector(".ui-button__icon");
     await expect(icon).toHaveAttribute("aria-hidden", "true");
+    await expect(icon?.querySelector("svg")).not.toBeNull();
   },
 };

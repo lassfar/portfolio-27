@@ -2,6 +2,7 @@
 
 import clsx from "clsx";
 import { FormEvent, useRef, useState } from "react";
+import { Send } from "lucide-react";
 import Button from "#/components/UI/buttons/Button";
 import Field from "#/components/UI/forms/Field";
 import TextLink from "#/components/UI/links/TextLink";
@@ -148,6 +149,7 @@ const Contact = ({ overlayRef, reduced }: ContactProps) => {
               <Button
                 type="submit"
                 label={status === "sending" ? "Sending…" : "Send it"}
+                icon={Send}
                 variant="outline"
                 size="large"
                 disabled={status === "sending"}

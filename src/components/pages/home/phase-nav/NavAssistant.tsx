@@ -6,6 +6,7 @@ import gsap from "gsap";
 import { SplitText } from "gsap/all";
 import { useEffect, useRef, useState, type CSSProperties } from "react";
 import { createPortal } from "react-dom";
+import { ArrowDown } from "lucide-react";
 import Button from "#/components/UI/buttons/Button";
 import Tooltip from "#/components/UI/tooltip/Tooltip";
 import {
@@ -264,6 +265,8 @@ const NavAssistant = () => {
       <div ref={reveal} className="nav-assistant__reveal" aria-hidden={!open}>
         <Button
           label={stop?.name ?? ""}
+          icon={ArrowDown}
+          iconSlide="down"
           variant={PHASE_NAV.variant}
           size={PHASE_NAV.size}
           tabIndex={open ? 0 : -1}

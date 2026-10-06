@@ -787,11 +787,17 @@
   box-shadow: inset 0 0 0 1px var(--ui-ring);
   transform: none;
 }
+/* Its icon slides a little on hover, the way it points. On `translate`, not `transform`:
+   the navigation assistant writes the icon in with GSAP, which owns its transform. */
 .ui-button__icon {
-  transition: transform 0.3s ease;
+  display: inline-flex;
+  transition: translate 0.3s ease;
 }
-.ui-button:hover .ui-button__icon {
-  transform: translateX(3px);
+.ui-button:hover .ui-button__icon--right {
+  translate: 3px 0;
+}
+.ui-button:hover .ui-button__icon--down {
+  translate: 0 2px;
 }
 
 /* Variants: tones only. */
