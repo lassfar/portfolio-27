@@ -24,6 +24,7 @@ const meta = {
     name: "London",
     meta: "5 shots",
     "aria-label": "Open London: 4 photos and 1 clip",
+    className: "relative", // on the site, its overlay positions it (fixed)
     onClick: fn(),
   },
 } satisfies Meta<typeof SceneLabel>;

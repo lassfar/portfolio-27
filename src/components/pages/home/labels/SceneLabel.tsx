@@ -16,8 +16,10 @@ const TONE: Record<SceneLabelTone, string> = {
  * reads as something to click. The Earth's places and Parker's memory card use it.
  *
  * Its overlay places it (`className`) and shows it — it owns the label's `transform`,
- * `opacity`, pointer events and `tabIndex` (written every frame, never by React). It
- * moves with `translate` / `scale` on hover (the `liquid` utility), never `transform`.
+ * `opacity`, pointer events and `tabIndex` (written every frame, never by React). Its
+ * hover lifts it with `translate` (the `liquid` utility), but doesn't grow it: `scale`
+ * applies after `translate` and before `transform`, so it would scale the label's
+ * position too, and move it away from its point.
  */
 const SceneLabel = ({
   ref,
@@ -40,6 +42,7 @@ const SceneLabel = ({
     onPointerMove={pointerLight}
     className={clsx(
       "glass liquid tap-target group/label inline-flex items-center gap-2 whitespace-nowrap rounded-full py-1.75 pr-3 pl-2.5 text-xs font-light tracking-wide hover:text-white focus-visible:text-white max-sm:pr-2.75 max-sm:pl-2.25 max-sm:text-2xs",
+      "hover:scale-none focus-visible:scale-none active:scale-none",
       TONE[tone],
       className,
     )}

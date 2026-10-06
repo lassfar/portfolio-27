@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import clsx from "clsx";
 import type { MediaItem } from "#/components/three.js/earth/data";
 
@@ -58,18 +58,28 @@ export function MediaThumb({ item, index }: { item: MediaItem; index: number }) 
   );
 }
 
-/** The media in the photo viewer: the photo, or the video with sound and controls. */
-export function MediaFull({ item, index }: { item: MediaItem; index: number }) {
+/**
+ * The media in the photo viewer: the photo, or the video with sound and controls (it
+ * stops when the viewer closes: `playing`). Its placeholder fits the viewer's size
+ * container at 4:3.
+ */
+export function MediaFull({ item, index, playing }: { item: MediaItem; index: number; playing: boolean }) {
   const [failed, setFailed] = useState(false);
+  const video = useRef<HTMLVideoElement>(null);
+  useEffect(() => {
+    if (!playing) video.current?.pause();
+  }, [playing]);
   if (failed) {
     return (
-      <span className="relative block aspect-4/3 h-full max-h-full max-w-full overflow-hidden rounded-2xl shadow-photo">
+      // The largest 4:3 box that fits (container units: the viewer's media area).
+      <span className="relative block aspect-4/3 w-[min(100cqw,133.33cqh)] overflow-hidden rounded-2xl shadow-photo">
         <MediaPlaceholder index={index} />
       </span>
     );
   }
   return item.type === "video" ? (
     <video
+      ref={video}
       src={item.src}
       poster={item.poster}
       controls

@@ -5,7 +5,7 @@ import { ScrollSmoother } from "gsap/all";
  *
  * Several independent features need to FREEZE the smooth scroll at the same time
  * and must not clobber each other's paused() state:
- *   • the overlay panels (Earth gallery / Lab experiments) — pause while open;
+ *   • the scene's panel (a place's photos / the Lab: usePanelStore) — pause while open;
  *   • the journey's hard checkpoints (Earth arrival) — pause on arrival until a
  *     fresh forward gesture.
  *

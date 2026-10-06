@@ -1,5 +1,4 @@
 import clsx from "clsx";
-import type { Ref } from "react";
 import { Maximize2, PanelRight, X } from "lucide-react";
 import IconButton from "#/components/UI/buttons/IconButton";
 import { usePanelStore, type PanelView } from "#/stores/usePanelStore";
@@ -20,7 +19,7 @@ const PLACE: Record<PanelView, string> = {
  * The panel's controls (P27-80): switch between the full view and the side panel, and
  * close ("Close · Esc"). The close button is first focused when the panel opens.
  */
-const PanelControls = ({ view, closeRef }: { view: PanelView; closeRef?: Ref<HTMLButtonElement> }) => {
+const PanelControls = ({ view }: { view: PanelView }) => {
   const mode = MODE[view];
   return (
     <div className={clsx("absolute z-3 flex gap-3", PLACE[view])}>
@@ -31,7 +30,6 @@ const PanelControls = ({ view, closeRef }: { view: PanelView; closeRef?: Ref<HTM
         onClick={() => usePanelStore.getState().toggleView()}
       />
       <IconButton
-        ref={closeRef}
         data-autofocus
         icon={X}
         label="Close"

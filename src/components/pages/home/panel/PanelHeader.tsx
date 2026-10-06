@@ -80,7 +80,9 @@ const PanelHeader = ({ view, model, titleId, children }: PanelHeaderProps) => {
       </p>
       <h2
         id={titleId}
-        className={clsx(RISE, "pb-[0.06em] font-great-vibes font-normal text-white", slots.title)}
+        tabIndex={-1} // focus lands here when the place it was in is swapped (usePanelFrame)
+        data-focus-key="title"
+        className={clsx(RISE, "pb-[0.06em] font-great-vibes font-normal text-white outline-hidden", slots.title)}
         style={riseAt(1)}
       >
         <AccentText text={model.title} />

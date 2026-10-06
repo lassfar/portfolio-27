@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it } from "vitest";
-import { selectIsOpen, selectKey, selectView, usePanelStore } from "./usePanelStore";
+import { selectIsOpen, selectKey, usePanelStore } from "./usePanelStore";
 
 const london = { kind: "place", id: "london" } as const;
 const morocco = { kind: "place", id: "morocco" } as const;
@@ -13,7 +13,7 @@ describe("the scene's panel", () => {
   it("opens in the full view, and marks a panel as opened", () => {
     state().open(london);
     expect(selectIsOpen(state())).toBe(true);
-    expect(selectView(state())).toBe("full");
+    expect(state().view).toBe("full");
     expect(selectKey(state())).toBe("london");
     expect(state().opened).toBe(true);
   });
@@ -51,14 +51,14 @@ describe("the scene's panel", () => {
     expect(state().photo).toBeNull();
   });
 
-  it("keeps the chosen view for the next opens, and reports none while closed", () => {
+  it("keeps the chosen view for the next opens", () => {
     state().open({ kind: "lab" });
     state().toggleView();
-    expect(selectView(state())).toBe("side");
+    expect(state().view).toBe("side");
     state().close();
-    expect(selectView(state())).toBeNull();
+    expect(selectKey(state())).toBeNull();
     state().open(london);
-    expect(selectView(state())).toBe("side");
+    expect(state().view).toBe("side");
     expect(selectKey(state())).toBe("london");
   });
 });

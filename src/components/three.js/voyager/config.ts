@@ -9,7 +9,7 @@ import { labAt } from "#/components/three.js/star/config";
  * back from Earth and flies to it (see CameraRig segment 3 + LAB_CAM). The craft
  * turns WITH the cosmos — it mirrors the shared scene rotation (like the Saturn),
  * so dragging rotates the space and the craft as one. Its glowing Golden Record
- * opens the DOM experiments overlay (mirrors the Earth gallery).
+ * opened the Lab's DOM panel (the Parker Solar Probe's memory card does now: P27-80's panel).
  */
 
 export const VOYAGER = {

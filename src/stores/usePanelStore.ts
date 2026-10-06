@@ -55,7 +55,5 @@ export const usePanelStore = create<PanelState>((set) => ({
 
 /** Whether a panel is open. */
 export const selectIsOpen = (s: PanelState) => s.content !== null;
-/** The open panel's view, or null (closed). */
-export const selectView = (s: PanelState): PanelView | null => (s.content ? s.view : null);
 /** The open panel's key (see panelKey), or null. */
 export const selectKey = (s: PanelState) => (s.content ? panelKey(s.content) : null);

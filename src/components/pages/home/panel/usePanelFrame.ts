@@ -11,7 +11,8 @@ export type PanelFrame = { content: PanelContent; view: PanelView; key: number }
  * (`morphing`, MORPH_MS) and then swaps — so nothing is laid out again while it's seen —
  * and the scroll goes back to the top. While the panel closes, the last content stays
  * for its fade-out. A new `key` on each swap replays the content's entrance, and focus
- * comes back to the control it was on (by its `data-focus-key`: a place pill, Previous / Next).
+ * that was in the content comes back to the control it was on (by its `data-focus-key`:
+ * a place pill, Previous / Next) — or else to the new title.
  */
 export function usePanelFrame(scroll: RefObject<HTMLElement | null>) {
   const content = usePanelStore((s) => s.content);
@@ -27,7 +28,11 @@ export function usePanelFrame(scroll: RefObject<HTMLElement | null>) {
     last.current = content;
     if (!content) return; // closing: the last frame stays for the fade-out
     const swap = () => {
-      focusKey.current = document.activeElement instanceof HTMLElement ? document.activeElement.dataset.focusKey : undefined;
+      const focused = document.activeElement;
+      focusKey.current =
+        focused instanceof HTMLElement && scroll.current?.contains(focused)
+          ? (focused.dataset.focusKey ?? "title")
+          : undefined;
       const next = { content, view, key: (shown.current?.key ?? 0) + 1 };
       shown.current = next;
       setFrame(next);

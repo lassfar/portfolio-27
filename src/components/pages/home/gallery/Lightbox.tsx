@@ -69,8 +69,8 @@ const Lightbox = ({ ref }: { ref?: Ref<HTMLDivElement> }) => {
               </div>
             </>
           )}
-          <div className="grid min-h-0 w-full flex-1 place-items-center">
-            <MediaFull key={`${shownPlace?.id}-${index}`} item={item} index={index} />
+          <div className="container-size grid min-h-0 w-full flex-1 place-items-center">
+            <MediaFull key={`${shownPlace?.id}-${index}`} item={item} index={index} playing={open} />
           </div>
           <p className="flex max-w-full items-center gap-4 text-xs text-gray-slate/60 tabular-nums">
             <span className="shrink-0 tracking-eyebrow-sm text-peach">

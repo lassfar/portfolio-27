@@ -50,7 +50,7 @@ export const FullView: Story = {
     await expect(within(panel).getByRole("button", { name: "London" })).toHaveAttribute("aria-current", "true");
     await expect(within(panel).getAllByRole("button", { name: /^Open Placeholder — London/ })).toHaveLength(5);
     await waitFor(() => expect(within(panel).getByRole("button", { name: "Close" })).toHaveFocus());
-    await expect(document.body.querySelector("button")?.closest("[inert]")).not.toBeNull();
+    await expect(page().getByRole("button", { name: "Outside", hidden: true }).closest("[inert]")).not.toBeNull();
   },
 };
 
@@ -66,7 +66,7 @@ export const Keys: Story = {
     await userEvent.keyboard("{Escape}");
     await expect(usePanelStore.getState().content).toBeNull();
     await expect(document.documentElement.dataset.panel).toBeUndefined();
-    await expect(document.body.querySelector("button")?.closest("[inert]")).toBeNull();
+    await expect(page().getByRole("button", { name: "Outside", hidden: true }).closest("[inert]")).toBeNull();
   },
 };
 
@@ -77,7 +77,7 @@ export const SidePanel: Story = {
     const panel = await page().findByRole("dialog", { name: "Back to London" });
     await expect(panel).toHaveAttribute("aria-modal", "false");
     await expect(document.documentElement.dataset.panel).toBe("side");
-    await expect(document.body.querySelector("button")?.closest("[inert]")).toBeNull();
+    await expect(page().getByRole("button", { name: "Outside", hidden: true }).closest("[inert]")).toBeNull();
     await userEvent.click(page().getByRole("button", { name: "Open the full view" }));
     await waitFor(() => expect(panel).toHaveAttribute("aria-modal", "true"));
   },
