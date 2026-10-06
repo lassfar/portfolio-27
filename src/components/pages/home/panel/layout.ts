@@ -14,8 +14,12 @@ export const riseAt = (order: number): CSSProperties => ({
   animationDelay: `${Math.min(order, 12) * 60}ms`,
 });
 
-/** The header's parts take the first rises (eyebrow, title, swash, quote, tags, places). */
+/** The header's parts take the first rises (the eyebrow, title, swash, quote, tags, places). */
 export const RISE_AFTER_HEADER = 6;
+
+/** The content's swap (another place, or the other view): it fades out first (usePanelFrame). */
+export const SWAP = "transition-[opacity,translate] duration-240 ease-out motion-reduce:transition-none";
+export const SWAPPING = "translate-y-2 opacity-0";
 
 /** The media (photos or experiments) under the header. */
 export const MEDIA: Record<PanelView, string> = {

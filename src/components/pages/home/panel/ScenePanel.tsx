@@ -7,6 +7,9 @@ import { cosmicVeil } from "#/stores/cosmicVeil";
 import PlaceContent from "#/components/pages/home/gallery/PlaceContent";
 import LabContent from "#/components/pages/home/lab/LabContent";
 import PanelControls from "./PanelControls";
+import PanelEyebrow from "./PanelEyebrow";
+import { headerOf } from "./content";
+import { SWAP, SWAPPING } from "./layout";
 import { PANEL_ID } from "./config";
 import { usePanelFrame } from "./usePanelFrame";
 
@@ -30,10 +33,13 @@ const SHELL_CLOSED: Record<PanelView, string> = {
   side: "invisible pointer-events-none translate-y-full opacity-0 transition-[opacity,visibility,translate] sm:translate-x-full sm:translate-y-0",
 };
 
-/** The content: one centred column in the full view (like the Maker), a reading column at the side. */
+/**
+ * The content: one centred column in the full view (like the Maker), a reading column at
+ * the side. It starts on the buttons' line (their top: the eyebrow's row is as tall as them).
+ */
 const INNER: Record<PanelView, string> = {
-  full: "mx-auto flex max-w-panel flex-col items-center px-5 pt-21 pb-10 sm:px-16 sm:pt-26 sm:pb-24",
-  side: "flex flex-col px-5 pt-10 pb-7 sm:px-8 sm:pt-16 sm:pb-10",
+  full: "mx-auto flex max-w-panel flex-col items-center px-5 pt-4.5 pb-10 sm:px-16 sm:pt-8 sm:pb-24",
+  side: "flex flex-col px-5 pt-4.5 pb-7 sm:px-8 sm:pt-6 sm:pb-10",
 };
 
 /**
@@ -51,6 +57,7 @@ const ScenePanel = ({ ref }: { ref?: Ref<HTMLElement> }) => {
   const titleId = useId();
   const scroll = useRef<HTMLDivElement>(null);
   const { frame, morphing } = usePanelFrame(scroll);
+  const eyebrow = frame ? headerOf(frame.content)?.eyebrow : undefined;
 
   // The full view veils the scene (WebGL) and the story's overlays step back (`panel-full:`).
   useEffect(() => {
@@ -83,16 +90,11 @@ const ScenePanel = ({ ref }: { ref?: Ref<HTMLElement> }) => {
         />
       )}
       <PanelControls view={view} />
-      <div ref={scroll} className="min-h-0 flex-1 overflow-y-auto overscroll-contain scrollbar-thin">
+      {/* The content scrolls under the buttons, softly faded at the panel's top edge. */}
+      <div ref={scroll} className="min-h-0 flex-1 overflow-y-auto overscroll-contain scrollbar-thin mask-t-from-98%">
         {frame && (
-          <div
-            key={frame.key}
-            className={clsx(
-              INNER[frame.view],
-              "transition-[opacity,translate] duration-240 ease-out motion-reduce:transition-none",
-              morphing && "translate-y-2 opacity-0",
-            )}
-          >
+          <div key={frame.key} className={clsx(INNER[frame.view], SWAP, morphing && SWAPPING)}>
+            {eyebrow && <PanelEyebrow view={frame.view} eyebrow={eyebrow} />}
             {frame.content.kind === "place" ? (
               <PlaceContent id={frame.content.id} view={frame.view} titleId={titleId} />
             ) : (

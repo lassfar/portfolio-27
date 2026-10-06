@@ -1,6 +1,7 @@
 import { Camera, FlaskConical, MemoryStick, Video } from "lucide-react";
 import { PHOTO_LOCATIONS, type MediaItem, type PhotoLocation } from "#/components/three.js/earth/data";
 import { EXPERIMENTS, LAB_PANEL } from "#/components/three.js/voyager/data";
+import type { PanelContent } from "#/stores/usePanelStore";
 import type { PanelHeaderModel, PanelTag } from "./panel.types";
 
 /** A quote longer than this (characters) is set smaller. */
@@ -51,6 +52,13 @@ export function labHeader(): PanelHeaderModel {
       { icon: MemoryStick, label: LAB_PANEL.cardTag },
     ],
   };
+}
+
+/** The header of what's in the panel (null for a place that doesn't exist). */
+export function headerOf(content: PanelContent): PanelHeaderModel | null {
+  if (content.kind === "lab") return labHeader();
+  const loc = findPlace(content.id);
+  return loc ? placeHeader(loc) : null;
 }
 
 /** A place's label says what it opens: "5 shots". */

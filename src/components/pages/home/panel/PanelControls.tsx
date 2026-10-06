@@ -9,7 +9,7 @@ const MODE: Record<PanelView, { icon: typeof PanelRight; label: string; tooltip:
   side: { icon: Maximize2, label: "Open the full view", tooltip: "Full view" },
 };
 
-/** Top right: further in for the full view on larger screens. */
+/** Top right, over the content (it scrolls under them): further in for the full view on larger screens. */
 const PLACE: Record<PanelView, string> = {
   full: "top-4.5 right-4.5 sm:top-8 sm:right-10",
   side: "top-4.5 right-4.5 sm:top-6 sm:right-6",
@@ -17,7 +17,8 @@ const PLACE: Record<PanelView, string> = {
 
 /**
  * The panel's controls (P27-80): switch between the full view and the side panel, and
- * close ("Close · Esc"). The close button is first focused when the panel opens.
+ * close ("Close · Esc"). They stay put while the content scrolls. The close button is
+ * first focused when the panel opens.
  */
 const PanelControls = ({ view }: { view: PanelView }) => {
   const mode = MODE[view];

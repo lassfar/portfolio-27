@@ -10,10 +10,6 @@ import type { PanelHeaderModel } from "./panel.types";
 
 type HeaderSlots = {
   root: string;
-  eyebrow: string;
-  /** The hairline before the eyebrow (the full view has one each side). */
-  lead: string;
-  trail: string;
   title: string;
   swash: string;
   quote: string;
@@ -25,9 +21,6 @@ type HeaderSlots = {
 const HEADER: Record<PanelView, HeaderSlots> = {
   full: {
     root: "flex max-w-panel-head flex-col items-center text-center",
-    eyebrow: "justify-center gap-2 text-3xs tracking-eyebrow-sm sm:gap-3.5 sm:text-2xs sm:tracking-eyebrow",
-    lead: "w-4 sm:w-12",
-    trail: "w-4 sm:w-12",
     title: "mt-3.5 max-w-[13ch] text-balance text-display-sm sm:mt-5 sm:text-display",
     swash: "h-5.5 w-45 sm:h-7.5 sm:w-75",
     quote: "mt-4.5 max-w-[34ch] text-balance text-lg sm:mt-6 sm:text-quote",
@@ -36,9 +29,6 @@ const HEADER: Record<PanelView, HeaderSlots> = {
   },
   side: {
     root: "flex w-full flex-col items-start text-left",
-    eyebrow: "justify-start gap-2 text-3xs tracking-eyebrow-sm sm:gap-2.5",
-    lead: "hidden",
-    trail: "w-4 sm:w-6",
     title: "mt-3.5 text-pretty text-4xl leading-display sm:text-5xl",
     swash: "h-5.5 w-45 sm:w-50",
     quote: "mt-4.5 text-pretty text-base leading-relaxed",
@@ -57,27 +47,15 @@ export interface PanelHeaderProps {
 }
 
 /**
- * A panel's header (P27-80), the same for a place and the Lab: the eyebrow (a place in
- * peach and a detail, between thin peach lines), the title in Great Vibes with its key
- * word in peach, a swash drawing itself in, the story as a short quote, and glass tags.
- * Its parts rise in one after another.
+ * A panel's header (P27-80), the same for a place and the Lab: the title in Great Vibes
+ * with its key word in peach, a swash drawing itself in, the story as a short quote, and
+ * glass tags. Its parts rise in one after another. (Its eyebrow is in the panel's top
+ * bar: PanelEyebrow.)
  */
 const PanelHeader = ({ view, model, titleId, children }: PanelHeaderProps) => {
   const slots = HEADER[view];
   return (
     <header className={slots.root}>
-      <p
-        className={clsx(RISE, "flex items-center uppercase tabular-nums text-light-peach/62", slots.eyebrow)}
-        style={riseAt(0)}
-      >
-        <span aria-hidden="true" className={clsx("h-px shrink-0 bg-linear-to-r from-transparent to-peach/80", slots.lead)} />
-        <span className="text-peach">{model.eyebrow.place}</span>
-        <span aria-hidden="true" className="text-peach/50">
-          ·
-        </span>
-        <span>{model.eyebrow.detail}</span>
-        <span aria-hidden="true" className={clsx("h-px shrink-0 bg-linear-to-l from-transparent to-peach/80", slots.trail)} />
-      </p>
       <h2
         id={titleId}
         tabIndex={-1} // focus lands here when the place it was in is swapped (usePanelFrame)
