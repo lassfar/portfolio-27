@@ -859,17 +859,25 @@ const InteractionLock = () => {
   return null;
 };
 
-/** Whether RenderPause is skipping the draw (shared with the QualityMonitor). */
-const renderPause = { paused: false, drawOnce: false };
+/**
+ * Whether RenderPause is skipping the draw (shared with the QualityMonitor): while the 3D
+ * is `covered` (the Craft, the Lightbox) or veiled behind the panel's settled `fullView`
+ * (set by BloomController, which eases that veil).
+ */
+const renderPause = { paused: false, drawOnce: false, covered: false, fullView: false };
+const syncRenderPause = () => {
+  renderPause.paused = PERFORMANCE.pauseCovered && (renderPause.covered || renderPause.fullView);
+};
 
 /** Scroll (in master progress) the pause stays clear of the Craft's edges: ~10% of a screen. */
 const COVER_MARGIN = mpAt(10);
-/** The Lightbox's fade-in (its `duration-300`): pause only once it fully covers. */
-const LIGHTBOX_FADE_MS = 300;
+/** The Lightbox's fade-in (its `duration-350`): pause only once it fully covers. */
+const LIGHTBOX_FADE_MS = 350;
 
 /**
  * Skips drawing while the 3D is fully covered (P27-78, `PERFORMANCE.pauseCovered`): under
- * the opaque Craft overlay, and under the Lightbox (95% opaque) once it has faded in.
+ * the opaque Craft overlay, under the Lightbox once it has faded in, and behind the
+ * panel's full view once its veil has settled (P27-80: blurred and still, a frame is enough).
  * Only the GPU work stops — the composer's render is skipped, so the canvas keeps its
  * last frame, while every useFrame (orbits, anchors, labels) and the clock run on. (Not
  * R3F's frameloop: switching it resets the clock, so the planets would jump.) It resumes
@@ -893,19 +901,23 @@ const RenderPause = ({
       original.call(composer, deltaTime);
     };
 
+    let photoOpen = false;
     let lightboxCovers = false;
     let lightboxTimer = 0;
     const update = () => {
       const mp = useJourneyScroll.getState().progress;
       const craftCovers =
         mp > JOURNEY.craftCoverEnd + COVER_MARGIN && mp < JOURNEY.craftFadeStart - COVER_MARGIN;
-      renderPause.paused = PERFORMANCE.pauseCovered && (craftCovers || lightboxCovers);
+      renderPause.covered = craftCovers || lightboxCovers;
+      syncRenderPause();
     };
     const onPanel = () => {
       const open = usePanelStore.getState().photo !== null;
+      if (open === photoOpen) return;
+      photoOpen = open;
       window.clearTimeout(lightboxTimer);
       if (!open) lightboxCovers = false;
-      else if (!lightboxCovers) {
+      else {
         lightboxTimer = window.setTimeout(() => {
           lightboxCovers = true;
           update();
@@ -1093,6 +1105,12 @@ const BloomController = ({
         ? target
         : damp(panelVeil.current, target, PANEL_VEIL.damping, delta);
     const panel = panelVeil.current;
+    // Settled behind the full view: RenderPause can stop drawing (it resumes the frame it lifts).
+    const settled = target === 1 && panel === 1;
+    if (settled !== renderPause.fullView) {
+      renderPause.fullView = settled;
+      syncRenderPause();
+    }
     if (about > 0.001) {
       // Behind the About: the look of its original CSS filter — a blur growing to
       // `revealBlur` CSS px, dimmed to `revealDim` — faded in over the first quarter
