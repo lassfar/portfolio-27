@@ -1,3 +1,4 @@
+import type { ButtonSize, ButtonVariant } from "#/components/UI/buttons/button.types";
 import { solarRestRange } from "#/components/three.js/galaxy/pace";
 import { VOYAGE } from "#/components/three.js/solar/config";
 import { JOURNEY, mpAt } from "#/components/three.js/star/config";
@@ -90,6 +91,9 @@ export const PHASE_STOPS: readonly PhaseStop[] = [
   },
 ];
 
+/** The button's tones the orb can grow into (its landing colours, useReveal). */
+export type AssistantVariant = Extract<ButtonVariant, "outline" | "primary">;
+
 /**
  * The navigation assistant (a glowing orb at the bottom of the screen that opens into
  * the next chapter's button) and its glide. Mutable: the dev panel (`?gui` → "Navigation
@@ -97,19 +101,22 @@ export const PHASE_STOPS: readonly PhaseStop[] = [
  * 100% of scroll, kept within [minSeconds, maxSeconds].
  */
 export const PHASE_NAV = {
-  variant: "outline" as const, // the revealed UI/Button (Storybook)
-  size: "large" as const,
+  variant: "outline" as AssistantVariant, // the revealed UI/Button (Storybook)
+  size: "large" as ButtonSize,
   orbSize: 16, // px
   revealSeconds: 0.8, // the orb → button morph (the label writes in after it); reversed the same, calmly
   autoCloseSeconds: 6, // an unused button (opened by a tap / Enter) folds back after this long
   hoverOpenDelay: 0.12, // desktop: the mouse opens it after resting this long (s)…
   hoverCloseDelay: 2, // …and leaving folds it back after this grace (s)
+  hideSeconds: 0.5, // out of the way while the story glides (P27-85): it shrinks…
+  hideScale: 0.2, // …to this size…
+  hideDrop: 72, // …and drops this far (px), below the screen's edge; it plays back after the glide
   secondsPerScreen: 1,
   minSeconds: 1.5,
   maxSeconds: 8,
   // The scroll → motion curves already ease each beat (e.g. the finale's slow → fast →
   // slow), so an even-paced scroll ("none") plays them as they are.
-  ease: "none",
+  ease: "none" as string,
 };
 
 /**

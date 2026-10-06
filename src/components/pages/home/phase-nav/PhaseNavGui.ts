@@ -4,8 +4,8 @@ import { PHASE_NAV, PHASE_STOPS } from "./config";
 
 /**
  * The navigation assistant's section of the dev tuning panel (hosted by GalaxyGui): jump
- * to each resting point, the orb → button animation, and the glide's timing (applied on
- * the next press).
+ * to each resting point, the orb → button animation, how it gets out of the way during a
+ * glide, and the glide's timing (applied on the next press).
  */
 export function buildPhaseNavPanel(gui: GUI) {
   const fJump = gui.addFolder("Jump to a rest (its button shows)");
@@ -29,6 +29,11 @@ export function buildPhaseNavPanel(gui: GUI) {
   fAssist
     .add(PHASE_NAV, "autoCloseSeconds", 2, 20, 0.5)
     .name("fold back if unused (s)");
+
+  const fHide = gui.addFolder("Hidden while gliding");
+  fHide.add(PHASE_NAV, "hideSeconds", 0.2, 1.5, 0.05).name("shrink + drop / rise (s)");
+  fHide.add(PHASE_NAV, "hideScale", 0.05, 1, 0.05).name("shrinks to (scale)");
+  fHide.add(PHASE_NAV, "hideDrop", 0, 200, 4).name("drops (px)");
 
   const fGlide = gui.addFolder("Glide");
   fGlide

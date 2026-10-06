@@ -594,6 +594,18 @@
   visibility: visible;
   transition: opacity 0.6s ease;
 }
+/* What moves while the story glides (P27-85, useGlideHide): the orb and the button around it,
+   shrinking toward the orb's centre (this box's corner) and dropping out of sight. GSAP sets
+   its scale, offset and fade; no will-change on its opacity (it would cut the button's
+   frosted glass). */
+.nav-assistant__lift {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 0;
+  height: 0;
+  transform-origin: 0 0;
+}
 .nav-assistant__orb {
   position: absolute;
   top: 0;
@@ -670,12 +682,14 @@
       0 0 52px 18px var(--na-halo-hi);
   }
 }
-/* Paused while it can't be seen — hidden, or opened into the button (P27-78): its
-   glow repaints every frame. */
+/* Paused while it can't be seen — hidden, opened into the button (P27-78), or away for a
+   glide (P27-85): its glow repaints every frame. */
 .nav-assistant:not(.is-visible) .nav-assistant__glow,
 .nav-assistant:not(.is-visible) .nav-assistant__glow::after,
 .nav-assistant.is-open .nav-assistant__glow,
-.nav-assistant.is-open .nav-assistant__glow::after {
+.nav-assistant.is-open .nav-assistant__glow::after,
+.nav-assistant.is-gliding .nav-assistant__glow,
+.nav-assistant.is-gliding .nav-assistant__glow::after {
   animation-play-state: paused;
 }
 /* The ring bounces out into the halo and settles back as the orb breathes. */
