@@ -38,7 +38,7 @@ const PlaceStepper = ({ view, currentId, onPick }: { view: PanelView; currentId:
           className={clsx(STEP, dir === "prev" ? "pr-4 pl-3" : "flex-row-reverse pr-3 pl-4")}
         >
           <Icon icon={dir === "prev" ? ChevronLeft : ChevronRight} size={15} className="text-peach" />
-          <span className={clsx("text-3xs uppercase tracking-eyebrow-sm text-white/36", HINT[view])}>{hint}</span>
+          <span className={clsx("text-3xs uppercase tracking-eyebrow-sm text-white/50", HINT[view])}>{hint}</span>
           {shortName(place)}
         </button>
       ))}
