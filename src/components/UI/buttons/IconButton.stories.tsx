@@ -8,9 +8,6 @@ const meta = {
   title: "UI/IconButton",
   component: IconButton,
   tags: ["autodocs"],
-  parameters: {
-    backgrounds: { default: "dark", values: [{ name: "dark", value: "#19191C" }] }, // --color-rich-black
-  },
   decorators: [
     (Story) => (
       <div className="flex min-h-40 items-start justify-center p-10">

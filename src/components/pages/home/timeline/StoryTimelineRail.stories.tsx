@@ -21,7 +21,6 @@ const meta = {
   component: StoryTimelineRail,
   parameters: {
     layout: "fullscreen",
-    backgrounds: { default: "dark", values: [{ name: "dark", value: "#19191C" }] }, // --color-rich-black
   },
   args: {
     chapters: STORY_CHAPTERS,
@@ -38,7 +37,7 @@ const meta = {
   },
   decorators: [
     (Story) => (
-      <div style={{ minHeight: "100vh", background: "#19191C" }}>
+      <div className="min-h-screen">
         <Story />
       </div>
     ),

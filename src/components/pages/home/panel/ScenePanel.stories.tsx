@@ -16,11 +16,10 @@ const page = () => within(document.body);
 
 /** The panel, as the site mounts it (with its labels and the photo viewer, portalled to the body). */
 const meta = {
-  title: "Home/ScenePanel",
+  title: "Home/Panel/ScenePanel",
   component: SceneOverlays,
   parameters: {
     layout: "fullscreen",
-    backgrounds: { default: "dark", values: [{ name: "dark", value: "#19191C" }] }, // --color-rich-black
   },
   decorators: [
     (Story) => (

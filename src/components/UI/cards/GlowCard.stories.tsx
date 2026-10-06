@@ -13,9 +13,6 @@ const meta = {
   title: "UI/GlowCard",
   component: GlowCard,
   tags: ["autodocs"],
-  parameters: {
-    backgrounds: { default: "dark", values: [{ name: "dark", value: "#19191C" }] }, // --color-rich-black
-  },
   decorators: [
     (Story) => (
       <div className="w-72 p-12">

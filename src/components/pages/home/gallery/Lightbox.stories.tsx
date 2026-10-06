@@ -5,11 +5,10 @@ import { usePanelStore } from "#/stores/usePanelStore";
 import Lightbox from "./Lightbox";
 
 const meta = {
-  title: "Home/Lightbox",
+  title: "Home/Gallery/Lightbox",
   component: Lightbox,
   parameters: {
     layout: "fullscreen",
-    backgrounds: { default: "dark", values: [{ name: "dark", value: "#19191C" }] }, // --color-rich-black
   },
   beforeEach: () => {
     usePanelStore.setState({ content: { kind: "place", id: "london" }, view: "full", photo: 1, opened: true });

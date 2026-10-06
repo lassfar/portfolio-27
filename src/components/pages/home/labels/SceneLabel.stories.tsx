@@ -5,12 +5,9 @@ import { expect, fn, userEvent, within } from "storybook/test";
 import SceneLabel from "./SceneLabel";
 
 const meta = {
-  title: "Home/SceneLabel",
+  title: "Home/Labels/SceneLabel",
   component: SceneLabel,
   tags: ["autodocs"],
-  parameters: {
-    backgrounds: { default: "dark", values: [{ name: "dark", value: "#19191C" }] }, // --color-rich-black
-  },
   decorators: [
     (Story) => (
       <div className="relative p-12">

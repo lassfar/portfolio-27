@@ -6,16 +6,6 @@ const meta = {
   title: "UI/Button",
   component: Button,
   tags: ["autodocs"],
-  parameters: {
-    // Render on the portfolio background so secondary/light variants look realistic
-    backgrounds: {
-      default: "dark",
-      values: [
-        { name: "dark", value: "#19191C" }, // --color-rich-black
-        { name: "light", value: "#ffffff" },
-      ],
-    },
-  },
   argTypes: {
     variant: {
       control: { type: "select" },

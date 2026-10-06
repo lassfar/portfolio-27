@@ -7,9 +7,6 @@ const meta = {
   title: "UI/Chip",
   component: Chip,
   tags: ["autodocs"],
-  parameters: {
-    backgrounds: { default: "dark", values: [{ name: "dark", value: "#19191C" }] }, // --color-rich-black
-  },
   decorators: [
     (Story) => (
       <div className="p-10">

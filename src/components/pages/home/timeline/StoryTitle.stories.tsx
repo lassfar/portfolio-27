@@ -18,14 +18,10 @@ const meta = {
   component: StoryTitle,
   parameters: {
     layout: "fullscreen",
-    backgrounds: {
-      default: "dark",
-      values: [{ name: "dark", value: "#19191C" }],
-    }, // --color-rich-black
   },
   decorators: [
     (Story) => (
-      <div style={{ minHeight: "100vh", background: "#19191C" }}>
+      <div className="min-h-screen">
         <Story />
       </div>
     ),

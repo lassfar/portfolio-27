@@ -10,7 +10,7 @@ const TONE: Record<SceneLabelTone, string> = {
 };
 
 /**
- * A label in the scene that opens a panel (Storybook: Home/SceneLabel, P27-80): it says
+ * A label in the scene that opens a panel (Storybook: Home/Labels/SceneLabel, P27-80): it says
  * what it opens — an icon, the name, "· 5 shots", an arrow that nudges out on hover —
  * in liquid glass, and breathes a peach ring until the first panel is opened, so it
  * reads as something to click. The Earth's places and Parker's memory card use it.

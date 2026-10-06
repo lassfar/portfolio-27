@@ -8,9 +8,6 @@ const meta = {
   title: "UI/Swash",
   component: Swash,
   tags: ["autodocs"],
-  parameters: {
-    backgrounds: { default: "dark", values: [{ name: "dark", value: "#19191C" }] }, // --color-rich-black
-  },
   decorators: [
     (Story) => (
       <div className="p-10">

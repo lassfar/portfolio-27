@@ -9,9 +9,8 @@ import LabContent from "#/components/pages/home/lab/LabContent";
 import PanelControls from "./PanelControls";
 import PanelEyebrow from "./PanelEyebrow";
 import { headerOf } from "./content";
-import { DRAW_AFTER_RISE, SWAP, SWAPPING } from "./layout";
-import useRiseInMotion from "#/components/hooks/motions/blocks/useRiseInMotion";
-import { addSwashDraw } from "#/components/UI/swash/drawSwash";
+import { SWAP, SWAPPING } from "./layout";
+import { usePanelEntrance } from "./usePanelEntrance";
 import { PANEL_ID } from "./config";
 import { usePanelFrame } from "./usePanelFrame";
 
@@ -61,17 +60,7 @@ const ScenePanel = ({ ref }: { ref?: Ref<HTMLElement> }) => {
   const { frame, morphing } = usePanelFrame(scroll);
   const content = useRef<HTMLDivElement>(null);
 
-  // Its entrance, on each new content: one GSAP timeline — the parts (`RISE`) rise in one
-  // after another, and the swash draws as it rises.
-  useRiseInMotion({
-    scope: content,
-    selector: "[data-rise], [data-swash]",
-    extend: (timeline, riseAt) => {
-      const swash = content.current?.querySelector("[data-swash]") ?? null;
-      if (swash) addSwashDraw(timeline, swash, riseAt(swash) + DRAW_AFTER_RISE);
-    },
-    dependencies: [frame?.key],
-  });
+  usePanelEntrance(content, frame?.key);
   const eyebrow = frame ? headerOf(frame.content)?.eyebrow : undefined;
 
   // The full view veils the scene (WebGL) and the story's overlays step back (`panel-full:`).
