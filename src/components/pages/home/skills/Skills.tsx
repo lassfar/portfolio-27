@@ -115,6 +115,9 @@ export function addConstellationAssembly(
       ".skill-line",
       {
         strokeDashoffset: 1,
+        // GSAP rounds px values by default: the offset (1 → 0, pathLength 1) would jump
+        // from hidden to drawn halfway through instead of drawing along the scroll.
+        autoRound: false,
         ease: "none",
         stagger: D(0.05),
         duration: D(0.53),
