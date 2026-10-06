@@ -1,9 +1,9 @@
 /**
  * Photo/video locations plotted as pins on the Earth globe (M3).
  *
- * Each PLACE is one pin at true lat/lng; clicking it opens a GALLERY of that
- * place's media (photos + short video clips) in the luxurious side panel, with a
- * per-place story and per-photo captions. A pin's 3D position comes from
+ * Each PLACE is one pin at true lat/lng; clicking it (or its label) opens a GALLERY of
+ * that place's media (photos + short video clips) in the scene's panel (P27-80), under
+ * its title and story, with per-photo captions. A pin's 3D position comes from
  * `latLngToVector3(lat, lng, EARTH.radius)`.
  *
  * ── Adding real media ────────────────────────────────────────────────────────
@@ -26,7 +26,11 @@ export type MediaItem = {
 
 export type PhotoLocation = {
   id: string;
-  place: string; // "London", "New Forest — Brockenhurst"
+  place: string; // "London", "New Forest — Brockenhurst" (its label)
+  /** A shorter name for the panel's place pills, when `place` is long ("New Forest"). */
+  short?: string;
+  /** The panel's title, its key word in peach between asterisks ("Back to *London*"). */
+  title: string;
   country: string;
   lat: number; // degrees, +N
   lng: number; // degrees, +E
@@ -46,6 +50,7 @@ export const PHOTO_LOCATIONS: PhotoLocation[] = [
   {
     id: "london",
     place: "London",
+    title: "Back to *London*",
     country: "United Kingdom",
     lat: 51.5074,
     lng: -0.1278,
@@ -67,6 +72,8 @@ export const PHOTO_LOCATIONS: PhotoLocation[] = [
   {
     id: "brockenhurst",
     place: "New Forest — Brockenhurst",
+    short: "New Forest",
+    title: "New Forest, *Brockenhurst*",
     country: "United Kingdom",
     lat: 50.8198,
     lng: -1.573,
@@ -86,6 +93,7 @@ export const PHOTO_LOCATIONS: PhotoLocation[] = [
   {
     id: "morocco",
     place: "Morocco",
+    title: "Home, *Morocco*",
     country: "Morocco",
     lat: 31.6295, // Marrakesh — a central, recognizable spot on the map
     lng: -7.9811,
