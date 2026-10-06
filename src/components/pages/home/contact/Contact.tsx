@@ -3,6 +3,8 @@
 import clsx from "clsx";
 import { FormEvent, useRef, useState } from "react";
 import Button from "#/components/UI/buttons/Button";
+import Field from "#/components/UI/forms/Field";
+import TextLink from "#/components/UI/links/TextLink";
 import Swash from "#/components/UI/swash/Swash";
 import { TITLE_SWASH } from "#/components/pages/home/swashes";
 import {
@@ -24,18 +26,6 @@ const sendMessage = (message: ContactMessage) =>
   new Promise<ContactMessage>((resolve) =>
     window.setTimeout(() => resolve(message), CONTACT_SEND_DELAY_MS)
   );
-
-const labelClass = clsx(
-  "font-sans uppercase text-white/40",
-  "text-[10px] sm:text-[11px] font-medium tracking-[0.3em]"
-);
-const fieldClass = clsx(
-  "w-full bg-transparent rounded-none",
-  "border-0 border-b border-white/20 focus:border-peach",
-  "px-0 py-2 outline-none transition-colors duration-300",
-  "text-white font-light text-base sm:text-lg",
-  "placeholder:text-white/25"
-);
 
 /**
  * Contact — the site's last beat. After the galaxy has fully resolved (and a short
@@ -131,43 +121,36 @@ const Contact = ({ overlayRef, reduced }: ContactProps) => {
               sent && "opacity-0"
             )}
           >
-            <label className="home-contact__piece flex flex-col gap-1">
-              <span className={labelClass}>Name</span>
-              <input
-                name="name"
-                type="text"
-                required
-                maxLength={80}
-                autoComplete="name"
-                placeholder="Your name"
-                className={fieldClass}
-              />
-            </label>
-
-            <label className="home-contact__piece flex flex-col gap-1">
-              <span className={labelClass}>Email</span>
-              <input
-                name="email"
-                type="email"
-                required
-                maxLength={120}
-                autoComplete="email"
-                placeholder="you@somewhere.com"
-                className={fieldClass}
-              />
-            </label>
-
-            <label className="home-contact__piece flex flex-col gap-1 sm:col-span-2">
-              <span className={labelClass}>Message</span>
-              <textarea
-                name="message"
-                required
-                rows={3}
-                maxLength={2000}
-                placeholder="A project, a question, or just hello."
-                className={clsx(fieldClass, "resize-none")}
-              />
-            </label>
+            <Field
+              label="Name"
+              name="name"
+              type="text"
+              required
+              maxLength={80}
+              autoComplete="name"
+              placeholder="Your name"
+              className="home-contact__piece"
+            />
+            <Field
+              label="Email"
+              name="email"
+              type="email"
+              required
+              maxLength={120}
+              autoComplete="email"
+              placeholder="you@somewhere.com"
+              className="home-contact__piece"
+            />
+            <Field
+              label="Message"
+              multiline
+              name="message"
+              required
+              rows={3}
+              maxLength={2000}
+              placeholder="A project, a question, or just hello."
+              className="home-contact__piece sm:col-span-2"
+            />
 
             <div className="home-contact__piece sm:col-span-2 flex justify-center pt-2">
               <Button
@@ -198,16 +181,9 @@ const Contact = ({ overlayRef, reduced }: ContactProps) => {
               <p className="text-white/75 font-light text-base sm:text-lg max-w-md">
                 Your message is on its way. I&rsquo;ll write back soon.
               </p>
-              <button
-                type="button"
-                onClick={() => setStatus("idle")}
-                className={clsx(
-                  labelClass,
-                  "tap-target max-sm:relative mt-2 cursor-pointer hover:text-peach transition-colors"
-                )}
-              >
+              <TextLink variant="caps" onClick={() => setStatus("idle")} className="mt-2">
                 Write another
-              </button>
+              </TextLink>
             </div>
           )}
         </div>
@@ -216,20 +192,14 @@ const Contact = ({ overlayRef, reduced }: ContactProps) => {
           className={clsx(
             "home-contact__piece home-contact__links",
             "flex flex-wrap justify-center gap-x-8 gap-y-2",
-            "mt-10 sm:mt-12 text-sm text-white/55"
+            "mt-10 sm:mt-12 text-sm"
           )}
         >
           {CONTACT_LINKS.map((link) => (
             <li key={link.label}>
-              <a
-                href={link.href}
-                {...(link.external
-                  ? { target: "_blank", rel: "noopener noreferrer" }
-                  : {})}
-                className="tap-target max-sm:relative hover:text-peach transition-colors duration-300"
-              >
+              <TextLink href={link.href} external={link.external}>
                 {link.label}
-              </a>
+              </TextLink>
             </li>
           ))}
         </ul>

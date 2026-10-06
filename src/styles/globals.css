@@ -38,6 +38,7 @@
   --text-display: 5.25rem; /* 84px */
   --text-display--line-height: 1.04;
   --leading-display: 1.04;
+  --tracking-caps: 0.3em; /* small spaced capitals: a form field's name (UI/text/caps) */
   --tracking-eyebrow: 0.3em;
   --tracking-eyebrow-sm: 0.22em; /* smaller eyebrows (the side panel, phones) */
 
