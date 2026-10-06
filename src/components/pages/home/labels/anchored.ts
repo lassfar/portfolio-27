@@ -5,7 +5,3 @@
  */
 export const ANCHORED =
   "fixed left-0 top-0 z-45 pointer-events-none opacity-0 will-change-[transform,opacity]";
-
-/** The quiet pill of the scene's names that open nothing (Parker's journey, the probe from afar). */
-export const QUIET_LABEL =
-  "whitespace-nowrap rounded-full bg-rich-black/70 px-2 py-0.5 text-3xs font-light tracking-wide ring-1";

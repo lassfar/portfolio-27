@@ -1,12 +1,12 @@
 "use client";
 
 import { useEffect, useRef } from "react";
-import clsx from "clsx";
 import { MemoryStick } from "lucide-react";
 import { recordLabel, recordScreen } from "#/components/three.js/voyager/recordScreen";
 import { usePanelStore } from "#/stores/usePanelStore";
 import { PHONE_QUERY, keepOnScreen } from "#/components/pages/home/labels/screenEdge";
-import { ANCHORED, QUIET_LABEL } from "#/components/pages/home/labels/anchored";
+import { ANCHORED } from "#/components/pages/home/labels/anchored";
+import QuietLabel from "#/components/UI/labels/QuietLabel";
 import SceneLabel from "#/components/pages/home/labels/SceneLabel";
 import { PANEL_ID } from "#/components/pages/home/panel/config";
 
@@ -89,13 +89,9 @@ const RecordLabel = () => {
         className={ANCHORED}
         onClick={() => usePanelStore.getState().open({ kind: "lab" })}
       />
-      <span
-        ref={probeRef}
-        aria-hidden="true"
-        className={clsx(ANCHORED, QUIET_LABEL, "text-light-peach/80 ring-white/10 transition-opacity duration-300")}
-      >
+      <QuietLabel ref={probeRef} aria-hidden="true" className={ANCHORED}>
         Parker Solar Probe
-      </span>
+      </QuietLabel>
     </>
   );
 };

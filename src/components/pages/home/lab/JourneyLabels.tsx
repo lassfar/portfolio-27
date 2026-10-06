@@ -5,7 +5,8 @@ import clsx from "clsx";
 import { journeyLabels, journeyScreen } from "#/components/three.js/parker/journeyScreen";
 import { PHONE_QUERY, TOUCH_QUERY, keepOnScreen } from "#/components/pages/home/labels/screenEdge";
 import { type LabelBox, stackLabels } from "#/components/pages/home/labels/stack";
-import { ANCHORED, QUIET_LABEL } from "#/components/pages/home/labels/anchored";
+import { ANCHORED } from "#/components/pages/home/labels/anchored";
+import QuietLabel from "#/components/UI/labels/QuietLabel";
 
 /** Gap (px) kept between labels that would otherwise overlap. */
 const LABEL_GAP = 4;
@@ -153,18 +154,14 @@ const JourneyLabels = () => {
       {Array.from({ length: COUNT }, (_, i) => {
         const t = texts(1 << i);
         return (
-          <span
+          <QuietLabel
             key={i}
             ref={(el) => {
               refs.current[i] = el;
             }}
             aria-hidden="true"
             onClick={toggle}
-            className={clsx(
-              "journey-label group text-light-peach/80 ring-white/10 transition-[opacity,color] duration-300 hover:text-peach",
-              ANCHORED,
-              QUIET_LABEL,
-            )}
+            className={clsx("journey-label group hover:text-peach", ANCHORED)}
           >
             <span
               ref={(el) => {
@@ -182,14 +179,10 @@ const JourneyLabels = () => {
             >
               {t.long}
             </span>
-          </span>
+          </QuietLabel>
         );
       })}
-      <span
-        ref={tipRef}
-        aria-hidden="true"
-        className={clsx("tabular-nums text-peach ring-peach/30 transition-opacity duration-300", ANCHORED, QUIET_LABEL)}
-      />
+      <QuietLabel ref={tipRef} aria-hidden="true" tone="peach" className={clsx("tabular-nums", ANCHORED)} />
     </>
   );
 };
