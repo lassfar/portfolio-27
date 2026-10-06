@@ -2,99 +2,91 @@
 
 import { useCallback, useEffect } from "react";
 import clsx from "clsx";
+import { ChevronLeft, ChevronRight, X } from "lucide-react";
+import IconButton from "#/components/UI/buttons/IconButton";
+import { useLingering } from "#/components/hooks/useLingering";
 import { usePanelStore } from "#/stores/usePanelStore";
-import { PHOTO_LOCATIONS } from "#/components/three.js/earth/data";
+import { findPlace, wrapIndex } from "#/components/pages/home/panel/content";
 import { MediaFull } from "./GalleryMedia";
 
+/** Where the arrows sit: at the sides, centred — at the bottom corners on a phone. */
+const ARROW = {
+  prev: "bottom-6 left-5 sm:top-1/2 sm:bottom-auto sm:left-10 sm:-translate-y-1/2",
+  next: "right-5 bottom-6 sm:top-1/2 sm:right-10 sm:bottom-auto sm:-translate-y-1/2",
+} as const;
+
 /**
- * Fullscreen lightbox for a single piece of media, opened from the gallery panel.
- * Photos fill the frame; videos play with sound + controls. Browse with the
- * on-screen chevrons or the ← / → keys; Esc closes.
+ * The photo viewer (P27-80): one of a place's photos or clips over everything, the
+ * scene and the panel dimmed behind it — "2 / 5" and its caption under it, liquid-glass
+ * arrows and close. ← → step through them; Esc (or close) goes back to the panel. It
+ * keeps its photo while it fades out. A video plays here, with sound and controls.
  */
 const Lightbox = () => {
-  const openId = usePanelStore((s) => (s.content?.kind === "place" ? s.content.id : null));
-  const index = usePanelStore((s) => s.photo);
-  const setIndex = usePanelStore((s) => s.openPhoto);
-  const closeLightbox = usePanelStore((s) => s.back);
-
-  const loc = PHOTO_LOCATIONS.find((l) => l.id === openId) ?? null;
-  const media = loc?.media ?? [];
-  const count = media.length;
-  const open = index !== null && index >= 0 && index < count;
+  const placeId = usePanelStore((s) => (s.content?.kind === "place" ? s.content.id : null));
+  const photo = usePanelStore((s) => s.photo);
+  const media = findPlace(placeId)?.media ?? [];
+  const open = photo !== null && photo < media.length;
+  const shownPlace = findPlace(useLingering(open ? placeId : null));
+  const index = useLingering(open ? photo : null);
+  const items = shownPlace?.media ?? [];
+  const item = index !== null ? items[index] : undefined;
+  const count = items.length;
 
   const step = useCallback(
     (dir: number) => {
-      if (index === null || count === 0) return;
-      setIndex((index + dir + count) % count);
+      const { photo: now, openPhoto } = usePanelStore.getState();
+      if (now !== null && count > 0) openPhoto(wrapIndex(now + dir, count));
     },
-    [index, count, setIndex]
+    [count],
   );
+  const back = () => usePanelStore.getState().back();
 
   useEffect(() => {
     if (!open) return;
     const onKey = (e: KeyboardEvent) => {
-      if (e.key === "Escape") closeLightbox();
+      if (e.key === "Escape") usePanelStore.getState().back();
       else if (e.key === "ArrowRight") step(1);
       else if (e.key === "ArrowLeft") step(-1);
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, [open, step, closeLightbox]);
-
-  const item = open ? media[index] : null;
+  }, [open, step]);
 
   return (
     <div
-      aria-hidden={!open}
+      role="dialog"
+      aria-modal="true"
+      aria-label="Photo viewer"
+      inert={!open}
       className={clsx(
-        "fixed inset-0 z-[60] flex flex-col items-center justify-center bg-rich-black/95 backdrop-blur-xl transition-opacity duration-300",
-        open ? "opacity-100" : "pointer-events-none opacity-0"
+        "fixed inset-0 z-60 flex flex-col items-center gap-6 bg-black/80 px-4 pt-20 pb-24 backdrop-blur-lg transition-[opacity,visibility] duration-350 ease-out motion-reduce:transition-none sm:px-30 sm:pt-22 sm:pb-10",
+        open ? "visible opacity-100" : "invisible opacity-0",
       )}
     >
-      {item && (
+      {item && index !== null && (
         <>
-          <button
-            type="button"
-            onClick={closeLightbox}
-            aria-label="Close"
-            className="absolute right-6 top-6 z-10 grid h-11 w-11 place-items-center rounded-full text-xl text-white/60 ring-1 ring-white/10 transition hover:bg-white/5 hover:text-peach"
-          >
-            ✕
-          </button>
-
+          <div className="absolute top-4.5 right-4.5 z-1 sm:top-8 sm:right-10">
+            <IconButton icon={X} label="Close the photo" onClick={back} />
+          </div>
           {count > 1 && (
             <>
-              <button
-                type="button"
-                onClick={() => step(-1)}
-                aria-label="Previous"
-                className="absolute left-4 top-1/2 z-10 grid h-12 w-12 -translate-y-1/2 place-items-center rounded-full text-3xl text-white/50 transition hover:bg-white/5 hover:text-peach lg:left-8"
-              >
-                ‹
-              </button>
-              <button
-                type="button"
-                onClick={() => step(1)}
-                aria-label="Next"
-                className="absolute right-4 top-1/2 z-10 grid h-12 w-12 -translate-y-1/2 place-items-center rounded-full text-3xl text-white/50 transition hover:bg-white/5 hover:text-peach lg:right-8"
-              >
-                ›
-              </button>
+              <div className={clsx("absolute z-1", ARROW.prev)}>
+                <IconButton icon={ChevronLeft} label="Previous photo" onClick={() => step(-1)} />
+              </div>
+              <div className={clsx("absolute z-1", ARROW.next)}>
+                <IconButton icon={ChevronRight} label="Next photo" onClick={() => step(1)} />
+              </div>
             </>
           )}
-
-          <MediaFull item={item} index={index ?? 0} />
-
-          <div className="mt-6 flex flex-col items-center gap-2 px-8 text-center">
-            {item.caption && (
-              <p className="max-w-xl text-sm font-light italic text-gray-slate/80">
-                {item.caption}
-              </p>
-            )}
-            <p className="text-[10px] uppercase tracking-[0.35em] text-white/35">
-              {(index ?? 0) + 1} / {count}
-            </p>
+          <div className="grid min-h-0 w-full flex-1 place-items-center">
+            <MediaFull key={`${shownPlace?.id}-${index}`} item={item} index={index} />
           </div>
+          <p className="flex max-w-full items-center gap-4 text-xs text-gray-slate/60 tabular-nums">
+            <span className="shrink-0 tracking-eyebrow-sm text-peach">
+              {index + 1} / {count}
+            </span>
+            {item.caption && <span className="truncate">{item.caption}</span>}
+          </p>
         </>
       )}
     </div>
