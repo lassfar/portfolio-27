@@ -16,6 +16,76 @@
   --color-light-peach: #ffe3c7;
   --color-peach: #ffa14a;
   --color-dark-peach: #ef7d14;
+
+  /* ── Liquid glass, scene labels and panels (P27-80) ───────────────────────────── */
+  --font-quote: Georgia, "Times New Roman", serif; /* the panels' opening quote mark */
+
+  --ease-spring: cubic-bezier(0.34, 1.56, 0.64, 1); /* out, with a soft overshoot */
+  --ease-out-quint: cubic-bezier(0.22, 1, 0.36, 1);
+
+  --text-3xs: 0.625rem; /* 10px */
+  --text-3xs--line-height: 0.875rem;
+  --text-2xs: 0.6875rem; /* 11px */
+  --text-2xs--line-height: 1rem;
+  --text-quote: 1.375rem; /* 22px */
+  --text-quote--line-height: 1.55;
+  --text-display-sm: 3.375rem; /* 54px */
+  --text-display-sm--line-height: 1.04;
+  --text-display: 5.25rem; /* 84px */
+  --text-display--line-height: 1.04;
+  --leading-display: 1.04;
+  --tracking-eyebrow: 0.3em;
+
+  --container-panel: 70rem; /* the full view's column (1120px) */
+  --container-panel-head: 47.5rem; /* its header (760px) */
+  --container-panel-side: 32.5rem; /* the side panel (520px) */
+
+  --shadow-glass: 0 8px 24px -10px rgb(0 0 0 / 0.6);
+  --shadow-glow: 0 14px 30px -12px --alpha(var(--color-dark-peach) / 45%);
+  --shadow-chip: 0 8px 24px -10px --alpha(var(--color-dark-peach) / 60%);
+  --shadow-halo: 0 0 18px --alpha(var(--color-peach) / 25%);
+  --shadow-panel: -30px 0 80px -30px rgb(0 0 0 / 0.9);
+  --shadow-sheet: 0 -20px 60px -20px rgb(0 0 0 / 0.9);
+  --shadow-photo: 0 30px 80px -30px rgb(0 0 0 / 0.9);
+  --inset-shadow-glass: inset 0 1px 0 rgb(255 255 255 / 0.22), inset 0 -8px 16px -12px --alpha(var(--color-peach) / 18%);
+  --inset-shadow-glass-lit: inset 0 1px 0 rgb(255 255 255 / 0.32), inset 0 -10px 18px -12px --alpha(var(--color-peach) / 35%);
+  --inset-shadow-edge: inset 0 1px 0 rgb(255 255 255 / 0.32);
+  --inset-shadow-sheet: inset 0 1px 0 rgb(255 255 255 / 0.12);
+
+  /* (No color-mix() / --alpha() inside these keyframes: the CSS pipeline drops it.) */
+  --animate-breathe: breathe 2.8s ease-in-out infinite;
+  --animate-rise: rise 600ms var(--ease-out-quint) backwards;
+  --animate-draw: draw 1200ms var(--ease-out-quint) 300ms backwards;
+
+  /* A scene label's ring, breathing out until the first panel opens. */
+  @keyframes breathe {
+    0% {
+      opacity: 0;
+      scale: 0.96;
+    }
+    45% {
+      opacity: 1;
+      scale: 1.04;
+    }
+    100% {
+      opacity: 0;
+      scale: 1.12;
+    }
+  }
+  /* A panel's parts rising in. It moves `translate`, not `transform`, and holds nothing
+     once done (fill: backwards), so the parts' own hover transitions stay smooth. */
+  @keyframes rise {
+    from {
+      opacity: 0;
+      translate: 0 14px;
+    }
+  }
+  /* A stroke drawing itself in (the path has pathLength=1 and a dash of 1). */
+  @keyframes draw {
+    from {
+      stroke-dashoffset: 1;
+    }
+  }
 }
 
 @layer base {
@@ -76,6 +146,48 @@
     }
   }
 }
+
+/* ── Liquid glass (P27-80), in two parts ─────────────────────────────────────────────
+   `glass` is the frosted surface (labels, icon buttons, tags, chips): a dark see-through
+   fill under a faint top-lit gradient, a lit top edge, a thin ring and a peach glow
+   along the bottom.
+   `liquid` is the interaction: a soft light that follows the pointer (`--mx` / `--my`,
+   set by UI/glass/pointerLight), springing up on hover and squishing on press, its ring
+   and glow turning peach. It moves with `translate` / `scale` — never `transform`, which
+   the scene labels' positions own — on `::before` (`tap-target` owns `::after`). The
+   element must be positioned. */
+@utility glass {
+  @apply bg-rich-black/55 bg-linear-to-b from-white/9 to-white/2 shadow-glass inset-shadow-glass inset-ring inset-ring-white/8 backdrop-blur-md backdrop-saturate-150;
+}
+
+@utility liquid {
+  isolation: isolate;
+  cursor: pointer;
+  transition-property: translate, scale, box-shadow, color, background-color, opacity;
+  transition-duration: 420ms, 420ms, 300ms, 300ms, 300ms, 300ms;
+  transition-timing-function: var(--ease-spring), var(--ease-spring), ease, ease, ease, ease;
+  @apply hover:-translate-y-0.5 hover:scale-103 hover:inset-shadow-glass-lit hover:inset-ring-peach/45 hover:shadow-glow;
+  @apply focus-visible:-translate-y-0.5 focus-visible:scale-103 focus-visible:inset-shadow-glass-lit focus-visible:inset-ring-peach/45 focus-visible:shadow-glow focus-visible:outline-2 focus-visible:outline-offset-3 focus-visible:outline-peach/70;
+  @apply active:translate-y-0 active:scale-96 active:duration-120;
+  /* The light: its position comes from the pointer (JS), hence the arbitrary gradient. */
+  @apply before:pointer-events-none before:absolute before:inset-0 before:-z-1 before:rounded-[inherit] before:bg-radial-[120px_circle_at_var(--mx,50%)_var(--my,-30%)] before:from-white/26 before:to-transparent before:to-60% before:opacity-0 before:transition-opacity before:duration-300 hover:before:opacity-100 focus-visible:before:opacity-100;
+  @apply motion-reduce:transition-none;
+}
+
+/* Film grain over the placeholder photos (an SVG noise tile). */
+@utility grain {
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='160' height='160'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='2'/><feColorMatrix values='0 0 0 0 1 0 0 0 0 1 0 0 0 0 1 0 0 0 .07 0'/></filter><rect width='100%' height='100%' filter='url(%23n)'/></svg>");
+}
+
+/* A thin, faint scrollbar (the panels). */
+@utility scrollbar-thin {
+  scrollbar-width: thin;
+  scrollbar-color: --alpha(var(--color-white) / 15%) transparent;
+}
+
+/* `panel-full:` — while a panel is open in its full view (`<html data-panel="full">`,
+   set by the panel): the story's overlays and the scene labels step back. */
+@custom-variant panel-full (&:where([data-panel="full"] *));
 
 @keyframes twinkle {
   0%,
