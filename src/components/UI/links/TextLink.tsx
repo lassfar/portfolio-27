@@ -30,7 +30,7 @@ const elementOf = <T extends TextLinkOwnProps & { children?: ReactNode }>({
  * A quiet text link (Storybook: UI/TextLink, P27-82): it turns peach on hover or keyboard
  * focus, with a 44px tap area on phones; an optional `icon` before its text (P27-81). With
  * `href` it's a link (`external` opens it in a new tab, with a small ↗); without, a button
- * ("Write another"). `className` places it.
+ * that does something here. `className` places it.
  */
 const TextLink = (props: TextLinkProps) => {
   const variant = props.variant ?? "plain";

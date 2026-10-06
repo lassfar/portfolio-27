@@ -2,7 +2,7 @@ import type { ComponentProps } from "react";
 import type { LucideIcon } from "lucide-react";
 
 export const TEXT_LINK_VARIANTS = ["plain", "caps"] as const;
-/** `plain`: a quiet link in a list (Contact's links); `caps`: a quiet action under a form ("Write another"). */
+/** `plain`: a quiet link in a list (Contact's links); `caps`: in small spaced capitals. */
 export type TextLinkVariant = (typeof TEXT_LINK_VARIANTS)[number];
 
 /** The link's own props; the rest go to its `<a>` or `<button>`. */

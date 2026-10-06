@@ -54,11 +54,11 @@ export const External: Story = {
   },
 };
 
-/** Without `href`: a button that does something here ("Write another"). */
+/** Without `href`: a button that does something here. */
 export const AsButton: Story = {
-  args: { children: "Write another", href: undefined, variant: "caps", icon: SITE_ICONS.PenLine, onClick: fn() },
+  args: { children: "Show more", href: undefined, variant: "caps", onClick: fn() },
   play: async ({ canvas, userEvent, args }: Context) => {
-    await userEvent.click(canvas.getByRole("button", { name: "Write another" }));
+    await userEvent.click(canvas.getByRole("button", { name: "Show more" }));
     await expect(args.onClick).toHaveBeenCalledOnce();
   },
 };

@@ -173,9 +173,14 @@ const Contact = ({ overlayRef, reduced }: ContactProps) => {
               <p className="text-white/75 font-light text-base sm:text-lg max-w-md">
                 Your message is on its way. I&rsquo;ll write back soon.
               </p>
-              <TextLink variant="caps" icon={PenLine} onClick={() => setStatus("idle")} className="mt-2">
-                Write another
-              </TextLink>
+              <Button
+                label="Write another"
+                icon={PenLine}
+                variant="secondary"
+                size="medium"
+                onClick={() => setStatus("idle")}
+                className="mt-2"
+              />
             </div>
           )}
         </div>
