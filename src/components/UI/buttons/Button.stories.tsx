@@ -24,12 +24,6 @@ const meta = {
       description: "Padding and font size",
       table: { defaultValue: { summary: "medium" } },
     },
-    state: {
-      control: "inline-radio",
-      options: ["default", "text", "filled"],
-      description: "Interaction state — not yet implemented in component (P27-34)",
-      table: { defaultValue: { summary: "default" } },
-    },
     icon: ICON_ARG_TYPE,
     iconSlide: { control: "inline-radio", options: BUTTON_ICON_SLIDES },
   },
@@ -66,8 +60,19 @@ export const Sizes: Story = {
 export const WithIcon: Story = {
   args: { label: "The Lab", icon: SITE_ICONS.ArrowDown, iconSlide: "down" },
   play: async ({ canvas }) => {
-    const icon = canvas.getByRole("button", { name: "The Lab" }).querySelector(".ui-button__icon");
+    const icon = canvas.getByRole("button", { name: "The Lab" }).querySelector("[data-button-icon]");
     await expect(icon).toHaveAttribute("aria-hidden", "true");
     await expect(icon?.querySelector("svg")).not.toBeNull();
+  },
+};
+
+/** Disabled (e.g. "Sending…"): faded, no glow, not clickable. */
+export const Disabled: Story = {
+  args: { label: "Sending…", disabled: true },
+  play: async ({ canvas, userEvent, args }) => {
+    const button = canvas.getByRole("button", { name: "Sending…" });
+    await expect(button).toBeDisabled();
+    await userEvent.click(button);
+    await expect(args.onClick).not.toHaveBeenCalled();
   },
 };

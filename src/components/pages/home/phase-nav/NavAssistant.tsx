@@ -81,19 +81,19 @@ const NavAssistant = () => {
     const r = reveal.current;
     const sh = shell.current;
     const glow = orb.current?.querySelector(".nav-assistant__glow");
-    const label = r?.querySelector(".ui-button__label");
+    const label = r?.querySelector("[data-button-label]");
     if (!r || !sh || !glow || !label || out.current) return;
     out.current = true;
     setOpen(true);
     const split = new SplitText(label, { type: "chars" });
-    const icon = r.querySelector(".ui-button__icon");
+    const icon = r.querySelector("[data-button-icon]");
     const letters = icon ? [...split.chars, icon] : split.chars;
     const css = getComputedStyle(document.documentElement);
     const peach = rgba(css.getPropertyValue("--color-peach"));
     const lightPeach = rgba(css.getPropertyValue("--color-light-peach"));
     const darkPeach = rgba(css.getPropertyValue("--color-dark-peach"));
     const frost = rgba(css.getPropertyValue("--color-gray-slate")); // the buttons' frosted glass
-    // The shell lands on the revealed button's own glass + ring (globals.css .ui-button).
+    // The shell lands on the revealed button's own glass + ring (UI/Button's VARIANT tones).
     const landing =
       PHASE_NAV.variant === "outline"
         ? { fill: peach(0.06), ring: peach(0.7) }

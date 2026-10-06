@@ -153,7 +153,6 @@ const Contact = ({ overlayRef, reduced }: ContactProps) => {
                 variant="outline"
                 size="large"
                 disabled={status === "sending"}
-                className="disabled:opacity-60 disabled:cursor-default"
               />
             </div>
           </form>
