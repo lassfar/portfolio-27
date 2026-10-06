@@ -15,5 +15,6 @@ type GlideState = {
 
 export const useGlide = create<GlideState>((set) => ({
   by: null,
-  setBy: (by) => set({ by }),
+  // The same value again (a wheel with no glide running) notifies no one.
+  setBy: (by) => set((s) => (s.by === by ? s : { by })),
 }));
