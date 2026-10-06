@@ -5,6 +5,7 @@ import { createPortal } from "react-dom";
 import JourneyLabels from "./JourneyLabels";
 import RecordLabel from "./RecordLabel";
 import ExperimentsPanel from "./ExperimentsPanel";
+import SceneLabelLayer from "#/components/pages/home/labels/SceneLabelLayer";
 
 /**
  * Mounts the DOM overlays for The Lab (the Parker Solar Probe) — its journey line's
@@ -23,8 +24,10 @@ const LabExperiments = () => {
 
   return createPortal(
     <>
-      <JourneyLabels />
-      <RecordLabel />
+      <SceneLabelLayer>
+        <JourneyLabels />
+        <RecordLabel />
+      </SceneLabelLayer>
       <ExperimentsPanel />
     </>,
     document.body

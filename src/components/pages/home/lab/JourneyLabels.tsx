@@ -1,9 +1,11 @@
 "use client";
 
 import { useEffect, useRef, type MouseEvent } from "react";
+import clsx from "clsx";
 import { journeyLabels, journeyScreen } from "#/components/three.js/parker/journeyScreen";
 import { PHONE_QUERY, TOUCH_QUERY, keepOnScreen } from "#/components/pages/home/labels/screenEdge";
 import { type LabelBox, stackLabels } from "#/components/pages/home/labels/stack";
+import { ANCHORED, QUIET_LABEL } from "#/components/pages/home/labels/anchored";
 
 /** Gap (px) kept between labels that would otherwise overlap. */
 const LABEL_GAP = 4;
@@ -40,8 +42,7 @@ function texts(here: number): { short: string; long: string } {
  * then calls our `update` in that same step (`journeyLabels`), so each label moves with
  * its dot in the very frame it's drawn — positioned imperatively (transform + opacity),
  * so nothing re-renders per frame; labels that would overlap are stacked (as the
- * Earth's pins do). Quieter than the pin labels (no blur, smaller), under the side
- * panels (z-45 < the panels' z-50).
+ * Earth's pins do). Quiet: they open nothing (no glass, smaller). Under the panel.
  */
 const JourneyLabels = () => {
   const refs = useRef<(HTMLSpanElement | null)[]>([]);
@@ -159,8 +160,11 @@ const JourneyLabels = () => {
             }}
             aria-hidden="true"
             onClick={toggle}
-            className="journey-label group pointer-events-none fixed left-0 top-0 z-[45] whitespace-nowrap rounded-full bg-rich-black/70 px-2 py-0.5 text-[10px] font-light tracking-wide text-light-peach/80 opacity-0 ring-1 ring-white/10 transition-[opacity,color] duration-300 hover:text-peach"
-            style={{ willChange: "transform, opacity" }}
+            className={clsx(
+              "journey-label group text-light-peach/80 ring-white/10 transition-[opacity,color] duration-300 hover:text-peach",
+              ANCHORED,
+              QUIET_LABEL,
+            )}
           >
             <span
               ref={(el) => {
@@ -184,8 +188,7 @@ const JourneyLabels = () => {
       <span
         ref={tipRef}
         aria-hidden="true"
-        className="pointer-events-none fixed left-0 top-0 z-[45] whitespace-nowrap rounded-full bg-rich-black/70 px-2 py-0.5 text-[10px] font-light tabular-nums tracking-wide text-peach opacity-0 ring-1 ring-peach/30 transition-opacity duration-300"
-        style={{ willChange: "transform, opacity" }}
+        className={clsx("tabular-nums text-peach ring-peach/30 transition-opacity duration-300", ANCHORED, QUIET_LABEL)}
       />
     </>
   );

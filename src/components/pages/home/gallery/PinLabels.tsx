@@ -1,11 +1,16 @@
 "use client";
 
 import { useEffect, useRef } from "react";
+import { Camera } from "lucide-react";
 import { PHOTO_LOCATIONS } from "#/components/three.js/earth/data";
-import { pinLabels, pinScreen } from "#/components/three.js/earth/pinScreen";
-import { usePanelStore } from "#/stores/usePanelStore";
+import { pinHover, pinLabels, pinScreen } from "#/components/three.js/earth/pinScreen";
+import { selectKey, usePanelStore } from "#/stores/usePanelStore";
 import { PHONE_QUERY, keepOnScreen } from "#/components/pages/home/labels/screenEdge";
 import { type LabelBox, stackLabels } from "#/components/pages/home/labels/stack";
+import { ANCHORED } from "#/components/pages/home/labels/anchored";
+import SceneLabel from "#/components/pages/home/labels/SceneLabel";
+import { placeLabelAria, placeLabelMeta } from "#/components/pages/home/panel/content";
+import { PANEL_ID } from "#/components/pages/home/panel/config";
 
 /** Gap (px) kept between labels that would otherwise overlap. */
 const LABEL_GAP = 6;
@@ -14,25 +19,26 @@ const OFFSET_X = 10;
 const OFFSET_Y = 8;
 
 /**
- * Always-on place labels anchored above each globe pin, shown once the Earth is
- * in full view. The 3D pins publish their projected screen positions to
- * `pinScreen` once the camera has moved, then call our `update` in that same step
- * (`pinLabels`), so each label moves with its pin in the very frame it's drawn —
- * positioned imperatively (transform + opacity), so nothing re-renders per frame.
- * They sit under the side panels (z-45 < the panels' z-50).
+ * Always-on place labels beside each globe pin, shown once the Earth is in full view:
+ * scene labels that say what they open ("London · 5 shots ↗", P27-80) and light their
+ * pin on hover. The 3D pins publish their projected screen positions to `pinScreen`
+ * once the camera has moved, then call our `update` in that same step (`pinLabels`), so
+ * each label moves with its pin in the very frame it's drawn — positioned imperatively
+ * (transform + opacity + tabIndex), so nothing re-renders per frame. Under the panel.
  *
  * Each label is anchored to one side of its pin (loc.labelAnchor) — used to fan
  * clustered places apart (London top-right, Brockenhurst top-left, ~130 km
  * apart, would otherwise sit on the same spot). A de-overlap pass then stacks
- * any that still collide. Labels are clickable and open that place's gallery,
- * exactly like clicking the 3D pin.
+ * any that still collide. A label opens its place's panel, exactly like its 3D pin.
  */
 const PinLabels = () => {
   const refs = useRef<Record<string, HTMLButtonElement | null>>({});
+  const openKey = usePanelStore(selectKey);
+  const opened = usePanelStore((s) => s.opened);
 
   useEffect(() => {
-    // Each label's last shown state — its opacity / pointer-events are only written
-    // when it changes (the positions are still written every frame while shown).
+    // Each label's last shown state — its opacity / pointer-events / tabIndex are only
+    // written when it changes (the positions are still written every frame while shown).
     const shownBefore: Record<string, boolean> = {};
     // Each label's size, measured once (P27-78): the text never changes, and reading
     // it every frame forced a layout. Measured again after a resize or the fonts load.
@@ -50,13 +56,15 @@ const PinLabels = () => {
       shownBefore[id] = shown;
       el.style.opacity = shown ? "1" : "0";
       el.style.pointerEvents = shown ? "auto" : "none";
+      el.tabIndex = shown ? 0 : -1;
+      if (!shown && document.activeElement === el) el.blur();
     };
+    const boxes: (LabelBox & { el: HTMLButtonElement })[] = [];
     const update = () => {
       // 1. READ pass: gather the visible labels with their measured geometry.
-      //    `left`/`top` are the label's desired top-left (centered on the pin,
-      //    sitting above the head). Reads are batched before any writes to
-      //    avoid layout thrash.
-      const boxes: (LabelBox & { el: HTMLButtonElement })[] = [];
+      //    `left`/`top` are the label's desired top-left (beside the pin head).
+      //    Reads are batched before any writes to avoid layout thrash.
+      boxes.length = 0;
       for (const loc of PHOTO_LOCATIONS) {
         const el = refs.current[loc.id];
         if (!el) continue;
@@ -94,25 +102,37 @@ const PinLabels = () => {
     };
   }, []);
 
-  return (
-    <>
-      {PHOTO_LOCATIONS.map((loc) => (
-        <button
-          key={loc.id}
-          type="button"
-          ref={(el) => {
-            refs.current[loc.id] = el;
-          }}
-          onClick={() => usePanelStore.getState().open({ kind: "place", id: loc.id })}
-          aria-label={`Open ${loc.place} gallery`}
-          className="tap-target pointer-events-none fixed left-0 top-0 z-[45] cursor-pointer whitespace-nowrap rounded-full bg-rich-black/85 px-3 py-1.5 text-[11px] font-light tracking-wide text-light-peach opacity-0 ring-1 ring-white/10 backdrop-blur-md transition-[opacity,color,box-shadow] duration-300 hover:text-peach hover:ring-white/25 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-peach/60"
-          style={{ willChange: "transform, opacity" }}
-        >
-          {loc.place}
-        </button>
-      ))}
-    </>
-  );
+  return PHOTO_LOCATIONS.map((loc) => {
+    const light = () => {
+      pinHover.id = loc.id;
+    };
+    const unlight = () => {
+      if (pinHover.id === loc.id) pinHover.id = null;
+    };
+    return (
+      <SceneLabel
+        key={loc.id}
+        ref={(el) => {
+          refs.current[loc.id] = el;
+        }}
+        labelKey={loc.id}
+        icon={Camera}
+        name={loc.place}
+        meta={placeLabelMeta(loc)}
+        fresh={!opened}
+        aria-label={placeLabelAria(loc)}
+        aria-expanded={openKey === loc.id}
+        aria-controls={PANEL_ID}
+        tabIndex={-1} // hidden until shown: `update` owns it from here (React never rewrites a constant prop)
+        className={ANCHORED}
+        onClick={() => usePanelStore.getState().open({ kind: "place", id: loc.id })}
+        onPointerEnter={light}
+        onFocus={light}
+        onPointerLeave={unlight}
+        onBlur={unlight}
+      />
+    );
+  });
 };
 
 export default PinLabels;

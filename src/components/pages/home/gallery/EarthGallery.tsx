@@ -5,6 +5,7 @@ import { createPortal } from "react-dom";
 import GalleryPanel from "./GalleryPanel";
 import Lightbox from "./Lightbox";
 import PinLabels from "./PinLabels";
+import SceneLabelLayer from "#/components/pages/home/labels/SceneLabelLayer";
 
 /**
  * Mounts the DOM gallery overlays (hover label + side panel + lightbox) that the
@@ -23,7 +24,9 @@ const EarthGallery = () => {
 
   return createPortal(
     <>
-      <PinLabels />
+      <SceneLabelLayer>
+        <PinLabels />
+      </SceneLabelLayer>
       <GalleryPanel />
       <Lightbox />
     </>,
