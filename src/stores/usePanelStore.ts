@@ -1,6 +1,6 @@
 import { create } from "zustand";
 
-/** How the panel shows: over the whole screen, the scene veiled behind (the default), or at the side. */
+/** How the panel shows: at the side, the scene still in view (the default), or over the whole screen, the scene veiled behind. */
 export type PanelView = "full" | "side";
 
 /** What it shows: one of the Earth's places (its photos), or the Lab (Parker's memory card). */
@@ -37,7 +37,7 @@ type PanelState = {
  */
 export const usePanelStore = create<PanelState>((set) => ({
   content: null,
-  view: "full",
+  view: "side",
   photo: null,
   opened: false,
 

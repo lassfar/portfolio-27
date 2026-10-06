@@ -7,13 +7,13 @@ const state = () => usePanelStore.getState();
 
 describe("the scene's panel", () => {
   beforeEach(() =>
-    usePanelStore.setState({ content: null, view: "full", photo: null, opened: false }),
+    usePanelStore.setState({ content: null, view: "side", photo: null, opened: false }),
   );
 
-  it("opens in the full view, and marks a panel as opened", () => {
+  it("opens as a side panel, and marks a panel as opened", () => {
     state().open(london);
     expect(selectIsOpen(state())).toBe(true);
-    expect(state().view).toBe("full");
+    expect(state().view).toBe("side");
     expect(selectKey(state())).toBe("london");
     expect(state().opened).toBe(true);
   });
@@ -54,11 +54,11 @@ describe("the scene's panel", () => {
   it("keeps the chosen view for the next opens", () => {
     state().open({ kind: "lab" });
     state().toggleView();
-    expect(state().view).toBe("side");
+    expect(state().view).toBe("full");
     state().close();
     expect(selectKey(state())).toBeNull();
     state().open(london);
-    expect(state().view).toBe("side");
+    expect(state().view).toBe("full");
     expect(selectKey(state())).toBe("london");
   });
 });

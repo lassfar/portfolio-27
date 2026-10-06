@@ -13,7 +13,7 @@ const meta = {
   },
   beforeEach: () => {
     usePanelStore.setState({ content: { kind: "place", id: "london" }, view: "full", photo: 1, opened: true });
-    return () => usePanelStore.setState({ content: null, view: "full", photo: null, opened: false });
+    return () => usePanelStore.setState({ content: null, view: "side", photo: null, opened: false });
   },
 } satisfies Meta<typeof Lightbox>;
 

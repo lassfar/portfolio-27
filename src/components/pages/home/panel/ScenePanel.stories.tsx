@@ -7,9 +7,9 @@ import SceneOverlays from "./SceneOverlays";
 const london: PanelContent = { kind: "place", id: "london" };
 
 /** Opens the panel on `content` in `view` for a story (and closes it after). */
-const opened = (content: PanelContent, view: PanelView = "full", photo: number | null = null) => () => {
+const opened = (content: PanelContent, view: PanelView = "side", photo: number | null = null) => () => {
   usePanelStore.setState({ content, view, photo, opened: true });
-  return () => usePanelStore.setState({ content: null, view: "full", photo: null, opened: false });
+  return () => usePanelStore.setState({ content: null, view: "side", photo: null, opened: false });
 };
 
 const page = () => within(document.body);
@@ -39,9 +39,9 @@ export default meta;
 
 type Story = StoryObj<typeof meta>;
 
-/** A place in the full view (the default): modal — focus on Close, the page behind inert. */
+/** A place in the full view: modal — focus on Close, the page behind inert. */
 export const FullView: Story = {
-  beforeEach: opened(london),
+  beforeEach: opened(london, "full"),
   play: async () => {
     const panel = await page().findByRole("dialog", { name: "Back to London" });
     await expect(panel).toHaveAttribute("aria-modal", "true");
@@ -54,9 +54,9 @@ export const FullView: Story = {
   },
 };
 
-/** ← → step through the places; a place pill too. Esc closes. */
+/** In the full view, ← → step through the places; a place pill too. Esc closes. */
 export const Keys: Story = {
-  beforeEach: opened(london),
+  beforeEach: opened(london, "full"),
   play: async () => {
     await page().findByRole("dialog", { name: "Back to London" });
     await userEvent.keyboard("{ArrowRight}");
@@ -70,9 +70,9 @@ export const Keys: Story = {
   },
 };
 
-/** The side panel: the scene stays in view and usable beside it (a bottom sheet on a phone). */
+/** The side panel (the default): the scene stays in view and usable beside it (a bottom sheet on a phone). */
 export const SidePanel: Story = {
-  beforeEach: opened(london, "side"),
+  beforeEach: opened(london),
   play: async () => {
     const panel = await page().findByRole("dialog", { name: "Back to London" });
     await expect(panel).toHaveAttribute("aria-modal", "false");

@@ -38,11 +38,12 @@ const INNER: Record<PanelView, string> = {
 
 /**
  * The scene's panel (P27-80; was the gallery's and the Lab's side panels): a place's
- * photos or the Lab's experiments, opened by a scene label or a 3D pin. It opens in the
- * full view — over the whole screen, the scene veiled behind it and the story's
- * overlays stepping back (`<html data-panel>`, read by the `panel-full:` variant) — or,
- * by choice, as a side panel beside the scene. Its content swaps with a short fade
- * (usePanelFrame). Portalled to the body; SceneOverlays makes it a dialog (focus, keys).
+ * photos or the Lab's experiments, opened by a scene label or a 3D pin. It opens as a
+ * side panel beside the scene (a bottom sheet on a phone) or, by choice, in the full
+ * view — over the whole screen, the scene veiled behind it and the story's overlays
+ * stepping back (`<html data-panel>`, read by the `panel-full:` variant). Its content
+ * swaps with a short fade (usePanelFrame). Portalled to the body; SceneOverlays makes it
+ * a dialog (focus, keys).
  */
 const ScenePanel = ({ ref }: { ref?: Ref<HTMLElement> }) => {
   const open = usePanelStore(selectIsOpen);
