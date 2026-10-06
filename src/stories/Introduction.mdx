@@ -1,0 +1,95 @@
+import { Canvas, Controls, Meta } from "@storybook/addon-docs/blocks";
+// Relative: the `#/` alias comes from tsconfig, which doesn't cover MDX.
+import * as DisplayTitleStories from "../components/UI/text/DisplayTitle.stories";
+
+<Meta title="Introduction" />
+
+# Portfolio-27
+
+The components of Aymane Lassfar's portfolio — one scroll through space, from a star out to the galaxy —
+each one documented and tested here.
+
+- **UI** — the reusable components: buttons, the tooltip, form fields, labels, titles, cards, icons, the swash.
+  Tailwind utilities on the site's design tokens (`src/styles/globals.css`, under `@theme`).
+- **Home** — the home page's own parts (the panel, the scene labels, the story timeline…), shown in their real context.
+
+Every component has a **Docs** page: what it is, its props and its stories. Open a story to change it in
+**Controls**, replay its test in **Interactions**, and see its checks in **Accessibility**.
+
+## How the stories are written
+
+A story is one **state** of a component. The stories grow with what a component can do, never with the places
+it's used: the site has many titles, and `DisplayTitle` still has two stories.
+
+- **Content is args.** Text, icons, places and chapters are edited in Controls, never copied into a new story.
+- **`Default` comes first.** The usual state, every prop in Controls. A prop's choices come from the component's
+  own typed list — the same list its type is built from.
+- **A closed set of looks is one gallery.** `Sizes`, `Variants`, `Sides`, `Tones`, `Shapes`: every value side by
+  side (`src/stories/Gallery.tsx`). A new value adds no story.
+- **A state or a behaviour gets its own story, with a test.** `Current`, `WithoutTooltip`, `Delayed`, `Phone`,
+  `Keys`… Its play function checks it.
+- **Stories are named by their state,** never by a place ("Maker", "London").
+- **Edge cases only when they change the layout:** `LongLine`, `LongQuote`, `AtTheStart`.
+- **Page parts follow the same rules:** their states (`Side` and `Full`, phone, open), in their real context
+  (`src/stories/PanelColumn.tsx`). Those driven by the scroll get a control for where the journey is parked.
+
+### Try it
+
+Content is args: retype this title in its controls (its key words between asterisks), or change its size.
+
+<Canvas of={DisplayTitleStories.Default} />
+
+<Controls of={DisplayTitleStories.Default} />
+
+## Writing a story
+
+Next to its component, in `Name.stories.tsx`:
+
+```tsx
+const meta = {
+  title: "UI/Chip",
+  component: Chip,
+  tags: ["autodocs"],
+  parameters: { layout: "centered" },
+  args: { children: "London", onClick: fn() },
+} satisfies Meta<typeof Chip>;
+
+export default meta;
+
+type Story = StoryObj<typeof meta>;
+
+/** A choice among others: a glass pill. */
+export const Default: Story = {
+  play: async ({ canvas, userEvent, args }) => {
+    await userEvent.click(canvas.getByRole("button", { name: "London" }));
+    await expect(args.onClick).toHaveBeenCalledOnce();
+  },
+};
+
+/** The current one: filled peach. */
+export const Current: Story = { args: { current: true } };
+```
+
+- **Layout** — `parameters.layout` (`centered`, `padded`, `fullscreen`) rather than padding around the story; a
+  decorator only for a real context (a column's width, a positioned parent).
+- **Callbacks** — `fn()` in its args, so a play can check them and the Actions panel logs them.
+- **Plays** — `canvas` and `userEvent` from the story's context; a dialog outside the canvas through
+  `within(document.body)`.
+
+## Tests
+
+- **Every story is a test.** `npm test` runs each one in a browser (Vitest): it renders, its play function runs,
+  and its accessibility is checked (axe).
+- **Accessibility fails the test** (`a11y.test: "error"`), so a violation blocks the commit: the pre-commit hook
+  runs `npm test`.
+- **One background.** The stories sit on the page's dark background (`--color-rich-black`); the tests paint it
+  too, so contrast is measured as a visitor sees it.
+- **Panels rise in.** A play that opens a panel ends with `entered()` (`src/stories/entered.ts`), so the
+  accessibility check measures the colours, not the fade.
+
+## Run it
+
+```bash
+npm run storybook   # http://localhost:6006
+npm test            # the unit tests and every story
+```

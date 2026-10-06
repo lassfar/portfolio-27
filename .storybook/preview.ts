@@ -13,6 +13,10 @@ const preview: Preview = {
     backgrounds: { value: "dark" },
   },
   parameters: {
+    // The Introduction, then the reusable components, then the home page's parts.
+    options: {
+      storySort: { order: ["Introduction", "UI", "Home"] },
+    },
     backgrounds: {
       options: {
         dark: { name: "Rich black", value: "#19191C" },
