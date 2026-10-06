@@ -40,6 +40,9 @@ function tone(css: CSSStyleDeclaration, token: string): Tone {
   return (alpha) => `rgba(${(n >> 16) & 255}, ${(n >> 8) & 255}, ${n & 255}, ${alpha})`;
 }
 
+/** The label writing in, letter by letter, as the pill lands: each letter's fade-up, and the gap between two. */
+const LETTERS = { duration: 0.3, stagger: 0.025 };
+
 /** Where the growing pill lands: the revealed button's own glass and ring (UI/Button's tones). */
 const LANDING: Record<AssistantVariant, (t: { peach: Tone; frost: Tone }) => { fill: string; ring: string }> = {
   outline: ({ peach }) => ({ fill: peach(0.06), ring: peach(0.7) }),
@@ -154,7 +157,7 @@ export function useReveal(
         )
         .to(r, { autoAlpha: 1, duration: T * 0.3 }, T * 0.8)
         .to(sh, { autoAlpha: 0, duration: T * 0.3 }, T * 0.95)
-        .to(letters, { autoAlpha: 1, y: 0, duration: 0.4, stagger: 0.03, ease: "sine.out" }, T * 0.9);
+        .to(letters, { autoAlpha: 1, y: 0, ...LETTERS, ease: "sine.out" }, T * 0.9);
       anim.current = { tl, split };
       if (by === "tap") autoFold.set(() => fold(), PHASE_NAV.autoCloseSeconds);
     });
