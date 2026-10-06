@@ -1,30 +1,41 @@
 import {
+  ArrowDown,
   ArrowUpRight,
   Camera,
   ChevronLeft,
   ChevronRight,
   Expand,
   FlaskConical,
+  Mail,
   Maximize2,
   MemoryStick,
   PanelRight,
+  PenLine,
   Play,
+  Send,
   Video,
   X,
 } from "lucide-react";
+import { GitHub, LinkedIn } from "#/components/UI/icons/brands";
 
-/** The icons the site uses (P27-80), by name. */
+/** The icons the site uses (P27-80, P27-81), by name. */
 export const SITE_ICONS = {
+  ArrowDown,
   ArrowUpRight,
   Camera,
   ChevronLeft,
   ChevronRight,
   Expand,
   FlaskConical,
+  GitHub,
+  LinkedIn,
+  Mail,
   Maximize2,
   MemoryStick,
   PanelRight,
+  PenLine,
   Play,
+  Send,
   Video,
   X,
 };
