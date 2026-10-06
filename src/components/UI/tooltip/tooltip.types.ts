@@ -1,10 +1,12 @@
 import type { ReactNode } from "react";
 
+export const TOOLTIP_SIDES = ["above", "below", "left", "right"] as const;
 /** Which side of its trigger it opens on (it slides in from there). */
-export type TooltipSide = "above" | "below" | "left" | "right";
+export type TooltipSide = (typeof TOOLTIP_SIDES)[number];
 
+export const TOOLTIP_ALIGNS = ["start", "center", "end"] as const;
 /** Along its trigger, above or below it: flush with its start or end edge, or centred. */
-export type TooltipAlign = "start" | "center" | "end";
+export type TooltipAlign = (typeof TOOLTIP_ALIGNS)[number];
 
 export interface TooltipProps {
   children: ReactNode;

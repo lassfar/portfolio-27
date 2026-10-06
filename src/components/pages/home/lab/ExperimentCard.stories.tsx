@@ -1,35 +1,39 @@
 import type { Meta, StoryObj } from "@storybook/nextjs-vite";
-import { expect, within } from "storybook/test";
+import { expect } from "storybook/test";
 
+import { PANEL_VIEWS } from "#/stores/usePanelStore";
 import { EXPERIMENTS } from "#/components/three.js/voyager/data";
 import ExperimentCard from "./ExperimentCard";
 
 const meta = {
   title: "Home/Lab/ExperimentCard",
   component: ExperimentCard,
+  tags: ["autodocs"],
+  parameters: { layout: "centered" },
   decorators: [
     (Story, { args }) => (
-      <div className={args.view === "full" ? "w-80 p-12" : "w-60 p-12"}>
+      // One cell of the Lab's grid.
+      <div className={args.view === "full" ? "w-80" : "w-60"}>
         <Story />
       </div>
     ),
   ],
-  args: { experiment: EXPERIMENTS[0], view: "full" },
+  argTypes: { view: { control: "inline-radio", options: PANEL_VIEWS } },
+  args: { experiment: EXPERIMENTS[0], view: "side" },
 } satisfies Meta<typeof ExperimentCard>;
 
 export default meta;
 
 type Story = StoryObj<typeof meta>;
 
-/** An experiment that isn't live yet: "Drifting in soon", a slow pulse. Not a button (nothing to open yet). */
-export const Soon: Story = {
-  play: async ({ canvasElement }) => {
-    const canvas = within(canvasElement);
+/** At the side: an experiment that isn't live yet ("Drifting in soon", a slow pulse). Not a button: nothing to open yet. */
+export const Side: Story = {
+  play: async ({ canvas }) => {
     await expect(canvas.getByText("Drifting in soon")).toBeInTheDocument();
     await expect(canvas.getByText("Worlds")).toBeInTheDocument();
     await expect(canvas.queryByRole("button")).toBeNull();
   },
 };
 
-/** At the side: smaller. */
-export const Side: Story = { args: { view: "side", experiment: EXPERIMENTS[1] } };
+/** In the full view: larger. */
+export const Full: Story = { args: { view: "full" } };

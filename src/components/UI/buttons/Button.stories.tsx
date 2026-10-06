@@ -1,85 +1,69 @@
 import type { Meta, StoryObj } from "@storybook/nextjs-vite";
+import { expect, fn } from "storybook/test";
 
+import Gallery from "#/stories/Gallery";
 import Button from "./Button";
+import { BUTTON_SIZES, BUTTON_VARIANTS } from "./button.types";
 
 const meta = {
   title: "UI/Button",
   component: Button,
   tags: ["autodocs"],
+  parameters: { layout: "centered" },
   argTypes: {
     variant: {
-      control: { type: "select" },
-      options: ["primary", "secondary", "light", "outline", "text"],
+      control: "inline-radio",
+      options: BUTTON_VARIANTS,
       description: "Visual style of the button",
       table: { defaultValue: { summary: "primary" } },
     },
     size: {
-      control: { type: "select" },
-      options: ["small", "medium", "large"],
+      control: "inline-radio",
+      options: BUTTON_SIZES,
       description: "Padding and font size",
       table: { defaultValue: { summary: "medium" } },
     },
     state: {
-      control: { type: "select" },
+      control: "inline-radio",
       options: ["default", "text", "filled"],
-      description:
-        "Interaction state — not yet implemented in component (P27-34)",
+      description: "Interaction state — not yet implemented in component (P27-34)",
       table: { defaultValue: { summary: "default" } },
     },
-    label: {
-      control: "text",
-      description: "Button label text",
-    },
-    onClick: {
-      action: "clicked",
-      description: "Click handler",
-    },
   },
+  args: { label: "To wander", onClick: fn() },
 } satisfies Meta<typeof Button>;
 
 export default meta;
 
 type Story = StoryObj<typeof meta>;
 
-// ── Variants ────────────────────────────────────────────────────────────────
-
-export const Primary: Story = {
-  args: {
-    label: "Primary",
-    variant: "primary",
-    size: "medium",
-    state: "filled",
+/** Any button: its label, variant and size in Controls. */
+export const Default: Story = {
+  play: async ({ canvas, userEvent, args }) => {
+    await userEvent.click(canvas.getByRole("button", { name: "To wander" }));
+    await expect(args.onClick).toHaveBeenCalledOnce();
   },
 };
 
-export const Secondary: Story = {
-  args: { label: "Secondary", variant: "secondary", size: "medium" },
+/** Every variant: from the filled primary to text only. */
+export const Variants: Story = {
+  parameters: { controls: { exclude: ["variant"] } },
+  render: (args) => <Gallery values={BUTTON_VARIANTS}>{(variant) => <Button {...args} variant={variant} />}</Gallery>,
+  play: async ({ canvas }) => {
+    await expect(canvas.getAllByRole("button")).toHaveLength(BUTTON_VARIANTS.length);
+  },
 };
 
-export const Light: Story = {
-  args: { label: "Light", variant: "light", size: "medium" },
+export const Sizes: Story = {
+  parameters: { controls: { exclude: ["size"] } },
+  render: (args) => <Gallery values={BUTTON_SIZES}>{(size) => <Button {...args} size={size} />}</Gallery>,
 };
 
-export const Outline: Story = {
-  args: { label: "Outline", variant: "outline", size: "medium" },
-};
-
-/** With a trailing icon that slides on hover (the navigation assistant uses "→"). */
+/** A trailing icon that slides a little on hover (the navigation assistant's "→"). */
 export const WithIcon: Story = {
-  args: { label: "The Craft", variant: "primary", size: "medium", icon: "→" },
-};
-
-/** Text only: no border, no background. */
-export const Text: Story = {
-  args: { label: "Text", variant: "text", size: "medium" },
-};
-
-// ── Sizes ────────────────────────────────────────────────────────────────────
-
-export const Small: Story = {
-  args: { label: "Small", variant: "primary", size: "small" },
-};
-
-export const Large: Story = {
-  args: { label: "Large", variant: "primary", size: "large" },
+  args: { icon: "→" },
+  play: async ({ canvas }) => {
+    const icon = canvas.getByRole("button").querySelector(".ui-button__icon");
+    await expect(icon).toHaveAttribute("aria-hidden", "true");
+  },
 };

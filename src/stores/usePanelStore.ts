@@ -1,7 +1,8 @@
 import { create } from "zustand";
 
+export const PANEL_VIEWS = ["side", "full"] as const;
 /** How the panel shows: at the side, the scene still in view (the default), or over the whole screen, the scene veiled behind. */
-export type PanelView = "full" | "side";
+export type PanelView = (typeof PANEL_VIEWS)[number];
 
 /** What it shows: one of the Earth's places (its photos), or the Lab (Parker's memory card). */
 export type PanelContent = { kind: "place"; id: string } | { kind: "lab" };

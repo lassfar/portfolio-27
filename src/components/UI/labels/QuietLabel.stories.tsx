@@ -1,19 +1,16 @@
 import type { Meta, StoryObj } from "@storybook/nextjs-vite";
-import { expect, within } from "storybook/test";
+import { expect } from "storybook/test";
 
+import Gallery from "#/stories/Gallery";
 import QuietLabel from "./QuietLabel";
+import { QUIET_LABEL_TONES } from "./label.types";
 
 const meta = {
   title: "UI/QuietLabel",
   component: QuietLabel,
   tags: ["autodocs"],
-  decorators: [
-    (Story) => (
-      <div className="flex justify-center p-10">
-        <Story />
-      </div>
-    ),
-  ],
+  parameters: { layout: "centered" },
+  argTypes: { tone: { control: "inline-radio", options: QUIET_LABEL_TONES } },
   args: { children: "Parker Solar Probe" },
 } satisfies Meta<typeof QuietLabel>;
 
@@ -21,25 +18,15 @@ export default meta;
 
 type Story = StoryObj<typeof meta>;
 
-/** A name in the scene that opens nothing (the probe seen from afar). */
-export const Soft: Story = {
-  play: async ({ canvasElement }) => {
-    await expect(within(canvasElement).getByText("Parker Solar Probe")).toBeVisible();
+/** A name in the scene that opens nothing. */
+export const Default: Story = {
+  play: async ({ canvas }) => {
+    await expect(canvas.getByText("Parker Solar Probe")).toBeVisible();
   },
 };
 
-/** A live reading by its point (Parker's distance), its digits tabular so it doesn't jitter. */
-export const Peach: Story = { args: { tone: "peach", className: "tabular-nums", children: "6.9 million km" } };
-
-/** A journey label: short, and its full line on hover (its own states, through `className`). */
-export const JourneyLabel: Story = {
-  args: {
-    className: "group hover:text-peach",
-    children: (
-      <>
-        <span className="group-hover:hidden">Venus 1 · 2</span>
-        <span className="hidden group-hover:inline">Venus flybys · loops now reach 14.2 million km</span>
-      </>
-    ),
-  },
+/** `soft` for a name, `peach` for a live reading (Parker's distance). */
+export const Tones: Story = {
+  parameters: { controls: { exclude: ["tone"] } },
+  render: (args) => <Gallery values={QUIET_LABEL_TONES}>{(tone) => <QuietLabel {...args} tone={tone} />}</Gallery>,
 };

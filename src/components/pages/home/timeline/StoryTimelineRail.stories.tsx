@@ -1,5 +1,5 @@
 import type { Meta, StoryObj } from "@storybook/nextjs-vite";
-import { expect, within } from "storybook/test";
+import { expect, waitFor } from "storybook/test";
 
 import StoryTimelineRail from "./StoryTimelineRail";
 import { STORY_CHAPTERS, TIMELINE } from "./config";
@@ -19,8 +19,11 @@ function at(i: number, t = 0.4) {
 const meta = {
   title: "Home/StoryTimeline",
   component: StoryTimelineRail,
+  tags: ["autodocs"],
   parameters: {
     layout: "fullscreen",
+    // Fixed to the screen: on the docs page, each story in its own frame.
+    docs: { story: { inline: false, height: "36rem" } },
   },
   args: {
     chapters: STORY_CHAPTERS,
@@ -48,22 +51,22 @@ export default meta;
 
 type Story = StoryObj<typeof meta>;
 
-/** In the Lab: the first five stars passed, the Lab's glowing, the rest still hidden. */
-export const InTheLab: Story = {
-  play: async ({ canvasElement }) => {
-    const canvas = within(canvasElement);
+/** In the middle of the story (the Lab): the stars passed in peach, the current one glowing, the rest still hidden. */
+export const Default: Story = {
+  play: async ({ canvas }) => {
     await expect(canvas.getAllByRole("button")).toHaveLength(STORY_CHAPTERS.length);
     await expect(canvas.getByRole("button", { name: "The Lab" })).toHaveAttribute("aria-current", "step");
     await expect(canvas.getByRole("button", { name: "The Earth" })).not.toHaveAttribute("aria-current");
   },
 };
 
-export const JustStarted: Story = { args: at(1, 0.1) };
+/** Just started: nothing passed yet. */
+export const AtTheStart: Story = { args: at(1, 0.1) };
 
-export const AtContact: Story = {
+/** At the end (Contact): every star passed. */
+export const AtTheEnd: Story = {
   args: at(STORY_CHAPTERS.length - 1),
-  play: async ({ canvasElement }) => {
-    const canvas = within(canvasElement);
+  play: async ({ canvas }) => {
     await expect(canvas.getByRole("button", { name: "Contact" })).toHaveAttribute("aria-current", "step");
   },
 };
@@ -71,8 +74,13 @@ export const AtContact: Story = {
 /** After a moment without scrolling it dims (hover brings it back). */
 export const Dimmed: Story = { args: { rest: "dim" } };
 
-/** Phones: no hover tooltips; a new chapter's name pops up by its star. */
+/** Phones: no hover tooltips; a new chapter's name pops up by its star, read out. */
 export const Phone: Story = {
   args: { phone: true, toast: { index: 5, on: true } },
-  parameters: { viewport: { defaultViewport: "mobile1" } },
+  globals: { viewport: { value: "mobile1", isRotated: false } },
+  play: async ({ canvas }) => {
+    const pill = canvas.getByText(STORY_CHAPTERS[5].name); // the only one: phones have no tooltips
+    await expect(pill).toHaveAttribute("aria-live", "polite");
+    await waitFor(() => expect(pill).toBeVisible());
+  },
 };

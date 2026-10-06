@@ -1,35 +1,32 @@
 import type { Meta, StoryObj } from "@storybook/nextjs-vite";
-import { Camera, Video } from "lucide-react";
-import { expect, within } from "storybook/test";
+import { expect } from "storybook/test";
 
+import { ICON_ARG_TYPE, SITE_ICONS } from "#/stories/icons";
 import Tag from "./Tag";
 
 const meta = {
   title: "UI/Tag",
   component: Tag,
   tags: ["autodocs"],
-  decorators: [
-    (Story) => (
-      <div className="flex gap-2.5 p-10">
-        <Story />
-      </div>
-    ),
-  ],
-  args: { icon: Camera, children: "4 photos" },
+  parameters: { layout: "centered" },
+  argTypes: { icon: ICON_ARG_TYPE },
+  args: { icon: SITE_ICONS.Camera, children: "4 photos" },
 } satisfies Meta<typeof Tag>;
 
 export default meta;
 
 type Story = StoryObj<typeof meta>;
 
-/** A fact under a panel's title. */
-export const Photos: Story = {
-  play: async ({ canvasElement }) => {
-    await expect(within(canvasElement).getByText("4 photos")).toBeVisible();
+/** A fact (a panel's "4 photos"), its icon in peach. */
+export const Default: Story = {
+  play: async ({ canvas }) => {
+    await expect(canvas.getByText("4 photos")).toBeVisible();
   },
 };
 
-export const Clip: Story = { args: { icon: Video, children: "1 clip" } };
-
-/** Without an icon. */
-export const Plain: Story = { args: { icon: undefined, children: "On Parker's memory card" } };
+export const WithoutIcon: Story = {
+  args: { icon: undefined },
+  play: async ({ canvas }) => {
+    await expect(canvas.getByText("4 photos").querySelector("svg")).toBeNull();
+  },
+};

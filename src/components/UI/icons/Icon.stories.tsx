@@ -1,37 +1,8 @@
 import type { Meta, StoryObj } from "@storybook/nextjs-vite";
-import {
-  ArrowUpRight,
-  Camera,
-  ChevronLeft,
-  ChevronRight,
-  Expand,
-  FlaskConical,
-  Maximize2,
-  MemoryStick,
-  PanelRight,
-  Play,
-  Video,
-  X,
-} from "lucide-react";
-import { expect, within } from "storybook/test";
+import { expect } from "storybook/test";
 
+import { ICON_ARG_TYPE, SITE_ICONS } from "#/stories/icons";
 import Icon, { ICON_STROKE } from "./Icon";
-
-/** The icons the site uses today (P27-80), in one thin stroke. */
-const SITE_ICONS = {
-  ArrowUpRight,
-  Camera,
-  ChevronLeft,
-  ChevronRight,
-  Expand,
-  FlaskConical,
-  Maximize2,
-  MemoryStick,
-  PanelRight,
-  Play,
-  Video,
-  X,
-};
 
 const meta = {
   title: "UI/Icon",
@@ -44,7 +15,8 @@ const meta = {
       </div>
     ),
   ],
-  args: { icon: Camera, size: 24 },
+  argTypes: { icon: ICON_ARG_TYPE },
+  args: { icon: SITE_ICONS.Camera, size: 24 },
 } satisfies Meta<typeof Icon>;
 
 export default meta;
@@ -52,7 +24,7 @@ export default meta;
 type Story = StoryObj<typeof meta>;
 
 /** One icon: decorative (hidden from screen readers — the control around it names it). */
-export const Single: Story = {
+export const Default: Story = {
   play: async ({ canvasElement }) => {
     const svg = canvasElement.querySelector("svg");
     await expect(svg).toHaveAttribute("aria-hidden", "true");
@@ -61,10 +33,11 @@ export const Single: Story = {
 };
 
 /** Filled with the text colour (the play button). */
-export const Filled: Story = { args: { icon: Play, filled: true } };
+export const Filled: Story = { args: { icon: SITE_ICONS.Play, filled: true } };
 
 /** Every icon on the site, at the sizes they're used (14–17px) and larger. */
-export const AllIcons: Story = {
+export const SiteIcons: Story = {
+  parameters: { controls: { exclude: ["icon"] } },
   render: () => (
     <ul className="grid grid-cols-4 gap-6 sm:grid-cols-6">
       {Object.entries(SITE_ICONS).map(([name, glyph]) => (
@@ -78,7 +51,7 @@ export const AllIcons: Story = {
       ))}
     </ul>
   ),
-  play: async ({ canvasElement }) => {
-    await expect(within(canvasElement).getAllByRole("listitem")).toHaveLength(Object.keys(SITE_ICONS).length);
+  play: async ({ canvas }) => {
+    await expect(canvas.getAllByRole("listitem")).toHaveLength(Object.keys(SITE_ICONS).length);
   },
 };

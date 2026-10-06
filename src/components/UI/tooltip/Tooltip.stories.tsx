@@ -1,8 +1,17 @@
 import type { Meta, StoryObj } from "@storybook/nextjs-vite";
-import type { CSSProperties } from "react";
-import { expect, userEvent, waitFor, within } from "storybook/test";
+import type { CSSProperties, ReactNode } from "react";
+import { expect, waitFor } from "storybook/test";
 
+import Gallery from "#/stories/Gallery";
 import Tooltip from "./Tooltip";
+import { TOOLTIP_ALIGNS, TOOLTIP_SIDES } from "./tooltip.types";
+
+/** Its trigger: any positioned element marked `group/tip` (a timeline star, a panel button…). */
+const Trigger = ({ children }: { children: ReactNode }) => (
+  <button type="button" aria-label="Saturn" className="group/tip relative size-6 rounded-full bg-peach/80 focus-ring">
+    {children}
+  </button>
+);
 
 const meta = {
   title: "UI/Tooltip",
@@ -10,29 +19,31 @@ const meta = {
   tags: ["autodocs"],
   decorators: [
     (Story) => (
-      <div className="grid min-h-60 place-items-center p-10">
-        {/* Its trigger: any positioned element marked `group/tip` (a timeline star, a panel button…). */}
-        <button
-          type="button"
-          aria-label="Saturn"
-          className="group/tip relative size-6 rounded-full bg-peach/80 focus-ring"
-        >
-          <Story />
-        </button>
+      // Room on every side for it to open into.
+      <div className="flex min-h-60 items-center justify-center p-16">
+        <Story />
       </div>
     ),
   ],
+  argTypes: {
+    side: { control: "inline-radio", options: TOOLTIP_SIDES },
+    align: { control: "inline-radio", options: TOOLTIP_ALIGNS },
+  },
   args: { children: "Saturn" },
+  render: (args) => (
+    <Trigger>
+      <Tooltip {...args} />
+    </Trigger>
+  ),
 } satisfies Meta<typeof Tooltip>;
 
 export default meta;
 
 type Story = StoryObj<typeof meta>;
 
-/** Under its trigger, on hover or keyboard focus (a panel button's hint). */
-export const Below: Story = {
-  play: async ({ canvasElement }) => {
-    const canvas = within(canvasElement);
+/** Under its trigger while it's hovered or keyboard-focused. */
+export const Default: Story = {
+  play: async ({ canvas, userEvent }) => {
     const tip = canvas.getByText("Saturn");
     await expect(tip).not.toBeVisible();
     await expect(tip).toHaveAttribute("aria-hidden", "true");
@@ -42,37 +53,74 @@ export const Below: Story = {
   },
 };
 
-/** Above it, after a short hover (the orb's "Next chapter"). */
-export const AboveDelayed: Story = { args: { side: "above", delayed: true, children: "Next chapter" } };
+/** The sides it opens on (shown here with `open`). */
+export const Sides: Story = {
+  args: { open: true },
+  parameters: { controls: { exclude: ["side", "open"] } },
+  render: (args) => (
+    <Gallery values={TOOLTIP_SIDES}>
+      {(side) => (
+        <span className="p-14">
+          <Trigger>
+            <Tooltip {...args} side={side} />
+          </Trigger>
+        </span>
+      )}
+    </Gallery>
+  ),
+  play: async ({ canvas }) => {
+    const tips = canvas.getAllByText("Saturn");
+    await expect(tips).toHaveLength(TOOLTIP_SIDES.length);
+    for (const tip of tips) await expect(tip).toBeVisible();
+  },
+};
 
-/** Beside it, into the screen (a timeline star on the screen's left or right edge). */
-export const Right: Story = { args: { side: "right" } };
+/** Above or below: flush with its trigger's start or end edge, or centred. */
+export const Aligns: Story = {
+  args: { open: true, children: "Close · Esc" },
+  parameters: { controls: { exclude: ["align", "open"] } },
+  render: (args) => (
+    <Gallery values={TOOLTIP_ALIGNS}>
+      {(align) => (
+        <span className="px-20 pb-10">
+          <Trigger>
+            <Tooltip {...args} align={align} />
+          </Trigger>
+        </span>
+      )}
+    </Gallery>
+  ),
+};
 
-export const Left: Story = { args: { side: "left" } };
+/** Shows only after a short hover (0.8s), so a passing pointer doesn't flash it. */
+export const Delayed: Story = {
+  args: { side: "above", delayed: true, children: "Next chapter" },
+  play: async ({ canvas, userEvent }) => {
+    const tip = canvas.getByText("Next chapter");
+    await userEvent.tab();
+    await expect(tip).not.toBeVisible();
+    await waitFor(() => expect(tip).toBeVisible(), { timeout: 2000 });
+  },
+};
 
-/** Under it, flush with its end edge (a panel's top-right buttons). */
-export const AlignEnd: Story = { args: { align: "end", children: "Close · Esc" } };
-
-export const AlignStart: Story = { args: { align: "start", children: "Full view" } };
-
-/** Shown from outside and read out as it changes (the timeline's name pill). */
+/** Shown from outside and read out as it changes: the timeline's name pill. */
 export const OpenLive: Story = {
   args: { side: "right", open: true, live: true, children: "Back to London" },
-  play: async ({ canvasElement }) => {
-    const tip = within(canvasElement).getByText("Back to London");
+  play: async ({ canvas }) => {
+    const tip = canvas.getByText("Back to London");
     await expect(tip).toBeVisible();
     await expect(tip).toHaveAttribute("aria-live", "polite");
   },
 };
 
-/** Its text tuned by a part of the page (`--color-tooltip`), as the timeline's dev panel does. */
-export const Tuned: Story = {
+/** Its text colour, tuned by a part of the page through `--color-tooltip` (the timeline's dev panel). */
+export const TunedColour: Story = {
   args: { open: true },
   decorators: [
     (Story) => (
-      <span style={{ "--color-tooltip": "var(--color-baby-blue)" } as CSSProperties}>
+      <div style={{ "--color-tooltip": "var(--color-baby-blue)" } as CSSProperties}>
         <Story />
-      </span>
+      </div>
     ),
   ],
 };

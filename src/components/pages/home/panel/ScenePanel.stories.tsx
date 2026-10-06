@@ -1,7 +1,8 @@
 import type { Meta, StoryObj } from "@storybook/nextjs-vite";
-import { expect, userEvent, waitFor, within } from "storybook/test";
+import { expect, waitFor, within } from "storybook/test";
 
 import { usePanelStore, type PanelContent, type PanelView } from "#/stores/usePanelStore";
+import { entered } from "#/stories/entered";
 import SceneOverlays from "./SceneOverlays";
 
 const london: PanelContent = { kind: "place", id: "london" };
@@ -18,12 +19,15 @@ const page = () => within(document.body);
 const meta = {
   title: "Home/Panel/ScenePanel",
   component: SceneOverlays,
+  tags: ["autodocs"],
   parameters: {
     layout: "fullscreen",
+    // Fixed to the screen: on the docs page, each story in its own frame.
+    docs: { story: { inline: false, height: "36rem" } },
   },
   decorators: [
     (Story) => (
-      <div className="min-h-screen bg-rich-black p-6">
+      <div className="min-h-screen p-6">
         {/* Something of the page outside the panel. */}
         <button type="button" className="text-white/50">
           Outside
@@ -38,8 +42,22 @@ export default meta;
 
 type Story = StoryObj<typeof meta>;
 
-/** A place in the full view: modal — focus on Close, the page behind inert. */
-export const FullView: Story = {
+/** At the side (the default): the scene stays in view and usable beside it (a bottom sheet on a phone). */
+export const Side: Story = {
+  beforeEach: opened(london),
+  play: async ({ userEvent }) => {
+    const panel = await page().findByRole("dialog", { name: "Back to London" });
+    await expect(panel).toHaveAttribute("aria-modal", "false");
+    await expect(document.documentElement.dataset.panel).toBe("side");
+    await expect(page().getByRole("button", { name: "Outside", hidden: true }).closest("[inert]")).toBeNull();
+    await userEvent.click(page().getByRole("button", { name: "Open the full view" }));
+    await waitFor(() => expect(panel).toHaveAttribute("aria-modal", "true"));
+    await entered(panel);
+  },
+};
+
+/** In the full view: modal — focus on Close, the page behind inert. */
+export const Full: Story = {
   beforeEach: opened(london, "full"),
   play: async () => {
     const panel = await page().findByRole("dialog", { name: "Back to London" });
@@ -50,13 +68,14 @@ export const FullView: Story = {
     await expect(within(panel).getAllByRole("button", { name: /^Open Placeholder — London/ })).toHaveLength(5);
     await waitFor(() => expect(within(panel).getByRole("button", { name: "Close" })).toHaveFocus());
     await expect(page().getByRole("button", { name: "Outside", hidden: true }).closest("[inert]")).not.toBeNull();
+    await entered(panel);
   },
 };
 
 /** In the full view, ← → step through the places; a place pill too. Esc closes. */
 export const Keys: Story = {
   beforeEach: opened(london, "full"),
-  play: async () => {
+  play: async ({ userEvent }) => {
     await page().findByRole("dialog", { name: "Back to London" });
     await userEvent.keyboard("{ArrowRight}");
     await waitFor(() => expect(page().getByRole("dialog", { name: "New Forest, Brockenhurst" })).toBeInTheDocument());
@@ -69,23 +88,10 @@ export const Keys: Story = {
   },
 };
 
-/** The side panel (the default): the scene stays in view and usable beside it (a bottom sheet on a phone). */
-export const SidePanel: Story = {
-  beforeEach: opened(london),
-  play: async () => {
-    const panel = await page().findByRole("dialog", { name: "Back to London" });
-    await expect(panel).toHaveAttribute("aria-modal", "false");
-    await expect(document.documentElement.dataset.panel).toBe("side");
-    await expect(page().getByRole("button", { name: "Outside", hidden: true }).closest("[inert]")).toBeNull();
-    await userEvent.click(page().getByRole("button", { name: "Open the full view" }));
-    await waitFor(() => expect(panel).toHaveAttribute("aria-modal", "true"));
-  },
-};
-
-/** A photo: Esc goes back to the panel (focus on its card), then closes it. */
+/** A photo open over it: Esc goes back to the panel (focus on its card), then closes it. */
 export const Photo: Story = {
   beforeEach: opened(london, "full", 1),
-  play: async () => {
+  play: async ({ userEvent }) => {
     const viewer = await page().findByRole("dialog", { name: "Photo viewer" });
     await expect(within(viewer).getByText("2 / 5")).toBeInTheDocument();
     await userEvent.keyboard("{ArrowRight}");
@@ -97,7 +103,7 @@ export const Photo: Story = {
   },
 };
 
-/** The Lab: what's on Parker's memory card. */
+/** The Lab's content: what's on Parker's memory card. */
 export const Lab: Story = {
   beforeEach: opened({ kind: "lab" }),
   play: async () => {
@@ -105,5 +111,6 @@ export const Lab: Story = {
     await expect(within(panel).getByText("Parker Solar Probe")).toBeInTheDocument();
     await expect(within(panel).getByText("3 experiments")).toBeInTheDocument();
     await expect(within(panel).getAllByText("Drifting in soon")).toHaveLength(3);
+    await entered(panel);
   },
 };

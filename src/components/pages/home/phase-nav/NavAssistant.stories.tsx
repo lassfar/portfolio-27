@@ -1,5 +1,5 @@
 import type { Meta, StoryObj } from "@storybook/nextjs-vite";
-import { expect, userEvent, waitFor, within } from "storybook/test";
+import { expect, waitFor, within } from "storybook/test";
 
 import { useJourneyScroll } from "#/stores/useJourneyScroll";
 import NavAssistant from "./NavAssistant";
@@ -11,8 +11,11 @@ const earth = PHASE_STOPS.find((s) => s.id === "earth")?.target ?? 0.47;
 const meta = {
   title: "Home/NavAssistant",
   component: NavAssistant,
+  tags: ["autodocs"],
   parameters: {
     layout: "fullscreen",
+    // Fixed to the screen: on the docs page, each story in its own frame.
+    docs: { story: { inline: false, height: "36rem" } },
   },
   beforeEach: () => {
     useJourneyScroll.setState({ progress: earth });
@@ -43,7 +46,7 @@ export const Orb: Story = {
 
 /** A click grows the dot into the next chapter's button; the label writes in. */
 export const Opened: Story = {
-  play: async () => {
+  play: async ({ userEvent }) => {
     const page = within(document.body);
     await userEvent.click(
       await page.findByRole("button", { name: "Next chapter: The Lab" }),

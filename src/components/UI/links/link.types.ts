@@ -1,7 +1,8 @@
 import type { ComponentProps } from "react";
 
+export const TEXT_LINK_VARIANTS = ["plain", "caps"] as const;
 /** `plain`: a quiet link in a list (Contact's links); `caps`: a quiet action under a form ("Write another"). */
-export type TextLinkVariant = "plain" | "caps";
+export type TextLinkVariant = (typeof TEXT_LINK_VARIANTS)[number];
 
 /** The link's own props; the rest go to its `<a>` or `<button>`. */
 export interface TextLinkOwnProps {

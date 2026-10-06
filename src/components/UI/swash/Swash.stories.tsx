@@ -1,21 +1,28 @@
 import type { Meta, StoryObj } from "@storybook/nextjs-vite";
 import { expect } from "storybook/test";
 
+import Gallery from "#/stories/Gallery";
 import Swash from "./Swash";
+import type { SwashFlip } from "./orient";
 import { SWASH_NAMES } from "./shapes";
+
+/** Its four orientations (`flipX`, `flipY`). */
+const TURNS = {
+  "as drawn": { flipX: false, flipY: false },
+  mirrored: { flipX: true, flipY: false },
+  "upside down": { flipX: false, flipY: true },
+  "mirrored, upside down": { flipX: true, flipY: true },
+} satisfies Record<string, SwashFlip>;
+const TURN_NAMES = Object.keys(TURNS) as (keyof typeof TURNS)[];
 
 const meta = {
   title: "UI/Swash",
   component: Swash,
   tags: ["autodocs"],
-  decorators: [
-    (Story) => (
-      <div className="p-10">
-        <Story />
-      </div>
-    ),
-  ],
-  argTypes: { shape: { control: "select", options: SWASH_NAMES } },
+  argTypes: {
+    shape: { control: "select", options: SWASH_NAMES },
+    draw: { control: "inline-radio", options: ["mount", "cue"] },
+  },
   args: { shape: "loopEnd", className: "w-75" },
 } satisfies Meta<typeof Swash>;
 
@@ -23,63 +30,35 @@ export default meta;
 
 type Story = StoryObj<typeof meta>;
 
-/** One swash, drawing itself in (reload the story to see it again). */
-export const LoopEnd: Story = {
+/** One swash drawing itself in (change a control to draw it again). Decorative: hidden from screen readers. */
+export const Default: Story = {
   play: async ({ canvasElement }) => {
     const svg = canvasElement.querySelector("svg");
     await expect(svg).toHaveAttribute("aria-hidden", "true");
     await expect(svg).toHaveAttribute("data-swash", "loopEnd");
-    await expect(canvasElement.querySelector("path")).toHaveAttribute("pathLength", "1");
+    await expect(svg?.querySelector("path")).toHaveAttribute("pathLength", "1");
   },
 };
 
-export const LoopStart: Story = { args: { shape: "loopStart" } };
-
-export const LoopMiddle: Story = { args: { shape: "loopMiddle" } };
-
-/** Every shape under a title (each title has its own: pages/home/swashes.ts). */
-export const UnderTitles: Story = {
-  render: () => (
-    <div className="flex flex-col items-center gap-14">
-      {SWASH_NAMES.map((shape) => (
-        <div key={shape} className="flex flex-col items-center">
-          <p className="mb-1 font-great-vibes text-6xl leading-none text-white">
-            Say <span className="text-peach">Hello</span>
-          </p>
-          <Swash shape={shape} className="w-64" />
-        </div>
-      ))}
-    </div>
+/** Every shape (Aymane's pen strokes). */
+export const Shapes: Story = {
+  parameters: { controls: { exclude: ["shape"] } },
+  render: (args) => (
+    <Gallery values={SWASH_NAMES} layout="stack">
+      {(shape) => <Swash {...args} shape={shape} />}
+    </Gallery>
   ),
   play: async ({ canvasElement }) => {
     await expect(canvasElement.querySelectorAll("[data-swash]")).toHaveLength(SWASH_NAMES.length);
   },
 };
 
-/** Turned for variety: as drawn, mirrored, upside down, both (mirrored, it still draws from the left). */
+/** Its four orientations, for variety: mirrored, it still draws from the left. */
 export const Turned: Story = {
-  render: () => (
-    <div className="grid grid-cols-2 gap-x-12 gap-y-10">
-      {SWASH_NAMES.flatMap((shape) =>
-        [
-          [false, false],
-          [true, false],
-          [false, true],
-          [true, true],
-        ].map(([flipX, flipY]) => (
-          <figure key={`${shape}-${flipX}-${flipY}`} className="flex flex-col gap-2">
-            <Swash shape={shape} flipX={flipX} flipY={flipY} className="w-60" />
-            <figcaption className="text-2xs text-white/40">
-              {shape}
-              {flipX ? " · mirrored" : ""}
-              {flipY ? " · upside down" : ""}
-            </figcaption>
-          </figure>
-        )),
-      )}
-    </div>
+  parameters: { controls: { exclude: ["flipX", "flipY"] } },
+  render: (args) => (
+    <Gallery values={TURN_NAMES} layout="stack">
+      {(turn) => <Swash {...args} {...TURNS[turn]} />}
+    </Gallery>
   ),
-  play: async ({ canvasElement }) => {
-    await expect(canvasElement.querySelectorAll("[data-swash]")).toHaveLength(SWASH_NAMES.length * 4);
-  },
 };

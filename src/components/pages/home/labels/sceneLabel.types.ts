@@ -1,8 +1,9 @@
 import type { ButtonHTMLAttributes, Ref } from "react";
 import type { LucideIcon } from "lucide-react";
 
+export const SCENE_LABEL_TONES = ["place", "card"] as const;
 /** A place (light peach) or Parker's memory card (peach). */
-export type SceneLabelTone = "place" | "card";
+export type SceneLabelTone = (typeof SCENE_LABEL_TONES)[number];
 
 export interface SceneLabelProps extends Omit<ButtonHTMLAttributes<HTMLButtonElement>, "children"> {
   ref?: Ref<HTMLButtonElement>;

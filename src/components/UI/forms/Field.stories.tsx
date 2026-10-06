@@ -1,5 +1,5 @@
 import type { Meta, StoryContext, StoryObj } from "@storybook/nextjs-vite";
-import { expect, userEvent, within } from "storybook/test";
+import { expect } from "storybook/test";
 
 import Field from "./Field";
 import type { FieldProps } from "./field.types";
@@ -10,7 +10,8 @@ const meta = {
   tags: ["autodocs"],
   decorators: [
     (Story) => (
-      <div className="max-w-md p-10">
+      // It fills its form's column.
+      <div className="max-w-md">
         <Story />
       </div>
     ),
@@ -20,34 +21,25 @@ const meta = {
 
 export default meta;
 
-// Its props are a union (an input or a textarea), which `typeof meta` can't infer from; so its plays name their context's type.
+// Its props are a union (an input or a textarea), which `typeof meta` can't infer stories from:
+// so they're typed by the props, and their plays name their context.
 type Story = StoryObj<FieldProps>;
+type Context = StoryContext<FieldProps>;
 
-/** Its name over the line it's written on; the line turns peach while focused. */
-export const Text: Story = {
-  play: async ({ canvasElement }: StoryContext<FieldProps>) => {
-    const input = within(canvasElement).getByRole("textbox", { name: "Name" });
+/** A line to write on: its name above it, the line turns peach while focused. */
+export const Default: Story = {
+  play: async ({ canvas, userEvent }: Context) => {
+    const input = canvas.getByRole("textbox", { name: "Name" });
     await userEvent.type(input, "Aymane");
     await expect(input).toHaveFocus();
     await expect(input).toHaveValue("Aymane");
   },
 };
 
-export const Email: Story = {
-  args: { label: "Email", name: "email", type: "email", placeholder: "you@somewhere.com", autoComplete: "email" },
-};
-
-/** A longer text: a textarea (it doesn't resize). */
+/** `multiline`: a textarea for a longer text (it doesn't resize). */
 export const Multiline: Story = {
-  args: {
-    label: "Message",
-    name: "message",
-    multiline: true,
-    rows: 3,
-    placeholder: "A project, a question, or just hello.",
-  },
-  play: async ({ canvasElement }: StoryContext<FieldProps>) => {
-    const textarea = within(canvasElement).getByRole("textbox", { name: "Message" });
-    await expect(textarea.tagName).toBe("TEXTAREA");
+  args: { label: "Message", name: "message", multiline: true, rows: 3, placeholder: "A project, a question, or just hello." },
+  play: async ({ canvas }: Context) => {
+    await expect(canvas.getByRole("textbox", { name: "Message" }).tagName).toBe("TEXTAREA");
   },
 };

@@ -1,7 +1,9 @@
 import type { Meta, StoryObj } from "@storybook/nextjs-vite";
-import { expect, fn, userEvent, within } from "storybook/test";
+import { expect, fn } from "storybook/test";
 
+import Gallery from "#/stories/Gallery";
 import GlowCard from "./GlowCard";
+import { GLOW_CARD_SIZES } from "./card.types";
 
 const Picture = () => (
   <span className="relative block aspect-4/5 bg-linear-150 from-[#768496] to-[#282c36] transition-[filter] duration-500 group-hover/card:brightness-108 group-hover/card:saturate-112">
@@ -13,24 +15,28 @@ const meta = {
   title: "UI/GlowCard",
   component: GlowCard,
   tags: ["autodocs"],
-  decorators: [
-    (Story) => (
-      <div className="w-72 p-12">
-        <Story />
-      </div>
-    ),
-  ],
+  parameters: { layout: "centered" },
+  argTypes: {
+    size: { control: "inline-radio", options: GLOW_CARD_SIZES },
+    children: { control: false },
+  },
   args: { children: <Picture />, "aria-label": "Open London 01", onClick: fn() },
+  // It fills its column: one column's width here.
+  render: (args) => (
+    <div className="w-72">
+      <GlowCard {...args} />
+    </div>
+  ),
 } satisfies Meta<typeof GlowCard>;
 
 export default meta;
 
 type Story = StoryObj<typeof meta>;
 
-/** A photo: hover it — it lifts, and a peach glow behind it follows the pointer. */
-export const Photo: Story = {
-  play: async ({ canvasElement, args }) => {
-    const card = within(canvasElement).getByRole("button", { name: "Open London 01" });
+/** With `onClick`: a button — hover it, it lifts and a peach glow behind it follows the pointer. */
+export const Default: Story = {
+  play: async ({ canvas, userEvent, args }) => {
+    const card = canvas.getByRole("button", { name: "Open London 01" });
     await userEvent.pointer({ target: card, coords: { clientX: 60, clientY: 80 } });
     await expect(card.style.getPropertyValue("--mx")).not.toBe("");
     await userEvent.click(card);
@@ -38,18 +44,24 @@ export const Photo: Story = {
   },
 };
 
-/** Without `onClick`: a plain card (e.g. an experiment that isn't live yet), not focusable. */
+/** Without `onClick`: a plain card (an experiment that isn't live yet), not focusable. */
 export const Static: Story = {
-  args: {
-    onClick: undefined,
-    size: "sm",
-    children: (
-      <span className="flex aspect-4/3 flex-col justify-end gap-1.5 bg-dark/45 p-6">
-        <span className="text-lg font-light text-white/74">Worlds</span>
-      </span>
-    ),
+  args: { onClick: undefined },
+  play: async ({ canvas }) => {
+    await expect(canvas.queryByRole("button")).toBeNull();
   },
-  play: async ({ canvasElement }) => {
-    await expect(within(canvasElement).queryByRole("button")).toBeNull();
-  },
+};
+
+/** Its corners: `md` in the full view, `sm` at the side and on phones. */
+export const Sizes: Story = {
+  parameters: { controls: { exclude: ["size"] } },
+  render: (args) => (
+    <Gallery values={GLOW_CARD_SIZES}>
+      {(size) => (
+        <div className="w-56">
+          <GlowCard {...args} size={size} />
+        </div>
+      )}
+    </Gallery>
+  ),
 };

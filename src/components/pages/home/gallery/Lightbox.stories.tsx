@@ -1,5 +1,5 @@
 import type { Meta, StoryObj } from "@storybook/nextjs-vite";
-import { expect, userEvent, waitFor, within } from "storybook/test";
+import { expect, waitFor, within } from "storybook/test";
 
 import { usePanelStore } from "#/stores/usePanelStore";
 import Lightbox from "./Lightbox";
@@ -7,8 +7,11 @@ import Lightbox from "./Lightbox";
 const meta = {
   title: "Home/Gallery/Lightbox",
   component: Lightbox,
+  tags: ["autodocs"],
   parameters: {
     layout: "fullscreen",
+    // Fixed to the screen: on the docs page, each story in its own frame.
+    docs: { story: { inline: false, height: "36rem" } },
   },
   beforeEach: () => {
     usePanelStore.setState({ content: { kind: "place", id: "london" }, view: "full", photo: 1, opened: true });
@@ -20,9 +23,9 @@ export default meta;
 
 type Story = StoryObj<typeof meta>;
 
-/** London's second photo: step through them, then go back to the panel. */
-export const Photo: Story = {
-  play: async () => {
+/** Open on a photo (London's second): step through them, then go back to the panel. */
+export const Default: Story = {
+  play: async ({ userEvent }) => {
     const viewer = within(await within(document.body).findByRole("dialog", { name: "Photo viewer" }));
     await expect(viewer.getByText("2 / 5")).toBeInTheDocument();
     await userEvent.click(viewer.getByRole("button", { name: "Next photo" }));

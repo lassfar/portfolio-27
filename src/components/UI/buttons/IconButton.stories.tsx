@@ -1,31 +1,37 @@
 import type { Meta, StoryObj } from "@storybook/nextjs-vite";
-import { ChevronRight, Maximize2, PanelRight, X } from "lucide-react";
-import { expect, fn, userEvent, waitFor, within } from "storybook/test";
+import { expect, fn, waitFor } from "storybook/test";
 
+import { ICON_ARG_TYPE, SITE_ICONS } from "#/stories/icons";
+import { TOOLTIP_ALIGNS } from "#/components/UI/tooltip/tooltip.types";
 import IconButton from "./IconButton";
 
 const meta = {
   title: "UI/IconButton",
   component: IconButton,
   tags: ["autodocs"],
+  parameters: { layout: "centered" },
   decorators: [
     (Story) => (
-      <div className="flex min-h-40 items-start justify-center p-10">
+      // Room for its tooltip, under it.
+      <div className="pb-10">
         <Story />
       </div>
     ),
   ],
-  args: { icon: X, label: "Close", tooltip: "Close · Esc", onClick: fn() },
+  argTypes: {
+    icon: ICON_ARG_TYPE,
+    tooltipAlign: { control: "inline-radio", options: TOOLTIP_ALIGNS },
+  },
+  args: { icon: SITE_ICONS.X, label: "Close", tooltip: "Close · Esc", onClick: fn() },
 } satisfies Meta<typeof IconButton>;
 
 export default meta;
 
 type Story = StoryObj<typeof meta>;
 
-/** Close, with its tooltip under it on hover / keyboard focus. */
-export const Close: Story = {
-  play: async ({ canvasElement, args }) => {
-    const canvas = within(canvasElement);
+/** Any icon (Controls), named by its label; its tooltip shows on hover or keyboard focus. */
+export const Default: Story = {
+  play: async ({ canvas, userEvent, args }) => {
     const button = canvas.getByRole("button", { name: "Close" });
     const tip = canvas.getByText("Close · Esc");
     await expect(tip).not.toBeVisible();
@@ -37,17 +43,10 @@ export const Close: Story = {
   },
 };
 
-/** The panel's mode switch, in the full view. */
-export const SidePanel: Story = {
-  args: { icon: PanelRight, label: "Show as a side panel", tooltip: "Side panel" },
-};
-
-/** …and in the side panel. */
-export const FullView: Story = {
-  args: { icon: Maximize2, label: "Open the full view", tooltip: "Full view" },
-};
-
-/** The photo viewer's arrows: no tooltip. */
-export const Arrow: Story = {
-  args: { icon: ChevronRight, label: "Next photo", tooltip: undefined },
+/** Without a tooltip: only its accessible name (the photo viewer's arrows). */
+export const WithoutTooltip: Story = {
+  args: { icon: SITE_ICONS.ChevronRight, label: "Next photo", tooltip: undefined },
+  play: async ({ canvas }) => {
+    await expect(canvas.getByRole("button", { name: "Next photo" })).toHaveTextContent("");
+  },
 };
