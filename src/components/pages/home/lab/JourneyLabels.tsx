@@ -3,6 +3,7 @@
 import { useEffect, useRef, type MouseEvent } from "react";
 import { journeyLabels, journeyScreen } from "#/components/three.js/parker/journeyScreen";
 import { PHONE_QUERY, TOUCH_QUERY, keepOnScreen } from "#/components/pages/home/labels/screenEdge";
+import { type LabelBox, stackLabels } from "#/components/pages/home/labels/stack";
 
 /** Gap (px) kept between labels that would otherwise overlap. */
 const LABEL_GAP = 4;
@@ -65,7 +66,7 @@ const JourneyLabels = () => {
     };
     window.addEventListener("resize", remeasure);
     void document.fonts?.ready.then(remeasure);
-    const boxes: { el: HTMLSpanElement; cx: number; left: number; top: number; w: number; h: number }[] = [];
+    const boxes: (LabelBox & { el: HTMLSpanElement })[] = [];
     // Phones keep each label on screen (P27-31); desktop places them as before.
     const phone = window.matchMedia(PHONE_QUERY);
     const leftOf = (x: number, w: number) => (phone.matches ? keepOnScreen(x - w / 2, w, x, window.innerWidth) : x - w / 2);
@@ -118,22 +119,13 @@ const JourneyLabels = () => {
           const { w, h } = (tipSize ??= { w: tipEl.offsetWidth, h: tipEl.offsetHeight });
           // Kept in place (it moves every frame): the others make way for it.
           const left = leftOf(tip.x, w);
-          boxes.push({ el: tipEl, cx: centreOf(tip.x, left, w), left, top: tip.y - h - OFFSET_Y, w, h });
+          boxes.push({ el: tipEl, cx: centreOf(tip.x, left, w), left, top: tip.y - h - OFFSET_Y, w, h, pinned: true });
         }
       }
 
       // 2. De-overlap: keep the tip's and then the lowest labels in place, lift any that
       //    collide above them.
-      boxes.sort((a, b) => (a.el === tipEl ? -1 : b.el === tipEl ? 1 : b.top - a.top));
-      for (let i = 1; i < boxes.length; i++) {
-        const cur = boxes[i];
-        for (let j = 0; j < i; j++) {
-          const o = boxes[j];
-          const hOver = Math.abs(cur.cx - o.cx) < (cur.w + o.w) / 2 + LABEL_GAP;
-          const vOver = cur.top < o.top + o.h + LABEL_GAP && cur.top + cur.h + LABEL_GAP > o.top;
-          if (hOver && vOver) cur.top = o.top - cur.h - LABEL_GAP;
-        }
-      }
+      stackLabels(boxes, LABEL_GAP);
 
       // 3. Write.
       for (const b of boxes) b.el.style.transform = `translate(${b.left}px, ${b.top}px)`;

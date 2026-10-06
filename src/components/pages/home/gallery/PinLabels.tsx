@@ -5,6 +5,7 @@ import { PHOTO_LOCATIONS } from "#/components/three.js/earth/data";
 import { pinLabels, pinScreen } from "#/components/three.js/earth/pinScreen";
 import { useGalleryStore } from "#/stores/useGalleryStore";
 import { PHONE_QUERY, keepOnScreen } from "#/components/pages/home/labels/screenEdge";
+import { type LabelBox, stackLabels } from "#/components/pages/home/labels/stack";
 
 /** Gap (px) kept between labels that would otherwise overlap. */
 const LABEL_GAP = 6;
@@ -55,14 +56,7 @@ const PinLabels = () => {
       //    `left`/`top` are the label's desired top-left (centered on the pin,
       //    sitting above the head). Reads are batched before any writes to
       //    avoid layout thrash.
-      const boxes: {
-        el: HTMLButtonElement;
-        cx: number;
-        left: number;
-        top: number;
-        w: number;
-        h: number;
-      }[] = [];
+      const boxes: (LabelBox & { el: HTMLButtonElement })[] = [];
       for (const loc of PHOTO_LOCATIONS) {
         const el = refs.current[loc.id];
         if (!el) continue;
@@ -84,27 +78,9 @@ const PinLabels = () => {
         }
       }
 
-      // 2. DE-OVERLAP: keep the lowest label anchored and push any that collide
-      //    (horizontally + vertically) up above it, so labels stack cleanly.
-      boxes.sort((a, b) => b.top - a.top); // bottom-most first
-      for (let i = 1; i < boxes.length; i++) {
-        const cur = boxes[i];
-        let guard = 0;
-        let moved = true;
-        while (moved && guard++ < boxes.length) {
-          moved = false;
-          for (let j = 0; j < i; j++) {
-            const o = boxes[j];
-            const hOver = Math.abs(cur.cx - o.cx) < (cur.w + o.w) / 2 + LABEL_GAP;
-            const vOver =
-              cur.top < o.top + o.h + LABEL_GAP && cur.top + cur.h + LABEL_GAP > o.top;
-            if (hOver && vOver) {
-              cur.top = o.top - cur.h - LABEL_GAP;
-              moved = true;
-            }
-          }
-        }
-      }
+      // 2. DE-OVERLAP: keep the lowest label anchored and lift any that collide above
+      //    it, so labels stack cleanly.
+      stackLabels(boxes, LABEL_GAP);
 
       // 3. WRITE pass: apply the resolved positions.
       for (const b of boxes) {
