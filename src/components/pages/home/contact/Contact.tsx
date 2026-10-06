@@ -6,6 +6,7 @@ import Button from "#/components/UI/buttons/Button";
 import Field from "#/components/UI/forms/Field";
 import TextLink from "#/components/UI/links/TextLink";
 import Swash from "#/components/UI/swash/Swash";
+import DisplayTitle from "#/components/UI/text/DisplayTitle";
 import { TITLE_SWASH } from "#/components/pages/home/swashes";
 import {
   CONTACT_LINKS,
@@ -83,16 +84,7 @@ const Contact = ({ overlayRef, reduced }: ContactProps) => {
           reduced ? "pointer-events-auto" : "pointer-events-none"
         )}
       >
-        <h2
-          className={clsx(
-            "home-contact__title",
-            "font-great-vibes text-white",
-            "text-6xl sm:text-7xl md:text-8xl leading-none",
-            "mb-1"
-          )}
-        >
-          <span>Say</span> <span className="text-peach">Hello</span>
-        </h2>
+        <DisplayTitle size="lg" text="Say *Hello*" className="home-contact__title mb-1" />
         {/* Its swash draws in once the title has written in (useCosmicJourney). */}
         <Swash {...TITLE_SWASH.contact} draw={reduced ? "mount" : "cue"} className="mb-4 w-48 sm:mb-5 sm:w-64" />
 
@@ -174,9 +166,7 @@ const Contact = ({ overlayRef, reduced }: ContactProps) => {
                 "animate-[fadeIn_0.6s_ease-out]"
               )}
             >
-              <p className="font-great-vibes text-peach text-5xl sm:text-6xl leading-none">
-                Thank you
-              </p>
+              <DisplayTitle as="h3" size="sm" text="*Thank you*" />
               <Swash {...TITLE_SWASH.contact} delay={0.3} className="-mt-2 w-40 sm:w-48" />
               <p className="text-white/75 font-light text-base sm:text-lg max-w-md">
                 Your message is on its way. I&rsquo;ll write back soon.

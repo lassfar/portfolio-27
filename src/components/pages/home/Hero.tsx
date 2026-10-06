@@ -13,6 +13,7 @@ import gsap from "gsap";
 import { ScrollSmoother, ScrollTrigger, SplitText } from "gsap/all";
 import clsx from "clsx";
 import Swash from "#/components/UI/swash/Swash";
+import DisplayTitle from "#/components/UI/text/DisplayTitle";
 import { TITLE_SWASH } from "#/components/pages/home/swashes";
 import { useSceneIntro } from "#/stores/useSceneIntro";
 
@@ -189,17 +190,13 @@ const Hero = () => {
             I&rsquo;m Aymane &mdash;
           </p>
 
-          <h1
-            className={clsx(
-              "home-hero__title",
-              "font-great-vibes text-white",
-              "text-4xl sm:text-6xl md:text-6xl lg:text-7xl xl:text-8xl",
-              "leading-tight"
-            )}
+          <DisplayTitle
             ref={headlineRef}
-          >
-            A quiet maker of <span className="text-peach">Small Universes</span>
-          </h1>
+            as="h1"
+            size="hero"
+            text="A quiet maker of *Small Universes*"
+            className="home-hero__title"
+          />
 
           <p
             className={clsx(
@@ -239,18 +236,12 @@ const Hero = () => {
           "px-12 sm:px-6"
         )}
       >
-        <h2
+        <DisplayTitle
           ref={aboutTitleRef}
-          className={clsx(
-            "home-about__title",
-            "font-great-vibes text-white",
-            "text-6xl sm:text-7xl md:text-8xl lg:text-9xl leading-none",
-            "mb-1"
-          )}
-        >
-          <span>Small,</span> <span>Patient</span>{" "}
-          <span className="text-peach">Details</span>
-        </h2>
+          size="xl"
+          text="Small, Patient *Details*"
+          className="home-about__title mb-1"
+        />
         {/* Its swash draws in once the title has written in (useCosmicJourney). */}
         <Swash
           {...TITLE_SWASH.maker}

@@ -4,6 +4,7 @@ import { CSSProperties, RefObject, useEffect, useMemo, useState } from "react";
 import gsap from "gsap";
 import clsx from "clsx";
 import Swash from "#/components/UI/swash/Swash";
+import DisplayTitle from "#/components/UI/text/DisplayTitle";
 import { TITLE_SWASH } from "#/components/pages/home/swashes";
 
 /**
@@ -211,17 +212,15 @@ const Skills = ({ overlayRef, reduced = false }: Props) => {
       </div>
 
       {/* Title + intro */}
-      <h2
+      <DisplayTitle
+        size="md"
+        text="What I’m *drawn to*"
         className={clsx(
-          "home-skills__title skills__title",
-          "font-great-vibes text-white text-center",
-          "text-5xl sm:text-6xl md:text-7xl lg:text-8xl leading-none",
+          "home-skills__title skills__title text-center",
           // Phones: clear of the story title (left) and the timeline (right).
           "relative z-10 px-8 sm:px-0"
         )}
-      >
-        What I&rsquo;m <span className="text-peach">drawn to</span>
-      </h2>
+      />
       {/* Its swash draws in once the title has written in (useCosmicJourney). */}
       <Swash
         {...TITLE_SWASH.craft}

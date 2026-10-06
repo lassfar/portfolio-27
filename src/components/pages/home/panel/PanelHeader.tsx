@@ -1,7 +1,8 @@
 import clsx from "clsx";
 import type { ReactNode } from "react";
 import type { PanelView } from "#/stores/usePanelStore";
-import AccentText from "#/components/UI/text/AccentText";
+import DisplayTitle from "#/components/UI/text/DisplayTitle";
+import type { DisplayTitleSize } from "#/components/UI/text/text.types";
 import Tag from "#/components/UI/tags/Tag";
 import Swash from "#/components/UI/swash/Swash";
 import { TITLE_SWASH } from "#/components/pages/home/swashes";
@@ -18,11 +19,13 @@ type HeaderSlots = {
   tags: string;
 };
 
+const TITLE_SIZE: Record<PanelView, DisplayTitleSize> = { full: "panel", side: "panel-side" };
+
 /** The full view centres the header like the Maker; the side panel is a left-aligned reading column. */
 const HEADER: Record<PanelView, HeaderSlots> = {
   full: {
     root: "flex max-w-panel-head flex-col items-center text-center",
-    title: "mt-3.5 max-w-[13ch] text-balance text-display-sm sm:mt-5 sm:text-display",
+    title: "mt-3.5 max-w-[13ch] text-balance sm:mt-5",
     swash: "mt-0.5 w-45 sm:w-75",
     quote: "mt-4.5 max-w-[34ch] text-balance text-lg sm:mt-6 sm:text-quote",
     longQuote: "mt-4.5 max-w-[46ch] text-balance text-base leading-relaxed sm:mt-6 sm:text-quote-long",
@@ -30,7 +33,7 @@ const HEADER: Record<PanelView, HeaderSlots> = {
   },
   side: {
     root: "flex w-full flex-col items-start text-left",
-    title: "mt-3.5 text-pretty text-4xl leading-display sm:text-5xl",
+    title: "mt-3.5 text-pretty",
     swash: "mt-0.5 w-45 sm:w-50",
     quote: "mt-4.5 text-pretty text-base leading-relaxed",
     longQuote: "mt-4.5 text-pretty text-sm leading-relaxed",
@@ -57,15 +60,15 @@ const PanelHeader = ({ view, model, titleId, children }: PanelHeaderProps) => {
   const slots = HEADER[view];
   return (
     <header className={slots.root}>
-      <h2
+      <DisplayTitle
         {...RISE}
         id={titleId}
         tabIndex={-1} // focus lands here when the place it was in is swapped (usePanelFrame)
         data-focus-key="title"
-        className={clsx("pb-[0.06em] font-great-vibes font-normal text-white outline-hidden", slots.title)}
-      >
-        <AccentText text={model.title} />
-      </h2>
+        size={TITLE_SIZE[view]}
+        text={model.title}
+        className={clsx("pb-[0.06em] outline-hidden", slots.title)}
+      />
       {/* It rises and draws in the panel's entrance timeline (ScenePanel). */}
       <Swash {...TITLE_SWASH.panel} draw="cue" className={slots.swash} />
       {model.blurb && (
