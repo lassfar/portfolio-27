@@ -69,9 +69,9 @@ import { useSceneRotation } from "#/stores/useSceneRotation";
 import { useSaturnAnchor } from "#/stores/useSaturnAnchor";
 import { useEarthAnchor } from "#/stores/useEarthAnchor";
 import { useParkerAnchor } from "#/stores/useParkerAnchor";
-import { useGalleryStore } from "#/stores/useGalleryStore";
 import { useJourneyScroll } from "#/stores/useJourneyScroll";
-import { useLabStore } from "#/stores/useLabStore";
+import { selectIsOpen, usePanelStore } from "#/stores/usePanelStore";
+import { pinHover } from "#/components/three.js/earth/pinScreen";
 import { storyEase } from "./storyMotion";
 import { fitRamp, portraitFit, spanOf } from "./portraitFit";
 import { monotoneCurve } from "./monotoneCurve";
@@ -825,30 +825,32 @@ const CameraRig = ({
 };
 
 /**
- * While an overlay panel is open (Earth gallery or Lab experiments), lock the
- * journey to the panel: pause ScrollSmoother so the wheel/touch can't advance the
- * story, and disable pointer events on the canvas so drags/clicks don't fire
- * "space events" behind the panel. The panel (portalled outside #smooth-content)
- * keeps its own scroll + clicks. Everything restores when the panel closes.
+ * While the panel is open (a place's photos or the Lab), lock the journey to it: pause
+ * ScrollSmoother so the wheel/touch can't advance the story, and disable pointer events
+ * on the canvas so drags don't fire "space events" behind the panel (the Earth's pins
+ * ignore R3F's events themselves; a pin lit when it opened goes dark). The panel
+ * (portalled outside #smooth-content) keeps its own scroll + clicks. Everything restores
+ * when the panel closes.
  */
 const InteractionLock = () => {
   const gl = useThree((s) => s.gl);
   useEffect(() => {
-    const apply = () => {
-      const locked =
-        useGalleryStore.getState().openId !== null ||
-        useLabStore.getState().open;
+    const apply = (locked: boolean) => {
       gl.domElement.style.pointerEvents = locked ? "none" : "auto";
+      if (locked) {
+        pinHover.id = null;
+        document.body.style.cursor = "";
+      }
       // Freeze the journey via the shared lock registry (stores/scrollLock) so
       // any lock source coordinates without clobbering ScrollSmoother.paused().
       setScrollLock("panel", locked);
     };
-    apply();
-    const unsubGallery = useGalleryStore.subscribe(apply);
-    const unsubLab = useLabStore.subscribe(apply);
+    apply(selectIsOpen(usePanelStore.getState()));
+    const unsubscribe = usePanelStore.subscribe((s, prev) => {
+      if (selectIsOpen(s) !== selectIsOpen(prev)) apply(selectIsOpen(s));
+    });
     return () => {
-      unsubGallery();
-      unsubLab();
+      unsubscribe();
       gl.domElement.style.pointerEvents = "auto";
       setScrollLock("panel", false);
     };
@@ -898,8 +900,8 @@ const RenderPause = ({
         mp > JOURNEY.craftCoverEnd + COVER_MARGIN && mp < JOURNEY.craftFadeStart - COVER_MARGIN;
       renderPause.paused = PERFORMANCE.pauseCovered && (craftCovers || lightboxCovers);
     };
-    const onGallery = () => {
-      const open = useGalleryStore.getState().lightboxIndex !== null;
+    const onPanel = () => {
+      const open = usePanelStore.getState().photo !== null;
       window.clearTimeout(lightboxTimer);
       if (!open) lightboxCovers = false;
       else if (!lightboxCovers) {
@@ -914,7 +916,7 @@ const RenderPause = ({
     update();
     const unsubscribe = [
       useJourneyScroll.subscribe(update),
-      useGalleryStore.subscribe(onGallery),
+      usePanelStore.subscribe(onPanel),
       onPerformanceChange(update),
     ];
     return () => {

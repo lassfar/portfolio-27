@@ -13,7 +13,7 @@ import PinLabels from "./PinLabels";
  * Rendered through a PORTAL to `document.body` — the app tree lives inside
  * ScrollSmoother's `#smooth-content`, which is `transform`ed, and a transformed
  * ancestor re-bases `position: fixed`. Portalling to the body escapes that so the
- * overlays are pinned to the real viewport. Driven by `useGalleryStore`, which
+ * overlays are pinned to the real viewport. Driven by `usePanelStore`, which
  * the 3D pins write to on hover/click (M3).
  */
 const EarthGallery = () => {

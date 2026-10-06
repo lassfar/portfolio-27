@@ -14,7 +14,7 @@ import ExperimentsPanel from "./ExperimentsPanel";
  * gallery: the app tree lives inside ScrollSmoother's `#smooth-content`, which is
  * `transform`ed, and a transformed ancestor re-bases `position: fixed`. Portalling
  * to the body escapes that so the overlays pin to the real viewport. Driven by
- * `useLabStore`, which the label opens on click (mirrors EarthGallery).
+ * `usePanelStore`, which the label opens on click (mirrors EarthGallery).
  */
 const LabExperiments = () => {
   const [mounted, setMounted] = useState(false);

@@ -15,3 +15,7 @@ export const pinScreen: Record<string, PinScreen> = {};
 /** The DOM overlay's per-frame update — set by PinLabels, called by EarthPins right
  *  after the pins are projected (same frame, before it's drawn). */
 export const pinLabels: { update: (() => void) | null } = { update: null };
+
+/** The place whose pin is lit (hovered, or its label is): set by the pins and the labels,
+ *  read by the pins every frame. A plain record, like `pinScreen`. */
+export const pinHover: { id: string | null } = { id: null };

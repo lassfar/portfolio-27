@@ -1,7 +1,7 @@
 "use client";
 
 import clsx from "clsx";
-import { useLabStore } from "#/stores/useLabStore";
+import { usePanelStore } from "#/stores/usePanelStore";
 import { EXPERIMENTS } from "#/components/three.js/voyager/data";
 
 /**
@@ -12,8 +12,8 @@ import { EXPERIMENTS } from "#/components/three.js/voyager/data";
  * scene) via `next/dynamic({ ssr: false })`.
  */
 const ExperimentsPanel = () => {
-  const open = useLabStore((s) => s.open);
-  const close = useLabStore((s) => s.close);
+  const open = usePanelStore((s) => s.content?.kind === "lab");
+  const close = usePanelStore((s) => s.close);
 
   return (
     <aside

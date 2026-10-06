@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import clsx from "clsx";
-import { useGalleryStore } from "#/stores/useGalleryStore";
+import { usePanelStore } from "#/stores/usePanelStore";
 import {
   PHOTO_LOCATIONS,
   type PhotoLocation,
@@ -18,9 +18,9 @@ import { MediaTile } from "./GalleryMedia";
  * closing, so the slide-out animates gracefully.
  */
 const GalleryPanel = () => {
-  const openId = useGalleryStore((s) => s.openId);
-  const close = useGalleryStore((s) => s.close);
-  const openLightbox = useGalleryStore((s) => s.openLightbox);
+  const openId = usePanelStore((s) => (s.content?.kind === "place" ? s.content.id : null));
+  const close = usePanelStore((s) => s.close);
+  const openLightbox = usePanelStore((s) => s.openPhoto);
 
   const loc = PHOTO_LOCATIONS.find((l) => l.id === openId) ?? null;
   const open = loc !== null;

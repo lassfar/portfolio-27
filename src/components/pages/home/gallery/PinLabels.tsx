@@ -3,7 +3,7 @@
 import { useEffect, useRef } from "react";
 import { PHOTO_LOCATIONS } from "#/components/three.js/earth/data";
 import { pinLabels, pinScreen } from "#/components/three.js/earth/pinScreen";
-import { useGalleryStore } from "#/stores/useGalleryStore";
+import { usePanelStore } from "#/stores/usePanelStore";
 import { PHONE_QUERY, keepOnScreen } from "#/components/pages/home/labels/screenEdge";
 import { type LabelBox, stackLabels } from "#/components/pages/home/labels/stack";
 
@@ -103,7 +103,7 @@ const PinLabels = () => {
           ref={(el) => {
             refs.current[loc.id] = el;
           }}
-          onClick={() => useGalleryStore.getState().open(loc.id)}
+          onClick={() => usePanelStore.getState().open({ kind: "place", id: loc.id })}
           aria-label={`Open ${loc.place} gallery`}
           className="tap-target pointer-events-none fixed left-0 top-0 z-[45] cursor-pointer whitespace-nowrap rounded-full bg-rich-black/85 px-3 py-1.5 text-[11px] font-light tracking-wide text-light-peach opacity-0 ring-1 ring-white/10 backdrop-blur-md transition-[opacity,color,box-shadow] duration-300 hover:text-peach hover:ring-white/25 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-peach/60"
           style={{ willChange: "transform, opacity" }}

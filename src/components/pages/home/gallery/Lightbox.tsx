@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect } from "react";
 import clsx from "clsx";
-import { useGalleryStore } from "#/stores/useGalleryStore";
+import { usePanelStore } from "#/stores/usePanelStore";
 import { PHOTO_LOCATIONS } from "#/components/three.js/earth/data";
 import { MediaFull } from "./GalleryMedia";
 
@@ -12,10 +12,10 @@ import { MediaFull } from "./GalleryMedia";
  * on-screen chevrons or the ← / → keys; Esc closes.
  */
 const Lightbox = () => {
-  const openId = useGalleryStore((s) => s.openId);
-  const index = useGalleryStore((s) => s.lightboxIndex);
-  const setIndex = useGalleryStore((s) => s.setLightboxIndex);
-  const closeLightbox = useGalleryStore((s) => s.closeLightbox);
+  const openId = usePanelStore((s) => (s.content?.kind === "place" ? s.content.id : null));
+  const index = usePanelStore((s) => s.photo);
+  const setIndex = usePanelStore((s) => s.openPhoto);
+  const closeLightbox = usePanelStore((s) => s.back);
 
   const loc = PHOTO_LOCATIONS.find((l) => l.id === openId) ?? null;
   const media = loc?.media ?? [];

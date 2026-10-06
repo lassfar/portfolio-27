@@ -13,9 +13,8 @@ import {
 } from "#/components/pages/home/scroll/glide";
 import { TIMELINE } from "#/components/pages/home/timeline/config";
 import { mpAt } from "#/components/three.js/star/config";
-import { useGalleryStore } from "#/stores/useGalleryStore";
 import { useJourneyScroll } from "#/stores/useJourneyScroll";
-import { useLabStore } from "#/stores/useLabStore";
+import { selectIsOpen, usePanelStore } from "#/stores/usePanelStore";
 import { PHASE_NAV, glideSeconds, nextStopAt, type PhaseStop } from "./config";
 
 gsap.registerPlugin(useGSAP, SplitText);
@@ -187,9 +186,7 @@ const NavAssistant = () => {
       closeRef.current();
     };
     const syncPanels = () => {
-      const isOpen =
-        useGalleryStore.getState().openId !== null ||
-        useLabStore.getState().open;
+      const isOpen = selectIsOpen(usePanelStore.getState());
       setPanelOpen(isOpen);
       if (isOpen) closeRef.current();
     };
@@ -203,8 +200,7 @@ const NavAssistant = () => {
     syncPanels();
     const unsubscribe = [
       useJourneyScroll.subscribe((s) => update(s.progress)),
-      useGalleryStore.subscribe(syncPanels),
-      useLabStore.subscribe(syncPanels),
+      usePanelStore.subscribe(syncPanels),
     ];
     window.addEventListener("keydown", onKey);
     window.addEventListener("pointerdown", onPointerDown, { capture: true });

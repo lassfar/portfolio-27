@@ -1,7 +1,7 @@
 "use client";
 
 import { ThreeEvent, useFrame, useThree } from "@react-three/fiber";
-import { useMemo, useRef, useState } from "react";
+import { useMemo, useRef } from "react";
 import {
   AdditiveBlending,
   CanvasTexture,
@@ -14,13 +14,13 @@ import { clamp01, damp, remap01 } from "#/components/three.js/star/utils";
 import { useVoyageScroll } from "#/stores/useVoyageScroll";
 import { useLabScroll } from "#/stores/useLabScroll";
 import { useEarthAnchor } from "#/stores/useEarthAnchor";
-import { useGalleryStore } from "#/stores/useGalleryStore";
+import { usePanelStore } from "#/stores/usePanelStore";
 import { VOYAGE } from "#/components/three.js/solar/config";
 import { LAB } from "#/components/three.js/voyager/config";
 import { EARTH } from "./config";
 import { PHOTO_LOCATIONS, type PhotoLocation } from "./data";
 import { latLngToVector3 } from "./utils";
-import { pinLabels, pinScreen } from "./pinScreen";
+import { pinHover, pinLabels, pinScreen } from "./pinScreen";
 import { LABEL_PRIORITY, projectToViewport } from "#/components/three.js/scene/labelProjection";
 
 const UP = new Vector3(0, 1, 0);
@@ -52,7 +52,8 @@ function makeGlowTexture() {
  * STICK that stands radially off the globe (a thin stem + a glowing head). They
  * live inside the Earth's spin group (so they stick to the geography as it
  * turns), appear only once the Earth is the focus, hide on the back hemisphere,
- * grow + glow on hover, and open that place's gallery on click.
+ * grow + glow on hover — theirs, or their label's (`pinHover`) — and open that place's
+ * panel on click (not while a panel is open: R3F's events still reach the scene then).
  */
 const EarthPins = () => {
   const glow = useMemo(makeGlowTexture, []);
@@ -85,7 +86,6 @@ const Pin = ({
   const headRef = useRef<Group>(null);
   const glowRef = useRef<SpriteMaterial>(null);
   const scale = useRef(1);
-  const [hovered, setHovered] = useState(false);
 
   const worldPos = useRef(new Vector3());
   const normal = useRef(new Vector3());
@@ -140,6 +140,7 @@ const Pin = ({
       };
     }
 
+    const hovered = pinHover.id === loc.id;
     const target = hovered ? 1.35 : 1;
     scale.current = damp(scale.current, target, 0.2, delta);
     if (headRef.current) headRef.current.scale.setScalar(scale.current);
@@ -151,20 +152,21 @@ const Pin = ({
     }
   }, LABEL_PRIORITY);
 
+  const panelOpen = () => usePanelStore.getState().content !== null;
   const over = (e: ThreeEvent<PointerEvent>) => {
     e.stopPropagation();
-    setHovered(true);
-    useGalleryStore.getState().setHover(loc.id);
+    if (panelOpen()) return;
+    pinHover.id = loc.id;
     document.body.style.cursor = "pointer";
   };
   const out = () => {
-    setHovered(false);
-    useGalleryStore.getState().setHover(null);
+    if (pinHover.id === loc.id) pinHover.id = null;
     document.body.style.cursor = "";
   };
   const click = (e: ThreeEvent<MouseEvent>) => {
     e.stopPropagation();
-    useGalleryStore.getState().open(loc.id);
+    if (panelOpen()) return;
+    usePanelStore.getState().open({ kind: "place", id: loc.id });
   };
 
   return (

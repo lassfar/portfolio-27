@@ -2,7 +2,7 @@
 
 import { useEffect, useRef } from "react";
 import { recordLabel, recordScreen } from "#/components/three.js/voyager/recordScreen";
-import { useLabStore } from "#/stores/useLabStore";
+import { usePanelStore } from "#/stores/usePanelStore";
 import { PHONE_QUERY, keepOnScreen } from "#/components/pages/home/labels/screenEdge";
 
 /**
@@ -66,7 +66,7 @@ const RecordLabel = () => {
       ref={ref}
       type="button"
       onClick={() => {
-        if (recordScreen.text === "card") useLabStore.getState().openPanel();
+        if (recordScreen.text === "card") usePanelStore.getState().open({ kind: "lab" });
       }}
       aria-label="Open Parker's memory card — the Lab experiments"
       className="tap-target pointer-events-none fixed left-0 top-0 z-[45] cursor-pointer whitespace-nowrap rounded-full bg-rich-black/85 px-3 py-1.5 text-[11px] font-light tracking-wide text-light-peach opacity-0 ring-1 ring-white/10 backdrop-blur-md transition-[opacity,color,box-shadow] duration-300 hover:text-peach hover:ring-white/25 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-peach/60"
