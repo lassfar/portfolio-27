@@ -6,7 +6,8 @@ import { createPortal } from "react-dom";
 import { useGlide } from "#/stores/useGlide";
 import { useJourneyScroll } from "#/stores/useJourneyScroll";
 import { mpAt } from "#/components/three.js/star/config";
-import { STORY_SUBTITLES, SUBTITLE_PACE, SUBTITLE_PLACEMENT, accentParts, nextSubtitle } from "./config";
+import AccentText from "#/components/UI/text/AccentText";
+import { STORY_SUBTITLES, SUBTITLE_PACE, SUBTITLE_PLACEMENT, nextSubtitle } from "./config";
 import type { SubtitlePlacement } from "./subtitles.types";
 
 /** How quickly the measured scroll speed follows the scroll (s): smooths frame-to-frame jitter. */
@@ -24,18 +25,6 @@ const PLACEMENT: Record<SubtitlePlacement, string> = {
   "bottom-center": CENTRED,
   "bottom-right": `${CENTRED} sm:left-auto sm:right-20 sm:translate-x-0 sm:text-right md:right-24`,
 };
-
-/** A line's text, its accent in peach. */
-const LineText = ({ line }: { line: string }) =>
-  accentParts(line).map((part, k) =>
-    part.accent ? (
-      <span key={k} className="story-subtitle__accent text-peach">
-        {part.text}
-      </span>
-    ) : (
-      part.text
-    ),
-  );
 
 /**
  * The story's subtitles (P27-79): on each part of the scroll with no words of its own,
@@ -129,7 +118,7 @@ const StorySubtitles = () => {
             )}
             style={{ transitionDuration: `${SUBTITLE_PACE.fadeMs}ms` }}
           >
-            <LineText line={subtitle.line} />
+            <AccentText text={subtitle.line} accentClassName="story-subtitle__accent text-peach" />
           </p>
         );
       })}

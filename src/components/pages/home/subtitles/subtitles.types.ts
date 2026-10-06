@@ -16,5 +16,3 @@ export type StorySubtitle = {
   placement?: SubtitlePlacement;
 };
 
-/** A run of a line's text, accented (peach) or not. */
-export type SubtitlePart = { text: string; accent: boolean };

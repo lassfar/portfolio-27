@@ -3,12 +3,12 @@ import { PHASE_STOPS } from "#/components/pages/home/phase-nav/config";
 import { STORY_CHAPTERS } from "#/components/pages/home/timeline/config";
 import { chapterAt } from "#/components/pages/home/timeline/layout";
 import { JOURNEY, mpAt } from "#/components/three.js/star/config";
+import { accentParts } from "#/components/UI/text/accent";
 import {
   SUBTITLE_PLACEMENT,
   STORY_SUBTITLES,
   SUBTITLE_PACE,
   SUBTITLE_START,
-  accentParts,
   nextSubtitle,
   subtitleAt,
 } from "./config";
@@ -70,14 +70,7 @@ describe("the story's subtitles", () => {
     expect(subtitleAt(1)).toBe(-1); // the end: Contact
   });
 
-  it("split each line into its plain and peach runs", () => {
-    expect(accentParts("Before it has to *come apart*. *Dot by dot* — I've")).toEqual([
-      { text: "Before it has to ", accent: false },
-      { text: "come apart", accent: true },
-      { text: ". ", accent: false },
-      { text: "Dot by dot", accent: true },
-      { text: " — I've", accent: false },
-    ]);
+  it("each have words in peach", () => {
     for (const { line } of STORY_SUBTITLES) {
       const parts = accentParts(line);
       expect(parts.map((p) => p.text).join("")).toBe(line.replaceAll("*", ""));

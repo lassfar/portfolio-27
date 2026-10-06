@@ -1,7 +1,7 @@
 import { STORY_CHAPTERS } from "#/components/pages/home/timeline/config";
 import { JOURNEY } from "#/components/three.js/star/config";
 import { LAB } from "#/components/three.js/voyager/config";
-import type { StorySubtitle, SubtitlePart, SubtitlePlacement } from "./subtitles.types";
+import type { StorySubtitle, SubtitlePlacement } from "./subtitles.types";
 
 const jp = (x: number) => x * JOURNEY.journeyEnd; // journey progress (the star → About block) → mp
 const labMp = (lab: number) => JOURNEY.earthDwellEnd + lab * (JOURNEY.galaxyStart - JOURNEY.earthDwellEnd); // Lab progress → mp
@@ -91,14 +91,6 @@ export const STORY_SUBTITLES: readonly StorySubtitle[] = [
     onAssistantGlide: true,
   },
 ];
-
-/** A line split into its plain and accented (`*…*`) runs. */
-export function accentParts(line: string): SubtitlePart[] {
-  return line
-    .split("*")
-    .map((text, i) => ({ text, accent: i % 2 === 1 }))
-    .filter((part) => part.text.length > 0);
-}
 
 /**
  * The line showing at master progress `mp` (its index), or -1 between them — or if it's
