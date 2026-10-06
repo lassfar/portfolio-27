@@ -10,7 +10,8 @@ export type PanelFrame = { content: PanelContent; view: PanelView; key: number }
  * once; on a switch while open (another place, or the other view) it fades out first
  * (`morphing`, MORPH_MS) and then swaps — so nothing is laid out again while it's seen —
  * and the scroll goes back to the top. While the panel closes, the last content stays
- * for its fade-out. A new `key` on each swap replays the content's entrance.
+ * for its fade-out. A new `key` on each swap replays the content's entrance, and focus
+ * comes back to the control it was on (by its `data-focus-key`: a place pill, Previous / Next).
  */
 export function usePanelFrame(scroll: RefObject<HTMLElement | null>) {
   const content = usePanelStore((s) => s.content);
@@ -19,12 +20,14 @@ export function usePanelFrame(scroll: RefObject<HTMLElement | null>) {
   const [morphing, setMorphing] = useState(false);
   const shown = useRef<PanelFrame | null>(null);
   const last = useRef<PanelContent | null>(null);
+  const focusKey = useRef<string | undefined>(undefined);
 
   useEffect(() => {
     const wasOpen = last.current !== null;
     last.current = content;
     if (!content) return; // closing: the last frame stays for the fade-out
     const swap = () => {
+      focusKey.current = document.activeElement instanceof HTMLElement ? document.activeElement.dataset.focusKey : undefined;
       const next = { content, view, key: (shown.current?.key ?? 0) + 1 };
       shown.current = next;
       setFrame(next);
@@ -41,6 +44,12 @@ export function usePanelFrame(scroll: RefObject<HTMLElement | null>) {
     const timer = window.setTimeout(swap, MORPH_MS);
     return () => window.clearTimeout(timer);
   }, [content, view, scroll]);
+
+  useEffect(() => {
+    const key = focusKey.current;
+    focusKey.current = undefined;
+    if (key) scroll.current?.querySelector<HTMLElement>(`[data-focus-key="${key}"]`)?.focus({ preventScroll: true });
+  }, [frame?.key, scroll]);
 
   return { frame, morphing };
 }

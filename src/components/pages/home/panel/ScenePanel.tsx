@@ -1,7 +1,7 @@
 "use client";
 
 import clsx from "clsx";
-import { useEffect, useId, useRef } from "react";
+import { useEffect, useId, useRef, type Ref } from "react";
 import { selectIsOpen, usePanelStore, type PanelView } from "#/stores/usePanelStore";
 import PlaceContent from "#/components/pages/home/gallery/PlaceContent";
 import LabContent from "#/components/pages/home/lab/LabContent";
@@ -10,8 +10,7 @@ import { PANEL_ID } from "./config";
 import { usePanelFrame } from "./usePanelFrame";
 
 /** Its size, shape and fill animate between the two views (and in and out). */
-const SHELL =
-  "fixed right-0 bottom-0 z-50 flex flex-col transition-[opacity,visibility,width,height,translate,background-color,border-radius,box-shadow] duration-600 ease-out-quint motion-reduce:transition-none";
+const SHELL = "fixed right-0 bottom-0 z-50 flex flex-col duration-600 ease-out-quint motion-reduce:transition-none";
 
 /** The full view covers the screen (the scene veiled behind it); the side panel is frosted glass — a bottom sheet on a phone. */
 const SHELL_VIEW: Record<PanelView, string> = {
@@ -19,10 +18,15 @@ const SHELL_VIEW: Record<PanelView, string> = {
   side: "h-2/3 w-full rounded-t-3xl bg-rich-black/76 shadow-sheet inset-shadow-sheet backdrop-blur-xl backdrop-saturate-150 sm:h-dvh sm:w-panel-side sm:rounded-none sm:border-l sm:border-white/10 sm:shadow-panel sm:inset-shadow-none",
 };
 
-/** Closed: faded out (the side panel slides off too). Never a translate while open: it would re-base fixed children. */
+/**
+ * Open, it shows at once (so focus can move in) and fades in; closed, it fades out (the
+ * side panel slides off too) and only then hides. Never a translate while open: it would
+ * re-base fixed children.
+ */
+const SHELL_OPEN = "visible transition-[opacity,width,height,translate,background-color,border-radius,box-shadow]";
 const SHELL_CLOSED: Record<PanelView, string> = {
-  full: "invisible pointer-events-none opacity-0",
-  side: "invisible pointer-events-none translate-y-full opacity-0 sm:translate-x-full sm:translate-y-0",
+  full: "invisible pointer-events-none opacity-0 transition-[opacity,visibility]",
+  side: "invisible pointer-events-none translate-y-full opacity-0 transition-[opacity,visibility,translate] sm:translate-x-full sm:translate-y-0",
 };
 
 /** The content: one centred column in the full view (like the Maker), a reading column at the side. */
@@ -37,9 +41,9 @@ const INNER: Record<PanelView, string> = {
  * full view — over the whole screen, the scene veiled behind it and the story's
  * overlays stepping back (`<html data-panel>`, read by the `panel-full:` variant) — or,
  * by choice, as a side panel beside the scene. Its content swaps with a short fade
- * (usePanelFrame). Portalled to the body (SceneOverlays).
+ * (usePanelFrame). Portalled to the body; SceneOverlays makes it a dialog (focus, keys).
  */
-const ScenePanel = () => {
+const ScenePanel = ({ ref }: { ref?: Ref<HTMLElement> }) => {
   const open = usePanelStore(selectIsOpen);
   const view = usePanelStore((s) => s.view);
   const titleId = useId();
@@ -60,12 +64,12 @@ const ScenePanel = () => {
 
   return (
     <section
+      ref={ref}
       id={PANEL_ID}
       role="dialog"
       aria-modal={view === "full"}
       aria-labelledby={titleId}
-      inert={!open}
-      className={clsx(SHELL, SHELL_VIEW[view], !open && SHELL_CLOSED[view])}
+      className={clsx(SHELL, SHELL_VIEW[view], open ? SHELL_OPEN : SHELL_CLOSED[view])}
     >
       {view === "side" && (
         <span

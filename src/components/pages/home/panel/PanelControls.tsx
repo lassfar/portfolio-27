@@ -32,6 +32,7 @@ const PanelControls = ({ view, closeRef }: { view: PanelView; closeRef?: Ref<HTM
       />
       <IconButton
         ref={closeRef}
+        data-autofocus
         icon={X}
         label="Close"
         tooltip="Close · Esc"
