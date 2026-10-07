@@ -11,7 +11,7 @@ Goal: prove production-grade code quality and creative frontend skill to recruit
 
 | Layer | Technology |
 |---|---|
-| Framework | Next.js 15 (App Router) |
+| Framework | Next.js 16 (App Router) |
 | Language | TypeScript (strict) |
 | Styling | Tailwind CSS v4 (CSS-based config) |
 | Animation | GSAP 3 + SplitText + ScrollTrigger |
@@ -147,10 +147,9 @@ Failing either check rejects the commit with a clear error message.
 ## Task Management
 
 Notion workspace: **Portfolio-27**
-- All tasks tracked in the **Backlog** database
+- Everything is tracked in the one **Backlog** database: tasks, bugs (Type `Bug`) and technical debt (Type `Tech Debt`), so every item gets a `P27-N` ID for its commits
+- The **Bugs** and **Tech Debt** views list those two Types, each with its own template
 - Active sprint tracked in **Current Sprint** page
-- Bugs go in the **Bugs** database
-- Technical debt goes in the **Technical Debt** database
 
 ## Commands
 
