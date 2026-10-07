@@ -1,0 +1,16 @@
+# Prettier also skips node_modules and everything in .gitignore.
+
+# Build output and generated files
+.next/
+out/
+build/
+storybook-static/
+coverage/
+next-env.d.ts
+package-lock.json
+
+# Design prototypes and mockups: not app source (ESLint skips them too)
+docs/
+
+# Served as they are (data, images, icons)
+public/

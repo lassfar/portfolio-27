@@ -1,3 +1,5 @@
-# Lint first (a few seconds): an unused import or variable, among others, stops the commit (P27-84).
+# Format the commit's files with Prettier, and add them back to the commit (lint-staged, P27-96).
+npx lint-staged
+# Lint the whole project (a few seconds): any error or warning stops the commit (P27-84, P27-96).
 npm run lint
 npm test

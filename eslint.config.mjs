@@ -4,6 +4,7 @@
 // `core-web-vitals` config already includes the base Next + TypeScript rules.
 // See: https://github.com/storybookjs/eslint-plugin-storybook#configuration-flat-config-format
 import next from "eslint-config-next/core-web-vitals";
+import prettier from "eslint-config-prettier/flat";
 import storybook from "eslint-plugin-storybook";
 
 /**
@@ -53,6 +54,8 @@ const eslintConfig = [
     files: ["**/*.{js,jsx,mjs,cjs}"],
     rules: { "no-unused-vars": ["error", UNUSED] },
   },
+  // Prettier owns the formatting (P27-96): any rule above about layout or style is turned off.
+  prettier,
   {
     ignores: [
       "node_modules/**",
