@@ -16,7 +16,7 @@ Goal: prove production-grade code quality and creative frontend skill to recruit
 | Styling | Tailwind CSS v4 (CSS-based config) |
 | Animation | GSAP 3 + SplitText + ScrollTrigger |
 | 3D | Three.js + React Three Fiber (@react-three/fiber) |
-| State | Zustand (global), Jotai (atomic) |
+| State | Zustand |
 | Component Dev | Storybook v10 |
 | Testing | Vitest + Playwright (browser-mode) |
 | Package Manager | npm |
