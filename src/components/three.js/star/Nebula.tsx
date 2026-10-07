@@ -1,9 +1,8 @@
 "use client";
 
 import { useFrame } from "@react-three/fiber";
-import { Billboard } from "@react-three/drei";
-import { useMemo, useRef } from "react";
-import { AdditiveBlending, Color, Group, Points, ShaderMaterial } from "three";
+import { useMemo, useRef, type ReactNode } from "react";
+import { AdditiveBlending, Color, Group, Points, Quaternion, ShaderMaterial } from "three";
 import { useHeroScroll } from "#/stores/useHeroScroll";
 import {
   BURST,
@@ -30,6 +29,29 @@ const INNER_FRACTION = 0.52; // 0.13..0.52 → inner shell; rest → outer gas
 
 // Base opacity of the soft core glow (multiplied by the global fade).
 const GLOW_OPACITY = 0.9;
+
+const _parentTurn = new Quaternion(); // scratch (FaceCamera)
+
+/**
+ * Its children always face the camera: drei's Billboard, without the rotation it cloned
+ * every frame (P27-86). The inner group turns as the camera does, less its parent's turn.
+ */
+const FaceCamera = ({ children }: { children: ReactNode }) => {
+  const outer = useRef<Group>(null);
+  const inner = useRef<Group>(null);
+  useFrame(({ camera }) => {
+    if (!outer.current || !inner.current) return;
+    outer.current.updateMatrix();
+    outer.current.updateWorldMatrix(false, false);
+    outer.current.getWorldQuaternion(_parentTurn);
+    camera.getWorldQuaternion(inner.current.quaternion).premultiply(_parentTurn.invert());
+  });
+  return (
+    <group ref={outer}>
+      <group ref={inner}>{children}</group>
+    </group>
+  );
+};
 
 /**
  * A particle nebula-star: tens of thousands of small glowing points sculpted
@@ -180,7 +202,7 @@ const Nebula = ({ count = PARTICLES.count, animate = true }: Props) => {
           Its own scale shrinks to 0 as the star fills the screen, vanishing
           right as the burst begins. */}
       <group ref={glowGroupRef}>
-        <Billboard>
+        <FaceCamera>
           <mesh>
             <planeGeometry args={[LAYOUT.glowSize, LAYOUT.glowSize]} />
             <shaderMaterial
@@ -193,7 +215,7 @@ const Nebula = ({ count = PARTICLES.count, animate = true }: Props) => {
               fragmentShader={GLOW_FRAGMENT_SHADER}
             />
           </mesh>
-        </Billboard>
+        </FaceCamera>
       </group>
 
       <points ref={pointsRef}>

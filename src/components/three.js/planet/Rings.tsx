@@ -242,15 +242,21 @@ void main(){
   float assembleScale = mix(uStartScale, 1.0, grow) + uOvershoot * sin(3.14159265 * wob);
   home *= assembleScale;
 
-  float ds = uTime * 0.05;
-  vec3 scattered = aScatter + vec3(
-    snoise(aScatter * 0.5 + vec3(ds, 0.0, 0.0)),
-    snoise(aScatter * 0.5 + vec3(0.0, ds + 4.0, 0.0)),
-    snoise(aScatter * 0.5 + vec3(0.0, 0.0, ds + 8.0))
-  ) * uScatterDrift;
-  float f = clamp((uForm - aSeed * uStagger) / (1.0 - uStagger), 0.0, 1.0);
-  f = f * f * (3.0 - 2.0 * f);
-  p = mix(scattered, home, f);
+  // Assembled (uForm 1): every grain is home, so its drifting scatter would be weighed by
+  // exactly 0 — skip its three noises (P27-86).
+  if (uForm < 1.0) {
+    float ds = uTime * 0.05;
+    vec3 scattered = aScatter + vec3(
+      snoise(aScatter * 0.5 + vec3(ds, 0.0, 0.0)),
+      snoise(aScatter * 0.5 + vec3(0.0, ds + 4.0, 0.0)),
+      snoise(aScatter * 0.5 + vec3(0.0, 0.0, ds + 8.0))
+    ) * uScatterDrift;
+    float f = clamp((uForm - aSeed * uStagger) / (1.0 - uStagger), 0.0, 1.0);
+    f = f * f * (3.0 - 2.0 * f);
+    p = mix(scattered, home, f);
+  } else {
+    p = home;
+  }
 
   vec4 mvPosition = modelViewMatrix * vec4(p, 1.0);
 

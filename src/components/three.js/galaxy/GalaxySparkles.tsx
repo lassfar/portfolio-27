@@ -44,7 +44,7 @@ const GalaxySparkles = ({ animate = true }: { animate?: boolean }) => {
 
   // Same seeded layout as the prototype, spread across the frame for this aspect.
   // Built imperatively (and rebuilt when the count is tuned or the viewport changes).
-  const builtKey = useRef("");
+  const built = useRef({ count: -1, width: 0, height: 0, fov: 0 }); // what it was built for
   const buildGeometry = () => {
     const rnd = mulberry32(7);
     const tanH = Math.tan(MathUtils.degToRad(camera.fov / 2));
@@ -112,12 +112,12 @@ const GalaxySparkles = ({ animate = true }: { animate?: boolean }) => {
   useFrame((_, delta) => {
     const points = ref.current;
     if (!points) return;
-    const key = `${SP.count}|${width}|${height}|${camera.fov}`;
-    if (builtKey.current !== key) {
+    const b = built.current; // (compared field by field: no key string each frame, P27-86)
+    if (b.count !== SP.count || b.width !== width || b.height !== height || b.fov !== camera.fov) {
       const old = points.geometry;
       points.geometry = buildGeometry();
       old.dispose();
-      builtKey.current = key;
+      Object.assign(b, { count: SP.count, width, height, fov: camera.fov });
     }
     const g = clamp01(useGalaxyScroll.getState().progress);
     const fade = GALAXY_FX.showSparkles ? remap01(g, SP.fadeIn[0], SP.fadeIn[1]) : 0;

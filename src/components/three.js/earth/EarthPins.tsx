@@ -133,11 +133,10 @@ const Pin = ({
     // is on the near hemisphere and in front of the camera.
     if (headRef.current) {
       const ahead = projectToViewport(headRef.current, camera, gl.domElement, screen.current);
-      pinScreen[loc.id] = {
-        x: screen.current.x,
-        y: screen.current.y,
-        shown: front && ahead && approach >= EARTH.pinLabelsAt && labFade < 0.5,
-      };
+      const s = (pinScreen[loc.id] ??= { x: 0, y: 0, shown: false }); // (updated in place)
+      s.x = screen.current.x;
+      s.y = screen.current.y;
+      s.shown = front && ahead && approach >= EARTH.pinLabelsAt && labFade < 0.5;
     }
 
     const hovered = pinHover.id === loc.id;

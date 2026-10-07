@@ -14,6 +14,11 @@ vec3 toLinear(vec3 c) {
   return mix(c / 12.92, pow((max(c, 0.0) + 0.055) / 1.055, vec3(2.4)), step(0.04045, c));
 }
 void mainImage(const in vec4 inputColor, const in vec2 uv, out vec4 outputColor) {
+  // Off (every beat before the galaxy finale): nothing to roll off, skip the work (P27-86).
+  if (uStrength <= 0.0) {
+    outputColor = inputColor;
+    return;
+  }
   // Work on SCREEN brightness (as tuned in the prototype), then back to linear.
   vec3 c = toScreen(inputColor.rgb);
   vec3 over = max(c - uKnee, 0.0);

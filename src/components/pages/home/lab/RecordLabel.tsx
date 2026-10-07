@@ -2,7 +2,7 @@
 
 import { useEffect, useRef } from "react";
 import { MemoryStick } from "lucide-react";
-import { recordLabel, recordScreen } from "#/components/three.js/voyager/recordScreen";
+import { recordLabel, recordScreen, type RecordScreen } from "#/components/three.js/voyager/recordScreen";
 import { usePanelStore } from "#/stores/usePanelStore";
 import { PHONE_QUERY, keepOnScreen } from "#/components/pages/home/labels/screenEdge";
 import { ANCHORED, showAnchored } from "#/components/pages/home/labels/anchored";
@@ -27,7 +27,9 @@ const RecordLabel = () => {
   const opened = usePanelStore((s) => s.opened);
 
   useEffect(() => {
-    let before = ""; // opacity / pointer-events / tabIndex only change with it
+    // Opacity / pointer-events / tabIndex only change with these (null: none applied yet).
+    let shownBefore: boolean | null = null;
+    let textBefore: RecordScreen["text"] | null = null;
     // Phones keep the label on screen (P27-31), so they need its width: measured once
     // (and after a resize or the fonts load). Desktop centres it on its point.
     const phone = window.matchMedia(PHONE_QUERY);
@@ -55,9 +57,9 @@ const RecordLabel = () => {
           el.style.transform = `translate(calc(${s.x}px - 50%), calc(${s.y}px - 220%))`;
         }
       }
-      const state = `${s.shown}:${s.text}`;
-      if (state === before) return;
-      before = state;
+      if (s.shown === shownBefore && s.text === textBefore) return;
+      shownBefore = s.shown;
+      textBefore = s.text;
       const cardShown = s.shown && isCard;
       showAnchored(card, cardShown);
       card.style.pointerEvents = cardShown ? "auto" : "none";

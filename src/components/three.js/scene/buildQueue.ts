@@ -91,9 +91,9 @@ export function createBuildQueue(env: BuildEnv, tuning = BUILD_TUNING): BuildQue
       return () => remove(job);
     },
     catchUp() {
-      for (const job of [...jobs]) {
-        if (!due(job)) continue;
-        remove(job);
+      // In story order, the due jobs lead the queue: no copy of it on every scroll tick.
+      for (let job = jobs[0]; job && due(job); job = jobs[0]) {
+        jobs.shift();
         drain(job);
       }
     },

@@ -62,6 +62,20 @@ describe("the build queue", () => {
     expect(q.pending).toEqual(["galaxy"]);
   });
 
+  it("finishes every job a jump got ahead of, in story order", () => {
+    const { state, env } = fakeEnv();
+    const done: string[] = [];
+    const q = createBuildQueue(env);
+    q.add(job("galaxy", 0.75, 5, state, done));
+    q.add(job("sun", 0.26, 5, state, done));
+    q.add(job("saturn", 0.03, 5, state, done));
+    q.add(job("earth", 0.26, 5, state, done));
+    state.mp = 0.5;
+    q.catchUp();
+    expect(done).toEqual(["saturn", "sun", "earth"]);
+    expect(q.pending).toEqual(["galaxy"]);
+  });
+
   it("finishes a job at once when it's added already due (a reload mid-page)", () => {
     const { state, env } = fakeEnv();
     const done: string[] = [];
