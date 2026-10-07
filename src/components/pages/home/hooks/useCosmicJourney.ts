@@ -140,7 +140,8 @@ export default function useCosmicJourney(refs: CosmicJourneyRefs): void {
         if (block) {
           block.style.opacity = String(enter * (1 - exit));
           block.style.transform = `translateY(${-40 * (1 - enter) - 80 * exit}px)`;
-          block.style.filter = `blur(${16 * exit}px)`;
+          // No filter at all until it leaves: even blur(0px) keeps a filter layer.
+          block.style.filter = exit > 0 ? `blur(${16 * exit}px)` : "none";
         }
 
         return enterLin * (1 - exitLin);
