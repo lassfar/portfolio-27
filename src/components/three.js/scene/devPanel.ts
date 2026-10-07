@@ -1,20 +1,12 @@
-import { ScrollSmoother } from "gsap/all";
+import { jumpToJourney } from "#/components/pages/home/scroll/glide";
 import { JOURNEY } from "#/components/three.js/star/config";
-import { journeyTrigger } from "#/stores/journeyTrigger";
 
 /**
  * Helpers shared by the dev tuning panel's sections (GalaxyGui, SunGui, PlanetGui).
  */
 
 /** Scroll to a point of the pinned journey (master progress 0..1). */
-export function jumpToJourney(mp: number) {
-  const trigger = journeyTrigger.current;
-  if (!trigger) return;
-  const y = trigger.start + mp * (trigger.end - trigger.start);
-  const smoother = ScrollSmoother.get();
-  if (smoother) smoother.scrollTo(y, false);
-  else window.scrollTo(0, y);
-}
+export { jumpToJourney };
 
 /** Scroll to a point of the voyage (0 = leaving the Saturn → 1 = the Earth). */
 export function jumpToVoyage(v: number) {

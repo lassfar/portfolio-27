@@ -1,5 +1,5 @@
 import type { GUI } from "three/examples/jsm/libs/lil-gui.module.min.js";
-import { jumpToJourney } from "#/components/three.js/scene/devPanel";
+import { goTo } from "#/components/pages/home/scroll/goTo";
 import { PHASE_NAV, PHASE_STOPS } from "./config";
 
 /**
@@ -11,8 +11,7 @@ export function buildPhaseNavPanel(gui: GUI) {
   const fJump = gui.addFolder("Jump to a rest (its button shows)");
   for (const stop of PHASE_STOPS) {
     if (!stop.window) continue;
-    const [from, to] = stop.window;
-    const go = { [stop.id]: () => jumpToJourney((from + to) / 2) };
+    const go = { [stop.id]: () => goTo(stop.id, { instant: true }) };
     fJump.add(go, stop.id).name(stop.name);
   }
 

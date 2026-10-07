@@ -63,8 +63,7 @@ export const TIMELINE: StoryTimelineTuning = {
   dimAfter: 1.5, // s without scrolling before it dims…
   dimOpacity: 0.55, // …to this
   hideAfter: 0, // s after dimming before it hides too (0 = never)
-  glideSeconds: 1.5, // clicking a star glides to its chapter
-  glideInside: 3, // scroll %: …landing just inside it
+  glideSeconds: 1.5, // clicking a star glides to its chapter's resting view
   nameOnChange: false, // a new chapter's name pops up by its star (always on phones)
   nameSeconds: 1.8,
   phoneMaxWidth: 767, // px: phones have no hover tooltips (the name pops up on change instead)

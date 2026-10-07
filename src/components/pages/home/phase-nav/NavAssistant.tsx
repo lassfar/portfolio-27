@@ -11,11 +11,12 @@ import Tooltip from "#/components/UI/tooltip/Tooltip";
 import { useIsClient } from "#/components/hooks/useIsClient";
 import { useReducedMotion } from "#/components/hooks/useReducedMotion";
 import { useTimeout } from "#/components/hooks/useTimeout";
-import { glideToJourney, stopGlideOnInput } from "#/components/pages/home/scroll/glide";
+import { stopGlideOnInput } from "#/components/pages/home/scroll/glide";
+import { goTo } from "#/components/pages/home/scroll/goTo";
 import { mpAt } from "#/components/three.js/star/config";
 import { useGlide } from "#/stores/useGlide";
 import { useJourneyScroll } from "#/stores/useJourneyScroll";
-import { PHASE_NAV, glideSeconds, type PhaseStop } from "./config";
+import { PHASE_NAV, type PhaseStop } from "./config";
 import { isAssistantVisible } from "./lift";
 import { useAssistantStory } from "./useAssistantStory";
 import { useGlideHide } from "./useGlideHide";
@@ -107,8 +108,7 @@ const NavAssistantView = () => {
   const go = () => {
     if (!stop || useGlide.getState().by !== null) return;
     hover.clear();
-    const from = useJourneyScroll.getState().progress;
-    glideToJourney(stop.target, glideSeconds(stop.target - from), PHASE_NAV.ease, "assistant");
+    goTo(stop.id, { ease: PHASE_NAV.ease, by: "assistant" });
     if (useGlide.getState().by !== "assistant") button.fold();
   };
 

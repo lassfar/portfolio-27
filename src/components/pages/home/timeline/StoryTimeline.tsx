@@ -3,14 +3,11 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { mpAt } from "#/components/three.js/star/config";
-import {
-  glideToJourney,
-  stopGlideOnInput,
-} from "#/components/pages/home/scroll/glide";
+import { goTo } from "#/components/pages/home/scroll/goTo";
+import { stopGlideOnInput } from "#/components/pages/home/scroll/glide";
 import { useJourneyScroll } from "#/stores/useJourneyScroll";
 import { useTimelineTuning } from "#/stores/useTimelineTuning";
 import { STEP_BACK_IN_FULL_VIEW } from "#/components/pages/home/panel/layout";
-import { PHASE_STOPS } from "#/components/pages/home/phase-nav/config";
 import { STORY_CHAPTERS, TIMELINE } from "./config";
 import { chapterAt, chapterPositions, fillAt, fillClip, railLayout } from "./layout";
 import StoryTimelineRail from "./StoryTimelineRail";
@@ -129,18 +126,11 @@ const StoryTimeline = () => {
   // A wheel, touch or key press takes the scroll back from a glide.
   useEffect(stopGlideOnInput, []);
 
-  // Glide to a chapter (not while a panel holds the scroll): to its resting point (the
-  // phase buttons' — Saturn built, the Earth up close, the probe's close-up…), so you
-  // arrive on the chapter itself, not the tail of the one before; else just inside it.
+  // Glide to a chapter (not while a panel holds the scroll): to its resting view (Saturn
+  // built, the Earth up close, the probe's close-up…), so you arrive on the chapter itself,
+  // not the tail of the one before.
   const glideTo = useCallback((index: number) => {
-    const chapter = STORY_CHAPTERS[index];
-    const rest = PHASE_STOPS.find((s) => s.id === chapter.id);
-    const mp = rest
-      ? rest.target
-      : index === 0
-        ? 0
-        : chapter.start + mpAt(TIMELINE.glideInside);
-    glideToJourney(mp, TIMELINE.glideSeconds, undefined, "timeline");
+    goTo(STORY_CHAPTERS[index].id, { seconds: TIMELINE.glideSeconds, by: "timeline" });
   }, []);
 
   if (!mounted || reduced) return null;

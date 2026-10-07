@@ -61,7 +61,6 @@ export type StoryTimelineTuning = {
   dimOpacity: number;
   hideAfter: number;
   glideSeconds: number;
-  glideInside: number;
   nameOnChange: boolean;
   nameSeconds: number;
   phoneMaxWidth: number;

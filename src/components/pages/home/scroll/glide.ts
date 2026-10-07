@@ -6,6 +6,12 @@ import { useGlide, type GlideSource } from "#/stores/useGlide";
 
 let current: gsap.core.Tween | null = null; // the glide running, if any
 
+/** Where master progress `mp` lies on the page (px); null without the pinned journey. */
+function journeyY(mp: number): number | null {
+  const trigger = journeyTrigger.current;
+  return trigger ? trigger.start + mp * (trigger.end - trigger.start) : null;
+}
+
 /** A glide ended (done, or interrupted): unless another has replaced it, none is running. */
 function end(tween: gsap.core.Tween): void {
   if (current !== tween) return;
@@ -25,9 +31,8 @@ export function glideToJourney(
   ease = "power3.inOut",
   by?: GlideSource,
 ): boolean {
-  const trigger = journeyTrigger.current;
-  if (!trigger || isScrollLocked()) return false;
-  const y = trigger.start + mp * (trigger.end - trigger.start);
+  const y = journeyY(mp);
+  if (y === null || isScrollLocked()) return false;
   const smoother = ScrollSmoother.get();
   if (!smoother) {
     window.scrollTo({ top: y, behavior: "smooth" });
@@ -46,6 +51,19 @@ export function glideToJourney(
   });
   current = tween;
   useGlide.getState().setBy(by ?? null);
+  return true;
+}
+
+/**
+ * Jump straight to a point of the pinned journey (master progress 0..1): the dev panel, an
+ * instant goTo. Returns whether it could (not without the pinned journey).
+ */
+export function jumpToJourney(mp: number): boolean {
+  const y = journeyY(mp);
+  if (y === null) return false;
+  const smoother = ScrollSmoother.get();
+  if (smoother) smoother.scrollTo(y, false);
+  else window.scrollTo(0, y);
   return true;
 }
 
