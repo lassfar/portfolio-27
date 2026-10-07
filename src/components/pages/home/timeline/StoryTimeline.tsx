@@ -12,7 +12,7 @@ import { useTimelineTuning } from "#/stores/useTimelineTuning";
 import { STEP_BACK_IN_FULL_VIEW } from "#/components/pages/home/panel/layout";
 import { PHASE_STOPS } from "#/components/pages/home/phase-nav/config";
 import { STORY_CHAPTERS, TIMELINE } from "./config";
-import { chapterAt, chapterPositions, fillAt, railLayout } from "./layout";
+import { chapterAt, chapterPositions, fillAt, fillClip, railLayout } from "./layout";
 import StoryTimelineRail from "./StoryTimelineRail";
 import type {
   StoryTimelineRest,
@@ -85,11 +85,7 @@ const StoryTimeline = () => {
     let hideTimer = 0;
     const update = (mp: number) => {
       const fill = fillRef.current;
-      if (fill) {
-        fill.style.width = fill.style.height = ""; // the direction may have changed (dev panel)
-        fill.style[horizontal ? "width" : "height"] =
-          `${fillAt(STORY_CHAPTERS, positions, mp) * 100}%`;
-      }
+      if (fill) fill.style.clipPath = fillClip(fillAt(STORY_CHAPTERS, positions, mp), horizontal);
       setCurrent(chapterAt(STORY_CHAPTERS, mp));
       setShown(mp >= mpAt(TIMELINE.showAfter));
       setRest("awake");

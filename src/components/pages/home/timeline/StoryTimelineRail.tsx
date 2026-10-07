@@ -3,7 +3,7 @@ import type { CSSProperties } from "react";
 import Tooltip from "#/components/UI/tooltip/Tooltip";
 import type { TooltipSide } from "#/components/UI/tooltip/tooltip.types";
 import { TIMELINE } from "./config";
-import { railLayout } from "./layout";
+import { fillClip, railLayout } from "./layout";
 import type { StoryTimelineColor, StoryTimelineRailProps } from "./StoryTimeline.types";
 
 /** A design-system colour's token (globals.css @theme), or the custom hex. */
@@ -79,11 +79,7 @@ const StoryTimelineRail = ({
     style={{ ...railVars(horizontal), ...place }}
   >
     <div className="story-timeline__rail" />
-    <div
-      ref={fillRef}
-      className="story-timeline__fill"
-      style={{ [horizontal ? "width" : "height"]: `${fill * 100}%` }}
-    />
+    <div ref={fillRef} className="story-timeline__fill" style={{ clipPath: fillClip(fill, horizontal) }} />
     <ol className="story-timeline__list">
       {chapters.map((chapter, i) => (
         <li key={chapter.id} className="story-timeline__item" style={{ [along]: `${positions[i] * 100}%` }}>

@@ -77,3 +77,12 @@ export function fillAt(
   const t = Math.min(1, Math.max(0, (mp - chapters[i].start) / (next.start - chapters[i].start)));
   return positions[i] + (positions[i + 1] - positions[i]) * t;
 }
+
+/**
+ * The fill shown as far as `fill` (0..1) along the rail: the whole rail, clipped with round
+ * ends (P27-86). Resizing it would cost a layout on every scroll frame; a clip doesn't.
+ */
+export function fillClip(fill: number, horizontal: boolean): string {
+  const rest = `${(1 - fill) * 100}%`;
+  return horizontal ? `inset(0 ${rest} 0 0 round 9999px)` : `inset(0 0 ${rest} 0 round 9999px)`;
+}

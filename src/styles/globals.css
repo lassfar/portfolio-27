@@ -308,6 +308,7 @@
   opacity: 0;
 }
 
+/* The fill spans the whole rail; its clip-path (fillClip) shows how far it has reached. */
 .story-timeline__rail,
 .story-timeline__fill {
   position: absolute;
@@ -316,22 +317,18 @@
 .is-vertical .story-timeline__rail,
 .is-vertical .story-timeline__fill {
   top: 0;
+  bottom: 0;
   left: 50%;
   width: var(--tl-rail);
   transform: translateX(-50%);
-}
-.is-vertical .story-timeline__rail {
-  bottom: 0;
 }
 .is-horizontal .story-timeline__rail,
 .is-horizontal .story-timeline__fill {
   top: 50%;
   left: 0;
+  right: 0;
   height: var(--tl-rail);
   transform: translateY(-50%);
-}
-.is-horizontal .story-timeline__rail {
-  right: 0;
 }
 .story-timeline__rail {
   background: color-mix(in srgb, var(--tl-rail-color) calc(var(--tl-rail-alpha) * 100%), transparent);
