@@ -35,4 +35,6 @@ export interface IconButtonProps extends ButtonBaseProps {
   tooltip?: string;
   /** Where its tooltip sits under it: flush with its right edge (the default), centred… */
   tooltipAlign?: TooltipAlign;
+  /** A toggle's state (the motion switch): `aria-pressed`, and peach while pressed. */
+  pressed?: boolean;
 }

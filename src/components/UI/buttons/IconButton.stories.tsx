@@ -60,6 +60,22 @@ export const Calm: Story = {
   },
 };
 
+/** A toggle, pressed (`pressed`: the motion switch): `aria-pressed`, and it stays peach. */
+export const Pressed: Story = {
+  args: {
+    icon: SITE_ICONS.Calm,
+    label: "Reduce motion",
+    tooltip: "Calm motion · on",
+    pressed: true,
+  },
+  play: async ({ canvas }) => {
+    await expect(canvas.getByRole("button", { name: "Reduce motion" })).toHaveAttribute(
+      "aria-pressed",
+      "true",
+    );
+  },
+};
+
 /** Without a tooltip: only its accessible name (the photo viewer's arrows). */
 export const WithoutTooltip: Story = {
   args: { icon: SITE_ICONS.ChevronRight, label: "Next photo", tooltip: undefined },

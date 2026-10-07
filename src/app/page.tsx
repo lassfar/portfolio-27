@@ -5,6 +5,7 @@ import StoryTitle from "#/components/pages/home/timeline/StoryTitle";
 import StorySubtitles from "#/components/pages/home/subtitles/StorySubtitles";
 import NavAssistant from "#/components/pages/home/phase-nav/NavAssistant";
 import PerfHud from "#/components/three.js/scene/PerfHud";
+import MotionSwitch from "#/components/pages/home/motion/MotionSwitch";
 
 export default function Home() {
   return (
@@ -33,6 +34,9 @@ export default function Home() {
 
       {/* ?perf only: live FPS and a per-chapter performance report. */}
       <PerfHud />
+
+      {/* The "Reduce motion" switch, top-right (with ?calm until the calm book ships). */}
+      <MotionSwitch />
     </main>
   );
 }

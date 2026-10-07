@@ -206,6 +206,9 @@
    set by the panel): the story's overlays and the scene labels step back. */
 @custom-variant panel-full (&:where([data-panel="full"] *));
 
+/* `panel-open:` — while a panel is open, in either view (the motion switch steps away). */
+@custom-variant panel-open (&:where([data-panel] *));
+
 @keyframes twinkle {
   0%,
   100% {
