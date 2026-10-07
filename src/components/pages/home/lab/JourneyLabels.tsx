@@ -5,7 +5,7 @@ import clsx from "clsx";
 import { journeyLabels, journeyScreen } from "#/components/three.js/parker/journeyScreen";
 import { PHONE_QUERY, TOUCH_QUERY, keepOnScreen } from "#/components/pages/home/labels/screenEdge";
 import { type LabelBox, stackLabels } from "#/components/pages/home/labels/stack";
-import { ANCHORED } from "#/components/pages/home/labels/anchored";
+import { ANCHORED, showAnchored } from "#/components/pages/home/labels/anchored";
 import QuietLabel from "#/components/UI/labels/QuietLabel";
 
 /** Gap (px) kept between labels that would otherwise overlap. */
@@ -89,7 +89,7 @@ const JourneyLabels = () => {
         }
         if (shownBefore[i] !== s.shown) {
           shownBefore[i] = s.shown;
-          el.style.opacity = s.shown ? "1" : "0";
+          showAnchored(el, s.shown);
           el.style.pointerEvents = s.shown ? "auto" : "none";
           if (!s.shown) delete el.dataset.open; // a hidden label closes
         }
@@ -115,7 +115,7 @@ const JourneyLabels = () => {
         }
         if (tip.shown !== tipShown) {
           tipShown = tip.shown;
-          tipEl.style.opacity = tip.shown ? "1" : "0";
+          showAnchored(tipEl, tip.shown);
         }
         if (tip.shown) {
           const { w, h } = (tipSize ??= { w: tipEl.offsetWidth, h: tipEl.offsetHeight });

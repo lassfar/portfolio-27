@@ -30,14 +30,14 @@ const HIDDEN: Record<TooltipSide, string> = {
 
 /** …and slides out to its place as it shows: while its trigger is hovered or focused… */
 const ON_TRIGGER: Record<Axis, string> = {
-  x: "group-hover/tip:translate-x-0 group-hover/tip:opacity-100 group-focus-visible/tip:translate-x-0 group-focus-visible/tip:opacity-100",
-  y: "group-hover/tip:translate-y-0 group-hover/tip:opacity-100 group-focus-visible/tip:translate-y-0 group-focus-visible/tip:opacity-100",
+  x: "group-hover/tip:visible group-hover/tip:translate-x-0 group-hover/tip:opacity-100 group-focus-visible/tip:visible group-focus-visible/tip:translate-x-0 group-focus-visible/tip:opacity-100",
+  y: "group-hover/tip:visible group-hover/tip:translate-y-0 group-hover/tip:opacity-100 group-focus-visible/tip:visible group-focus-visible/tip:translate-y-0 group-focus-visible/tip:opacity-100",
 };
 
 /** …or while it's `open`. */
 const SHOWN: Record<Axis, string> = {
-  x: "translate-x-0 opacity-100",
-  y: "translate-y-0 opacity-100",
+  x: "visible translate-x-0 opacity-100",
+  y: "visible translate-y-0 opacity-100",
 };
 
 /**
@@ -48,16 +48,19 @@ const SHOWN: Record<Axis, string> = {
  *
  * Its text is light peach; a part of the page can tune it with `--color-tooltip` (the
  * timeline's dev panel does). Not interactive.
+ *
+ * Once faded out it's `invisible` too (P27-86): its blur was still drawn at opacity 0, every
+ * frame. Not a `live` one: it stays in the page, so screen readers hear what it says.
  */
 const Tooltip = ({ children, side = "below", align = "center", open, delayed = false, live = false }: TooltipProps) => (
   <span
     aria-hidden={live ? undefined : true}
     aria-live={live ? "polite" : undefined}
     className={clsx(
-      "pointer-events-none absolute rounded-full bg-rich-black/85 px-3 py-1.5 font-sans text-2xs leading-none font-light tracking-wide whitespace-nowrap text-tooltip ring-1 ring-white/10 backdrop-blur-md transition-[opacity,translate] duration-200",
+      "pointer-events-none absolute rounded-full bg-rich-black/85 px-3 py-1.5 font-sans text-2xs leading-none font-light tracking-wide whitespace-nowrap text-tooltip ring-1 ring-white/10 backdrop-blur-md transition-[opacity,translate,visibility] duration-200",
       SIDE[side],
       AXIS[side] === "y" && ALIGN[align],
-      open ? SHOWN[AXIS[side]] : HIDDEN[side],
+      open ? SHOWN[AXIS[side]] : [HIDDEN[side], !live && "invisible"],
       open === undefined && ON_TRIGGER[AXIS[side]],
       open === undefined && delayed && "group-hover/tip:delay-800 group-focus-visible/tip:delay-800",
     )}

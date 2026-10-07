@@ -7,7 +7,7 @@ import { pinHover, pinLabels, pinScreen } from "#/components/three.js/earth/pinS
 import { selectKey, usePanelStore } from "#/stores/usePanelStore";
 import { PHONE_QUERY, keepOnScreen } from "#/components/pages/home/labels/screenEdge";
 import { type LabelBox, stackLabels } from "#/components/pages/home/labels/stack";
-import { ANCHORED } from "#/components/pages/home/labels/anchored";
+import { ANCHORED, showAnchored } from "#/components/pages/home/labels/anchored";
 import SceneLabel from "#/components/pages/home/labels/SceneLabel";
 import { placeLabelAria, placeLabelMeta } from "#/components/pages/home/panel/content";
 import { PANEL_ID } from "#/components/pages/home/panel/config";
@@ -54,7 +54,7 @@ const PinLabels = () => {
     const setShown = (id: string, el: HTMLButtonElement, shown: boolean) => {
       if (shownBefore[id] === shown) return;
       shownBefore[id] = shown;
-      el.style.opacity = shown ? "1" : "0";
+      showAnchored(el, shown);
       el.style.pointerEvents = shown ? "auto" : "none";
       el.tabIndex = shown ? 0 : -1;
       if (!shown && document.activeElement === el) el.blur();

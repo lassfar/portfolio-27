@@ -5,7 +5,7 @@ import { MemoryStick } from "lucide-react";
 import { recordLabel, recordScreen } from "#/components/three.js/voyager/recordScreen";
 import { usePanelStore } from "#/stores/usePanelStore";
 import { PHONE_QUERY, keepOnScreen } from "#/components/pages/home/labels/screenEdge";
-import { ANCHORED } from "#/components/pages/home/labels/anchored";
+import { ANCHORED, showAnchored } from "#/components/pages/home/labels/anchored";
 import QuietLabel from "#/components/UI/labels/QuietLabel";
 import SceneLabel from "#/components/pages/home/labels/SceneLabel";
 import { PANEL_ID } from "#/components/pages/home/panel/config";
@@ -59,11 +59,11 @@ const RecordLabel = () => {
       if (state === before) return;
       before = state;
       const cardShown = s.shown && isCard;
-      card.style.opacity = cardShown ? "1" : "0";
+      showAnchored(card, cardShown);
       card.style.pointerEvents = cardShown ? "auto" : "none";
       card.tabIndex = cardShown ? 0 : -1;
       if (!cardShown && document.activeElement === card) card.blur();
-      probe.style.opacity = s.shown && !isCard ? "1" : "0";
+      showAnchored(probe, s.shown && !isCard);
     };
     recordLabel.update = update;
     return () => {
