@@ -1,3 +1,5 @@
+import { VOICE } from "#/components/pages/home/story/copy";
+import type { ChapterId } from "#/components/pages/home/story/story.types";
 import { STORY_CHAPTERS } from "#/components/pages/home/timeline/config";
 import { JOURNEY } from "#/components/three.js/star/config";
 import { LAB } from "#/components/three.js/voyager/config";
@@ -13,14 +15,14 @@ export const SUBTITLE_PLACEMENT: SubtitlePlacement = "bottom-left";
 export const SUBTITLE_START = 0.35;
 
 /** Where chapter `id` runs on the journey (master progress): from its start to the next one's. */
-function chapter(id: string): [number, number] {
+function chapter(id: ChapterId): [number, number] {
   const i = STORY_CHAPTERS.findIndex((c) => c.id === id);
   if (i < 0) throw new Error(`No chapter "${id}"`);
   return [STORY_CHAPTERS[i].start, STORY_CHAPTERS[i + 1]?.start ?? 1];
 }
 
 /** A line's window in chapter `id`: from SUBTITLE_START into it, to its end (or `end`). */
-function phase(id: string, end?: number): [number, number] {
+function phase(id: ChapterId, end?: number): [number, number] {
   const [from, to] = chapter(id);
   return [from + SUBTITLE_START * (to - from), end ?? to];
 }
@@ -28,6 +30,7 @@ function phase(id: string, end?: number): [number, number] {
 /**
  * The story's subtitles (P27-79): a line in Aymane's voice for each part of the scroll
  * with no words of its own — the hero, the About, the Craft and Contact have their text.
+ * The lines themselves are the story's (VOICE, story/copy), shared with the calm book.
  * Each shows through its chapter (the user: long enough to read at any pace, the same
  * story for everyone) — from SUBTITLE_START (35%) into it, once its motion has set off,
  * to its end, or to where a text of its own takes over. Taken from
@@ -38,7 +41,7 @@ export const STORY_SUBTITLES: readonly StorySubtitle[] = [
   {
     // Origin: the star bursts, once the hero copy has lifted away, until Saturn starts.
     id: "star",
-    line: "Before anything takes shape, it has to *come apart*.",
+    line: VOICE.origin,
     window: [Math.max(phase("origin")[0], jp(JOURNEY.contentExit)), phase("origin")[1]],
     enabled: true,
     onAssistantGlide: true,
@@ -47,14 +50,14 @@ export const STORY_SUBTITLES: readonly StorySubtitle[] = [
     // The Maker: Saturn finished, until the About text slides in — not while the
     // assistant glides through to that text (the Maker has its own section).
     id: "saturn",
-    line: "*Dot by dot.* I've never known another way to make something.",
+    line: VOICE.maker,
     window: phase("maker", jp(JOURNEY.revealStart)),
     enabled: true,
     onAssistantGlide: false,
   },
   {
     id: "voyage", // The Voyage: Saturn flies away, out to the wide view of the Sun, and the dive
-    line: "I like to zoom out. That's where *the small things* start to make sense.",
+    line: VOICE.voyage,
     window: phase("voyage"),
     enabled: true,
     onAssistantGlide: true,
@@ -64,28 +67,28 @@ export const STORY_SUBTITLES: readonly StorySubtitle[] = [
     // Lab's pull-back while the Earth is still in view — until its pins and daylight
     // hand off (LAB.earthFadeEnd), well before the Lab's own line.
     id: "earth",
-    line: "Wherever I go, I carry a camera, not to keep the places, but *the light*.",
+    line: VOICE.earth,
     window: [chapter("earth")[0], labMp(LAB.earthFadeEnd)],
     enabled: true,
     onAssistantGlide: true,
   },
   {
     id: "lab", // The Lab: Parker's journey, the flight to the probe, its close-up
-    line: "It never flies straight at the Sun. It loops — and every loop takes it *a little closer*. That's how I learn.",
+    line: VOICE.lab,
     window: phase("lab"),
     enabled: true,
     onAssistantGlide: true,
   },
   {
     id: "way-out", // The Way Out: back from the probe to the whole solar system
-    line: "Up close, it's all details. From here, it's *one quiet system*. That's what I try to build.",
+    line: VOICE["way-out"],
     window: phase("way-out"),
     enabled: true,
     onAssistantGlide: true,
   },
   {
     id: "milky-way", // The Milky Way: out to the whole galaxy, handing over to the Contact form
-    line: "A hundred billion stars, and we still *find each other*.",
+    line: VOICE["milky-way"],
     window: phase("milky-way"),
     enabled: true,
     onAssistantGlide: true,

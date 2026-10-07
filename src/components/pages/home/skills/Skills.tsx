@@ -5,6 +5,8 @@ import clsx from "clsx";
 import Swash from "#/components/UI/swash/Swash";
 import DisplayTitle from "#/components/UI/text/DisplayTitle";
 import { TITLE_SWASH } from "#/components/pages/home/swashes";
+import { CRAFT } from "#/components/pages/home/story/copy";
+import { LINES, NODES, type ConstellationNode } from "./constellation";
 
 /**
  * Skills — "The Craft" constellation, now an OVERLAY inside the shared cosmic
@@ -22,53 +24,6 @@ import { TITLE_SWASH } from "#/components/pages/home/swashes";
  * component is purely presentational — it renders the markup + faint starfield
  * and exposes its root via `overlayRef`.
  */
-
-type Node = {
-  id: string;
-  label: string;
-  x: number;
-  y: number;
-  r: number;
-  /** Label vertical offset from the node (negative = above). */
-  labelDy: number;
-  bridge?: boolean;
-};
-
-// Organic layout (SVG units) — creative thread up top, engineering below, the
-// Three.js/R3F bridge in the middle where they meet. No recognizable shape.
-const NODES: Node[] = [
-  { id: "photo", label: "Photography", x: 110, y: 95, r: 5, labelDy: -14 },
-  { id: "draw", label: "Drawing", x: 300, y: 58, r: 5, labelDy: -14 },
-  { id: "motion", label: "Motion", x: 488, y: 104, r: 5, labelDy: -14 },
-  {
-    id: "bridge",
-    label: "Three.js / R3F",
-    x: 300,
-    y: 212,
-    r: 9,
-    labelDy: 26,
-    bridge: true,
-  },
-  { id: "react", label: "React", x: 104, y: 330, r: 5, labelDy: 22 },
-  { id: "ts", label: "TypeScript", x: 250, y: 362, r: 5, labelDy: 22 },
-  { id: "next", label: "Next.js", x: 410, y: 348, r: 5, labelDy: 22 },
-  { id: "gsap", label: "GSAP", x: 522, y: 298, r: 5, labelDy: 22 },
-];
-
-// Connections (node id pairs). Two threads, both wired through the bridge, plus
-// one thematic cross-link (GSAP ↔ Motion).
-const LINES: [string, string][] = [
-  ["photo", "draw"],
-  ["draw", "motion"], // creative thread
-  ["react", "ts"],
-  ["ts", "next"],
-  ["next", "gsap"], // engineering thread
-  ["bridge", "draw"],
-  ["bridge", "motion"], // bridge → creative
-  ["bridge", "react"],
-  ["bridge", "next"], // bridge → engineering
-  ["gsap", "motion"], // motion tool ↔ motion craft
-];
 
 type Star = {
   left: number;
@@ -166,7 +121,7 @@ const Skills = ({ overlayRef, reduced = false }: Props) => {
 
   const nodeMap = useMemo(
     () =>
-      Object.fromEntries(NODES.map((n) => [n.id, n])) as Record<string, Node>,
+      Object.fromEntries(NODES.map((n) => [n.id, n])) as Record<string, ConstellationNode>,
     []
   );
 
@@ -213,7 +168,7 @@ const Skills = ({ overlayRef, reduced = false }: Props) => {
       {/* Title + intro */}
       <DisplayTitle
         size="md"
-        text="What I’m *drawn to*"
+        text={CRAFT.title}
         className={clsx(
           "home-skills__title skills__title text-center",
           // Phones: clear of the story title (left) and the timeline (right).
@@ -233,8 +188,7 @@ const Skills = ({ overlayRef, reduced = false }: Props) => {
           "text-white/60 font-light text-base sm:text-lg leading-relaxed"
         )}
       >
-        The tools I reach for and the things that pull my eye &mdash; connected,
-        because the way I see is the way I build.
+        {CRAFT.intro}
       </p>
 
       {/* The constellation */}
@@ -242,7 +196,7 @@ const Skills = ({ overlayRef, reduced = false }: Props) => {
         viewBox="0 0 600 420"
         className="relative z-10 w-full max-w-3xl mt-6"
         role="img"
-        aria-label="An organic constellation of my tools and creative pulls"
+        aria-label={CRAFT.constellationLabel}
       >
         {/* Connector lines (drawn on scroll via stroke-dashoffset) */}
         <g>

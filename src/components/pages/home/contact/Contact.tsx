@@ -9,6 +9,7 @@ import TextLink from "#/components/UI/links/TextLink";
 import Swash from "#/components/UI/swash/Swash";
 import DisplayTitle from "#/components/UI/text/DisplayTitle";
 import { TITLE_SWASH } from "#/components/pages/home/swashes";
+import { CONTACT } from "#/components/pages/home/story/copy";
 import {
   CONTACT_LINKS,
   CONTACT_SEND_DELAY_MS,
@@ -85,7 +86,7 @@ const Contact = ({ overlayRef, reduced }: ContactProps) => {
           reduced ? "pointer-events-auto" : "pointer-events-none"
         )}
       >
-        <DisplayTitle size="lg" text="Say *Hello*" className="home-contact__title mb-1" />
+        <DisplayTitle size="lg" text={CONTACT.title} className="home-contact__title mb-1" />
         {/* Its swash draws in once the title has written in (useCosmicJourney). */}
         <Swash {...TITLE_SWASH.contact} draw={reduced ? "mount" : "cue"} className="mb-4 w-48 sm:mb-5 sm:w-64" />
 
@@ -97,8 +98,7 @@ const Contact = ({ overlayRef, reduced }: ContactProps) => {
             "max-w-xl mb-8 sm:mb-10"
           )}
         >
-          Parker carries over a million names toward the Sun. Leave yours
-          here, and I&rsquo;ll write back.
+          {CONTACT.intro}
         </p>
 
         <div className="relative w-full">
@@ -115,40 +115,40 @@ const Contact = ({ overlayRef, reduced }: ContactProps) => {
             )}
           >
             <Field
-              label="Name"
+              label={CONTACT.fields.name.label}
               name="name"
               type="text"
               required
               maxLength={80}
               autoComplete="name"
-              placeholder="Your name"
+              placeholder={CONTACT.fields.name.placeholder}
               className="home-contact__piece"
             />
             <Field
-              label="Email"
+              label={CONTACT.fields.email.label}
               name="email"
               type="email"
               required
               maxLength={120}
               autoComplete="email"
-              placeholder="you@somewhere.com"
+              placeholder={CONTACT.fields.email.placeholder}
               className="home-contact__piece"
             />
             <Field
-              label="Message"
+              label={CONTACT.fields.message.label}
               multiline
               name="message"
               required
               rows={3}
               maxLength={2000}
-              placeholder="A project, a question, or just hello."
+              placeholder={CONTACT.fields.message.placeholder}
               className="home-contact__piece sm:col-span-2"
             />
 
             <div className="home-contact__piece sm:col-span-2 flex justify-center pt-2">
               <Button
                 type="submit"
-                label={status === "sending" ? "Sending…" : "Send it"}
+                label={status === "sending" ? CONTACT.sending : CONTACT.send}
                 icon={Send}
                 variant="outline"
                 size="large"
@@ -167,13 +167,13 @@ const Contact = ({ overlayRef, reduced }: ContactProps) => {
                 "animate-[fadeIn_0.6s_ease-out]"
               )}
             >
-              <DisplayTitle as="h3" size="sm" text="*Thank you*" />
+              <DisplayTitle as="h3" size="sm" text={CONTACT.thanks.title} />
               <Swash {...TITLE_SWASH.contact} delay={0.3} className="-mt-2 w-40 sm:w-48" />
               <p className="text-white/75 font-light text-base sm:text-lg max-w-md">
-                Your message is on its way. I&rsquo;ll write back soon.
+                {CONTACT.thanks.line}
               </p>
               <Button
-                label="Write another"
+                label={CONTACT.thanks.again}
                 icon={PenLine}
                 variant="secondary"
                 size="medium"

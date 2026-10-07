@@ -15,6 +15,7 @@ import clsx from "clsx";
 import Swash from "#/components/UI/swash/Swash";
 import DisplayTitle from "#/components/UI/text/DisplayTitle";
 import { TITLE_SWASH } from "#/components/pages/home/swashes";
+import { ABOUT, HERO } from "#/components/pages/home/story/copy";
 import { useSceneIntro } from "#/stores/useSceneIntro";
 
 gsap.registerPlugin(useGSAP, ScrollTrigger, ScrollSmoother, SplitText);
@@ -187,14 +188,14 @@ const Hero = () => {
             )}
             ref={eyebrowRef}
           >
-            I&rsquo;m Aymane &mdash;
+            {HERO.eyebrow}
           </p>
 
           <DisplayTitle
             ref={headlineRef}
             as="h1"
             size="hero"
-            text="A quiet maker of *Small Universes*"
+            text={HERO.headline}
             className="home-hero__title"
           />
 
@@ -207,13 +208,12 @@ const Hero = () => {
             )}
             ref={subRef}
           >
-            I notice light. I&rsquo;ve been drawing since before I could write.
-            Now I do it with code.
+            {HERO.intro}
           </p>
 
           <div className="mt-8 pointer-events-auto" ref={ctaRef}>
             <Button
-              label="To wander"
+              label={HERO.cta}
               variant="outline"
               size="large"
               onClick={handleWander}
@@ -239,7 +239,7 @@ const Hero = () => {
         <DisplayTitle
           ref={aboutTitleRef}
           size="xl"
-          text="Small, Patient *Details*"
+          text={ABOUT.title}
           className="home-about__title mb-1"
         />
         {/* Its swash draws in once the title has written in (useCosmicJourney). */}
@@ -258,11 +258,7 @@ const Hero = () => {
               "text-base sm:text-lg md:text-xl leading-relaxed sm:leading-loose"
             )}
           >
-            I don&rsquo;t fill rooms &mdash; I notice them. I&rsquo;ve always
-            been the quiet one, more at home watching than performing.
-            That&rsquo;s where the work comes from: a love of small, patient
-            details &mdash; the right easing curve, the soft edge of a shadow,
-            the moment a page finally breathes.
+            {ABOUT.paragraphs[0]}
           </p>
           <p
             ref={aboutPara2Ref}
@@ -272,10 +268,7 @@ const Hero = () => {
               "text-base sm:text-lg md:text-xl leading-relaxed sm:leading-loose"
             )}
           >
-            I build the way I drew as a kid: slowly, and for the love of it.
-            Only now, other people get to live inside what I make. I care less
-            about looking impressive than about being honest &mdash; quiet
-            interfaces that feel considered, and a little bit alive.
+            {ABOUT.paragraphs[1]}
           </p>
         </div>
       </div>

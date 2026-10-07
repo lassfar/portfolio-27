@@ -1,4 +1,5 @@
 import type { Ref } from "react";
+import type { ChapterId } from "#/components/pages/home/story/story.types";
 
 /** Where the timeline sits: any edge or corner of the screen. */
 export type StoryTimelinePosition =
@@ -68,7 +69,7 @@ export type StoryTimelineTuning = {
 
 /** One chapter of the story: a star on the timeline. */
 export type StoryChapter = {
-  id: string;
+  id: ChapterId;
   name: string;
   /** Where the chapter starts on the pinned journey (master progress, 0..1). */
   start: number;

@@ -1,5 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { PHASE_STOPS } from "#/components/pages/home/phase-nav/config";
+import { VOICE } from "#/components/pages/home/story/copy";
+import { CHAPTER_IDS } from "#/components/pages/home/story/story.types";
 import { STORY_CHAPTERS } from "#/components/pages/home/timeline/config";
 import { chapterAt } from "#/components/pages/home/timeline/layout";
 import { JOURNEY, mpAt } from "#/components/three.js/star/config";
@@ -68,6 +70,14 @@ describe("the story's subtitles", () => {
     });
     expect(subtitleAt(0)).toBe(-1); // the hero
     expect(subtitleAt(1)).toBe(-1); // the end: Contact
+  });
+
+  it("speak the story's own lines, one per chapter of the journey", () => {
+    expect(STORY_CHAPTERS.map((c) => c.id)).toEqual([...CHAPTER_IDS]);
+    const chapterOf: Record<string, keyof typeof VOICE> = { star: "origin", saturn: "maker" };
+    for (const { id, line } of STORY_SUBTITLES) {
+      expect(line, id).toBe(VOICE[chapterOf[id] ?? (id as keyof typeof VOICE)]);
+    }
   });
 
   it("each have words in peach", () => {

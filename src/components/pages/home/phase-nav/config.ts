@@ -3,11 +3,12 @@ import { solarRestRange } from "#/components/three.js/galaxy/pace";
 import { VOYAGE } from "#/components/three.js/solar/config";
 import { JOURNEY, mpAt } from "#/components/three.js/star/config";
 import { LAB } from "#/components/three.js/voyager/config";
-import { STORY_CHAPTERS } from "#/components/pages/home/timeline/config";
+import { CHAPTER_NAMES } from "#/components/pages/home/story/copy";
+import type { ChapterId } from "#/components/pages/home/story/story.types";
 
 /** One resting point of the story, where a button offers the next one. */
 export type PhaseStop = {
-  id: string;
+  id: ChapterId;
   /** Its title: the label of the button that leads here. */
   name: string;
   /** Where its button shows ([from, to) master progress); null = no button (the end). */
@@ -16,8 +17,6 @@ export type PhaseStop = {
   target: number;
 };
 
-const title = (id: string) =>
-  STORY_CHAPTERS.find((c) => c.id === id)?.name ?? id;
 const lerp = (a: number, b: number, t: number) => a + (b - a) * t;
 const jp = (x: number) => x * JOURNEY.journeyEnd; // journey progress (the About block) → mp
 const voyageAt = (v: number) =>
@@ -34,7 +33,7 @@ const [solarRestStart, solarRestEnd] = solarRestRange();
 export const PHASE_STOPS: readonly PhaseStop[] = [
   {
     id: "maker", // the About text, fully coloured in
-    name: title("maker"),
+    name: CHAPTER_NAMES.maker,
     window: [
       jp(lerp(JOURNEY.fillStart, JOURNEY.exitStart, 0.6)),
       jp(JOURNEY.exitStart),
@@ -43,13 +42,13 @@ export const PHASE_STOPS: readonly PhaseStop[] = [
   },
   {
     id: "craft", // the constellation, assembled
-    name: title("craft"),
+    name: CHAPTER_NAMES.craft,
     window: [JOURNEY.constellationEnd - mpAt(80), JOURNEY.craftFadeStart],
     target: JOURNEY.craftFadeStart - mpAt(5),
   },
   {
     id: "voyage", // the wide, Sun-centred view
-    name: title("voyage"),
+    name: CHAPTER_NAMES.voyage,
     window: [
       voyageAt(VOYAGE.flyoutEnd - 0.08),
       voyageAt(VOYAGE.flyoutEnd + 0.04),
@@ -58,19 +57,19 @@ export const PHASE_STOPS: readonly PhaseStop[] = [
   },
   {
     id: "earth", // the Earth up close (its dwell)
-    name: title("earth"),
+    name: CHAPTER_NAMES.earth,
     window: [JOURNEY.voyageEnd, JOURNEY.earthDwellEnd],
     target: lerp(JOURNEY.voyageEnd, JOURNEY.earthDwellEnd, 0.5),
   },
   {
     id: "lab", // the Parker Solar Probe's close-up
-    name: title("lab"),
+    name: CHAPTER_NAMES.lab,
     window: [labMp(LAB.recordLabelAt), JOURNEY.galaxyStart],
     target: labMp((LAB.recordLabelAt + 1) / 2), // the middle of the close-up's pause
   },
   {
     id: "way-out", // the finale's rest on the whole solar system
-    name: title("way-out"),
+    name: CHAPTER_NAMES["way-out"],
     window: [
       solarRestStart - 0.03 * (solarRestStart - JOURNEY.galaxyStart),
       solarRestEnd,
@@ -79,13 +78,13 @@ export const PHASE_STOPS: readonly PhaseStop[] = [
   },
   {
     id: "milky-way", // the full galaxy
-    name: title("milky-way"),
+    name: CHAPTER_NAMES["milky-way"],
     window: [JOURNEY.galaxyEnd, JOURNEY.contactStart],
     target: JOURNEY.galaxyEnd + mpAt(5),
   },
   {
     id: "contact", // the form: the end
-    name: title("contact"),
+    name: CHAPTER_NAMES.contact,
     window: null,
     target: JOURNEY.contactEnd,
   },
