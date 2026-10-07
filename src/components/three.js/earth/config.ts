@@ -50,7 +50,9 @@ export const EARTH = {
     dayTo: 0.95,
   },
 
-  // Per-dot land/ocean, sampled from the mask (land = dark pixels).
+  // Per-dot land/ocean, sampled from the mask (land = dark pixels). The mask is 1-bit
+  // (15 KB, P27-86): the original grey map (ad7d993) already cut at landThreshold 0.5.
+  // To cut it elsewhere, redo the mask from the grey one; this alone changes nothing.
   maskUrl: "/textures/earth-land-mask.png",
   landThreshold: 0.5, // mask luminance < this ⇒ land
 
