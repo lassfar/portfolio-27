@@ -28,7 +28,7 @@ const dataAttributes = (props: object): Record<`data-${string}`, string> =>
 /**
  * A card with the liquid-glass hover (Storybook: UI/GlowCard, P27-80): it lifts (no
  * scale), a blurred peach glow behind it and a soft light over it follow the pointer, and
- * its edge lights up. Its children are clipped to its corners (they can brighten on
+ * its edge lights up. In calm motion it only glows: no lift, and the lights stay put (P27-92). Its children are clipped to its corners (they can brighten on
  * hover with `group-hover/card:`). With `onClick` it's a button (zooms in, e.g. to a
  * photo); without, a plain card.
  */
@@ -42,7 +42,7 @@ const GlowCard = ({
   ...props
 }: GlowCardProps) => {
   const shell = clsx(
-    "group/card relative isolate block w-full text-left transition-[translate] duration-550 ease-out-quint hover:-translate-y-1 motion-reduce:transition-none",
+    "group/card relative isolate block w-full text-left transition-[translate] duration-550 ease-out-quint moving:hover:-translate-y-1",
     RADIUS[size],
     className,
   );
@@ -65,7 +65,7 @@ const GlowCard = ({
       style={style}
       className={clsx(
         shell,
-        "cursor-zoom-in focus-ring focus-visible:-translate-y-1 active:-translate-y-0.5 active:duration-200",
+        "cursor-zoom-in focus-ring active:duration-200 moving:focus-visible:-translate-y-1 moving:active:-translate-y-0.5",
       )}
     >
       {content}

@@ -59,8 +59,8 @@ const PADDING_X: Record<ButtonSize, string> = {
  * the navigation assistant writes the icon in with GSAP, which owns its transform.
  */
 const SLIDE: Record<ButtonIconSlide, string> = {
-  right: "group-enabled/button:group-hover/button:translate-x-0.75",
-  down: "group-enabled/button:group-hover/button:translate-y-0.5",
+  right: "moving:group-enabled/button:group-hover/button:translate-x-0.75",
+  down: "moving:group-enabled/button:group-hover/button:translate-y-0.5",
 };
 
 /**
@@ -86,7 +86,7 @@ const Button = ({
     className={clsx(
       BUTTON_BASE,
       "group/button inline-flex w-fit items-center justify-center gap-[0.55em] rounded-full border-0 font-sans leading-none font-medium whitespace-nowrap",
-      "transition-[color,background-color,box-shadow,scale] duration-[300ms,300ms,400ms,300ms] ease-[ease] enabled:active:scale-98",
+      "transition-[color,background-color,box-shadow,scale] duration-[300ms,300ms,400ms,300ms] ease-[ease] moving:enabled:active:scale-98",
       "disabled:inset-shadow-none",
       VARIANT[variant],
       SIZE[size],

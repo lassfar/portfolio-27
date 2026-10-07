@@ -4,6 +4,7 @@ import type {
   TooltipProps,
   TooltipSide,
 } from "#/components/UI/tooltip/tooltip.types";
+import "#/components/UI/tooltip/dismiss";
 
 type Axis = "x" | "y";
 
@@ -24,12 +25,12 @@ const ALIGN: Record<TooltipAlign, string> = {
   end: "right-0",
 };
 
-/** Hidden, it waits 4px back toward its trigger… */
+/** Hidden, it waits 4px back toward its trigger (in calm motion it only fades: P27-92)… */
 const HIDDEN: Record<TooltipSide, string> = {
-  above: "translate-y-1 opacity-0",
-  below: "-translate-y-1 opacity-0",
-  left: "translate-x-1 opacity-0",
-  right: "-translate-x-1 opacity-0",
+  above: "opacity-0 moving:translate-y-1",
+  below: "opacity-0 moving:-translate-y-1",
+  left: "opacity-0 moving:translate-x-1",
+  right: "opacity-0 moving:-translate-x-1",
 };
 
 /** …and slides out to its place as it shows: while its trigger is hovered or focused… */
@@ -55,6 +56,9 @@ const SHOWN: Record<Axis, string> = {
  *
  * Once faded out it's `invisible` too (P27-86): its blur was still drawn at opacity 0, every
  * frame. Not a `live` one: it stays in the page, so screen readers hear what it says.
+ *
+ * Escape closes it, without moving the pointer or the focus (WCAG 1.4.13, ./dismiss). In calm
+ * motion it only fades in, with no slide (P27-92).
  */
 const Tooltip = ({
   children,
@@ -76,6 +80,8 @@ const Tooltip = ({
       open === undefined &&
         delayed &&
         "group-hover/tip:delay-800 group-focus-visible/tip:delay-800",
+      // Escape: hidden whatever else shows it (`!`: the trigger's hover outranks a plain variant).
+      "tooltips-off:invisible! tooltips-off:opacity-0!",
     )}
   >
     {children}

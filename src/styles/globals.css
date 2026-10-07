@@ -125,6 +125,19 @@
   }
 }
 
+/* ── Motion: full or calm (P27-92) ───────────────────────────────────────────────────
+   `<html data-motion="full|calm">`: the visitor's motion preference (stores/useMotion; set
+   before the first paint). `moving:` holds every movement (a lift, a slide, a scale, a
+   pulse), so calm never gets it, with no override to win; `calm:` holds what only calm does
+   (a shorter fade). Not `motion-reduce:` / `motion-safe:`: they follow the device setting
+   alone, not the site's switch. */
+@custom-variant moving (&:where(:root:not([data-motion="calm"]) *));
+@custom-variant calm (&:where([data-motion="calm"] *));
+
+/* `tooltips-off:` — after Escape (WCAG 1.4.13), until the pointer or the focus moves on to
+   something else (UI/tooltip/dismiss). */
+@custom-variant tooltips-off (&:where([data-tooltips="off"] *));
+
 /* A tap area of at least 44×44px on phones (P27-31), invisible: an `::after` centred on
    the element (which must be positioned). Nothing changes from `sm` up. */
 @utility tap-target {
@@ -149,7 +162,8 @@
    set by UI/glass/pointerLight), springing up on hover and squishing on press, its ring
    and glow turning peach. It moves with `translate` / `scale` — never `transform`, which
    the scene labels' positions own — on `::before` (`tap-target` owns `::after`). The
-   element must be positioned. */
+   element must be positioned. In calm motion only the glow, ring and colour change: no
+   spring, no squish, and the light stays put (P27-92). */
 /* The keyboard focus ring of the glass controls and the cards. */
 @utility focus-ring {
   @apply focus-visible:outline-2 focus-visible:outline-offset-3 focus-visible:outline-peach/70;
@@ -165,12 +179,11 @@
   transition-property: translate, scale, box-shadow, color, background-color, opacity;
   transition-duration: 420ms, 420ms, 300ms, 300ms, 300ms, 300ms;
   transition-timing-function: var(--ease-spring), var(--ease-spring), ease, ease, ease, ease;
-  @apply hover:-translate-y-0.5 hover:scale-103 hover:shadow-glow hover:inset-shadow-glass-lit hover:inset-ring-peach/45;
-  @apply focus-ring focus-visible:-translate-y-0.5 focus-visible:scale-103 focus-visible:shadow-glow focus-visible:inset-shadow-glass-lit focus-visible:inset-ring-peach/45;
-  @apply active:translate-y-0 active:scale-96 active:duration-120;
+  @apply hover:shadow-glow hover:inset-shadow-glass-lit hover:inset-ring-peach/45 moving:hover:-translate-y-0.5 moving:hover:scale-103;
+  @apply focus-ring focus-visible:shadow-glow focus-visible:inset-shadow-glass-lit focus-visible:inset-ring-peach/45 moving:focus-visible:-translate-y-0.5 moving:focus-visible:scale-103;
+  @apply active:duration-120 moving:active:translate-y-0 moving:active:scale-96;
   /* The light: its position comes from the pointer (JS), hence the arbitrary gradient. */
   @apply before:pointer-events-none before:absolute before:inset-0 before:-z-1 before:rounded-[inherit] before:bg-radial-[120px_circle_at_var(--mx,50%)_var(--my,-30%)] before:from-white/26 before:to-transparent before:to-60% before:opacity-0 before:transition-opacity before:duration-300 hover:before:opacity-100 focus-visible:before:opacity-100;
-  @apply motion-reduce:transition-none;
 }
 
 /* Film grain over the placeholder photos (an SVG noise tile). */

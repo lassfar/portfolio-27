@@ -110,6 +110,13 @@ All tokens are defined in `src/styles/globals.css` under `@theme`. Do not add co
 - **Never commit `markers: true`** in ScrollTrigger — debug only, remove before committing
 - Always return a cleanup function from `useGSAP` when using SplitText (call `.revert()`)
 
+### Calm motion (reduced motion)
+
+The visitor's motion preference is `full` or `calm`: the device setting, unless they chose on the site (`src/stores/useMotion.ts`), mirrored as `<html data-motion>` before the first paint. Calm allows short opacity fades only: nothing slides, scales, lifts or moves on its own (WCAG 2.3.3, 2.2.2).
+
+- **CSS:** gate every movement with `moving:` (a lift, a slide, a scale, a pulse), so calm never gets it; put calm-only styles under `calm:` (e.g. a shorter fade). Never `motion-reduce:` / `motion-safe:`: they follow the device alone, not the site's switch
+- **JS / GSAP:** check `isCalm()` when building an animation, or `useCalm()` in a component that must re-render
+
 ## Git Workflow
 
 ### Branch naming
