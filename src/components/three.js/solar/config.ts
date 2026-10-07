@@ -1,5 +1,5 @@
 import { PLANET, SATURN } from "#/components/three.js/planet/config";
-import { labAt } from "#/components/three.js/star/config";
+import { JOURNEY, labAt } from "#/components/three.js/star/config";
 
 /**
  * The solar system the Saturn belongs to — the sun at the centre and the
@@ -149,6 +149,13 @@ export const SOLAR = {
     segments: 200,
   },
 };
+
+/**
+ * Where the system first shows on the journey (master progress): as it fades in on the
+ * voyage (SOLAR.revealStart). Its dots are built in idle time until then (sceneBuilds).
+ */
+export const SYSTEM_SHOWS_AT =
+  JOURNEY.flyAwayStart + SOLAR.revealStart * (JOURNEY.voyageEnd - JOURNEY.flyAwayStart);
 
 // ── The sun ──────────────────────────────────────────────────────────────────
 

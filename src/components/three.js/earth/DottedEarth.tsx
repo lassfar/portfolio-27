@@ -21,7 +21,7 @@ import {
 import { clamp01, damp, easeInOutCubic, lerp, remap01 } from "#/components/three.js/star/utils";
 import { useEarthAnchor } from "#/stores/useEarthAnchor";
 import { useSceneRotation } from "#/stores/useSceneRotation";
-import { SOLAR, SUNPOS } from "#/components/three.js/solar/config";
+import { SUNPOS, SYSTEM_SHOWS_AT } from "#/components/three.js/solar/config";
 import { earthReveal } from "#/components/three.js/solar/reveal";
 import { EARTH } from "./config";
 import { directionToUV } from "./utils";
@@ -32,7 +32,6 @@ import EarthPins from "./EarthPins";
 import { preupload, whenIdle } from "#/components/three.js/scene/warmUp";
 import { sceneBuilds } from "#/components/three.js/scene/sceneBuilds";
 import { useJourneyScroll } from "#/stores/useJourneyScroll";
-import { JOURNEY } from "#/components/three.js/star/config";
 import { pointPixelRatio } from "#/components/three.js/scene/quality";
 import { createTouchAxisLock } from "#/components/three.js/scene/touchAxisLock";
 
@@ -60,9 +59,8 @@ const BUILD_STEP = 2000;
 const MASK_IDLE_TIMEOUT_MS = 2000;
 /** …or as soon as the journey gets this close to the Earth (a jump right after load). */
 const MASK_AHEAD_MP = 0.1;
-/** Where the Earth first shows: as the system fades in on the voyage (master progress). */
-const EARTH_SHOWS_AT =
-  JOURNEY.flyAwayStart + SOLAR.revealStart * (JOURNEY.voyageEnd - JOURNEY.flyAwayStart);
+/** Where the Earth first shows: with the system, as it fades in on the voyage. */
+const EARTH_SHOWS_AT = SYSTEM_SHOWS_AT;
 
 type LandMask = { data: Uint8ClampedArray; width: number; height: number };
 

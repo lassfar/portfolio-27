@@ -1,13 +1,13 @@
 "use client";
 
 import { useFrame, useThree } from "@react-three/fiber";
-import { useEffect, useMemo, useRef } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import {
   AdditiveBlending,
+  BufferAttribute,
   BufferGeometry,
   CanvasTexture,
   Color,
-  Float32BufferAttribute,
   Points,
   ShaderMaterial,
   Sprite,
@@ -15,9 +15,74 @@ import {
 } from "three";
 import { SIMPLEX_NOISE } from "#/components/three.js/planet/shaders";
 import { useDrawGate } from "#/components/three.js/scene/useDrawGate";
-import { SUN, SUN_CORE } from "./config";
+import { sceneBuilds } from "#/components/three.js/scene/sceneBuilds";
+import { SUN, SUN_CORE, SYSTEM_SHOWS_AT } from "./config";
 import { PERFORMANCE } from "#/components/three.js/scene/performance";
 import { setHexIfChanged } from "#/components/three.js/scene/colorCache";
+
+/** Dots built per step of the build queue (~a fraction of a ms each). */
+const BUILD_STEP = 2000;
+
+/** The body + corona dots, as flat arrays (one entry per dot, ×3 for positions). */
+type CoreDots = {
+  positions: Float32Array;
+  // Where each dot sits on its colour gradient (the colours themselves are live
+  // uniforms): body = centre (0) → edge (1); corona = edge colour (0) → corona colour (1).
+  tones: Float32Array;
+  jitters: Float32Array; // a little brightness variety
+  scales: Float32Array;
+  seeds: Float32Array;
+  shells: Float32Array; // 0 = body, 1 = corona
+};
+
+const allocateCore = (count: number): CoreDots => ({
+  positions: new Float32Array(count * 3),
+  tones: new Float32Array(count),
+  jitters: new Float32Array(count),
+  scales: new Float32Array(count),
+  seeds: new Float32Array(count),
+  shells: new Float32Array(count),
+});
+
+/** The body's and the corona's dots, built into `out`, pausing every BUILD_STEP dots (see sceneBuilds). */
+function* buildCore(count: number, out: CoreDots) {
+  const { positions, tones, jitters, scales, seeds, shells } = out;
+  const bodyRadius = SUN.radius * SUN_CORE.radiusScale; // just inside the dotted shell
+  // The body reaches from `inner` out to its edge; fill 1 = all the way to the centre.
+  const inner = 1 - SUN_CORE.fill;
+  for (let i = 0; i < count; i++) {
+    const u = Math.random() * 2 - 1;
+    const theta = Math.random() * Math.PI * 2;
+    const s = Math.sqrt(1 - u * u);
+    const isCorona = Math.random() < SUN_CORE.coronaFraction;
+    shells[i] = isCorona ? 1 : 0;
+    // Body: biased toward its edge so it's full, while the inside still fills in.
+    // Corona: a loose cloud beyond the (full-size) sphere.
+    const r = isCorona
+      ? SUN.radius * (1.0 + Math.pow(Math.random(), 1.6) * SUN_CORE.coronaReach)
+      : bodyRadius * (inner + Math.pow(Math.random(), 0.5) * SUN_CORE.fill);
+    positions[i * 3] = s * Math.cos(theta) * r;
+    positions[i * 3 + 1] = u * r;
+    positions[i * 3 + 2] = s * Math.sin(theta) * r;
+    // Body: inner → outer (warm-white core → orange → deep red-orange).
+    tones[i] = isCorona ? Math.random() : (r / bodyRadius - inner) / SUN_CORE.fill;
+    jitters[i] = 0.85 + Math.random() * 0.3;
+    scales[i] = isCorona ? 0.7 + Math.random() * 1.1 : 0.6 + Math.random() * 0.7;
+    seeds[i] = Math.random();
+    if ((i + 1) % BUILD_STEP === 0) yield;
+  }
+}
+
+function toCoreGeometry(dots: CoreDots): BufferGeometry {
+  const g = new BufferGeometry();
+  g.setAttribute("position", new BufferAttribute(dots.positions, 3));
+  g.setAttribute("aTone", new BufferAttribute(dots.tones, 1));
+  g.setAttribute("aJitter", new BufferAttribute(dots.jitters, 1));
+  g.setAttribute("aScale", new BufferAttribute(dots.scales, 1));
+  g.setAttribute("aSeed", new BufferAttribute(dots.seeds, 1));
+  g.setAttribute("aShell", new BufferAttribute(dots.shells, 1));
+  return g;
+}
 
 type Props = {
   count: number;
@@ -68,49 +133,21 @@ const SunCore = ({ count, version, animate, time, reveal, renderOrder }: Props) 
   }, []);
   useEffect(() => () => halo.dispose(), [halo]);
 
-  const geometry = useMemo(() => {
-    const bodyRadius = SUN.radius * SUN_CORE.radiusScale; // just inside the dotted shell
-    const positions = new Float32Array(count * 3);
-    // Where each dot sits on its colour gradient (the colours themselves are live
-    // uniforms): body = centre (0) → edge (1); corona = edge colour (0) → corona colour (1).
-    const tones = new Float32Array(count);
-    const jitters = new Float32Array(count); // a little brightness variety
-    const scales = new Float32Array(count);
-    const seeds = new Float32Array(count);
-    const shells = new Float32Array(count); // 0 = body, 1 = corona
-    // The body reaches from `inner` out to its edge; fill 1 = all the way to the centre.
-    const inner = 1 - SUN_CORE.fill;
-    for (let i = 0; i < count; i++) {
-      const u = Math.random() * 2 - 1;
-      const theta = Math.random() * Math.PI * 2;
-      const s = Math.sqrt(1 - u * u);
-      const isCorona = Math.random() < SUN_CORE.coronaFraction;
-      shells[i] = isCorona ? 1 : 0;
-      // Body: biased toward its edge so it's full, while the inside still fills in.
-      // Corona: a loose cloud beyond the (full-size) sphere.
-      const r = isCorona
-        ? SUN.radius * (1.0 + Math.pow(Math.random(), 1.6) * SUN_CORE.coronaReach)
-        : bodyRadius * (inner + Math.pow(Math.random(), 0.5) * SUN_CORE.fill);
-      positions[i * 3] = s * Math.cos(theta) * r;
-      positions[i * 3 + 1] = u * r;
-      positions[i * 3 + 2] = s * Math.sin(theta) * r;
-      // Body: inner → outer (warm-white core → orange → deep red-orange).
-      tones[i] = isCorona ? Math.random() : (r / bodyRadius - inner) / SUN_CORE.fill;
-      jitters[i] = 0.85 + Math.random() * 0.3;
-      scales[i] = isCorona ? 0.7 + Math.random() * 1.1 : 0.6 + Math.random() * 0.7;
-      seeds[i] = Math.random();
-    }
-    const g = new BufferGeometry();
-    g.setAttribute("position", new Float32BufferAttribute(positions, 3));
-    g.setAttribute("aTone", new Float32BufferAttribute(tones, 1));
-    g.setAttribute("aJitter", new Float32BufferAttribute(jitters, 1));
-    g.setAttribute("aScale", new Float32BufferAttribute(scales, 1));
-    g.setAttribute("aSeed", new Float32BufferAttribute(seeds, 1));
-    g.setAttribute("aShell", new Float32BufferAttribute(shells, 1));
-    return g;
-    // eslint-disable-next-line react-hooks/exhaustive-deps -- `version` rebuilds from the tuned SUN / SUN_CORE
+  // Its dots are built in idle time with the Sun's (P27-86); an empty geometry stands in
+  // until then. `version` rebuilds them from the tuned SUN / SUN_CORE.
+  const placeholder = useMemo(() => new BufferGeometry(), []);
+  const [geometry, setGeometry] = useState<BufferGeometry | null>(null);
+  useEffect(() => {
+    const dots = allocateCore(count);
+    return sceneBuilds.add({
+      name: "Sun core",
+      neededAt: SYSTEM_SHOWS_AT,
+      steps: buildCore(count, dots),
+      onDone: () => setGeometry(toCoreGeometry(dots)),
+    });
   }, [count, version]);
-  useEffect(() => () => geometry.dispose(), [geometry]);
+  useEffect(() => () => geometry?.dispose(), [geometry]);
+  useEffect(() => () => placeholder.dispose(), [placeholder]);
 
   const material = useMemo(
     () =>
@@ -189,7 +226,7 @@ const SunCore = ({ count, version, animate, time, reveal, renderOrder }: Props) 
       </sprite>
       <points
         ref={pointsRef}
-        geometry={geometry}
+        geometry={geometry ?? placeholder}
         material={material}
         renderOrder={renderOrder}
         frustumCulled={false}

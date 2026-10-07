@@ -1,20 +1,21 @@
 "use client";
 
 import { useFrame, useThree } from "@react-three/fiber";
-import { useEffect, useMemo, useRef } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import {
+  BufferAttribute,
   BufferGeometry,
   Color,
-  Float32BufferAttribute,
   Mesh,
   NormalBlending,
   Points,
   ShaderMaterial,
 } from "three";
 import { useDrawGate } from "#/components/three.js/scene/useDrawGate";
+import { sceneBuilds } from "#/components/three.js/scene/sceneBuilds";
 import { useVoyageScroll } from "#/stores/useVoyageScroll";
 import { easeOutCubic, remap01 } from "#/components/three.js/star/utils";
-import { SOLAR, SUN, SUN_CORE, VOYAGE } from "./config";
+import { SOLAR, SUN, SUN_CORE, SYSTEM_SHOWS_AT, VOYAGE } from "./config";
 import { sunReturn } from "./reveal";
 import { DOT_FRAG, DOT_VERT } from "./sunShaders";
 import SunCore from "./SunCore";
@@ -25,22 +26,48 @@ type Props = {
   animate?: boolean;
 };
 
+/** Dots built per step of the build queue (~a fraction of a ms each). */
+const BUILD_STEP = 2000;
+
+/** The shell's dots, as flat arrays (one entry per dot, ×3 for positions). */
+type ShellDots = { positions: Float32Array; scales: Float32Array; brights: Float32Array; seeds: Float32Array };
+
+const allocateShell = (count: number): ShellDots => ({
+  positions: new Float32Array(count * 3),
+  scales: new Float32Array(count),
+  brights: new Float32Array(count),
+  seeds: new Float32Array(count),
+});
+
 /**
  * Dots scattered at random over the unit sphere (like the Saturn's), each with a little
- * radial grain — an organic, grainy surface, never a regular pattern.
+ * radial grain — an organic, grainy surface, never a regular pattern — built into `out`,
+ * pausing every BUILD_STEP dots (see sceneBuilds).
  */
-function scatteredSphere(n: number): Float32Array {
-  const out = new Float32Array(n * 3);
-  for (let i = 0; i < n; i++) {
+function* buildShell(count: number, out: ShellDots) {
+  const { positions, scales, brights, seeds } = out;
+  for (let i = 0; i < count; i++) {
     const u = Math.random() * 2 - 1;
     const theta = Math.random() * Math.PI * 2;
     const s = Math.sqrt(1 - u * u);
     const r = 1 + (Math.random() - 0.5) * SUN.shellJitter;
-    out[i * 3] = s * Math.cos(theta) * r;
-    out[i * 3 + 1] = u * r;
-    out[i * 3 + 2] = s * Math.sin(theta) * r;
+    positions[i * 3] = s * Math.cos(theta) * r;
+    positions[i * 3 + 1] = u * r;
+    positions[i * 3 + 2] = s * Math.sin(theta) * r;
+    scales[i] = 0.6 + Math.random() * 0.8; // varied sizes, like the Saturn's dots
+    brights[i] = 0.82 + Math.random() * 0.32; // varied brightness
+    seeds[i] = Math.random();
+    if ((i + 1) % BUILD_STEP === 0) yield;
   }
-  return out;
+}
+
+function toShellGeometry(dots: ShellDots): BufferGeometry {
+  const g = new BufferGeometry();
+  g.setAttribute("position", new BufferAttribute(dots.positions, 3));
+  g.setAttribute("aScale", new BufferAttribute(dots.scales, 1));
+  g.setAttribute("aBright", new BufferAttribute(dots.brights, 1));
+  g.setAttribute("aSeed", new BufferAttribute(dots.seeds, 1));
+  return g;
 }
 
 /**
@@ -71,25 +98,23 @@ const Sun = ({ animate = true }: Props) => {
   const farRef = useRef<Points>(null);
   const nearRef = useRef<Points>(null);
 
-  const geometry = useMemo(() => {
+  // Its dots are built in idle time, in story order (P27-86, like the Saturn's): the Sun
+  // only shows on the voyage, so they needn't hold up the first frame. Until then an empty
+  // geometry stands in (it draws nothing). `version` rebuilds them from the tuned SUN.
+  const placeholder = useMemo(() => new BufferGeometry(), []);
+  const [geometry, setGeometry] = useState<BufferGeometry | null>(null);
+  useEffect(() => {
     const count = isSmall ? SUN.countMobile : SUN.count;
-    const g = new BufferGeometry();
-    g.setAttribute("position", new Float32BufferAttribute(scatteredSphere(count), 3));
-    const scale = new Float32Array(count);
-    const bright = new Float32Array(count);
-    const seed = new Float32Array(count);
-    for (let i = 0; i < count; i++) {
-      scale[i] = 0.6 + Math.random() * 0.8; // varied sizes, like the Saturn's dots
-      bright[i] = 0.82 + Math.random() * 0.32; // varied brightness
-      seed[i] = Math.random();
-    }
-    g.setAttribute("aScale", new Float32BufferAttribute(scale, 1));
-    g.setAttribute("aBright", new Float32BufferAttribute(bright, 1));
-    g.setAttribute("aSeed", new Float32BufferAttribute(seed, 1));
-    return g;
-    // eslint-disable-next-line react-hooks/exhaustive-deps -- `version` rebuilds from the tuned SUN
+    const dots = allocateShell(count);
+    return sceneBuilds.add({
+      name: "Sun",
+      neededAt: SYSTEM_SHOWS_AT,
+      steps: buildShell(count, dots),
+      onDone: () => setGeometry(toShellGeometry(dots)),
+    });
   }, [isSmall, version]);
-  useEffect(() => () => geometry.dispose(), [geometry]);
+  useEffect(() => () => geometry?.dispose(), [geometry]);
+  useEffect(() => () => placeholder.dispose(), [placeholder]);
 
   const shared = useMemo(
     () => ({
@@ -173,7 +198,7 @@ const Sun = ({ animate = true }: Props) => {
   // Far side → the old Sun's halo, glowing core + drifting corona → near side.
   return (
     <group>
-      <points ref={farRef} geometry={geometry} material={materials.far} renderOrder={-4} frustumCulled={false} />
+      <points ref={farRef} geometry={geometry ?? placeholder} material={materials.far} renderOrder={-4} frustumCulled={false} />
       <SunCore
         count={isSmall ? SUN_CORE.countMobile : SUN_CORE.count}
         version={version}
@@ -189,7 +214,7 @@ const Sun = ({ animate = true }: Props) => {
         <sphereGeometry args={[1, 32, 16]} />
         <meshBasicMaterial colorWrite={false} transparent />
       </mesh>
-      <points ref={nearRef} geometry={geometry} material={materials.near} renderOrder={-1} frustumCulled={false} />
+      <points ref={nearRef} geometry={geometry ?? placeholder} material={materials.near} renderOrder={-1} frustumCulled={false} />
     </group>
   );
 };
