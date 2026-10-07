@@ -27,7 +27,8 @@ type Props<T extends HTMLElement> = {
  * A staggered rise-in (P27-80, P27-83): the container's parts fade in and rise into place
  * one after another, on one GSAP timeline that `extend` can add to — so everything in the
  * entrance is in sync. It lets go of them once done (`clearProps`), so their own hover
- * transitions are untouched. Skipped with reduced motion.
+ * transitions are untouched. In calm motion, one short fade of all the parts together: no
+ * rise, no stagger (P27-92).
  *
  * @example
  * useRiseInMotion({ scope: contentRef, dependencies: [contentKey] });
@@ -44,8 +45,18 @@ const useRiseInMotion = <T extends HTMLElement>({
   useGSAP(
     () => {
       const root = scope.current;
-      if (!root || isCalm()) return;
+      if (!root) return;
       const parts = Array.from(root.querySelectorAll(selector));
+      if (isCalm()) {
+        if (parts.length)
+          gsap.from(parts, {
+            opacity: 0,
+            duration: 0.3,
+            ease: "power1.out",
+            clearProps: "opacity",
+          });
+        return;
+      }
       const delayOf = (i: number) => Math.min(i, maxSteps) * stagger;
       const timeline = gsap.timeline();
       if (parts.length) {

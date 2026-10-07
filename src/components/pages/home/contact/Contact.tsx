@@ -162,7 +162,8 @@ const Contact = ({ overlayRef, reduced }: ContactProps) => {
               className={clsx(
                 "home-contact__sent",
                 "absolute inset-0 flex flex-col items-center justify-center gap-3",
-                "animate-[fadeIn_0.6s_ease-out]",
+                // With motion it rises in; in calm it only fades (P27-92).
+                "moving:animate-[fadeIn_0.6s_ease-out] calm:animate-[fade_0.3s_ease-out]",
               )}
             >
               <DisplayTitle as="h3" size="sm" text={CONTACT.thanks.title} />

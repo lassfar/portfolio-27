@@ -49,7 +49,7 @@ const Lightbox = ({ ref }: { ref?: Ref<HTMLDivElement> }) => {
       aria-modal="true"
       aria-label="Photo viewer"
       className={clsx(
-        "fixed inset-0 z-60 flex flex-col items-center gap-6 bg-black/80 px-4 pt-20 pb-24 backdrop-blur-lg duration-350 ease-out motion-reduce:transition-none sm:px-30 sm:pt-22 sm:pb-10",
+        "fixed inset-0 z-60 flex flex-col items-center gap-6 bg-black/80 px-4 pt-20 pb-24 backdrop-blur-lg duration-350 ease-out sm:px-30 sm:pt-22 sm:pb-10 calm:duration-200",
         // Shown at once (focus can move in), hidden only once faded out.
         open
           ? "visible opacity-100 transition-opacity"

@@ -16,7 +16,7 @@ import { usePanelFrame } from "./usePanelFrame";
 
 /** Its size, shape and fill animate between the two views (and in and out). */
 const SHELL =
-  "fixed right-0 bottom-0 z-50 flex flex-col duration-600 ease-out-quint motion-reduce:transition-none";
+  "fixed right-0 bottom-0 z-50 flex flex-col duration-600 ease-out-quint calm:duration-300";
 
 /** The full view covers the screen (the scene veiled behind it); the side panel is frosted glass — a bottom sheet on a phone. */
 const SHELL_VIEW: Record<PanelView, string> = {
@@ -27,13 +27,14 @@ const SHELL_VIEW: Record<PanelView, string> = {
 /**
  * Open, it shows at once (so focus can move in) and fades in; closed, it fades out (the
  * side panel slides off too) and only then hides. Never a translate while open: it would
- * re-base fixed children.
+ * re-base fixed children. In calm motion it only fades, shorter, and the views swap sizes
+ * at once while the content cross-fades (P27-92).
  */
 const SHELL_OPEN =
-  "visible transition-[opacity,width,height,translate,background-color,border-radius,box-shadow]";
+  "visible transition-[opacity,width,height,translate,background-color,border-radius,box-shadow] calm:transition-opacity";
 const SHELL_CLOSED: Record<PanelView, string> = {
   full: "invisible pointer-events-none opacity-0 transition-[opacity,visibility]",
-  side: "invisible pointer-events-none translate-y-full opacity-0 transition-[opacity,visibility,translate] sm:translate-x-full sm:translate-y-0",
+  side: "invisible pointer-events-none opacity-0 transition-[opacity,visibility,translate] moving:translate-y-full moving:sm:translate-x-full moving:sm:translate-y-0",
 };
 
 /**

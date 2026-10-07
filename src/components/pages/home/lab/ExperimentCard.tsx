@@ -33,7 +33,7 @@ const ExperimentCard = ({
       <span className="inline-flex items-center gap-2 text-3xs tracking-eyebrow text-white/50 uppercase">
         <span
           aria-hidden="true"
-          className="size-1.5 rounded-full bg-peach/60 motion-safe:animate-pulse"
+          className="size-1.5 rounded-full bg-peach/60 moving:animate-pulse"
         />
         {experiment.status === "live" ? "Live" : "Drifting in soon"}
       </span>

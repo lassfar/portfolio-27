@@ -235,6 +235,16 @@
   );
 }
 
+/* A plain fade (the thank-you in calm motion: P27-92). */
+@keyframes fade {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
 /* A soft rise-in (the contact form's thank-you). */
 @keyframes fadeIn {
   from {

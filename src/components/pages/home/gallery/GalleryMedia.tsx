@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import clsx from "clsx";
 import type { MediaItem } from "#/components/three.js/earth/data";
+import { useCalm } from "#/stores/useMotion";
 
 /** Where each placeholder's soft light sits (varied, so a grid of them has some rhythm). */
 const PLACEHOLDER_LIGHT = [
@@ -66,7 +67,8 @@ export function MediaThumb({ item, index }: { item: MediaItem; index: number }) 
 
 /**
  * The media in the photo viewer: the photo, or the video with sound and controls (it
- * stops when the viewer closes: `playing`). Its placeholder fits the viewer's size
+ * stops when the viewer closes: `playing`). In calm motion a clip doesn't start on its own
+ * or loop: it waits on its poster for play (WCAG 2.2.2, P27-92). Its placeholder fits the viewer's size
  * container at 4:3.
  */
 export function MediaFull({
@@ -80,6 +82,7 @@ export function MediaFull({
 }) {
   const [failed, setFailed] = useState(false);
   const video = useRef<HTMLVideoElement>(null);
+  const calm = useCalm();
   useEffect(() => {
     if (!playing) video.current?.pause();
   }, [playing]);
@@ -97,8 +100,8 @@ export function MediaFull({
       src={item.src}
       poster={item.poster}
       controls
-      autoPlay
-      loop
+      autoPlay={!calm}
+      loop={!calm}
       playsInline
       onError={() => setFailed(true)}
       className="max-h-full max-w-full rounded-2xl shadow-photo"
