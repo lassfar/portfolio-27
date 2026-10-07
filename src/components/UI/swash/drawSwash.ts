@@ -1,4 +1,5 @@
 import gsap from "gsap";
+import { isCalm } from "#/stores/useMotion";
 
 /**
  * How a swash's line is hidden and drawn (P27-83). Its path's length is 1 and its dash
@@ -15,13 +16,12 @@ const HIDDEN = 1.01;
  */
 const SWASH_DRAW = { duration: 1.2, ease: "power4.out", autoRound: false } as const;
 
-const reducedMotion = () => window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 const strokeOf = (swash: Element | null) => swash?.querySelector("path") ?? null;
 
 /** Hides a swash's line until something draws it. With reduced motion it stays drawn. */
 export function hideSwash(swash: Element | null): void {
   const stroke = strokeOf(swash);
-  if (stroke && !reducedMotion()) gsap.set(stroke, { strokeDashoffset: HIDDEN });
+  if (stroke && !isCalm()) gsap.set(stroke, { strokeDashoffset: HIDDEN });
 }
 
 /**
@@ -31,7 +31,7 @@ export function hideSwash(swash: Element | null): void {
 export function drawSwash(swash: Element | null, delay = 0): void {
   const stroke = strokeOf(swash);
   if (!stroke) return;
-  if (reducedMotion()) gsap.set(stroke, { strokeDashoffset: 0 });
+  if (isCalm()) gsap.set(stroke, { strokeDashoffset: 0 });
   else gsap.fromTo(stroke, { strokeDashoffset: HIDDEN }, { strokeDashoffset: 0, ...SWASH_DRAW, delay });
 }
 
@@ -46,6 +46,6 @@ export function addSwashDraw(
   position?: gsap.Position,
 ): gsap.core.Timeline {
   const stroke = strokeOf(swash);
-  if (!stroke || reducedMotion()) return timeline;
+  if (!stroke || isCalm()) return timeline;
   return timeline.fromTo(stroke, { strokeDashoffset: HIDDEN }, { strokeDashoffset: 0, ...SWASH_DRAW }, position);
 }

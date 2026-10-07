@@ -3,6 +3,7 @@
 import gsap from "gsap";
 import { RefObject } from "react";
 import { useGSAP } from "@gsap/react";
+import { isCalm } from "#/stores/useMotion";
 
 gsap.registerPlugin(useGSAP);
 
@@ -43,7 +44,7 @@ const useRiseInMotion = <T extends HTMLElement>({
   useGSAP(
     () => {
       const root = scope.current;
-      if (!root || window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+      if (!root || isCalm()) return;
       const parts = Array.from(root.querySelectorAll(selector));
       const delayOf = (i: number) => Math.min(i, maxSteps) * stagger;
       const timeline = gsap.timeline();

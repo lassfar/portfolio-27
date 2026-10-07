@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import SmoothScrollProvider from "#/components/providers/SmoothScrollProvider";
+import { MOTION_SCRIPT } from "#/stores/motionPreference";
 import "#/styles/globals.css";
 import { greatVibes, kronaOne } from "./fonts";
 
@@ -25,6 +26,11 @@ export default function RootLayout({
       suppressHydrationWarning
       className={`${greatVibes.variable} ${kronaOne.variable}`}
     >
+      <head>
+        {/* Marks <html> with the motion mode (`data-motion`) before the first paint (P27-91).
+            A plain script: next/script's beforeInteractive would run only once Next has loaded. */}
+        <script dangerouslySetInnerHTML={{ __html: MOTION_SCRIPT }} />
+      </head>
       <body suppressHydrationWarning className="antialiased dark">
         <SmoothScrollProvider>{children}</SmoothScrollProvider>
       </body>
