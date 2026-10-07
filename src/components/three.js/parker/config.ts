@@ -38,7 +38,13 @@ export const PARKER = {
   array: { length: 1.1, width: 0.7, depth: 0.03, sweep: 0.96, hingeY: -0.82 }, // sweep: radians below the shield plane
   whip: { length: 2.0, radius: 0.012, root: 0.9, y: -0.1, azimuth: Math.PI / 4 }, // first of 4, 90° apart
   cup: { radius: 0.07, height: 0.12 },
-  boom: { length: 3.5, radius: 0.018, sensors: [1.6, 2.4, 3.5], shortAntennaAt: 3.08, shortAntenna: 0.21 },
+  boom: {
+    length: 3.5,
+    radius: 0.018,
+    sensors: [1.6, 2.4, 3.5],
+    shortAntennaAt: 3.08,
+    shortAntenna: 0.21,
+  },
   hga: { radius: 0.3, depth: 0.1 },
   card: { width: 0.24, height: 0.17, depth: 0.012 },
 

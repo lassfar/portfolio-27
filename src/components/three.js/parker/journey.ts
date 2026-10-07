@@ -126,10 +126,14 @@ export function journeyTipAt(line: JourneyLine, day: number, out: Vector3): numb
   const n = Math.max(1, pointsUpTo(line, day));
   const p = line.positions;
   const a = (n - 1) * 3;
-  if (n >= line.count) return out.set(p[a], p[a + 1], p[a + 2]), line.count;
+  if (n >= line.count) return (out.set(p[a], p[a + 1], p[a + 2]), line.count);
   const t = (day - line.days[n - 1]) / (line.days[n] - line.days[n - 1] || 1);
   const b = n * 3;
-  out.set(p[a] + (p[b] - p[a]) * t, p[a + 1] + (p[b + 1] - p[a + 1]) * t, p[a + 2] + (p[b + 2] - p[a + 2]) * t);
+  out.set(
+    p[a] + (p[b] - p[a]) * t,
+    p[a + 1] + (p[b + 1] - p[a + 1]) * t,
+    p[a + 2] + (p[b + 2] - p[a + 2]) * t,
+  );
   return n;
 }
 

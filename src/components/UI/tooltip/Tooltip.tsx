@@ -1,5 +1,9 @@
 import clsx from "clsx";
-import type { TooltipAlign, TooltipProps, TooltipSide } from "#/components/UI/tooltip/tooltip.types";
+import type {
+  TooltipAlign,
+  TooltipProps,
+  TooltipSide,
+} from "#/components/UI/tooltip/tooltip.types";
 
 type Axis = "x" | "y";
 
@@ -52,7 +56,14 @@ const SHOWN: Record<Axis, string> = {
  * Once faded out it's `invisible` too (P27-86): its blur was still drawn at opacity 0, every
  * frame. Not a `live` one: it stays in the page, so screen readers hear what it says.
  */
-const Tooltip = ({ children, side = "below", align = "center", open, delayed = false, live = false }: TooltipProps) => (
+const Tooltip = ({
+  children,
+  side = "below",
+  align = "center",
+  open,
+  delayed = false,
+  live = false,
+}: TooltipProps) => (
   <span
     aria-hidden={live ? undefined : true}
     aria-live={live ? "polite" : undefined}
@@ -62,7 +73,9 @@ const Tooltip = ({ children, side = "below", align = "center", open, delayed = f
       AXIS[side] === "y" && ALIGN[align],
       open ? SHOWN[AXIS[side]] : [HIDDEN[side], !live && "invisible"],
       open === undefined && ON_TRIGGER[AXIS[side]],
-      open === undefined && delayed && "group-hover/tip:delay-800 group-focus-visible/tip:delay-800",
+      open === undefined &&
+        delayed &&
+        "group-hover/tip:delay-800 group-focus-visible/tip:delay-800",
     )}
   >
     {children}

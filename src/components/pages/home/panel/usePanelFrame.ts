@@ -53,7 +53,10 @@ export function usePanelFrame(scroll: RefObject<HTMLElement | null>) {
   useEffect(() => {
     const key = focusKey.current;
     focusKey.current = undefined;
-    if (key) scroll.current?.querySelector<HTMLElement>(`[data-focus-key="${key}"]`)?.focus({ preventScroll: true });
+    if (key)
+      scroll.current
+        ?.querySelector<HTMLElement>(`[data-focus-key="${key}"]`)
+        ?.focus({ preventScroll: true });
   }, [frame?.key, scroll]);
 
   return { frame, morphing };

@@ -9,7 +9,12 @@ export const CONTACT_EMAIL = "aymanelassfar@outlook.com";
 export const CONTACT_LINKS: ContactLink[] = [
   { label: "Email", href: `mailto:${CONTACT_EMAIL}`, icon: Mail },
   { label: "GitHub", href: "https://github.com/lassfar", icon: GitHub, external: true },
-  { label: "LinkedIn", href: "https://www.linkedin.com/in/aymanelassfar/", icon: LinkedIn, external: true },
+  {
+    label: "LinkedIn",
+    href: "https://www.linkedin.com/in/aymanelassfar/",
+    icon: LinkedIn,
+    external: true,
+  },
 ];
 
 /**

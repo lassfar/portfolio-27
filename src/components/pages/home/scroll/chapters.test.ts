@@ -27,7 +27,8 @@ describe("the chapter map", () => {
   it("lands where the assistant lands, and offers the next stop from there", () => {
     PHASE_STOPS.forEach((stop, i) => {
       expect(restOf(stop.id), stop.id).toBe(stop.target);
-      if (stop.window) expect(nextStopAt(restOf(stop.id))?.id, stop.id).toBe(PHASE_STOPS[i + 1]?.id);
+      if (stop.window)
+        expect(nextStopAt(restOf(stop.id))?.id, stop.id).toBe(PHASE_STOPS[i + 1]?.id);
     });
   });
 

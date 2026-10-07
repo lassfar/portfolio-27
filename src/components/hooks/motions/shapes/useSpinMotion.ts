@@ -34,7 +34,7 @@ const useSpinMotion = <T extends HTMLElement | SVGSVGElement>({
         position: element.position,
       });
     },
-    { ...dependecies }
+    { ...dependecies },
   );
 };
 

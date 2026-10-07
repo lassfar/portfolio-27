@@ -7,8 +7,7 @@ import { restOf } from "./chapters";
 import { glideToJourney, jumpToJourney, stopGlide } from "./glide";
 
 export type GoToOptions =
-  | { instant: true }
-  | { instant?: false; seconds?: number; ease?: string; by?: GlideSource };
+  { instant: true } | { instant?: false; seconds?: number; ease?: string; by?: GlideSource };
 
 /**
  * Takes the visitor to chapter `id`, on its resting view (P27-91): the one way a chapter

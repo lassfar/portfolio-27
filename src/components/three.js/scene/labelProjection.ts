@@ -38,7 +38,7 @@ export function projectPointToViewport(
   point: Vector3,
   camera: Camera,
   canvas: HTMLCanvasElement,
-  out: Vector3
+  out: Vector3,
 ): boolean {
   camera.updateMatrixWorld(); // the camera moved this frame; its matrices catch up at render
   out.copy(point).project(camera);
@@ -53,7 +53,7 @@ export function projectToViewport(
   object: Object3D,
   camera: Camera,
   canvas: HTMLCanvasElement,
-  out: Vector3
+  out: Vector3,
 ): boolean {
   return projectPointToViewport(object.getWorldPosition(out), camera, canvas, out);
 }

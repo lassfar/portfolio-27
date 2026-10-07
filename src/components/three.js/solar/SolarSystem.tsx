@@ -54,7 +54,10 @@ const SolarSystem = ({ animate = true }: Props) => {
 
         {/* The orbit lines — the real ovals (shown while SOLAR.ring.visible). */}
         {PLANETS.map((def) => (
-          <OrbitRing key={`ring-${def.id}`} outline={() => orbitOutline(def.orbit, SOLAR.ring.segments)} />
+          <OrbitRing
+            key={`ring-${def.id}`}
+            outline={() => orbitOutline(def.orbit, SOLAR.ring.segments)}
+          />
         ))}
         <OrbitRing outline={() => orbitOutline(EARTH_ELEMENTS, SOLAR.ring.segments)} />
         {/* The Saturn's: the fixed circle through the origin (see SaturnMember). */}
@@ -94,8 +97,7 @@ const OrbitRing = ({ outline }: { outline: () => Float32Array }) => {
     const reveal = siblingReveal();
     // Skipped entirely while faded out (P27-78), not drawn at opacity 0.
     if (lineRef.current) {
-      lineRef.current.visible =
-        SOLAR.ring.visible && (!PERFORMANCE.hideInvisible || reveal > 0);
+      lineRef.current.visible = SOLAR.ring.visible && (!PERFORMANCE.hideInvisible || reveal > 0);
     }
     if (!matRef.current || !SOLAR.ring.visible) return;
     setHexIfChanged(matRef.current.color, SOLAR.ring.color);
@@ -104,7 +106,13 @@ const OrbitRing = ({ outline }: { outline: () => Float32Array }) => {
 
   return (
     <lineLoop ref={lineRef} geometry={geometry}>
-      <lineBasicMaterial ref={matRef} color={SOLAR.ring.color} transparent opacity={0} depthWrite={false} />
+      <lineBasicMaterial
+        ref={matRef}
+        color={SOLAR.ring.color}
+        transparent
+        opacity={0}
+        depthWrite={false}
+      />
     </lineLoop>
   );
 };

@@ -133,7 +133,15 @@ await mkdir(new URL("../public/data/", import.meta.url), { recursive: true });
 await writeFile(OUT, JSON.stringify(data));
 const date = (jd) => new Date((jd - 2440587.5) * 86400000).toISOString().slice(0, 10);
 console.log(`points: ${kept.length} (from ${path.length}); flybys: ${flybys.length}`);
-flybys.forEach((p, k) => console.log(`  Venus ${k + 1}: ${date(p.jd)}  (${(gaps[minima[k]] * 149597870.7).toFixed(0)} km)`));
+flybys.forEach((p, k) =>
+  console.log(
+    `  Venus ${k + 1}: ${date(p.jd)}  (${(gaps[minima[k]] * 149597870.7).toFixed(0)} km)`,
+  ),
+);
 console.log(`perihelia: ${perihelia.length}`);
-perihelia.forEach((p, k) => console.log(`  ${k + 1}: ${date(p.jd)}  ${((radius(p) * 149597870.7 - 695700) / 1e6).toFixed(2)} million km from the surface`));
+perihelia.forEach((p, k) =>
+  console.log(
+    `  ${k + 1}: ${date(p.jd)}  ${((radius(p) * 149597870.7 - 695700) / 1e6).toFixed(2)} million km from the surface`,
+  ),
+);
 console.log(`wrote ${OUT.pathname} (${JSON.stringify(data).length} bytes)`);

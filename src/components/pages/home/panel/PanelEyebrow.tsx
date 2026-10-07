@@ -40,17 +40,23 @@ const PanelEyebrow = ({ view, eyebrow }: PanelEyebrowProps) => {
     <p
       {...RISE}
       className={clsx(
-        "flex min-h-10 w-full items-center uppercase tabular-nums text-light-peach/62",
+        "flex min-h-10 w-full items-center text-light-peach/62 uppercase tabular-nums",
         slots.root,
       )}
     >
-      <span aria-hidden="true" className={clsx("h-px shrink-0 bg-linear-to-r from-transparent to-peach/80", slots.lead)} />
+      <span
+        aria-hidden="true"
+        className={clsx("h-px shrink-0 bg-linear-to-r from-transparent to-peach/80", slots.lead)}
+      />
       <span className="shrink-0 whitespace-nowrap text-peach">{eyebrow.place}</span>
       <span aria-hidden="true" className="text-peach/50">
         ·
       </span>
       <span>{eyebrow.detail}</span>
-      <span aria-hidden="true" className={clsx("h-px shrink-0 bg-linear-to-l from-transparent to-peach/80", slots.trail)} />
+      <span
+        aria-hidden="true"
+        className={clsx("h-px shrink-0 bg-linear-to-l from-transparent to-peach/80", slots.trail)}
+      />
     </p>
   );
 };

@@ -19,8 +19,7 @@ export const earthApproach = (): number =>
  * so the two never rotate at once.
  */
 export const earthOwnsDrag = (): boolean =>
-  earthApproach() >= 0.4 &&
-  clamp01(useLabScroll.getState().progress) < LAB.earthFadeEnd;
+  earthApproach() >= 0.4 && clamp01(useLabScroll.getState().progress) < LAB.earthFadeEnd;
 
 /**
  * What the CURRENT pointer-drag controls, decided on pointer-DOWN by a hit-test

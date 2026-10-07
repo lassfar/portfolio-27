@@ -8,7 +8,11 @@ import { TOOLTIP_ALIGNS, TOOLTIP_SIDES } from "./tooltip.types";
 
 /** Its trigger: any positioned element marked `group/tip` (a timeline star, a panel button…). */
 const Trigger = ({ children }: { children: ReactNode }) => (
-  <button type="button" aria-label="Saturn" className="group/tip relative size-6 rounded-full bg-peach/80 focus-ring">
+  <button
+    type="button"
+    aria-label="Saturn"
+    className="group/tip relative size-6 rounded-full bg-peach/80 focus-ring"
+  >
     {children}
   </button>
 );

@@ -1,11 +1,5 @@
 import { BlendFunction, Effect, KawaseBlurPass, KernelSize } from "postprocessing";
-import {
-  HalfFloatType,
-  TextureDataType,
-  Uniform,
-  WebGLRenderer,
-  WebGLRenderTarget,
-} from "three";
+import { HalfFloatType, TextureDataType, Uniform, WebGLRenderer, WebGLRenderTarget } from "three";
 import type { BlurQuality } from "./performance";
 
 const FRAG = /* glsl */ `

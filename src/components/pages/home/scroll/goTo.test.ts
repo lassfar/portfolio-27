@@ -24,7 +24,12 @@ describe("goTo", () => {
     useJourneyScroll.setState({ progress: 0.1 });
     expect(goTo("earth", { by: "assistant", ease: "none" })).toBe(true);
     const rest = restOf("earth");
-    expect(glideToJourney).toHaveBeenCalledWith(rest, glideSeconds(rest - 0.1), "none", "assistant");
+    expect(glideToJourney).toHaveBeenCalledWith(
+      rest,
+      glideSeconds(rest - 0.1),
+      "none",
+      "assistant",
+    );
   });
 
   it("takes the time it's given, and the glide's own ease by default", () => {

@@ -7,7 +7,7 @@ import { GLOW_CARD_SIZES } from "./card.types";
 
 const Picture = () => (
   <span className="relative block aspect-4/5 bg-linear-150 from-[#768496] to-[#282c36] transition-[filter] duration-500 group-hover/card:brightness-108 group-hover/card:saturate-112">
-    <span className="grain absolute inset-0" />
+    <span className="absolute inset-0 grain" />
   </span>
 );
 

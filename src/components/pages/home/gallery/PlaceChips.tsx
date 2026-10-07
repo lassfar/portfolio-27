@@ -27,8 +27,13 @@ export interface PlaceChipsProps {
 
 /** A panel's places as pills (P27-80): the one showing is filled peach; another opens there. A part of the panel's entrance (`RISE`). */
 const PlaceChips = ({ view, currentId, onPick, className, style }: PlaceChipsProps) => (
-  <nav {...RISE} aria-label="Places" className={clsx("flex flex-wrap items-center gap-2", ROW[view], className)} style={style}>
-    <p className={clsx("text-3xs uppercase tracking-eyebrow text-white/50", LABEL[view])}>Places</p>
+  <nav
+    {...RISE}
+    aria-label="Places"
+    className={clsx("flex flex-wrap items-center gap-2", ROW[view], className)}
+    style={style}
+  >
+    <p className={clsx("text-3xs tracking-eyebrow text-white/50 uppercase", LABEL[view])}>Places</p>
     {PHOTO_LOCATIONS.map((loc) => (
       <Chip
         key={loc.id}

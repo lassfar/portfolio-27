@@ -2,29 +2,21 @@
 
 import { Canvas, useFrame, useThree } from "@react-three/fiber";
 import { EffectComposer } from "@react-three/postprocessing";
-import {
-  BlendFunction,
-  BloomEffect,
-  EffectComposer as EffectComposerImpl,
-} from "postprocessing";
+import { BlendFunction, BloomEffect, EffectComposer as EffectComposerImpl } from "postprocessing";
 import { ReactNode, RefObject, useEffect, useMemo, useRef } from "react";
 import { Euler, Group, PerspectiveCamera, Vector3 } from "three";
 import Universe from "#/components/three.js/star/Universe";
-import { BLOOM, CAMERA, JOURNEY, mpAt, PANEL_VEIL, PARTICLES } from "#/components/three.js/star/config";
 import {
-  clamp01,
-  damp,
-  easeInOutCubic,
-  lerp,
-  remap01,
-} from "#/components/three.js/star/utils";
+  BLOOM,
+  CAMERA,
+  JOURNEY,
+  mpAt,
+  PANEL_VEIL,
+  PARTICLES,
+} from "#/components/three.js/star/config";
+import { clamp01, damp, easeInOutCubic, lerp, remap01 } from "#/components/three.js/star/utils";
 import Planet from "#/components/three.js/planet/Planet";
-import {
-  FLYOUT,
-  PLANET,
-  RING,
-  SATURN,
-} from "#/components/three.js/planet/config";
+import { FLYOUT, PLANET, RING, SATURN } from "#/components/three.js/planet/config";
 import SolarSystem from "#/components/three.js/solar/SolarSystem";
 import {
   EARTH_ELEMENTS,
@@ -51,12 +43,7 @@ import { METRE, PARKER_CAM } from "#/components/three.js/parker/config";
 import Galaxy from "#/components/three.js/galaxy/Galaxy";
 import GalaxyGui from "#/components/three.js/galaxy/GalaxyGui";
 import PerfProbe from "./PerfProbe";
-import {
-  GALAXY,
-  GALAXY_FX,
-  GALAXY_SCALE,
-  GALAXY_ZOOM,
-} from "#/components/three.js/galaxy/config";
+import { GALAXY, GALAXY_FX, GALAXY_SCALE, GALAXY_ZOOM } from "#/components/three.js/galaxy/config";
 import { SoftHighlights, SoftHighlightsEffect } from "./SoftHighlights";
 import { VeilEffect } from "./VeilEffect";
 import { cosmicVeil } from "#/stores/cosmicVeil";
@@ -97,8 +84,7 @@ import { setScrollLock } from "#/stores/scrollLock";
  */
 const CosmicScene = () => {
   const prefersReduced =
-    typeof window !== "undefined" &&
-    window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    typeof window !== "undefined" && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
   const animate = !prefersReduced;
 
   const isSmall = typeof window !== "undefined" && window.innerWidth < 768;
@@ -167,11 +153,7 @@ const CosmicScene = () => {
         gl={{ antialias: false, alpha: true }}
       >
         {/* Starfield + star: drag-rotates, scroll zooms + bursts the star. */}
-        <Universe
-          animate={animate}
-          count={starCount}
-          starfieldRef={starfieldRef}
-        />
+        <Universe animate={animate} count={starCount} starfieldRef={starfieldRef} />
 
         {/* Saturn — this system's hero planet. It's a FIXED anchor at the origin
           while the camera zooms out from it; once the solar system is visible it
@@ -204,11 +186,7 @@ const CosmicScene = () => {
           (a directional light from the Sun, in ParkerProbe). The camera flies from the
           Earth and dives to it (CameraRig segment 3). */}
         <ambientLight intensity={0.6} color="#50505a" />
-        <directionalLight
-          position={[5, -2, -4]}
-          intensity={0.4}
-          color="#9ec2ff"
-        />
+        <directionalLight position={[5, -2, -4]} intensity={0.4} color="#9ec2ff" />
         <ParkerMember />
         <ParkerProbe />
         {/* Its journey since the 2018 launch, drawn as the Lab pulls back (P27-72). */}
@@ -291,9 +269,7 @@ const SaturnMember = ({ children }: { children: ReactNode }) => {
     // group transform), then blended from unrotated → rotated over voyage start
     // so the origin stays fixed during the intro.
     const r = useSceneRotation.getState();
-    rotated.current
-      .copy(offset.current)
-      .applyEuler(euler.current.set(r.pitch, r.yaw, 0));
+    rotated.current.copy(offset.current).applyEuler(euler.current.set(r.pitch, r.yaw, 0));
     const blend = clamp01(voyage / SOLAR.revealStart);
 
     // Base off the Sun's LIVE position (SUNPOS normally; revolving with the galaxy at
@@ -391,7 +367,9 @@ function bendAroundSun(
   const dx = b[0] - ax;
   const dy = b[1] - ay;
   const dz = b[2] - az;
-  const along = clamp01(((sx - ax) * dx + (sy - ay) * dy + (sz - az) * dz) / (dx * dx + dy * dy + dz * dz || 1));
+  const along = clamp01(
+    ((sx - ax) * dx + (sy - ay) * dy + (sz - az) * dz) / (dx * dx + dy * dy + dz * dz || 1),
+  );
   const cx = ax + dx * along - sx;
   const cy = ay + dy * along - sy;
   const cz = az + dz * along - sz;
@@ -450,11 +428,7 @@ const G_START_DIR: [number, number, number] = [
   _gStartVec[1] / G_D_START,
   _gStartVec[2] / G_D_START,
 ];
-const _gEndLen = Math.hypot(
-  GALAXY_ZOOM.endDir[0],
-  GALAXY_ZOOM.endDir[1],
-  GALAXY_ZOOM.endDir[2],
-);
+const _gEndLen = Math.hypot(GALAXY_ZOOM.endDir[0], GALAXY_ZOOM.endDir[1], GALAXY_ZOOM.endDir[2]);
 const G_END_DIR: [number, number, number] = [
   GALAXY_ZOOM.endDir[0] / _gEndLen,
   GALAXY_ZOOM.endDir[1] / _gEndLen,
@@ -495,7 +469,11 @@ const SYSTEM_SPAN = spanOf(
 );
 /** The whole galaxy in its full view (live: the dev panel tunes its size and distance). */
 const galaxySpan = () =>
-  spanOf((GALAXY.discRadius * GALAXY_SCALE) / (GALAXY_ZOOM.dEnd / GALAXY_ZOOM.endCloser), CAMERA.fov, 1.03);
+  spanOf(
+    (GALAXY.discRadius * GALAXY_SCALE) / (GALAXY_ZOOM.dEnd / GALAXY_ZOOM.endCloser),
+    CAMERA.fov,
+    1.03,
+  );
 /** The Earth at its arrival (EARTH_CAM.offset), with room for its photo pins and their labels. */
 const EARTH_SPAN = spanOf(
   Math.tan(Math.asin(EARTH_RADIUS / Math.hypot(...EARTH_CAM.offset))),
@@ -531,11 +509,7 @@ const _overDir = new Vector3(0, FLYOUT.rise, CAMERA.z + FLYOUT.distance)
   .sub(new Vector3(...SUNPOS))
   .normalize();
 
-const CameraRig = ({
-  starfieldRef,
-}: {
-  starfieldRef: RefObject<Group | null>;
-}) => {
+const CameraRig = ({ starfieldRef }: { starfieldRef: RefObject<Group | null> }) => {
   const camera = useThree((s) => s.camera);
   useFrame(() => {
     const a = useSaturnAnchor.getState();
@@ -598,7 +572,13 @@ const CameraRig = ({
       // The Earth is the 3rd planet, close to the Sun: when it's behind the Sun, the
       // straight path would fly through it — so it bends round the Sun (bendAroundSun).
       const bent = set3(_bent, px, py, pz);
-      bendAroundSun(set3(_pathFrom, ax, ay, az), set3(_pathTo, bx, by, bz), u, EARTH_CAM.sunClear, bent);
+      bendAroundSun(
+        set3(_pathFrom, ax, ay, az),
+        set3(_pathTo, bx, by, bz),
+        u,
+        EARTH_CAM.sunClear,
+        bent,
+      );
       [px, py, pz] = bent;
     }
 
@@ -669,12 +649,22 @@ const CameraRig = ({
       [px, py, pz] = cam;
       if (flown < 0) {
         // The view turns at a steady rate from the Earth to the Sun as it pulls back.
-        turnToward(_fromDir.set(earth.x - px, earth.y - py, earth.z - pz), _toDir.set(sun[0] - px, sun[1] - py, sun[2] - pz), back);
+        turnToward(
+          _fromDir.set(earth.x - px, earth.y - py, earth.z - pz),
+          _toDir.set(sun[0] - px, sun[1] - py, sun[2] - pz),
+          back,
+        );
       } else {
         // Like the Earth dive, the aim slides from the Sun to the probe with the distance
         // flown — so the view holds still (no turn in place): the probe keeps its place
         // on screen while the camera flies straight at it, and centres on arrival.
-        _fromDir.set(lerp(sun[0], pk.x, flown) - px, lerp(sun[1], pk.y, flown) - py, lerp(sun[2], pk.z, flown) - pz).normalize();
+        _fromDir
+          .set(
+            lerp(sun[0], pk.x, flown) - px,
+            lerp(sun[1], pk.y, flown) - py,
+            lerp(sun[2], pk.z, flown) - pz,
+          )
+          .normalize();
       }
       lx = px + _fromDir.x;
       ly = py + _fromDir.y;
@@ -741,10 +731,19 @@ const CameraRig = ({
         const dl = Math.hypot(dx, dy, dz) || 1;
         const cam = set3(_outCam, pk.x + (dx / dl) * d, pk.y + (dy / dl) * d, pk.z + (dz / dl) * d);
         // When the probe is on the far side of the Sun, the way out bends round it.
-        bendAroundSun(set3(_probe, pk.x, pk.y, pk.z), frame, clamp01(d / d1), EARTH_CAM.sunClear, cam, true);
+        bendAroundSun(
+          set3(_probe, pk.x, pk.y, pk.z),
+          frame,
+          clamp01(d / d1),
+          EARTH_CAM.sunClear,
+          cam,
+          true,
+        );
         [px, py, pz] = cam;
         const flown = clamp01((d - dStart) / (d1 - dStart));
-        _fromDir.set(lerp(pk.x, sx, flown) - px, lerp(pk.y, sy, flown) - py, lerp(pk.z, sz, flown) - pz).normalize();
+        _fromDir
+          .set(lerp(pk.x, sx, flown) - px, lerp(pk.y, sy, flown) - py, lerp(pk.z, sz, flown) - pz)
+          .normalize();
         lx = px + _fromDir.x;
         ly = py + _fromDir.y;
         lz = pz + _fromDir.z;
@@ -763,7 +762,8 @@ const CameraRig = ({
         // …ending a little closer than the study framing (GALAXY_ZOOM.endCloser),
         // built up over this leg so the solar-system framing is unchanged.
         // (From the solar system's fit at its start to the galaxy's: exactly 1 on landscape.)
-        const d2 = (dist / Math.pow(GALAXY_ZOOM.endCloser, e)) * driftScale * lerp(systemFit, galaxyFit, s);
+        const d2 =
+          (dist / Math.pow(GALAXY_ZOOM.endCloser, e)) * driftScale * lerp(systemFit, galaxyFit, s);
         let dx = lerp(G_START_DIR[0], G_END_DIR[0], s);
         let dy = lerp(G_START_DIR[1], G_END_DIR[1], s);
         let dz = lerp(G_START_DIR[2], G_END_DIR[2], s);
@@ -884,11 +884,7 @@ const LIGHTBOX_FADE_MS = 350;
  * a little before the Craft uncovers the canvas, so the first frame you see is fresh,
  * and draws one frame on resize (a resize clears the canvas).
  */
-const RenderPause = ({
-  composerRef,
-}: {
-  composerRef: RefObject<EffectComposerImpl | null>;
-}) => {
+const RenderPause = ({ composerRef }: { composerRef: RefObject<EffectComposerImpl | null> }) => {
   const size = useThree((s) => s.size);
 
   useEffect(() => {
@@ -989,11 +985,7 @@ const ShaderWarmUp = ({
  * soft dots smooth their own edges, and 8× cost a lot of memory bandwidth on integrated
  * GPUs for no visible gain. postprocessing's setter re-allocates the scene buffers.
  */
-const Multisampling = ({
-  composerRef,
-}: {
-  composerRef: RefObject<EffectComposerImpl | null>;
-}) => {
+const Multisampling = ({ composerRef }: { composerRef: RefObject<EffectComposerImpl | null> }) => {
   useEffect(() => {
     const sync = () => {
       const composer = composerRef.current;
@@ -1012,11 +1004,7 @@ const Multisampling = ({
  * When the quality tiers change the canvas's pixel ratio, resize the composer's buffers
  * to match: by itself it only follows the canvas's CSS size.
  */
-const ComposerResize = ({
-  composerRef,
-}: {
-  composerRef: RefObject<EffectComposerImpl | null>;
-}) => {
+const ComposerResize = ({ composerRef }: { composerRef: RefObject<EffectComposerImpl | null> }) => {
   const dpr = useThree((s) => s.viewport.dpr);
   const get = useThree((s) => s.get);
   const applied = useRef(dpr);
@@ -1137,8 +1125,7 @@ const BloomController = ({
       );
     }
     const progress = useAboutScroll.getState().progress;
-    bloom.intensity =
-      BLOOM.intensity * (1 - remap01(progress, 0.05, 0.6));
+    bloom.intensity = BLOOM.intensity * (1 - remap01(progress, 0.05, 0.6));
   });
   return null;
 };

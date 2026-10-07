@@ -74,9 +74,7 @@ const PinLabels = () => {
           // Anchor to the requested side of the pin head so clustered labels
           // fan out rather than stack on the same point.
           const anchored =
-            (loc.labelAnchor ?? "top-left") === "top-right"
-              ? s.x + OFFSET_X
-              : s.x - w - OFFSET_X;
+            (loc.labelAnchor ?? "top-left") === "top-right" ? s.x + OFFSET_X : s.x - w - OFFSET_X;
           const left = phone.matches ? keepOnScreen(anchored, w, s.x, window.innerWidth) : anchored;
           const top = s.y - h - OFFSET_Y;
           boxes.push({ el, cx: left + w / 2, left, top, w, h });

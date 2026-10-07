@@ -10,14 +10,8 @@ import Swash from "#/components/UI/swash/Swash";
 import DisplayTitle from "#/components/UI/text/DisplayTitle";
 import { TITLE_SWASH } from "#/components/pages/home/swashes";
 import { CONTACT } from "#/components/pages/home/story/copy";
-import {
-  CONTACT_LINKS,
-  CONTACT_SEND_DELAY_MS,
-} from "#/components/pages/home/contact/config";
-import {
-  ContactMessage,
-  ContactProps,
-} from "#/components/pages/home/contact/contact.types";
+import { CONTACT_LINKS, CONTACT_SEND_DELAY_MS } from "#/components/pages/home/contact/config";
+import { ContactMessage, ContactProps } from "#/components/pages/home/contact/contact.types";
 
 type Status = "idle" | "sending" | "sent";
 
@@ -27,7 +21,7 @@ type Status = "idle" | "sending" | "sent";
  */
 const sendMessage = (message: ContactMessage) =>
   new Promise<ContactMessage>((resolve) =>
-    window.setTimeout(() => resolve(message), CONTACT_SEND_DELAY_MS)
+    window.setTimeout(() => resolve(message), CONTACT_SEND_DELAY_MS),
   );
 
 /**
@@ -68,9 +62,9 @@ const Contact = ({ overlayRef, reduced }: ContactProps) => {
         "home-contact",
         reduced
           ? "relative z-20 min-h-screen"
-          : "absolute inset-0 z-20 opacity-0 invisible pointer-events-none",
+          : "pointer-events-none invisible absolute inset-0 z-20 opacity-0",
         "flex flex-col items-center justify-center text-center",
-        "px-10 md:px-6 py-16" // (wider on phones, so the fields clear the section spine)
+        "px-10 py-16 md:px-6", // (wider on phones, so the fields clear the section spine)
       )}
     >
       {/* A soft dark vignette behind the form, so the text reads over the (softly
@@ -82,20 +76,24 @@ const Contact = ({ overlayRef, reduced }: ContactProps) => {
       <div
         className={clsx(
           "home-contact__inner",
-          "relative w-full max-w-2xl flex flex-col items-center",
-          reduced ? "pointer-events-auto" : "pointer-events-none"
+          "relative flex w-full max-w-2xl flex-col items-center",
+          reduced ? "pointer-events-auto" : "pointer-events-none",
         )}
       >
         <DisplayTitle size="lg" text={CONTACT.title} className="home-contact__title mb-1" />
         {/* Its swash draws in once the title has written in (useCosmicJourney). */}
-        <Swash {...TITLE_SWASH.contact} draw={reduced ? "mount" : "cue"} className="mb-4 w-48 sm:mb-5 sm:w-64" />
+        <Swash
+          {...TITLE_SWASH.contact}
+          draw={reduced ? "mount" : "cue"}
+          className="mb-4 w-48 sm:mb-5 sm:w-64"
+        />
 
         <p
           className={clsx(
             "home-contact__intro",
-            "text-white/80 font-light",
-            "text-base sm:text-lg md:text-xl leading-relaxed text-balance",
-            "max-w-xl mb-8 sm:mb-10"
+            "font-light text-white/80",
+            "text-base leading-relaxed text-balance sm:text-lg md:text-xl",
+            "mb-8 max-w-xl sm:mb-10",
           )}
         >
           {CONTACT.intro}
@@ -109,9 +107,9 @@ const Contact = ({ overlayRef, reduced }: ContactProps) => {
             aria-hidden={sent}
             className={clsx(
               "home-contact__form",
-              "grid grid-cols-1 sm:grid-cols-2 gap-x-8 gap-y-6 text-left",
+              "grid grid-cols-1 gap-x-8 gap-y-6 text-left sm:grid-cols-2",
               "transition-opacity duration-500",
-              sent && "opacity-0"
+              sent && "opacity-0",
             )}
           >
             <Field
@@ -145,7 +143,7 @@ const Contact = ({ overlayRef, reduced }: ContactProps) => {
               className="home-contact__piece sm:col-span-2"
             />
 
-            <div className="home-contact__piece sm:col-span-2 flex justify-center pt-2">
+            <div className="home-contact__piece flex justify-center pt-2 sm:col-span-2">
               <Button
                 type="submit"
                 label={status === "sending" ? CONTACT.sending : CONTACT.send}
@@ -164,12 +162,12 @@ const Contact = ({ overlayRef, reduced }: ContactProps) => {
               className={clsx(
                 "home-contact__sent",
                 "absolute inset-0 flex flex-col items-center justify-center gap-3",
-                "animate-[fadeIn_0.6s_ease-out]"
+                "animate-[fadeIn_0.6s_ease-out]",
               )}
             >
               <DisplayTitle as="h3" size="sm" text={CONTACT.thanks.title} />
               <Swash {...TITLE_SWASH.contact} delay={0.3} className="-mt-2 w-40 sm:w-48" />
-              <p className="text-white/75 font-light text-base sm:text-lg max-w-md">
+              <p className="max-w-md text-base font-light text-white/75 sm:text-lg">
                 {CONTACT.thanks.line}
               </p>
               <Button
@@ -188,7 +186,7 @@ const Contact = ({ overlayRef, reduced }: ContactProps) => {
           className={clsx(
             "home-contact__piece home-contact__links",
             "flex flex-wrap justify-center gap-x-8 gap-y-2",
-            "mt-10 sm:mt-12 text-sm"
+            "mt-10 text-sm sm:mt-12",
           )}
         >
           {CONTACT_LINKS.map((link) => (

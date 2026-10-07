@@ -28,5 +28,7 @@ export const Default: Story = {
 /** `soft` for a name, `peach` for a live reading (Parker's distance). */
 export const Tones: Story = {
   parameters: { controls: { exclude: ["tone"] } },
-  render: (args) => <Gallery values={QUIET_LABEL_TONES}>{(tone) => <QuietLabel {...args} tone={tone} />}</Gallery>,
+  render: (args) => (
+    <Gallery values={QUIET_LABEL_TONES}>{(tone) => <QuietLabel {...args} tone={tone} />}</Gallery>
+  ),
 };

@@ -48,7 +48,7 @@ const STAR_TINTS = ["#cfe0ff", "#ffffff", "#ffffff", "#fff4e6", "#ffe6c2"];
  */
 export function addConstellationAssembly(
   tl: gsap.core.Timeline,
-  { at, duration }: { at: number; duration: number }
+  { at, duration }: { at: number; duration: number },
 ): void {
   const T = (f: number) => at + duration * f; // absolute position in the window
   const D = (f: number) => duration * f; // a fraction of the window as a duration
@@ -64,7 +64,7 @@ export function addConstellationAssembly(
         stagger: D(0.05),
         duration: D(0.27),
       },
-      T(0.1)
+      T(0.1),
     )
     .from(
       ".skill-line",
@@ -77,13 +77,9 @@ export function addConstellationAssembly(
         stagger: D(0.05),
         duration: D(0.53),
       },
-      T(0.29)
+      T(0.29),
     )
-    .from(
-      ".skill-label",
-      { autoAlpha: 0, y: 6, stagger: D(0.04), duration: D(0.27) },
-      T(0.73)
-    );
+    .from(".skill-label", { autoAlpha: 0, y: 6, stagger: D(0.04), duration: D(0.27) }, T(0.73));
 }
 
 type Props = {
@@ -101,11 +97,7 @@ const Skills = ({ overlayRef, reduced = false }: Props) => {
     setStars(
       Array.from({ length: 60 }, () => {
         const bright = Math.random() < 0.16;
-        const size = bright
-          ? 2 + Math.random() * 1.5
-          : Math.random() < 0.7
-            ? 1
-            : 1.5;
+        const size = bright ? 2 + Math.random() * 1.5 : Math.random() < 0.7 ? 1 : 1.5;
         return {
           left: Math.random() * 100,
           top: Math.random() * 100,
@@ -115,14 +107,13 @@ const Skills = ({ overlayRef, reduced = false }: Props) => {
           delay: Math.random() * 4,
           dur: 3 + Math.random() * 4,
         };
-      })
+      }),
     );
   }, []);
 
   const nodeMap = useMemo(
-    () =>
-      Object.fromEntries(NODES.map((n) => [n.id, n])) as Record<string, ConstellationNode>,
-    []
+    () => Object.fromEntries(NODES.map((n) => [n.id, n])) as Record<string, ConstellationNode>,
+    [],
   );
 
   return (
@@ -136,14 +127,14 @@ const Skills = ({ overlayRef, reduced = false }: Props) => {
         // Starts parked below the fold; the journey sets transform/opacity.
         reduced
           ? "relative z-30 min-h-screen"
-          : "absolute inset-0 z-30 pointer-events-none will-change-[transform,opacity]",
+          : "pointer-events-none absolute inset-0 z-30 will-change-[transform,opacity]",
         "overflow-hidden bg-rich-black",
-        "flex flex-col items-center justify-center px-4 py-20"
+        "flex flex-col items-center justify-center px-4 py-20",
       )}
       style={reduced ? undefined : { transform: "translateY(100%)" }}
     >
       {/* Faint starfield background */}
-      <div className="absolute inset-0 pointer-events-none">
+      <div className="pointer-events-none absolute inset-0">
         {stars.map((s, i) => (
           <span
             key={i}
@@ -172,7 +163,7 @@ const Skills = ({ overlayRef, reduced = false }: Props) => {
         className={clsx(
           "home-skills__title skills__title text-center",
           // Phones: clear of the story title (left) and the timeline (right).
-          "relative z-10 px-8 sm:px-0"
+          "relative z-10 px-8 sm:px-0",
         )}
       />
       {/* Its swash draws in once the title has written in (useCosmicJourney). */}
@@ -185,7 +176,7 @@ const Skills = ({ overlayRef, reduced = false }: Props) => {
         className={clsx(
           "home-skills__intro skills__intro",
           "relative z-10 mt-5 mb-2 max-w-xl px-8 text-center sm:px-0",
-          "text-white/60 font-light text-base sm:text-lg leading-relaxed"
+          "text-base leading-relaxed font-light text-white/60 sm:text-lg",
         )}
       >
         {CRAFT.intro}
@@ -194,7 +185,7 @@ const Skills = ({ overlayRef, reduced = false }: Props) => {
       {/* The constellation */}
       <svg
         viewBox="0 0 600 420"
-        className="relative z-10 w-full max-w-3xl mt-6"
+        className="relative z-10 mt-6 w-full max-w-3xl"
         role="img"
         aria-label={CRAFT.constellationLabel}
       >

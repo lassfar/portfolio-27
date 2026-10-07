@@ -19,7 +19,7 @@ function starsSnapshot(): string {
       sparkle: STARFIELD.sparkle,
     },
     null,
-    2
+    2,
   );
 }
 
@@ -37,7 +37,11 @@ export function buildStarsPanel(gui: GUI) {
     hero: () => jumpToJourney(0),
     about: () => jumpToJourney(JOURNEY.journeyEnd * 0.7), // the Saturn, built
     wide: () => jumpToVoyage(0.5),
-    lab: () => jumpToJourney(JOURNEY.earthDwellEnd + ((LAB.recordLabelAt + 1) / 2) * (JOURNEY.galaxyStart - JOURNEY.earthDwellEnd)), // at the Parker Solar Probe
+    lab: () =>
+      jumpToJourney(
+        JOURNEY.earthDwellEnd +
+          ((LAB.recordLabelAt + 1) / 2) * (JOURNEY.galaxyStart - JOURNEY.earthDwellEnd),
+      ), // at the Parker Solar Probe
   };
   fJump.add(jumps, "hero").name("the hero");
   fJump.add(jumps, "about").name("About (the Saturn)");

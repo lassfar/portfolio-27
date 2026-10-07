@@ -33,4 +33,5 @@ export const startOf = (id: ChapterId): number => CHAPTER_MAP[id].start;
 export const restOf = (id: ChapterId): number => CHAPTER_MAP[id].rest;
 
 /** The chapter you're in at master progress `mp`. */
-export const chapterIdAt = (mp: number): ChapterId => STORY_CHAPTERS[chapterAt(STORY_CHAPTERS, mp)].id;
+export const chapterIdAt = (mp: number): ChapterId =>
+  STORY_CHAPTERS[chapterAt(STORY_CHAPTERS, mp)].id;

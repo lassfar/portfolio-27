@@ -8,10 +8,13 @@ import SceneOverlays from "./SceneOverlays";
 const london: PanelContent = { kind: "place", id: "london" };
 
 /** Opens the panel on `content` in `view` for a story (and closes it after). */
-const opened = (content: PanelContent, view: PanelView = "side", photo: number | null = null) => () => {
-  usePanelStore.setState({ content, view, photo, opened: true });
-  return () => usePanelStore.setState({ content: null, view: "side", photo: null, opened: false });
-};
+const opened =
+  (content: PanelContent, view: PanelView = "side", photo: number | null = null) =>
+  () => {
+    usePanelStore.setState({ content, view, photo, opened: true });
+    return () =>
+      usePanelStore.setState({ content: null, view: "side", photo: null, opened: false });
+  };
 
 const page = () => within(document.body);
 
@@ -49,7 +52,9 @@ export const Side: Story = {
     const panel = await page().findByRole("dialog", { name: "Back to London" });
     await expect(panel).toHaveAttribute("aria-modal", "false");
     await expect(document.documentElement.dataset.panel).toBe("side");
-    await expect(page().getByRole("button", { name: "Outside", hidden: true }).closest("[inert]")).toBeNull();
+    await expect(
+      page().getByRole("button", { name: "Outside", hidden: true }).closest("[inert]"),
+    ).toBeNull();
     await userEvent.click(page().getByRole("button", { name: "Open the full view" }));
     await waitFor(() => expect(panel).toHaveAttribute("aria-modal", "true"));
     await entered(panel);
@@ -64,10 +69,17 @@ export const Full: Story = {
     await expect(panel).toHaveAttribute("aria-modal", "true");
     await expect(document.documentElement.dataset.panel).toBe("full");
     await expect(within(panel).getByText("51.51° N, 0.13° W")).toBeInTheDocument();
-    await expect(within(panel).getByRole("button", { name: "London" })).toHaveAttribute("aria-current", "true");
-    await expect(within(panel).getAllByRole("button", { name: /^Open Placeholder — London/ })).toHaveLength(5);
+    await expect(within(panel).getByRole("button", { name: "London" })).toHaveAttribute(
+      "aria-current",
+      "true",
+    );
+    await expect(
+      within(panel).getAllByRole("button", { name: /^Open Placeholder — London/ }),
+    ).toHaveLength(5);
     await waitFor(() => expect(within(panel).getByRole("button", { name: "Close" })).toHaveFocus());
-    await expect(page().getByRole("button", { name: "Outside", hidden: true }).closest("[inert]")).not.toBeNull();
+    await expect(
+      page().getByRole("button", { name: "Outside", hidden: true }).closest("[inert]"),
+    ).not.toBeNull();
     await entered(panel);
   },
 };
@@ -78,13 +90,19 @@ export const Keys: Story = {
   play: async ({ userEvent }) => {
     await page().findByRole("dialog", { name: "Back to London" });
     await userEvent.keyboard("{ArrowRight}");
-    await waitFor(() => expect(page().getByRole("dialog", { name: "New Forest, Brockenhurst" })).toBeInTheDocument());
+    await waitFor(() =>
+      expect(page().getByRole("dialog", { name: "New Forest, Brockenhurst" })).toBeInTheDocument(),
+    );
     await userEvent.click(page().getByRole("button", { name: "Morocco" }));
-    await waitFor(() => expect(page().getByRole("dialog", { name: "Home, Morocco" })).toBeInTheDocument());
+    await waitFor(() =>
+      expect(page().getByRole("dialog", { name: "Home, Morocco" })).toBeInTheDocument(),
+    );
     await userEvent.keyboard("{Escape}");
     await expect(usePanelStore.getState().content).toBeNull();
     await expect(document.documentElement.dataset.panel).toBeUndefined();
-    await expect(page().getByRole("button", { name: "Outside", hidden: true }).closest("[inert]")).toBeNull();
+    await expect(
+      page().getByRole("button", { name: "Outside", hidden: true }).closest("[inert]"),
+    ).toBeNull();
   },
 };
 
@@ -97,7 +115,9 @@ export const Photo: Story = {
     await userEvent.keyboard("{ArrowRight}");
     await expect(within(viewer).getByText("3 / 5")).toBeInTheDocument();
     await userEvent.keyboard("{Escape}");
-    await waitFor(() => expect(page().getByRole("button", { name: "Open Placeholder — London 03" })).toHaveFocus());
+    await waitFor(() =>
+      expect(page().getByRole("button", { name: "Open Placeholder — London 03" })).toHaveFocus(),
+    );
     await userEvent.keyboard("{Escape}");
     await expect(usePanelStore.getState().content).toBeNull();
   },

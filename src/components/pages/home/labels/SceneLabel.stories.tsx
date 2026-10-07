@@ -49,5 +49,7 @@ export const Seen: Story = {};
 /** `place` (light peach) for the Earth's places, `card` (peach) for Parker's memory card. */
 export const Tones: Story = {
   parameters: { controls: { exclude: ["tone"] } },
-  render: (args) => <Gallery values={SCENE_LABEL_TONES}>{(tone) => <SceneLabel {...args} tone={tone} />}</Gallery>,
+  render: (args) => (
+    <Gallery values={SCENE_LABEL_TONES}>{(tone) => <SceneLabel {...args} tone={tone} />}</Gallery>
+  ),
 };

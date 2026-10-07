@@ -44,7 +44,10 @@ function tone(css: CSSStyleDeclaration, token: string): Tone {
 const LETTERS = { duration: 0.3, stagger: 0.025 };
 
 /** Where the growing pill lands: the revealed button's own glass and ring (UI/Button's tones). */
-const LANDING: Record<AssistantVariant, (t: { peach: Tone; frost: Tone }) => { fill: string; ring: string }> = {
+const LANDING: Record<
+  AssistantVariant,
+  (t: { peach: Tone; frost: Tone }) => { fill: string; ring: string }
+> = {
   outline: ({ peach }) => ({ fill: peach(0.06), ring: peach(0.7) }),
   primary: ({ peach, frost }) => ({ fill: frost(0.1), ring: peach(0.55) }),
 };

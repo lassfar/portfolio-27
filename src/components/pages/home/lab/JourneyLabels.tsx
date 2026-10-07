@@ -22,7 +22,10 @@ const COUNT = journeyScreen.markers.length;
 function texts(here: number): { short: string; long: string } {
   const reach = journeyScreen.reach;
   if (here & 1) {
-    return { short: "Launch", long: reach[0] ? `Launch · ${reach[0]} million km from the Sun` : "Launch" };
+    return {
+      short: "Launch",
+      long: reach[0] ? `Launch · ${reach[0]} million km from the Sun` : "Launch",
+    };
   }
   const flybys: number[] = [];
   for (let n = 1; n < COUNT; n++) if (here & (1 << n)) flybys.push(n);
@@ -71,7 +74,8 @@ const JourneyLabels = () => {
     const boxes: (LabelBox & { el: HTMLSpanElement })[] = [];
     // Phones keep each label on screen (P27-31); desktop places them as before.
     const phone = window.matchMedia(PHONE_QUERY);
-    const leftOf = (x: number, w: number) => (phone.matches ? keepOnScreen(x - w / 2, w, x, window.innerWidth) : x - w / 2);
+    const leftOf = (x: number, w: number) =>
+      phone.matches ? keepOnScreen(x - w / 2, w, x, window.innerWidth) : x - w / 2;
     const centreOf = (x: number, left: number, w: number) => (phone.matches ? left + w / 2 : x);
 
     const update = () => {
@@ -121,7 +125,15 @@ const JourneyLabels = () => {
           const { w, h } = (tipSize ??= { w: tipEl.offsetWidth, h: tipEl.offsetHeight });
           // Kept in place (it moves every frame): the others make way for it.
           const left = leftOf(tip.x, w);
-          boxes.push({ el: tipEl, cx: centreOf(tip.x, left, w), left, top: tip.y - h - OFFSET_Y, w, h, pinned: true });
+          boxes.push({
+            el: tipEl,
+            cx: centreOf(tip.x, left, w),
+            left,
+            top: tip.y - h - OFFSET_Y,
+            w,
+            h,
+            pinned: true,
+          });
         }
       }
 
@@ -182,7 +194,12 @@ const JourneyLabels = () => {
           </QuietLabel>
         );
       })}
-      <QuietLabel ref={tipRef} aria-hidden="true" tone="peach" className={clsx("tabular-nums", ANCHORED)} />
+      <QuietLabel
+        ref={tipRef}
+        aria-hidden="true"
+        tone="peach"
+        className={clsx("tabular-nums", ANCHORED)}
+      />
     </>
   );
 };

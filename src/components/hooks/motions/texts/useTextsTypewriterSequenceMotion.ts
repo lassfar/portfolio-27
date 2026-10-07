@@ -54,9 +54,7 @@ const useTextsTypewriterSequenceMotion = <T extends HTMLElement>({
 }: Props<T>) => {
   useGSAP(
     () => {
-      const nodes = elements
-        .map((el) => el.current)
-        .filter((node): node is T => node !== null);
+      const nodes = elements.map((el) => el.current).filter((node): node is T => node !== null);
 
       if (nodes.length === 0) return;
 
@@ -79,9 +77,7 @@ const useTextsTypewriterSequenceMotion = <T extends HTMLElement>({
       };
 
       // Split every element into characters up front.
-      const splits = nodes.map(
-        (node) => new SplitText(node, { type: "chars" })
-      );
+      const splits = nodes.map((node) => new SplitText(node, { type: "chars" }));
 
       // Only the first element is visible at the start.
       gsap.set(nodes, { autoAlpha: 0 });
@@ -103,11 +99,7 @@ const useTextsTypewriterSequenceMotion = <T extends HTMLElement>({
           const next = nodes[(i + 1) % nodes.length];
 
           timeline
-            .to(
-              splits[i].chars,
-              { ...eraseDefaults, ...eraseVars },
-              `+=${hold}`
-            )
+            .to(splits[i].chars, { ...eraseDefaults, ...eraseVars }, `+=${hold}`)
             // Instantly swap which element is on stage.
             .set(nodes[i], { autoAlpha: 0 })
             .set(next, { autoAlpha: 1 });
@@ -120,7 +112,7 @@ const useTextsTypewriterSequenceMotion = <T extends HTMLElement>({
         splits.forEach((split) => split.revert());
       };
     },
-    { ...dependencies }
+    { ...dependencies },
   );
 };
 

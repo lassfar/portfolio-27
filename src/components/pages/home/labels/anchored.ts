@@ -19,5 +19,9 @@ export function showAnchored(el: HTMLElement, shown: boolean) {
   window.clearTimeout(hiding.get(el));
   el.style.opacity = shown ? "1" : "0";
   if (shown) el.style.visibility = "visible";
-  else hiding.set(el, window.setTimeout(() => (el.style.visibility = "hidden"), FADE_MS));
+  else
+    hiding.set(
+      el,
+      window.setTimeout(() => (el.style.visibility = "hidden"), FADE_MS),
+    );
 }

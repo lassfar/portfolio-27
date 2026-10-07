@@ -13,7 +13,7 @@ const Chip = ({ current = false, className, type = "button", ...props }: ChipPro
     aria-current={current || undefined}
     onPointerMove={pointerLight}
     className={clsx(
-      "glass liquid tap-target relative inline-flex items-center gap-1.5 rounded-full px-3.5 py-2 text-xs font-light text-light-peach",
+      "liquid tap-target relative inline-flex items-center gap-1.5 rounded-full glass px-3.5 py-2 text-xs font-light text-light-peach",
       "aria-[current=true]:bg-peach aria-[current=true]:bg-none aria-[current=true]:text-rich-black aria-[current=true]:shadow-chip",
       className,
     )}

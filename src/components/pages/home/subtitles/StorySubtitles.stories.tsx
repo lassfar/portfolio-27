@@ -17,7 +17,9 @@ const Parked = ({ id, children }: { id: string; children: ReactNode }) => {
 };
 
 /** The paragraphs that are showing. */
-const shown = () => [...document.querySelectorAll<HTMLElement>('.story-subtitle[data-shown="true"]')];
+const shown = () => [
+  ...document.querySelectorAll<HTMLElement>('.story-subtitle[data-shown="true"]'),
+];
 
 /** The subtitles follow the scroll, not props: the story's control picks where the journey is parked. */
 type Args = { subtitle: string };
@@ -55,6 +57,8 @@ export const Default: Story = {
     await waitFor(() => expect(shown()).toHaveLength(1));
     const [line] = shown();
     await expect(line.textContent).toContain("It never flies straight at the Sun.");
-    await expect(line.querySelector(".story-subtitle__accent")?.textContent).toBe("a little closer");
+    await expect(line.querySelector(".story-subtitle__accent")?.textContent).toBe(
+      "a little closer",
+    );
   },
 };

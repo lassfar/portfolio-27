@@ -16,10 +16,7 @@ type Props<T extends HTMLElement> = {
   dependecies?: useGSAPConfig;
 };
 
-const useTextWritingMotion = <T extends HTMLElement>({
-  element,
-  dependecies,
-}: Props<T>) => {
+const useTextWritingMotion = <T extends HTMLElement>({ element, dependecies }: Props<T>) => {
   useGSAP(
     () => {
       const vars: gsap.TweenVars = {
@@ -44,7 +41,7 @@ const useTextWritingMotion = <T extends HTMLElement>({
 
       return () => splitText.revert();
     },
-    { ...dependecies }
+    { ...dependecies },
   );
 };
 

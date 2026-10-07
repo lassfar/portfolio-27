@@ -32,7 +32,8 @@ export const VOICE = {
   voyage: "I like to zoom out. That's where *the small things* start to make sense.",
   earth: "Wherever I go, I carry a camera, not to keep the places, but *the light*.",
   lab: "It never flies straight at the Sun. It loops — and every loop takes it *a little closer*. That's how I learn.",
-  "way-out": "Up close, it's all details. From here, it's *one quiet system*. That's what I try to build.",
+  "way-out":
+    "Up close, it's all details. From here, it's *one quiet system*. That's what I try to build.",
   "milky-way": "A hundred billion stars, and we still *find each other*.",
 } as const satisfies Partial<Record<ChapterId, string>>;
 
@@ -56,14 +57,16 @@ export const ABOUT = {
 /** The Craft: its title and intro (the constellation itself: skills/constellation.ts). */
 export const CRAFT = {
   title: "What I’m *drawn to*",
-  intro: "The tools I reach for and the things that pull my eye — connected, because the way I see is the way I build.",
+  intro:
+    "The tools I reach for and the things that pull my eye — connected, because the way I see is the way I build.",
   constellationLabel: "An organic constellation of my tools and creative pulls",
 } as const;
 
 /** Contact: the form's words. */
 export const CONTACT = {
   title: "Say *Hello*",
-  intro: "Parker carries over a million names toward the Sun. Leave yours here, and I’ll write back.",
+  intro:
+    "Parker carries over a million names toward the Sun. Leave yours here, and I’ll write back.",
   fields: {
     name: { label: "Name", placeholder: "Your name" },
     email: { label: "Email", placeholder: "you@somewhere.com" },

@@ -64,7 +64,14 @@ const StorySubtitles = () => {
     let current = -1;
     const seen = new Set<number>(); // the lines shown in this visit
     const decide = () => {
-      current = nextSubtitle(current, lastMp, speed, useGlide.getState().by === "assistant", backward, seen);
+      current = nextSubtitle(
+        current,
+        lastMp,
+        speed,
+        useGlide.getState().by === "assistant",
+        backward,
+        seen,
+      );
       if (current >= 0) seen.add(current);
       setActive(current);
     };
@@ -112,7 +119,7 @@ const StorySubtitles = () => {
             aria-hidden="true"
             className={clsx(
               "story-subtitle pointer-events-none fixed bottom-24 z-[35] w-[min(19rem,calc(100vw_-_6rem))] sm:w-[min(28rem,calc(100vw_-_8rem))]",
-              "text-sm font-light leading-relaxed text-white/90 sm:text-base",
+              "text-sm leading-relaxed font-light text-white/90 sm:text-base",
               "transition-[opacity,visibility]",
               PLACEMENT[subtitle.placement ?? SUBTITLE_PLACEMENT],
               shown ? "visible opacity-100" : "invisible opacity-0",

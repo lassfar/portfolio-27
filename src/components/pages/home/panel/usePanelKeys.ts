@@ -22,7 +22,11 @@ export function usePanelKeys() {
       }
       const dir = e.key === "ArrowRight" ? 1 : e.key === "ArrowLeft" ? -1 : 0;
       if (dir === 0 || s.content?.kind !== "place") return;
-      if (e.target instanceof Element && e.target.closest("input, textarea, select, [contenteditable], video")) return;
+      if (
+        e.target instanceof Element &&
+        e.target.closest("input, textarea, select, [contenteditable], video")
+      )
+        return;
       if (s.photo !== null) {
         const count = findPlace(s.content.id)?.media.length ?? 0;
         if (count > 0) s.openPhoto(wrapIndex(s.photo + dir, count));

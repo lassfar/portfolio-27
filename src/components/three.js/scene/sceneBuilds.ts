@@ -10,7 +10,11 @@ function idle(run: (budgetMs: number) => void) {
   if (typeof window.requestIdleCallback === "function") {
     window.requestIdleCallback(
       (deadline) =>
-        run(deadline.didTimeout ? SLICE_MS : Math.max(1, Math.min(SLICE_MS, deadline.timeRemaining()))),
+        run(
+          deadline.didTimeout
+            ? SLICE_MS
+            : Math.max(1, Math.min(SLICE_MS, deadline.timeRemaining())),
+        ),
       { timeout: IDLE_TIMEOUT_MS },
     );
   } else {

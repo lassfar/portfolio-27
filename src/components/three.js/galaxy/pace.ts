@@ -34,7 +34,8 @@ export function galaxyProgressAt(mp: number): number {
  * the hold between the pull-out and the flight to the galaxy.
  */
 export function solarRestRange(): [number, number] {
-  const at = (u: number) => JOURNEY.galaxyStart + (u / TOTAL) * (JOURNEY.galaxyEnd - JOURNEY.galaxyStart);
+  const at = (u: number) =>
+    JOURNEY.galaxyStart + (u / TOTAL) * (JOURNEY.galaxyEnd - JOURNEY.galaxyStart);
   return [at(P.toSolar), at(P.toSolar + P.solarHold)];
 }
 
@@ -43,7 +44,8 @@ export function solarRestRange(): [number, number] {
  * progress reaches `g`. At the solar system itself it lands mid-hold.
  */
 export function journeyAtGalaxy(g: number): number {
-  const at = (u: number) => JOURNEY.galaxyStart + (u / TOTAL) * (JOURNEY.galaxyEnd - JOURNEY.galaxyStart);
+  const at = (u: number) =>
+    JOURNEY.galaxyStart + (u / TOTAL) * (JOURNEY.galaxyEnd - JOURNEY.galaxyStart);
   if (Math.abs(g - SOLAR) < 1e-6) return at(P.toSolar + P.solarHold / 2);
   // Both legs are monotonic → bisect the scroll.
   let lo = 0;

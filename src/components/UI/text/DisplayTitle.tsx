@@ -18,7 +18,10 @@ const SIZE: Record<DisplayTitleSize, string> = {
  * The page writes it in, letter by letter (GSAP SplitText); `className` places it.
  */
 const DisplayTitle = ({ text, as: Tag = "h2", size, className, ...props }: DisplayTitleProps) => (
-  <Tag {...props} className={clsx("font-great-vibes font-normal text-white", SIZE[size], className)}>
+  <Tag
+    {...props}
+    className={clsx("font-great-vibes font-normal text-white", SIZE[size], className)}
+  >
     <AccentText text={text} />
   </Tag>
 );

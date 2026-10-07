@@ -28,11 +28,17 @@ export function buildSunPanel(gui: GUI) {
   const fShell = gui.addFolder("Dotted surface");
   fShell.add(SUN, "radius", 1, 8, 0.05).name("radius").onFinishChange(rebuildSun);
   fShell.add(SUN, "count", 1000, 40000, 500).name("dots (rebuilds)").onFinishChange(rebuildSun);
-  fShell.add(SUN, "countMobile", 1000, 40000, 500).name("dots on phones (rebuilds)").onFinishChange(rebuildSun);
+  fShell
+    .add(SUN, "countMobile", 1000, 40000, 500)
+    .name("dots on phones (rebuilds)")
+    .onFinishChange(rebuildSun);
   fShell.add(SUN, "dotSize", 10, 300, 1).name("dot size");
   fShell.add(SUN, "dotSoftness", 0.02, 0.5, 0.01).name("dot softness");
   fShell.add(SUN, "brightness", 0, 3, 0.05).name("brightness");
-  fShell.add(SUN, "shellJitter", 0, 0.3, 0.005).name("grain depth (rebuilds)").onFinishChange(rebuildSun);
+  fShell
+    .add(SUN, "shellJitter", 0, 0.3, 0.005)
+    .name("grain depth (rebuilds)")
+    .onFinishChange(rebuildSun);
   fShell.add(SUN, "spin", 0, 0.5, 0.005).name("spin");
   fShell.add(SUN, "swirl", 0, 0.05, 0.001).name("drift along the surface");
   fShell.add(SUN, "shimmer", 0, 1, 0.01).name("shimmer");
@@ -46,10 +52,19 @@ export function buildSunPanel(gui: GUI) {
   const fCore = gui.addFolder("Glow inside (the original Sun)");
   fCore.add(SUN_CORE, "bodyStrength", 0, 3, 0.05).name("strength (0 = off)");
   fCore.add(SUN_CORE, "count", 0, 80000, 1000).name("dots (rebuilds)").onFinishChange(rebuildSun);
-  fCore.add(SUN_CORE, "countMobile", 0, 80000, 1000).name("dots on phones (rebuilds)").onFinishChange(rebuildSun);
+  fCore
+    .add(SUN_CORE, "countMobile", 0, 80000, 1000)
+    .name("dots on phones (rebuilds)")
+    .onFinishChange(rebuildSun);
   fCore.add(SUN_CORE, "size", 5, 150, 1).name("dot size");
-  fCore.add(SUN_CORE, "radiusScale", 0.3, 1.2, 0.01).name("size × radius (rebuilds)").onFinishChange(rebuildSun);
-  fCore.add(SUN_CORE, "fill", 0.05, 1, 0.01).name("depth, 1 = solid (rebuilds)").onFinishChange(rebuildSun);
+  fCore
+    .add(SUN_CORE, "radiusScale", 0.3, 1.2, 0.01)
+    .name("size × radius (rebuilds)")
+    .onFinishChange(rebuildSun);
+  fCore
+    .add(SUN_CORE, "fill", 0.05, 1, 0.01)
+    .name("depth, 1 = solid (rebuilds)")
+    .onFinishChange(rebuildSun);
   fCore.addColor(SUN_CORE, "core").name("centre colour");
   fCore.addColor(SUN_CORE, "mid").name("middle colour");
   fCore.addColor(SUN_CORE, "edge").name("edge colour");
@@ -61,8 +76,14 @@ export function buildSunPanel(gui: GUI) {
 
   const fCorona = gui.addFolder("Corona (living dots around it)");
   fCorona.add(SUN_CORE, "coronaStrength", 0, 3, 0.05).name("strength (0 = off)");
-  fCorona.add(SUN_CORE, "coronaFraction", 0, 0.5, 0.01).name("share of the dots (rebuilds)").onFinishChange(rebuildSun);
-  fCorona.add(SUN_CORE, "coronaReach", 0, 1.5, 0.01).name("reach × radius (rebuilds)").onFinishChange(rebuildSun);
+  fCorona
+    .add(SUN_CORE, "coronaFraction", 0, 0.5, 0.01)
+    .name("share of the dots (rebuilds)")
+    .onFinishChange(rebuildSun);
+  fCorona
+    .add(SUN_CORE, "coronaReach", 0, 1.5, 0.01)
+    .name("reach × radius (rebuilds)")
+    .onFinishChange(rebuildSun);
   fCorona.add(SUN_CORE, "coronaDrift", 0, 0.8, 0.01).name("drift in / out");
   fCorona.add(SUN_CORE, "coronaFlicker", 0, 1, 0.01).name("flicker");
   fCorona.addColor(SUN_CORE, "corona").name("outer colour");

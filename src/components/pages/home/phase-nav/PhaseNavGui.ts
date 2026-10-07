@@ -16,18 +16,10 @@ export function buildPhaseNavPanel(gui: GUI) {
   }
 
   const fAssist = gui.addFolder("The orb → button");
-  fAssist
-    .add(PHASE_NAV, "revealSeconds", 0.3, 2.5, 0.05)
-    .name("grow / fold back (s)");
-  fAssist
-    .add(PHASE_NAV, "hoverOpenDelay", 0, 1, 0.02)
-    .name("mouse: open after (s)");
-  fAssist
-    .add(PHASE_NAV, "hoverCloseDelay", 0, 5, 0.1)
-    .name("mouse: fold back after leaving (s)");
-  fAssist
-    .add(PHASE_NAV, "autoCloseSeconds", 2, 20, 0.5)
-    .name("fold back if unused (s)");
+  fAssist.add(PHASE_NAV, "revealSeconds", 0.3, 2.5, 0.05).name("grow / fold back (s)");
+  fAssist.add(PHASE_NAV, "hoverOpenDelay", 0, 1, 0.02).name("mouse: open after (s)");
+  fAssist.add(PHASE_NAV, "hoverCloseDelay", 0, 5, 0.1).name("mouse: fold back after leaving (s)");
+  fAssist.add(PHASE_NAV, "autoCloseSeconds", 2, 20, 0.5).name("fold back if unused (s)");
 
   const fHide = gui.addFolder("Hidden while gliding");
   fHide.add(PHASE_NAV, "hideSeconds", 0.2, 1.5, 0.05).name("shrink + drop / rise (s)");
@@ -35,9 +27,7 @@ export function buildPhaseNavPanel(gui: GUI) {
   fHide.add(PHASE_NAV, "hideDrop", 0, 200, 4).name("drops (px)");
 
   const fGlide = gui.addFolder("Glide");
-  fGlide
-    .add(PHASE_NAV, "secondsPerScreen", 0.2, 3, 0.1)
-    .name("seconds per screen of scroll");
+  fGlide.add(PHASE_NAV, "secondsPerScreen", 0.2, 3, 0.1).name("seconds per screen of scroll");
   fGlide.add(PHASE_NAV, "minSeconds", 0.5, 5, 0.1).name("shortest glide (s)");
   fGlide.add(PHASE_NAV, "maxSeconds", 2, 20, 0.5).name("longest glide (s)");
   fGlide

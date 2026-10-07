@@ -133,12 +133,11 @@ const Probe = () => {
     }));
 
     // Main-thread tasks over 50 ms: the hitches (shader compiles, particle builds).
-    const longTasks =
-      PerformanceObserver.supportedEntryTypes?.includes("longtask")
-        ? new PerformanceObserver((list) =>
-            list.getEntries().forEach((e) => recordLongTask(e.duration)),
-          )
-        : null;
+    const longTasks = PerformanceObserver.supportedEntryTypes?.includes("longtask")
+      ? new PerformanceObserver((list) =>
+          list.getEntries().forEach((e) => recordLongTask(e.duration)),
+        )
+      : null;
     longTasks?.observe({ type: "longtask" });
 
     return () => {

@@ -53,9 +53,7 @@ const useTextsSlideMotion = <T extends HTMLElement>({
 }: Props<T>) => {
   useGSAP(
     () => {
-      const nodes = elements
-        .map((el) => el.current)
-        .filter((node): node is T => node !== null);
+      const nodes = elements.map((el) => el.current).filter((node): node is T => node !== null);
 
       if (nodes.length < 2) return;
 
@@ -86,7 +84,7 @@ const useTextsSlideMotion = <T extends HTMLElement>({
               ease,
               ...vars,
             },
-            `+=${holdDuration}`
+            `+=${holdDuration}`,
           )
           // Slide the next element up from below, into view — at the same time.
           .fromTo(
@@ -99,7 +97,7 @@ const useTextsSlideMotion = <T extends HTMLElement>({
               ease,
               ...vars,
             },
-            "<"
+            "<",
           );
       }
 
@@ -107,7 +105,7 @@ const useTextsSlideMotion = <T extends HTMLElement>({
         timeline.kill();
       };
     },
-    { ...dependencies }
+    { ...dependencies },
   );
 };
 

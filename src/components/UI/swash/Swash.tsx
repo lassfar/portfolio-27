@@ -66,7 +66,11 @@ const Swash = ({
       viewBox={viewBox}
       aria-hidden="true"
       data-swash={shape}
-      className={clsx("block h-auto overflow-visible text-peach", MAX_WIDTH[swash.length], className)}
+      className={clsx(
+        "block h-auto overflow-visible text-peach",
+        MAX_WIDTH[swash.length],
+        className,
+      )}
     >
       <path
         pathLength={1}

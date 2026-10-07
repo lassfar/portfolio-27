@@ -45,7 +45,11 @@ export const Default: Story = {
 /** Every variant: from the filled primary to text only. */
 export const Variants: Story = {
   parameters: { controls: { exclude: ["variant"] } },
-  render: (args) => <Gallery values={BUTTON_VARIANTS}>{(variant) => <Button {...args} variant={variant} />}</Gallery>,
+  render: (args) => (
+    <Gallery values={BUTTON_VARIANTS}>
+      {(variant) => <Button {...args} variant={variant} />}
+    </Gallery>
+  ),
   play: async ({ canvas }) => {
     await expect(canvas.getAllByRole("button")).toHaveLength(BUTTON_VARIANTS.length);
   },
@@ -53,14 +57,18 @@ export const Variants: Story = {
 
 export const Sizes: Story = {
   parameters: { controls: { exclude: ["size"] } },
-  render: (args) => <Gallery values={BUTTON_SIZES}>{(size) => <Button {...args} size={size} />}</Gallery>,
+  render: (args) => (
+    <Gallery values={BUTTON_SIZES}>{(size) => <Button {...args} size={size} />}</Gallery>
+  ),
 };
 
 /** A trailing icon that slides a little on hover, the way it points (the next-chapter button's arrow down). */
 export const WithIcon: Story = {
   args: { label: "The Lab", icon: SITE_ICONS.ArrowDown, iconSlide: "down" },
   play: async ({ canvas }) => {
-    const icon = canvas.getByRole("button", { name: "The Lab" }).querySelector("[data-button-icon]");
+    const icon = canvas
+      .getByRole("button", { name: "The Lab" })
+      .querySelector("[data-button-icon]");
     await expect(icon).toHaveAttribute("aria-hidden", "true");
     await expect(icon?.querySelector("svg")).not.toBeNull();
   },

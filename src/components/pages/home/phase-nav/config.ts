@@ -19,10 +19,8 @@ export type PhaseStop = {
 
 const lerp = (a: number, b: number, t: number) => a + (b - a) * t;
 const jp = (x: number) => x * JOURNEY.journeyEnd; // journey progress (the About block) → mp
-const voyageAt = (v: number) =>
-  lerp(JOURNEY.flyAwayStart, JOURNEY.voyageEnd, v);
-const labMp = (l: number) =>
-  lerp(JOURNEY.earthDwellEnd, JOURNEY.galaxyStart, l);
+const voyageAt = (v: number) => lerp(JOURNEY.flyAwayStart, JOURNEY.voyageEnd, v);
+const labMp = (l: number) => lerp(JOURNEY.earthDwellEnd, JOURNEY.galaxyStart, l);
 const [solarRestStart, solarRestEnd] = solarRestRange();
 
 /**
@@ -34,10 +32,7 @@ export const PHASE_STOPS: readonly PhaseStop[] = [
   {
     id: "maker", // the About text, fully coloured in
     name: CHAPTER_NAMES.maker,
-    window: [
-      jp(lerp(JOURNEY.fillStart, JOURNEY.exitStart, 0.6)),
-      jp(JOURNEY.exitStart),
-    ],
+    window: [jp(lerp(JOURNEY.fillStart, JOURNEY.exitStart, 0.6)), jp(JOURNEY.exitStart)],
     target: jp(JOURNEY.exitStart) - mpAt(8),
   },
   {
@@ -49,10 +44,7 @@ export const PHASE_STOPS: readonly PhaseStop[] = [
   {
     id: "voyage", // the wide, Sun-centred view
     name: CHAPTER_NAMES.voyage,
-    window: [
-      voyageAt(VOYAGE.flyoutEnd - 0.08),
-      voyageAt(VOYAGE.flyoutEnd + 0.04),
-    ],
+    window: [voyageAt(VOYAGE.flyoutEnd - 0.08), voyageAt(VOYAGE.flyoutEnd + 0.04)],
     target: voyageAt(VOYAGE.flyoutEnd),
   },
   {
@@ -70,10 +62,7 @@ export const PHASE_STOPS: readonly PhaseStop[] = [
   {
     id: "way-out", // the finale's rest on the whole solar system
     name: CHAPTER_NAMES["way-out"],
-    window: [
-      solarRestStart - 0.03 * (solarRestStart - JOURNEY.galaxyStart),
-      solarRestEnd,
-    ],
+    window: [solarRestStart - 0.03 * (solarRestStart - JOURNEY.galaxyStart), solarRestEnd],
     target: lerp(solarRestStart, solarRestEnd, 0.5),
   },
   {

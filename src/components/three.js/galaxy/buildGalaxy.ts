@@ -170,8 +170,14 @@ export function* buildGalaxyLayerSteps(count: number, aux = 1): Generator<undefi
   const CREAM = C.lpeach.clone().lerp(new Color(1, 1, 1), 0.35); // creamy core
   const PINK = C.coral.clone().lerp(C.lpeach, 0.35); // coral-pink star-forming regions
   // Dust tints are TRANSMISSION colours (multiplied onto the light behind).
-  const DUST = C.dpeach.clone().multiplyScalar(0.35).lerp(new Color(0.2, 0.15, 0.13), 0.5);
-  const DUST_RED = C.coral.clone().multiplyScalar(0.4).lerp(new Color(0.2, 0.13, 0.12), 0.5);
+  const DUST = C.dpeach
+    .clone()
+    .multiplyScalar(0.35)
+    .lerp(new Color(0.2, 0.15, 0.13), 0.5);
+  const DUST_RED = C.coral
+    .clone()
+    .multiplyScalar(0.4)
+    .lerp(new Color(0.2, 0.13, 0.12), 0.5);
   const NEUTRAL = new Color(0.62, 0.63, 0.66); // old, dim inter-arm stars
   const STEEL = new Color(0.55, 0.66, 0.85); // arm haze
   const _c = new Color();
@@ -199,8 +205,7 @@ export function* buildGalaxyLayerSteps(count: number, aux = 1): Generator<undefi
     const t = Math.min(1, rr / RMAX);
     const ts = Math.min(1, Math.max(0, t + (rnd() - 0.5) * 0.12));
     if (ts < G_.tWarm) return _c.copy(C.lpeach).lerp(C.peach, smoothstep(0, G_.tWarm, ts));
-    if (ts < G_.tBlue)
-      return _c.copy(C.peach).lerp(C.babyBlue, smoothstep(G_.tWarm, G_.tBlue, ts));
+    if (ts < G_.tBlue) return _c.copy(C.peach).lerp(C.babyBlue, smoothstep(G_.tWarm, G_.tBlue, ts));
     _c.copy(C.babyBlue).lerp(C.lbabyBlue, (ts - G_.tBlue) / (1 - G_.tBlue));
     if (rnd() < 0.25) _c.lerp(C.nebulaBlue, 0.4);
     return _c;
@@ -232,7 +237,10 @@ export function* buildGalaxyLayerSteps(count: number, aux = 1): Generator<undefi
     const r = sampleRadius();
     const phi = rnd() * TAU;
     const y = gauss(hz(r));
-    c = _c.copy(C.peach).lerp(C.lbabyBlue, smoothstep(0.15, 0.85, r / RMAX)).lerp(NEUTRAL, 0.35);
+    c = _c
+      .copy(C.peach)
+      .lerp(C.lbabyBlue, smoothstep(0.15, 0.85, r / RMAX))
+      .lerp(NEUTRAL, 0.35);
     b = base() * G_.interArmDim;
     s = 0.45 + rnd() * 0.4;
     if (rnd() < 0.02) {
@@ -244,7 +252,7 @@ export function* buildGalaxyLayerSteps(count: number, aux = 1): Generator<undefi
   // 3 — spiral arms: young + bright, clumpy, thinned where the dust lane sits
   const nArm = Math.round(N * 0.5);
   const maxTries = nArm * 4;
-  for (let got = 0, tries = 0; got < nArm && tries < maxTries; ) {
+  for (let got = 0, tries = 0; got < nArm && tries < maxTries;) {
     if (++rounds % BUILD_STEP === 0) yield;
     tries++;
     const r = sampleRadius();
@@ -305,7 +313,15 @@ export function* buildGalaxyLayerSteps(count: number, aux = 1): Generator<undefi
           c.copy(C.coreWhite).lerp(PINK, 0.3); // white-hot cores
           b *= 1.3;
         }
-        K.push(sx + gauss(0.045), cy + gauss(0.03), sz + gauss(0.045), c, jitter() * 1.4, b, r / RMAX);
+        K.push(
+          sx + gauss(0.045),
+          cy + gauss(0.03),
+          sz + gauss(0.045),
+          c,
+          jitter() * 1.4,
+          b,
+          r / RMAX,
+        );
       }
     }
     G.push(cx, cy, cz, PINK, 0.9 + rnd() * 0.6, 0.9 * regionB, r / RMAX);
@@ -321,7 +337,15 @@ export function* buildGalaxyLayerSteps(count: number, aux = 1): Generator<undefi
     const nd = 6 + Math.floor(rnd() * 7);
     for (let q = 0; q < nd; q++) {
       c = _c.copy(C.lbabyBlue).lerp(C.coreWhite, rnd() * 0.6);
-      K.push(bx + gauss(0.05), by + gauss(0.03), bz + gauss(0.05), c, jitter() * 1.1, base() * 1.3, r / RMAX);
+      K.push(
+        bx + gauss(0.05),
+        by + gauss(0.03),
+        bz + gauss(0.05),
+        c,
+        jitter() * 1.1,
+        base() * 1.3,
+        r / RMAX,
+      );
     }
     G.push(bx, by, bz, C.lbabyBlue, 0.7 + rnd() * 0.4, 0.45, r / RMAX);
   }
@@ -337,7 +361,7 @@ export function* buildGalaxyLayerSteps(count: number, aux = 1): Generator<undefi
   }
   const nArmGlow = Math.round(5200 * aux);
   const maxGlowTries = Math.round(20000 * aux);
-  for (let gArm = 0, gTries = 0; gArm < nArmGlow && gTries < maxGlowTries; ) {
+  for (let gArm = 0, gTries = 0; gArm < nArmGlow && gTries < maxGlowTries;) {
     if (++rounds % BUILD_STEP === 0) yield;
     // arm glow
     gTries++;
@@ -356,7 +380,7 @@ export function* buildGalaxyLayerSteps(count: number, aux = 1): Generator<undefi
       c,
       1.0 + rnd() * 1.3,
       0.4 * (0.6 + 0.4 * gridge) * (0.12 + 0.88 * smoothstep(1.2, 4.0, r)),
-      r / RMAX
+      r / RMAX,
     );
     gArm++;
   }
@@ -366,8 +390,19 @@ export function* buildGalaxyLayerSteps(count: number, aux = 1): Generator<undefi
     // faint disc glow
     const r = sampleRadius();
     const phi = rnd() * TAU;
-    c = _c.copy(C.peach).lerp(STEEL, smoothstep(0.1, 0.8, r / RMAX)).lerp(NEUTRAL, 0.4);
-    G.push(Math.cos(phi) * r, gauss(hz(r)), Math.sin(phi) * r, c, 1.8 + rnd() * 1.8, 0.16 * smoothstep(1.0, 3.5, r), r / RMAX);
+    c = _c
+      .copy(C.peach)
+      .lerp(STEEL, smoothstep(0.1, 0.8, r / RMAX))
+      .lerp(NEUTRAL, 0.4);
+    G.push(
+      Math.cos(phi) * r,
+      gauss(hz(r)),
+      Math.sin(phi) * r,
+      c,
+      1.8 + rnd() * 1.8,
+      0.16 * smoothstep(1.0, 3.5, r),
+      r / RMAX,
+    );
   }
 
   // ── DUST (multiplied onto the light behind it, so it only darkens where there's
@@ -396,7 +431,7 @@ export function* buildGalaxyLayerSteps(count: number, aux = 1): Generator<undefi
           c,
           0.4 + rnd() * 0.6,
           strength * outer * inner * (0.25 + 0.75 * rnd() * rnd()),
-          rr / RMAX
+          rr / RMAX,
         );
       }
       if (rnd() < 0.35) {
@@ -405,7 +440,15 @@ export function* buildGalaxyLayerSteps(count: number, aux = 1): Generator<undefi
         const rr = r + gauss(0.03);
         const phi = armAngle(rr, k) + ac2 / rr;
         c = _c.copy(DUST).lerp(DUST_RED, rnd() * 0.4);
-        D.push(Math.cos(phi) * rr, gauss(hz(rr) * 0.4), Math.sin(phi) * rr, c, 0.35 + rnd() * 0.4, strength * outer * inner * 0.45 * rnd(), rr / RMAX);
+        D.push(
+          Math.cos(phi) * rr,
+          gauss(hz(rr) * 0.4),
+          Math.sin(phi) * rr,
+          c,
+          0.35 + rnd() * 0.4,
+          strength * outer * inner * 0.45 * rnd(),
+          rr / RMAX,
+        );
       }
       if (r > 1.2 && rnd() < G_.featherRate) {
         // a feather crossing the arm
@@ -432,7 +475,15 @@ export function* buildGalaxyLayerSteps(count: number, aux = 1): Generator<undefi
           const z = pz0 + fz * st + fx * wob;
           const rf = Math.hypot(x, z);
           c = _c.copy(DUST).lerp(DUST_RED, rnd() * 0.4);
-          D.push(x, gauss(hz(rf) * 0.4), z, c, 0.5 + rnd() * 0.6, strength * outer * 0.8 * (1 - f / nf) * (0.5 + 0.5 * rnd()), rf / RMAX);
+          D.push(
+            x,
+            gauss(hz(rf) * 0.4),
+            z,
+            c,
+            0.5 + rnd() * 0.6,
+            strength * outer * 0.8 * (1 - f / nf) * (0.5 + 0.5 * rnd()),
+            rf / RMAX,
+          );
         }
       }
     }
@@ -448,7 +499,15 @@ export function* buildGalaxyLayerSteps(count: number, aux = 1): Generator<undefi
     const m = fbm(x2 * 0.55 + 3.1, z2 * 0.55 + 7.7);
     if (m < 0.55) continue;
     c = _c.copy(DUST).lerp(DUST_RED, rnd() * 0.3);
-    D.push(x2, gauss(hz(r) * 0.5), z2, c, 0.8 + rnd() * 1.2, (m - 0.55) * 0.8 * (1 - smoothstep(0.85 * RMAX, RMAX, r)), r / RMAX);
+    D.push(
+      x2,
+      gauss(hz(r) * 0.5),
+      z2,
+      c,
+      0.8 + rnd() * 1.2,
+      (m - 0.55) * 0.8 * (1 - smoothstep(0.85 * RMAX, RMAX, r)),
+      r / RMAX,
+    );
   }
 
   // ── SOFT EDGES (added last, so everything above stays identical) ──
@@ -461,7 +520,10 @@ export function* buildGalaxyLayerSteps(count: number, aux = 1): Generator<undefi
     const r = RMAX * (0.85 - 0.24 * Math.log(1 - rnd() * 0.94)); // 0.85 → ~1.5 RMAX
     const phi = rnd() * TAU;
     const y = gauss(hz(r) * (1.6 + (r / RMAX) * 1.4)); // puffier out here
-    c = _c.copy(C.lbabyBlue).lerp(C.coreWhite, rnd() * 0.5).lerp(NEUTRAL, 0.35);
+    c = _c
+      .copy(C.lbabyBlue)
+      .lerp(C.coreWhite, rnd() * 0.5)
+      .lerp(NEUTRAL, 0.35);
     b = base() * (0.22 + 0.3 * rnd()) * (1 - 0.5 * smoothstep(RMAX, 1.5 * RMAX, r));
     S.push(Math.cos(phi) * r, y, Math.sin(phi) * r, c, 0.4 + rnd() * 0.45, b, r / RMAX);
   }
@@ -479,7 +541,7 @@ export function* buildGalaxyLayerSteps(count: number, aux = 1): Generator<undefi
       c,
       2.4 + rnd() * 1.8,
       0.05 * G_.envelope * fall,
-      r / RMAX
+      r / RMAX,
     );
   }
 

@@ -54,8 +54,11 @@
   --shadow-panel: -30px 0 80px -30px rgb(0 0 0 / 0.9);
   --shadow-sheet: 0 -20px 60px -20px rgb(0 0 0 / 0.9);
   --shadow-photo: 0 30px 80px -30px rgb(0 0 0 / 0.9);
-  --inset-shadow-glass: inset 0 1px 0 rgb(255 255 255 / 0.22), inset 0 -8px 16px -12px --alpha(var(--color-peach) / 18%);
-  --inset-shadow-glass-lit: inset 0 1px 0 rgb(255 255 255 / 0.32), inset 0 -10px 18px -12px --alpha(var(--color-peach) / 35%);
+  --inset-shadow-glass:
+    inset 0 1px 0 rgb(255 255 255 / 0.22), inset 0 -8px 16px -12px --alpha(var(--color-peach) / 18%);
+  --inset-shadow-glass-lit:
+    inset 0 1px 0 rgb(255 255 255 / 0.32),
+    inset 0 -10px 18px -12px --alpha(var(--color-peach) / 35%);
   --inset-shadow-edge: inset 0 1px 0 rgb(255 255 255 / 0.32);
   --inset-shadow-sheet: inset 0 1px 0 rgb(255 255 255 / 0.12);
 
@@ -162,8 +165,8 @@
   transition-property: translate, scale, box-shadow, color, background-color, opacity;
   transition-duration: 420ms, 420ms, 300ms, 300ms, 300ms, 300ms;
   transition-timing-function: var(--ease-spring), var(--ease-spring), ease, ease, ease, ease;
-  @apply hover:-translate-y-0.5 hover:scale-103 hover:inset-shadow-glass-lit hover:inset-ring-peach/45 hover:shadow-glow;
-  @apply focus-ring focus-visible:-translate-y-0.5 focus-visible:scale-103 focus-visible:inset-shadow-glass-lit focus-visible:inset-ring-peach/45 focus-visible:shadow-glow;
+  @apply hover:-translate-y-0.5 hover:scale-103 hover:shadow-glow hover:inset-shadow-glass-lit hover:inset-ring-peach/45;
+  @apply focus-ring focus-visible:-translate-y-0.5 focus-visible:scale-103 focus-visible:shadow-glow focus-visible:inset-shadow-glass-lit focus-visible:inset-ring-peach/45;
   @apply active:translate-y-0 active:scale-96 active:duration-120;
   /* The light: its position comes from the pointer (JS), hence the arbitrary gradient. */
   @apply before:pointer-events-none before:absolute before:inset-0 before:-z-1 before:rounded-[inherit] before:bg-radial-[120px_circle_at_var(--mx,50%)_var(--my,-30%)] before:from-white/26 before:to-transparent before:to-60% before:opacity-0 before:transition-opacity before:duration-300 hover:before:opacity-100 focus-visible:before:opacity-100;
@@ -230,7 +233,6 @@
     transform: translateY(0);
   }
 }
-
 
 /* ── The 3D scene on touch screens (P27-31) ────────────────────────────────────────────
    ScrollSmoother's normalizeScroll leaves the page only horizontal native panning
@@ -331,7 +333,11 @@
   transform: translateY(-50%);
 }
 .story-timeline__rail {
-  background: color-mix(in srgb, var(--tl-rail-color) calc(var(--tl-rail-alpha) * 100%), transparent);
+  background: color-mix(
+    in srgb,
+    var(--tl-rail-color) calc(var(--tl-rail-alpha) * 100%),
+    transparent
+  );
 }
 .story-timeline__fill {
   background: var(--tl-color);
@@ -432,7 +438,11 @@
   height: var(--tl-h);
   border-radius: var(--tl-radius);
   clip-path: var(--tl-clip);
-  background: color-mix(in srgb, var(--tl-rail-color) calc(var(--tl-upcoming-alpha) * 100%), transparent);
+  background: color-mix(
+    in srgb,
+    var(--tl-rail-color) calc(var(--tl-upcoming-alpha) * 100%),
+    transparent
+  );
   transform: rotate(var(--tl-rot)) scale(var(--tl-scale));
   transition:
     width 0.3s ease,
@@ -455,7 +465,8 @@
 }
 /* Not reached yet (hidden while TIMELINE.upcomingAlpha is 0): a faint mark under the
    pointer / focus shows what you're about to pick. */
-.story-timeline__star:not(.is-passed):not(.is-current):is(:hover, :focus-visible) .story-timeline__glyph::before {
+.story-timeline__star:not(.is-passed):not(.is-current):is(:hover, :focus-visible)
+  .story-timeline__glyph::before {
   background: color-mix(in srgb, var(--tl-rail-color) 50%, transparent);
 }
 .story-timeline__star.is-passed .story-timeline__glyph::before {
@@ -470,7 +481,8 @@
   /* The pulse's colour, mixed here: the CSS pipeline drops color-mix() inside @keyframes. */
   --tl-glow-soft: color-mix(in srgb, var(--tl-color) calc(var(--tl-glow) * 55%), transparent);
   filter: drop-shadow(
-    0 0 calc(var(--tl-current) * 0.45) color-mix(in srgb, var(--tl-color) calc(var(--tl-glow) * 100%), transparent)
+    0 0 calc(var(--tl-current) * 0.45)
+      color-mix(in srgb, var(--tl-color) calc(var(--tl-glow) * 100%), transparent)
   );
 }
 .story-timeline.is-pulse .story-timeline__star.is-current .story-timeline__glyph {
@@ -498,7 +510,8 @@
   left: 50%;
   width: calc(var(--tl-current) * 2.3);
   height: calc(var(--tl-current) * 2.3);
-  border: 1px solid color-mix(in srgb, var(--tl-color) calc((0.25 + var(--tl-glow) * 0.75) * 100%), transparent);
+  border: 1px solid
+    color-mix(in srgb, var(--tl-color) calc((0.25 + var(--tl-glow) * 0.75) * 100%), transparent);
   border-radius: 9999px;
   opacity: 0;
   transform: translate(-50%, -50%) scale(0.4);
@@ -735,4 +748,3 @@
     animation: none;
   }
 }
-

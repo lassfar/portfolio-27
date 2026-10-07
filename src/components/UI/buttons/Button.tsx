@@ -1,32 +1,38 @@
 import clsx from "clsx";
 import Icon from "#/components/UI/icons/Icon";
 import { BUTTON_BASE, BUTTON_ICON_SIZE } from "#/components/UI/buttons/base";
-import type { ButtonIconSlide, ButtonProps, ButtonSize, ButtonVariant } from "#/components/UI/buttons/button.types";
+import type {
+  ButtonIconSlide,
+  ButtonProps,
+  ButtonSize,
+  ButtonVariant,
+} from "#/components/UI/buttons/button.types";
 
 /** The frosted glass (all but `text`): it blurs what's behind it, a thin ring, a faint top highlight. */
-const GLASS = "backdrop-blur-md backdrop-saturate-140 inset-ring inset-shadow-edge inset-shadow-gray-slate/22";
+const GLASS =
+  "backdrop-blur-md backdrop-saturate-140 inset-ring inset-shadow-edge inset-shadow-gray-slate/22";
 
 /** Each variant's tones: at rest, then hovered (the ring warms up, a soft glow appears) and focused. */
 const VARIANT: Record<ButtonVariant, string> = {
   primary: clsx(
     GLASS,
     "bg-gray-slate/10 text-light-peach inset-ring-peach/55 focus-visible:inset-ring-peach",
-    "enabled:hover:bg-gray-slate/16 enabled:hover:inset-ring-peach enabled:hover:shadow-button-glow enabled:hover:shadow-peach/45",
+    "enabled:hover:bg-gray-slate/16 enabled:hover:shadow-button-glow enabled:hover:shadow-peach/45 enabled:hover:inset-ring-peach",
   ),
   outline: clsx(
     GLASS,
     "bg-peach/6 text-peach inset-ring-peach/70 focus-visible:inset-ring-peach",
-    "enabled:hover:bg-peach/12 enabled:hover:inset-ring-peach enabled:hover:shadow-button-glow enabled:hover:shadow-peach/45",
+    "enabled:hover:bg-peach/12 enabled:hover:shadow-button-glow enabled:hover:shadow-peach/45 enabled:hover:inset-ring-peach",
   ),
   secondary: clsx(
     GLASS,
     "bg-gray-slate/10 text-gray-slate inset-ring-gray-slate/30 focus-visible:inset-ring-gray-slate/70",
-    "enabled:hover:bg-gray-slate/16 enabled:hover:inset-ring-gray-slate/70 enabled:hover:shadow-button-glow enabled:hover:shadow-gray-slate/22",
+    "enabled:hover:bg-gray-slate/16 enabled:hover:shadow-button-glow enabled:hover:shadow-gray-slate/22 enabled:hover:inset-ring-gray-slate/70",
   ),
   light: clsx(
     GLASS,
     "bg-light-peach/16 text-light-peach inset-ring-light-peach/40 focus-visible:inset-ring-light-peach",
-    "enabled:hover:bg-light-peach/24 enabled:hover:inset-ring-light-peach enabled:hover:shadow-button-glow enabled:hover:shadow-light-peach/35",
+    "enabled:hover:bg-light-peach/24 enabled:hover:shadow-button-glow enabled:hover:shadow-light-peach/35 enabled:hover:inset-ring-light-peach",
   ),
   text: "bg-transparent text-peach enabled:hover:text-light-peach",
 };
@@ -42,7 +48,11 @@ const SIZE: Record<ButtonSize, string> = {
 };
 
 /** Its sides: a pill's, or just a little air for `text`. */
-const PADDING_X: Record<ButtonSize, string> = { small: "px-[1em]", medium: "px-[1.4em]", large: "px-[1.9em]" };
+const PADDING_X: Record<ButtonSize, string> = {
+  small: "px-[1em]",
+  medium: "px-[1.4em]",
+  large: "px-[1.9em]",
+};
 
 /**
  * Its icon slides a little on hover, the way it points. On `translate`, not `transform`:
@@ -89,7 +99,10 @@ const Button = ({
       <span
         data-button-icon=""
         aria-hidden="true"
-        className={clsx("inline-flex transition-[translate] duration-300 ease-[ease]", SLIDE[iconSlide])}
+        className={clsx(
+          "inline-flex transition-[translate] duration-300 ease-[ease]",
+          SLIDE[iconSlide],
+        )}
       >
         <Icon icon={icon} size={BUTTON_ICON_SIZE[size]} />
       </span>

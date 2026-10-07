@@ -38,7 +38,13 @@ export const Default: Story = {
 
 /** `multiline`: a textarea for a longer text (it doesn't resize). */
 export const Multiline: Story = {
-  args: { label: "Message", name: "message", multiline: true, rows: 3, placeholder: "A project, a question, or just hello." },
+  args: {
+    label: "Message",
+    name: "message",
+    multiline: true,
+    rows: 3,
+    placeholder: "A project, a question, or just hello.",
+  },
   play: async ({ canvas }: Context) => {
     await expect(canvas.getByRole("textbox", { name: "Message" }).tagName).toBe("TEXTAREA");
   },

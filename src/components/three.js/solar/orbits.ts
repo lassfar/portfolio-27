@@ -51,7 +51,8 @@ function meanAnomalyToday(el: OrbitElements): number {
 /** A body's real heliocentric longitude today (radians, along its orbit ≈ the ecliptic). */
 function longitudeToday(el: OrbitElements): number {
   const E = eccentricAnomaly(meanAnomalyToday(el), el.e);
-  const nu = 2 * Math.atan2(Math.sqrt(1 + el.e) * Math.sin(E / 2), Math.sqrt(1 - el.e) * Math.cos(E / 2));
+  const nu =
+    2 * Math.atan2(Math.sqrt(1 + el.e) * Math.sin(E / 2), Math.sqrt(1 - el.e) * Math.cos(E / 2));
   return nu + el.peri * DEG;
 }
 

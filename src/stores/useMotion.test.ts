@@ -39,7 +39,9 @@ function fakeBrowser({
   vi.stubGlobal("matchMedia", matchMedia);
   vi.stubGlobal("localStorage", storage);
   vi.stubGlobal("document", {
-    documentElement: { setAttribute: (name: string, value: string) => void attributes.set(name, value) },
+    documentElement: {
+      setAttribute: (name: string, value: string) => void attributes.set(name, value),
+    },
   });
   return {
     items,

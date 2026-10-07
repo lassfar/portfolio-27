@@ -79,9 +79,21 @@ export const PHOTO_LOCATIONS: PhotoLocation[] = [
     lng: -1.573,
     blurb: "Wild ponies, low mist, and the quiet of the New Forest.",
     media: [
-      { type: "image", src: "/photos/brockenhurst/01.jpg", caption: "Placeholder — Brockenhurst 01" },
-      { type: "image", src: "/photos/brockenhurst/02.jpg", caption: "Placeholder — Brockenhurst 02" },
-      { type: "image", src: "/photos/brockenhurst/03.jpg", caption: "Placeholder — Brockenhurst 03" },
+      {
+        type: "image",
+        src: "/photos/brockenhurst/01.jpg",
+        caption: "Placeholder — Brockenhurst 01",
+      },
+      {
+        type: "image",
+        src: "/photos/brockenhurst/02.jpg",
+        caption: "Placeholder — Brockenhurst 02",
+      },
+      {
+        type: "image",
+        src: "/photos/brockenhurst/03.jpg",
+        caption: "Placeholder — Brockenhurst 03",
+      },
       {
         type: "video",
         src: "/videos/brockenhurst/01.mp4",

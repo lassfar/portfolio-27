@@ -12,7 +12,12 @@ import {
   SOLAR_MOTION,
   VOYAGE,
 } from "./config";
-import { planetInspect, planetTuningSnapshot, rebuildPlanets, resetPlanetTuning } from "./planetTuning";
+import {
+  planetInspect,
+  planetTuningSnapshot,
+  rebuildPlanets,
+  resetPlanetTuning,
+} from "./planetTuning";
 
 /**
  * The planets' section of the dev tuning panel (hosted by GalaxyGui): the planets,
@@ -51,7 +56,9 @@ export function buildPlanetPanel(gui: GUI) {
   fMotion.add(SOLAR_MOTION, "orbitPace", 0, 0.5, 0.001).name("orbit pace (the Earth, rad/s)");
   fMotion.add(SOLAR_MOTION, "dayPace", 0, 1, 0.005).name("day pace (1 Earth day, rad/s)");
   fMotion.add(SOLAR_MOTION, "moonSecondsPerDay", 0.2, 20, 0.1).name("the Moon: seconds per day");
-  fMotion.add(SOLAR_MOTION, "jupiterMoonSecondsPerDay", 0.2, 40, 0.1).name("Jupiter's moons: seconds per day");
+  fMotion
+    .add(SOLAR_MOTION, "jupiterMoonSecondsPerDay", 0.2, 40, 0.1)
+    .name("Jupiter's moons: seconds per day");
 
   const fStyle = gui.addFolder("All planets & moons");
   fStyle.add(PLANET_STYLE, "dotSoftness", 0.02, 0.5, 0.01).name("dot softness");
@@ -89,37 +96,67 @@ export function buildPlanetPanel(gui: GUI) {
 
   const fBelt = gui.addFolder("Asteroid belt");
   fBelt.add(ASTEROIDS, "show").name("show");
-  fBelt.add(ASTEROIDS, "count", 0, 40000, 500).name("dots (rebuilds)").onFinishChange(rebuildPlanets);
+  fBelt
+    .add(ASTEROIDS, "count", 0, 40000, 500)
+    .name("dots (rebuilds)")
+    .onFinishChange(rebuildPlanets);
   fBelt.add(ASTEROIDS, "size", 0.2, 6, 0.05).name("dot size (px)");
   fBelt.add(ASTEROIDS, "maxSize", 1, 12, 0.5).name("…at most, up close (px)");
   fBelt.add(ASTEROIDS, "brightness", 0, 2, 0.01).name("brightness");
   fBelt.addColor(ASTEROIDS, "color").name("colour");
-  fBelt.add(ASTEROIDS, "inner", 1.6, 3, 0.01).name("inner edge (AU, rebuilds)").onFinishChange(rebuildPlanets);
-  fBelt.add(ASTEROIDS, "outer", 2.5, 4.5, 0.01).name("outer edge (AU, rebuilds)").onFinishChange(rebuildPlanets);
-  fBelt.add(ASTEROIDS, "incl", 0, 25, 0.5).name("tilt spread (°, rebuilds)").onFinishChange(rebuildPlanets);
-  fBelt.add(ASTEROIDS, "ecc", 0, 0.4, 0.01).name("ovalness (rebuilds)").onFinishChange(rebuildPlanets);
-  fBelt.add(ASTEROIDS, "gapWidth", 0, 0.1, 0.005).name("Kirkwood gaps (AU, rebuilds)").onFinishChange(rebuildPlanets);
+  fBelt
+    .add(ASTEROIDS, "inner", 1.6, 3, 0.01)
+    .name("inner edge (AU, rebuilds)")
+    .onFinishChange(rebuildPlanets);
+  fBelt
+    .add(ASTEROIDS, "outer", 2.5, 4.5, 0.01)
+    .name("outer edge (AU, rebuilds)")
+    .onFinishChange(rebuildPlanets);
+  fBelt
+    .add(ASTEROIDS, "incl", 0, 25, 0.5)
+    .name("tilt spread (°, rebuilds)")
+    .onFinishChange(rebuildPlanets);
+  fBelt
+    .add(ASTEROIDS, "ecc", 0, 0.4, 0.01)
+    .name("ovalness (rebuilds)")
+    .onFinishChange(rebuildPlanets);
+  fBelt
+    .add(ASTEROIDS, "gapWidth", 0, 0.1, 0.005)
+    .name("Kirkwood gaps (AU, rebuilds)")
+    .onFinishChange(rebuildPlanets);
 
   for (const def of PLANETS) {
     const f = gui.addFolder(title(def.id));
     addSize(f, def);
-    f.add(def, "count", 1000, 300000, 1000).name("most dots, up close (rebuilds)").onFinishChange(rebuildPlanets);
+    f.add(def, "count", 1000, 300000, 1000)
+      .name("most dots, up close (rebuilds)")
+      .onFinishChange(rebuildPlanets);
     f.add(def, "tilt", 0, 180, 0.1).name("axial tilt (°)");
     f.add(def, "day", 0.1, 300, 0.001).name("day length (Earth days)");
     def.saturnLook ??= false;
     f.add(def as { saturnLook: boolean }, "saturnLook").name("Saturn look + dust");
-    f.add(def.orbit, "au", 0.2, 40, 0.001).name("distance (AU, rebuilds)").onFinishChange(rebuildPlanets);
-    f.add(def.orbit, "e", 0, 0.5, 0.001).name("orbit ovalness (rebuilds)").onFinishChange(rebuildPlanets);
-    f.add(def.orbit, "i", 0, 30, 0.01).name("orbit tilt (°, rebuilds)").onFinishChange(rebuildPlanets);
+    f.add(def.orbit, "au", 0.2, 40, 0.001)
+      .name("distance (AU, rebuilds)")
+      .onFinishChange(rebuildPlanets);
+    f.add(def.orbit, "e", 0, 0.5, 0.001)
+      .name("orbit ovalness (rebuilds)")
+      .onFinishChange(rebuildPlanets);
+    f.add(def.orbit, "i", 0, 30, 0.01)
+      .name("orbit tilt (°, rebuilds)")
+      .onFinishChange(rebuildPlanets);
     addLook(f, def.look);
     f.close();
   }
 
   const fMoons = gui.addFolder("Moons");
   for (const moon of MOONS) {
-    const f = fMoons.addFolder(`${title(moon.id)} (${moon.parent === "earth" ? "the Earth" : "Jupiter"})`);
+    const f = fMoons.addFolder(
+      `${title(moon.id)} (${moon.parent === "earth" ? "the Earth" : "Jupiter"})`,
+    );
     addSize(f, moon);
-    f.add(moon, "count", 1000, 300000, 1000).name("most dots, up close (rebuilds)").onFinishChange(rebuildPlanets);
+    f.add(moon, "count", 1000, 300000, 1000)
+      .name("most dots, up close (rebuilds)")
+      .onFinishChange(rebuildPlanets);
     f.add(moon, "distance", 0.1, 12, 0.01).name("distance from its planet");
     f.add(moon, "period", 0.1, 60, 0.001).name("orbit (Earth days)");
     f.add(moon, "incl", 0, 30, 0.1).name("orbit tilt (°)");
@@ -153,7 +190,9 @@ function addSize(f: GUI, body: { size: number }) {
       body.size = v * EARTH_RADIUS;
     },
   };
-  f.add(sizer, "earthRadii", 0.05, 15, 0.001).name("size, Earth radii (rebuilds)").onFinishChange(rebuildPlanets);
+  f.add(sizer, "earthRadii", 0.05, 15, 0.001)
+    .name("size, Earth radii (rebuilds)")
+    .onFinishChange(rebuildPlanets);
 }
 
 /** A surface's colours + features (planetShaders.ts). */

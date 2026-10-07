@@ -162,7 +162,7 @@ const Galaxy = ({ animate = true }: { animate?: boolean }) => {
       const L = layersRef.current;
       if (L) [L.stars, L.knots, L.glow, L.dust].forEach((g) => g.dispose());
     },
-    []
+    [],
   );
 
   // Uniforms shared by every layer (one reveal, one clock, one shear, one near fade).
@@ -176,7 +176,7 @@ const Galaxy = ({ animate = true }: { animate?: boolean }) => {
       uNearA: { value: GALAXY.nearFadeStart * GALAXY_SCALE },
       uNearB: { value: GALAXY.nearFadeEnd * GALAXY_SCALE },
     }),
-    []
+    [],
   );
   useEffect(() => {
     shared.uPixelRatio.value = dpr; // the canvas's real pixel ratio → sizes match the prototype
@@ -235,10 +235,7 @@ const Galaxy = ({ animate = true }: { animate?: boolean }) => {
     };
   }, [shared]);
   const starMaterials = useMemo(() => [materials.stars, materials.knots], [materials]); // (not a new array each frame)
-  useEffect(
-    () => () => Object.values(materials).forEach((m) => m.dispose()),
-    [materials]
-  );
+  useEffect(() => () => Object.values(materials).forEach((m) => m.dispose()), [materials]);
 
   // ── the galaxy's own layer ──
   const galaxyScene = useMemo(() => new Scene(), []);
@@ -249,7 +246,7 @@ const Galaxy = ({ animate = true }: { animate?: boolean }) => {
         depthBuffer: false,
         stencilBuffer: false,
       }),
-    []
+    [],
   );
   useEffect(() => () => target.dispose(), [target]);
   const bloom = useMemo(
@@ -258,7 +255,7 @@ const Galaxy = ({ animate = true }: { animate?: boolean }) => {
         threshold: GALAXY_FX.bloomThreshold,
         radius: GALAXY_FX.bloomRadius,
       }),
-    [gl]
+    [gl],
   );
   useEffect(() => () => bloom.dispose(), [bloom]);
   const composite = useMemo(
@@ -286,7 +283,7 @@ const Galaxy = ({ animate = true }: { animate?: boolean }) => {
         vertexShader: COMPOSITE_VERT,
         fragmentShader: COMPOSITE_FRAG,
       }),
-    [target, bloom]
+    [target, bloom],
   );
   useEffect(() => () => composite.dispose(), [composite]);
 
@@ -327,7 +324,9 @@ const Galaxy = ({ animate = true }: { animate?: boolean }) => {
     if (glowGeometry && glowCount !== undefined) {
       glowGeometry.setDrawRange(0, Math.round(glowCount * glowShare));
     }
-    materials.glow.uniforms.uGlowMaxPx.value = lightGlow ? GLOW_QUALITY.lightMaxPx : GLOW_QUALITY.fullMaxPx;
+    materials.glow.uniforms.uGlowMaxPx.value = lightGlow
+      ? GLOW_QUALITY.lightMaxPx
+      : GLOW_QUALITY.fullMaxPx;
     materials.glow.uniforms.uGlowAmt.value = GALAXY.glowAmount / glowShare;
     materials.glow.uniforms.uGlowSize.value = GALAXY.glowSize * GALAXY_SCALE;
     materials.glow.uniforms.uEdgeSoft.value = GALAXY.edgeSoftness;
@@ -345,7 +344,8 @@ const Galaxy = ({ animate = true }: { animate?: boolean }) => {
       rootRef.current.position.set(c[0], c[1], c[2]);
       rootRef.current.quaternion.copy(galaxyDrag);
     }
-    if (tiltRef.current) tiltRef.current.rotation.set(GALAXY_TILT[0], GALAXY_TILT[1], GALAXY_TILT[2]);
+    if (tiltRef.current)
+      tiltRef.current.rotation.set(GALAXY_TILT[0], GALAXY_TILT[1], GALAXY_TILT[2]);
 
     const p = clamp01(useGalaxyScroll.getState().progress);
     const reveal = easeOutCubic(remap01(p, GALAXY.revealStart, GALAXY.revealEnd));
@@ -355,7 +355,7 @@ const Galaxy = ({ animate = true }: { animate?: boolean }) => {
     // tuned look once the full view settles).
     const flight = easeInOutCubic(
       remap01(p, GALAXY.flightBoostIn[0], GALAXY.flightBoostIn[1]) *
-        (1 - remap01(p, GALAXY.flightBoostOut[0], GALAXY.flightBoostOut[1]))
+        (1 - remap01(p, GALAXY.flightBoostOut[0], GALAXY.flightBoostOut[1])),
     );
     shared.uFlight.value = 1 + GALAXY.flightBoost * flight;
     // Bake in the page background quickly as the galaxy starts to appear (see
@@ -374,7 +374,8 @@ const Galaxy = ({ animate = true }: { animate?: boolean }) => {
     // The deep stars come in earlier than the galaxy itself (they take over from the
     // near starfield), so the layer is drawn from then on.
     const starsOn =
-      GALAXY_SPACE.showStars && remap01(p, GALAXY_SPACE.starsIn[0], GALAXY_SPACE.starsIn[1]) > 0.001;
+      GALAXY_SPACE.showStars &&
+      remap01(p, GALAXY_SPACE.starsIn[0], GALAXY_SPACE.starsIn[1]) > 0.001;
     layerOn.current = (rootRef.current?.visible ?? false) || starsOn;
   });
 
@@ -428,7 +429,9 @@ const Galaxy = ({ animate = true }: { animate?: boolean }) => {
     const galaxyOn = !!rootRef.current?.visible;
     // Billboard the core (undoing the drag turn its parent carries).
     if (coreRef.current) {
-      coreRef.current.quaternion.copy(inverseDrag.copy(galaxyDrag).invert()).multiply(camera.quaternion);
+      coreRef.current.quaternion
+        .copy(inverseDrag.copy(galaxyDrag).invert())
+        .multiply(camera.quaternion);
     }
     // The sky: pinned to the camera (infinitely far), oriented like the end view,
     // turned by the drag with the galaxy — and by the framing turn (so centring the
@@ -483,10 +486,30 @@ const Galaxy = ({ animate = true }: { animate?: boolean }) => {
                 core → stars → dust → pink regions (→ sparkles). */}
             <group ref={tiltRef} rotation={GALAXY_TILT}>
               <group ref={spinRef}>
-                <points ref={glowPts} material={materials.glow} renderOrder={1} frustumCulled={false} />
-                <points ref={starPts} material={materials.stars} renderOrder={3} frustumCulled={false} />
-                <points ref={dustPts} material={materials.dust} renderOrder={4} frustumCulled={false} />
-                <points ref={knotPts} material={materials.knots} renderOrder={5} frustumCulled={false} />
+                <points
+                  ref={glowPts}
+                  material={materials.glow}
+                  renderOrder={1}
+                  frustumCulled={false}
+                />
+                <points
+                  ref={starPts}
+                  material={materials.stars}
+                  renderOrder={3}
+                  frustumCulled={false}
+                />
+                <points
+                  ref={dustPts}
+                  material={materials.dust}
+                  renderOrder={4}
+                  frustumCulled={false}
+                />
+                <points
+                  ref={knotPts}
+                  material={materials.knots}
+                  renderOrder={5}
+                  frustumCulled={false}
+                />
               </group>
             </group>
           </group>
@@ -499,13 +522,19 @@ const Galaxy = ({ animate = true }: { animate?: boolean }) => {
             <GalaxySparkles animate={animate} />
           </group>
         </>,
-        galaxyScene
+        galaxyScene,
       )}
 
       {/* The galaxy layer, added to the scene LAST: it's pure additive light, so order
           doesn't change its look — but drawn last, nothing dark (the planets' shaded
           sides, orbit lines) can paint holes in it once the system is a speck. */}
-      <mesh ref={compositeRef} material={composite} renderOrder={100} frustumCulled={false} visible={false}>
+      <mesh
+        ref={compositeRef}
+        material={composite}
+        renderOrder={100}
+        frustumCulled={false}
+        visible={false}
+      >
         <planeGeometry args={[2, 2]} />
       </mesh>
     </>

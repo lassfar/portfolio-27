@@ -63,49 +63,61 @@ const StoryTimelineRail = ({
   const { horizontal, tip, place } = railLayout(TIMELINE);
   const along = horizontal ? "left" : "top"; // places things along the rail
   return (
-  <nav
-    aria-label="Story timeline"
-    className={clsx(
-      "story-timeline",
-      horizontal ? "is-horizontal" : "is-vertical",
-      `shape-${TIMELINE.shape}`,
-      TIMELINE.upcoming === "hollow" && "is-hollow",
-      shown && "is-shown",
-      rest !== "awake" && "is-idle",
-      rest === "hidden" && "is-asleep",
-      phone && "is-phone",
-      TIMELINE.pulse && "is-pulse",
-    )}
-    style={{ ...railVars(horizontal), ...place }}
-  >
-    <div className="story-timeline__rail" />
-    <div ref={fillRef} className="story-timeline__fill" style={{ clipPath: fillClip(fill, horizontal) }} />
-    <ol className="story-timeline__list">
-      {chapters.map((chapter, i) => (
-        <li key={chapter.id} className="story-timeline__item" style={{ [along]: `${positions[i] * 100}%` }}>
-          <button
-            type="button"
-            className={clsx("story-timeline__star group/tip", i < current && "is-passed", i === current && "is-current")}
-            aria-label={chapter.name}
-            aria-current={i === current ? "step" : undefined}
-            onClick={() => onSelect?.(i)}
-          >
-            <span className="story-timeline__glyph" aria-hidden="true" />
-            {!phone && <Tooltip side={tip}>{chapter.name}</Tooltip>}
-          </button>
-        </li>
-      ))}
-    </ol>
-    {/* The chapter's name as it changes, by its star. */}
-    <div
-      className={clsx("absolute size-0", PILL_SPOT[tip])}
-      style={{ [along]: `${(positions[toast?.index ?? current] ?? 0) * 100}%` }}
+    <nav
+      aria-label="Story timeline"
+      className={clsx(
+        "story-timeline",
+        horizontal ? "is-horizontal" : "is-vertical",
+        `shape-${TIMELINE.shape}`,
+        TIMELINE.upcoming === "hollow" && "is-hollow",
+        shown && "is-shown",
+        rest !== "awake" && "is-idle",
+        rest === "hidden" && "is-asleep",
+        phone && "is-phone",
+        TIMELINE.pulse && "is-pulse",
+      )}
+      style={{ ...railVars(horizontal), ...place }}
     >
-      <Tooltip side={tip} open={toast?.on ?? false} live>
-        {toast ? chapters[toast.index]?.name : ""}
-      </Tooltip>
-    </div>
-  </nav>
+      <div className="story-timeline__rail" />
+      <div
+        ref={fillRef}
+        className="story-timeline__fill"
+        style={{ clipPath: fillClip(fill, horizontal) }}
+      />
+      <ol className="story-timeline__list">
+        {chapters.map((chapter, i) => (
+          <li
+            key={chapter.id}
+            className="story-timeline__item"
+            style={{ [along]: `${positions[i] * 100}%` }}
+          >
+            <button
+              type="button"
+              className={clsx(
+                "story-timeline__star group/tip",
+                i < current && "is-passed",
+                i === current && "is-current",
+              )}
+              aria-label={chapter.name}
+              aria-current={i === current ? "step" : undefined}
+              onClick={() => onSelect?.(i)}
+            >
+              <span className="story-timeline__glyph" aria-hidden="true" />
+              {!phone && <Tooltip side={tip}>{chapter.name}</Tooltip>}
+            </button>
+          </li>
+        ))}
+      </ol>
+      {/* The chapter's name as it changes, by its star. */}
+      <div
+        className={clsx("absolute size-0", PILL_SPOT[tip])}
+        style={{ [along]: `${(positions[toast?.index ?? current] ?? 0) * 100}%` }}
+      >
+        <Tooltip side={tip} open={toast?.on ?? false} live>
+          {toast ? chapters[toast.index]?.name : ""}
+        </Tooltip>
+      </div>
+    </nav>
   );
 };
 

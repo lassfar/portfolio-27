@@ -9,7 +9,10 @@ import { CHAPTER_IDS } from "./story.types";
 const expectAccented = (text: string) => {
   const parts = accentParts(text);
   expect(parts.map((p) => p.text).join(""), text).toBe(text.replaceAll("*", ""));
-  expect(parts.some((p) => p.accent), text).toBe(true);
+  expect(
+    parts.some((p) => p.accent),
+    text,
+  ).toBe(true);
 };
 
 describe("the story's words", () => {
@@ -35,7 +38,9 @@ describe("the story's words", () => {
 
   it("give every voice line and display title a word in peach", () => {
     Object.values(VOICE).forEach(expectAccented);
-    [HERO.headline, ABOUT.title, CRAFT.title, CONTACT.title, CONTACT.thanks.title].forEach(expectAccented);
+    [HERO.headline, ABOUT.title, CRAFT.title, CONTACT.title, CONTACT.thanks.title].forEach(
+      expectAccented,
+    );
   });
 
   it("load none of the 3D: no imports but types, here and in the places and the Lab's card", () => {
@@ -49,7 +54,10 @@ describe("the story's words", () => {
     for (const file of files) {
       const source = readFileSync(join(process.cwd(), "src", file), "utf8");
       const imports = source.match(/^import\s.*$/gm) ?? [];
-      expect(imports.filter((line) => !/^import type\s/.test(line)), file).toEqual([]);
+      expect(
+        imports.filter((line) => !/^import type\s/.test(line)),
+        file,
+      ).toEqual([]);
     }
   });
 });

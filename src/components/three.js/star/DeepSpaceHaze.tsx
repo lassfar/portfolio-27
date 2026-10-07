@@ -28,7 +28,7 @@ const DeepSpaceHaze = ({ animate = true }: Props) => {
       uColorA: { value: new Color(HAZE.colorA) },
       uColorB: { value: new Color(HAZE.colorB) },
     }),
-    []
+    [],
   );
 
   useFrame((_, delta) => {

@@ -35,7 +35,7 @@ type Options = {
 export function addTextsScrollWriteIn(
   timeline: gsap.core.Timeline,
   elements: ScrollWriteInElement[],
-  { at, duration }: Options
+  { at, duration }: Options,
 ): SplitText[] {
   const splits = elements
     .map((el) =>
@@ -43,13 +43,12 @@ export function addTextsScrollWriteIn(
         ? new SplitText(el.ref.current, {
             type: el.type === "chars" ? "chars" : "words",
           })
-        : null
+        : null,
     )
     .filter((s): s is SplitText => s !== null);
 
   const reduce =
-    typeof window !== "undefined" &&
-    window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    typeof window !== "undefined" && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
   if (reduce) return splits; // stay in place, no write-in
 
   const totalWeight = elements.reduce((sum, el) => sum + (el.weight ?? 1), 0);
@@ -69,7 +68,7 @@ export function addTextsScrollWriteIn(
         stagger: { amount: segment * 0.55 },
       },
       // First element starts at `at`; the rest cascade right after the previous.
-      i === 0 ? at : ">"
+      i === 0 ? at : ">",
     );
   });
 

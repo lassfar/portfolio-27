@@ -17,7 +17,12 @@ export type JourneyMarkerScreen = {
 };
 
 export const journeyScreen = {
-  markers: Array.from({ length: 8 }, (_, i): JourneyMarkerScreen => ({ x: 0, y: 0, shown: false, here: 1 << i })),
+  markers: Array.from({ length: 8 }, (_, i): JourneyMarkerScreen => ({
+    x: 0,
+    y: 0,
+    shown: false,
+    here: 1 << i,
+  })),
   /** The line's tip while it draws: its dot's label, how close it has come to the Sun. */
   tip: { x: 0, y: 0, shown: false, text: "" },
   /** How close each marker's loops reach (millions of km, set once built): the launch

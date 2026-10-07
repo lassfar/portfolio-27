@@ -183,10 +183,7 @@ const PlanetBody = ({ count = PLANET.count, animate = true }: Props) => {
       uSwirl: { value: PLANET.swirl },
       uFlowSpeed: { value: PLANET.flowSpeed },
       uPixelRatio: {
-        value:
-          typeof window !== "undefined"
-            ? Math.min(window.devicePixelRatio, 2)
-            : 1.5,
+        value: typeof window !== "undefined" ? Math.min(window.devicePixelRatio, 2) : 1.5,
       },
       uOpacity: { value: 1 },
       uLightDir: { value: LIGHT.dir },
@@ -209,7 +206,7 @@ const PlanetBody = ({ count = PLANET.count, animate = true }: Props) => {
       uLodCount: { value: 1e9 }, // level of detail (every dot until set each frame)
       uLodFade: { value: PLANET_LOD.fadeBand },
     }),
-    []
+    [],
   );
 
   useFrame((state, delta) => {
@@ -246,7 +243,10 @@ const PlanetBody = ({ count = PLANET.count, animate = true }: Props) => {
       const cam = state.camera as PerspectiveCamera;
       points.updateWorldMatrix(true, false);
       const worldRadius = PLANET.radius * points.matrixWorld.getMaxScaleOnAxis();
-      const dist = Math.max(points.getWorldPosition(_center).distanceTo(cam.position), worldRadius * 1.05);
+      const dist = Math.max(
+        points.getWorldPosition(_center).distanceTo(cam.position),
+        worldRadius * 1.05,
+      );
       const focal = state.size.height / 2 / Math.tan((cam.fov * Math.PI) / 360);
       const radiusPx = (worldRadius * focal) / dist;
       const limit = PLANET_LOD.maxDotsPerPx * Math.PI * (radiusPx * state.viewport.dpr) ** 2 * 2;
@@ -263,11 +263,15 @@ const PlanetBody = ({ count = PLANET.count, animate = true }: Props) => {
 
     // From the voyage on, the real Sun lights it (a real day and night side), blended
     // in as the system fades in; the About section keeps its own light.
-    m.uniforms.uSunLight.value = easeInOutCubic(remap01(voyage, SOLAR.revealStart, SOLAR.revealEnd));
+    m.uniforms.uSunLight.value = easeInOutCubic(
+      remap01(voyage, SOLAR.revealStart, SOLAR.revealEnd),
+    );
     m.uniforms.uSunAmbient.value = PLANET_STYLE.ambient;
     const [sx, sy, sz] = flyingSunPos();
     const a = useSaturnAnchor.getState();
-    m.uniforms.uSunDir.value.set(sx - a.x, sy - a.y, sz - a.z).transformDirection(state.camera.matrixWorldInverse);
+    m.uniforms.uSunDir.value
+      .set(sx - a.x, sy - a.y, sz - a.z)
+      .transformDirection(state.camera.matrixWorldInverse);
 
     // The solid core grows with the assembling planet (the shader's assembleScale)
     // and only fades in as the last dots land, so no dark ball shows mid-assembly.
@@ -275,7 +279,9 @@ const PlanetBody = ({ count = PLANET.count, animate = true }: Props) => {
       const grow = smoothstep(0, 0.82, progress);
       const wob = smoothstep(0.6, 1, progress);
       const assembleScale =
-        GROWTH.startScale + (1 - GROWTH.startScale) * grow + GROWTH.overshoot * Math.sin(Math.PI * wob);
+        GROWTH.startScale +
+        (1 - GROWTH.startScale) * grow +
+        GROWTH.overshoot * Math.sin(Math.PI * wob);
       coreRef.current.scale.setScalar(PLANET.radius * PLANET.coreScale * assembleScale);
       const opacity = smoothstep(0.85, 1, progress) * m.uniforms.uOpacity.value;
       coreMatRef.current.opacity = opacity;
@@ -289,7 +295,13 @@ const PlanetBody = ({ count = PLANET.count, animate = true }: Props) => {
         writing depth, so the far side and the back of the rings hide behind it. */}
       <mesh ref={coreRef} renderOrder={-0.5} visible={false}>
         <sphereGeometry args={[1, 48, 32]} />
-        <meshBasicMaterial ref={coreMatRef} color={PLANET.coreColor} transparent depthWrite opacity={0} />
+        <meshBasicMaterial
+          ref={coreMatRef}
+          color={PLANET.coreColor}
+          transparent
+          depthWrite
+          opacity={0}
+        />
       </mesh>
       <points ref={pointsRef} geometry={geometry ?? placeholder}>
         <shaderMaterial

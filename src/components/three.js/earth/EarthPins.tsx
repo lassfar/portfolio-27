@@ -2,14 +2,7 @@
 
 import { ThreeEvent, useFrame, useThree } from "@react-three/fiber";
 import { useMemo, useRef } from "react";
-import {
-  AdditiveBlending,
-  CanvasTexture,
-  Group,
-  Quaternion,
-  SpriteMaterial,
-  Vector3,
-} from "three";
+import { AdditiveBlending, CanvasTexture, Group, Quaternion, SpriteMaterial, Vector3 } from "three";
 import { clamp01, damp, remap01 } from "#/components/three.js/star/utils";
 import { useVoyageScroll } from "#/stores/useVoyageScroll";
 import { useLabScroll } from "#/stores/useLabScroll";
@@ -71,15 +64,7 @@ const EarthPins = () => {
 
 export default EarthPins;
 
-const Pin = ({
-  loc,
-  phase,
-  glow,
-}: {
-  loc: PhotoLocation;
-  phase: number;
-  glow: CanvasTexture;
-}) => {
+const Pin = ({ loc, phase, glow }: { loc: PhotoLocation; phase: number; glow: CanvasTexture }) => {
   const camera = useThree((s) => s.camera);
   const gl = useThree((s) => s.gl);
   const groupRef = useRef<Group>(null);
@@ -103,11 +88,7 @@ const Pin = ({
   // its label follow exactly what's drawn.
   useFrame((state, delta) => {
     if (!groupRef.current) return;
-    const approach = remap01(
-      clamp01(useVoyageScroll.getState().progress),
-      VOYAGE.flyoutEnd,
-      1
-    );
+    const approach = remap01(clamp01(useVoyageScroll.getState().progress), VOYAGE.flyoutEnd, 1);
     // Hide the pins as the Earth fades out into the Lab beat.
     const labFade = remap01(clamp01(useLabScroll.getState().progress), 0, LAB.earthFadeEnd);
     // Away from the Earth (most of the page) they're hidden: skip the rest, and the

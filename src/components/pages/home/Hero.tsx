@@ -24,10 +24,9 @@ gsap.registerPlugin(useGSAP, ScrollTrigger, ScrollSmoother, SplitText);
 // WebGL-only — load on the client, never during SSR. The unified scene holds
 // the starfield, the star, the Saturn that assembles from its debris, and (as
 // the journey continues) the Saturn's fly-away out into the wider voyage.
-const CosmicScene = dynamic(
-  () => import("#/components/three.js/scene/CosmicScene"),
-  { ssr: false }
-);
+const CosmicScene = dynamic(() => import("#/components/three.js/scene/CosmicScene"), {
+  ssr: false,
+});
 
 const Hero = () => {
   const containerRef = useRef<HTMLDivElement | null>(null);
@@ -77,21 +76,9 @@ const Hero = () => {
       duration: 0.8,
       ease: "power2.out",
     })
-      .from(
-        eyebrowRef.current,
-        { opacity: 0, y: 14, duration: 0.6, ease: "power2.out" },
-        0.2
-      )
-      .from(
-        subRef.current,
-        { opacity: 0, y: 18, duration: 0.9, ease: "power2.out" },
-        1.0
-      )
-      .from(
-        ctaRef.current,
-        { opacity: 0, y: 14, duration: 0.7, ease: "power2.out" },
-        1.4
-      );
+      .from(eyebrowRef.current, { opacity: 0, y: 14, duration: 0.6, ease: "power2.out" }, 0.2)
+      .from(subRef.current, { opacity: 0, y: 18, duration: 0.9, ease: "power2.out" }, 1.0)
+      .from(ctaRef.current, { opacity: 0, y: 14, duration: 0.7, ease: "power2.out" }, 1.4);
 
     // Intro scene spin — runs over the SAME duration as this text intro, so the
     // cosmos finishes turning exactly when the text has landed. Full speed
@@ -144,11 +131,7 @@ const Hero = () => {
 
   return (
     <div
-      className={clsx(
-        "home-hero",
-        "relative min-h-screen overflow-hidden",
-        "bg-rich-black"
-      )}
+      className={clsx("home-hero", "relative min-h-screen overflow-hidden", "bg-rich-black")}
       ref={containerRef}
     >
       {/* Full-bleed unified cosmos (starfield + star + Saturn), behind content.
@@ -158,11 +141,8 @@ const Hero = () => {
       </div>
 
       {/* Logo, top-left */}
-      <div
-        className="absolute top-6 left-6 z-10 pointer-events-auto"
-        ref={logoRef}
-      >
-        <SunriseLogo width={56} height={48} className="w-10 sm:w-12 h-auto" />
+      <div className="pointer-events-auto absolute top-6 left-6 z-10" ref={logoRef}>
+        <SunriseLogo width={56} height={48} className="h-auto w-10 sm:w-12" />
       </div>
 
       {/* Content overlay — pointer-events-none so drags reach the space;
@@ -170,25 +150,22 @@ const Hero = () => {
       <section
         className={clsx(
           "home-hero__section",
-          "relative z-10 pointer-events-none",
-          "w-11/12 mx-auto min-h-screen",
+          "pointer-events-none relative z-10",
+          "mx-auto min-h-screen w-11/12",
           "flex flex-col items-center justify-end text-center",
-          "pb-[10vh]"
+          "pb-[10vh]",
         )}
       >
         <div
           className={clsx(
             "home-hero__content",
             "flex flex-col items-center text-center",
-            "px-4 select-none"
+            "px-4 select-none",
           )}
           ref={contentRef}
         >
           <p
-            className={clsx(
-              "home-hero__eyebrow",
-              "text-sm sm:text-base text-white/55 mb-4"
-            )}
+            className={clsx("home-hero__eyebrow", "mb-4 text-sm text-white/55 sm:text-base")}
             ref={eyebrowRef}
           >
             {HERO.eyebrow}
@@ -205,22 +182,17 @@ const Hero = () => {
           <p
             className={clsx(
               "home-hero__intro",
-              "text-white/65 font-light",
+              "font-light text-white/65",
               "text-base sm:text-lg md:text-xl",
-              "max-w-xl mt-6"
+              "mt-6 max-w-xl",
             )}
             ref={subRef}
           >
             {HERO.intro}
           </p>
 
-          <div className="mt-8 pointer-events-auto" ref={ctaRef}>
-            <Button
-              label={HERO.cta}
-              variant="outline"
-              size="large"
-              onClick={handleWander}
-            />
+          <div className="pointer-events-auto mt-8" ref={ctaRef}>
+            <Button label={HERO.cta} variant="outline" size="large" onClick={handleWander} />
           </div>
         </div>
       </section>
@@ -233,10 +205,10 @@ const Hero = () => {
           "home-about__reveal",
           reduced
             ? "relative z-20 min-h-screen"
-            : "absolute inset-0 z-20 opacity-0 pointer-events-none",
+            : "pointer-events-none absolute inset-0 z-20 opacity-0",
           "flex flex-col items-center justify-center text-center",
           // Phones: clear of the story title (left) and the timeline (right).
-          "px-12 sm:px-6"
+          "px-12 sm:px-6",
         )}
       >
         <DisplayTitle
@@ -257,8 +229,8 @@ const Hero = () => {
             ref={aboutPara1Ref}
             className={clsx(
               "home-about__body",
-              "text-white font-light",
-              "text-base sm:text-lg md:text-xl leading-relaxed sm:leading-loose"
+              "font-light text-white",
+              "text-base leading-relaxed sm:text-lg sm:leading-loose md:text-xl",
             )}
           >
             {ABOUT.paragraphs[0]}
@@ -267,8 +239,8 @@ const Hero = () => {
             ref={aboutPara2Ref}
             className={clsx(
               "home-about__body",
-              "text-white font-light",
-              "text-base sm:text-lg md:text-xl leading-relaxed sm:leading-loose"
+              "font-light text-white",
+              "text-base leading-relaxed sm:text-lg sm:leading-loose md:text-xl",
             )}
           >
             {ABOUT.paragraphs[1]}

@@ -41,7 +41,7 @@ const SceneLabel = ({
     aria-haspopup="dialog"
     onPointerMove={pointerLight}
     className={clsx(
-      "glass liquid tap-target group/label inline-flex items-center gap-2 whitespace-nowrap rounded-full py-1.75 pr-3 pl-2.5 text-xs font-light tracking-wide hover:text-white focus-visible:text-white max-sm:pr-2.75 max-sm:pl-2.25 max-sm:text-2xs",
+      "group/label liquid tap-target inline-flex items-center gap-2 rounded-full glass py-1.75 pr-3 pl-2.5 text-xs font-light tracking-wide whitespace-nowrap hover:text-white focus-visible:text-white max-sm:pr-2.75 max-sm:pl-2.25 max-sm:text-2xs",
       "hover:scale-none focus-visible:scale-none active:scale-none",
       TONE[tone],
       className,

@@ -6,7 +6,8 @@ import { LAB } from "#/components/three.js/voyager/config";
 import type { StorySubtitle, SubtitlePlacement } from "./subtitles.types";
 
 const jp = (x: number) => x * JOURNEY.journeyEnd; // journey progress (the star → About block) → mp
-const labMp = (lab: number) => JOURNEY.earthDwellEnd + lab * (JOURNEY.galaxyStart - JOURNEY.earthDwellEnd); // Lab progress → mp
+const labMp = (lab: number) =>
+  JOURNEY.earthDwellEnd + lab * (JOURNEY.galaxyStart - JOURNEY.earthDwellEnd); // Lab progress → mp
 
 /** Where the subtitles sit, unless a line has its own `placement`. */
 export const SUBTITLE_PLACEMENT: SubtitlePlacement = "bottom-left";

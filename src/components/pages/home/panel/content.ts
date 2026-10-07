@@ -1,5 +1,9 @@
 import { Camera, FlaskConical, MemoryStick, Video } from "lucide-react";
-import { PHOTO_LOCATIONS, type MediaItem, type PhotoLocation } from "#/components/three.js/earth/data";
+import {
+  PHOTO_LOCATIONS,
+  type MediaItem,
+  type PhotoLocation,
+} from "#/components/three.js/earth/data";
 import { EXPERIMENTS, LAB_PANEL } from "#/components/three.js/voyager/data";
 import type { PanelContent } from "#/stores/usePanelStore";
 import type { PanelHeaderModel, PanelTag } from "./panel.types";

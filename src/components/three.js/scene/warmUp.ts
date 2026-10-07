@@ -1,4 +1,12 @@
-import { WebGLRenderTarget, type BufferGeometry, type Camera, type Mesh, type Object3D, type Scene, type WebGLRenderer } from "three";
+import {
+  WebGLRenderTarget,
+  type BufferGeometry,
+  type Camera,
+  type Mesh,
+  type Object3D,
+  type Scene,
+  type WebGLRenderer,
+} from "three";
 
 /**
  * Background shader compiles (P27-78). A shader compiled on the frame it first draws

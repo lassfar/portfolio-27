@@ -17,8 +17,14 @@ const meta = {
     ),
   ],
   beforeEach: () => {
-    usePanelStore.setState({ content: { kind: "place", id: "london" }, view: "side", photo: null, opened: true });
-    return () => usePanelStore.setState({ content: null, view: "side", photo: null, opened: false });
+    usePanelStore.setState({
+      content: { kind: "place", id: "london" },
+      view: "side",
+      photo: null,
+      opened: true,
+    });
+    return () =>
+      usePanelStore.setState({ content: null, view: "side", photo: null, opened: false });
   },
   argTypes: { view: { control: "inline-radio", options: PANEL_VIEWS } },
   args: { view: "side" },

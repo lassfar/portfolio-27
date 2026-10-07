@@ -45,7 +45,12 @@ export const WithIcon: Story = {
 
 /** `external`: another site, in a new tab — a small ↗ says so, and screen readers hear it. */
 export const External: Story = {
-  args: { children: "GitHub", href: "https://github.com/lassfar", icon: SITE_ICONS.GitHub, external: true },
+  args: {
+    children: "GitHub",
+    href: "https://github.com/lassfar",
+    icon: SITE_ICONS.GitHub,
+    external: true,
+  },
   play: async ({ canvas }: Context) => {
     const link = canvas.getByRole("link", { name: "GitHub (opens in a new tab)" });
     await expect(link).toHaveAttribute("target", "_blank");
@@ -67,6 +72,8 @@ export const AsButton: Story = {
 export const Variants: Story = {
   parameters: { controls: { exclude: ["variant"] } },
   render: (args: TextLinkProps) => (
-    <Gallery values={TEXT_LINK_VARIANTS}>{(variant) => <TextLink {...args} variant={variant} />}</Gallery>
+    <Gallery values={TEXT_LINK_VARIANTS}>
+      {(variant) => <TextLink {...args} variant={variant} />}
+    </Gallery>
   ),
 };

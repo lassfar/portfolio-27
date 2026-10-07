@@ -29,6 +29,9 @@ export const Default: Story = {
 export const Current: Story = {
   args: { current: true },
   play: async ({ canvas }) => {
-    await expect(canvas.getByRole("button", { name: "London" })).toHaveAttribute("aria-current", "true");
+    await expect(canvas.getByRole("button", { name: "London" })).toHaveAttribute(
+      "aria-current",
+      "true",
+    );
   },
 };

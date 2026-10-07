@@ -20,7 +20,7 @@ export function latLngToVector3(
   latDeg: number,
   lngDeg: number,
   r: number,
-  target = new Vector3()
+  target = new Vector3(),
 ): Vector3 {
   const phi = latDeg * DEG;
   const lambda = lngDeg * DEG;
@@ -28,7 +28,7 @@ export function latLngToVector3(
   return target.set(
     r * cosPhi * Math.cos(lambda),
     r * Math.sin(phi),
-    -r * cosPhi * Math.sin(lambda)
+    -r * cosPhi * Math.sin(lambda),
   );
 }
 

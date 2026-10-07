@@ -31,9 +31,7 @@ const useTextsWritingMotion = <T extends HTMLElement>({
 }: Props<T>) => {
   useGSAP(
     (_, contextSafe) => {
-      const targets = elements
-        .map((e) => e.ref.current)
-        .filter((el): el is T => el !== null);
+      const targets = elements.map((e) => e.ref.current).filter((el): el is T => el !== null);
       if (!targets.length || !contextSafe) return;
 
       const splitTexts: SplitText[] = [];
@@ -42,9 +40,7 @@ const useTextsWritingMotion = <T extends HTMLElement>({
       const play = contextSafe(() => {
         if (cancelled) return;
         gsap.set(targets, { autoAlpha: 1 });
-        const timeline = gsap.timeline(
-          scrollTrigger ? { scrollTrigger } : undefined
-        );
+        const timeline = gsap.timeline(scrollTrigger ? { scrollTrigger } : undefined);
 
         const vars: gsap.TweenVars = {
           opacity: 0,
@@ -76,13 +72,9 @@ const useTextsWritingMotion = <T extends HTMLElement>({
       // meanwhile; after FONT_WAIT_MS it plays anyway.
       gsap.set(targets, { autoAlpha: 0 });
       const fontsIn = Promise.all(
-        targets.map((el) =>
-          document.fonts?.load(`1em ${getComputedStyle(el).fontFamily}`)
-        )
+        targets.map((el) => document.fonts?.load(`1em ${getComputedStyle(el).fontFamily}`)),
       );
-      const timeout = new Promise((resolve) =>
-        window.setTimeout(resolve, FONT_WAIT_MS)
-      );
+      const timeout = new Promise((resolve) => window.setTimeout(resolve, FONT_WAIT_MS));
       void Promise.race([fontsIn, timeout]).then(play, play);
 
       return () => {
@@ -90,7 +82,7 @@ const useTextsWritingMotion = <T extends HTMLElement>({
         splitTexts.forEach((split) => split.revert());
       };
     },
-    { ...dependecies }
+    { ...dependecies },
   );
 };
 

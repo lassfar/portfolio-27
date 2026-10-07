@@ -22,7 +22,8 @@ describe("the portrait fit", () => {
 
   it("never steps closer, and needs nothing for a subject that already fits", () => {
     expect(portraitFit(0.5, 0.4)).toBe(1);
-    for (const aspect of [0.4, 0.6, 0.75, 0.9, 0.99]) expect(portraitFit(aspect, 1.2)).toBeGreaterThanOrEqual(1);
+    for (const aspect of [0.4, 0.6, 0.75, 0.9, 0.99])
+      expect(portraitFit(aspect, 1.2)).toBeGreaterThanOrEqual(1);
   });
 
   it("eases in as the screen turns, with no jump at square", () => {

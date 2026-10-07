@@ -13,7 +13,10 @@ const fmt = (v: number) => String(Math.round(v * 10) / 10);
  * stroke is also reversed, so it still draws from the left — like the text above it.
  * Expects the shapes' path form: `M x y` then `C x y, x y, x y` curves.
  */
-export function orientPath({ viewBox, d }: Pick<SwashShape, "viewBox" | "d">, { flipX, flipY }: SwashFlip): string {
+export function orientPath(
+  { viewBox, d }: Pick<SwashShape, "viewBox" | "d">,
+  { flipX, flipY }: SwashFlip,
+): string {
   if (!flipX && !flipY) return d;
   const [, , width, height] = viewBox.split(" ").map(Number);
   const n = (d.match(/-?\d*\.?\d+/g) ?? []).map(Number);

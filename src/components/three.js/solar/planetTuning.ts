@@ -1,6 +1,14 @@
 import { Object3D } from "three";
 import { create } from "zustand";
-import { ASTEROIDS, MOONS, PLANET_LOD, PLANET_STYLE, PLANETS, SATURN_LOOK, SOLAR_MOTION } from "./config";
+import {
+  ASTEROIDS,
+  MOONS,
+  PLANET_LOD,
+  PLANET_STYLE,
+  PLANETS,
+  SATURN_LOOK,
+  SOLAR_MOTION,
+} from "./config";
 
 /**
  * Live-tuning plumbing for the planets, moons and asteroid belt (used by the dev
@@ -84,5 +92,9 @@ export function resetPlanetTuning() {
 
 /** The current values as JSON — paste them back to bake them into `solar/config.ts`. */
 export function planetTuningSnapshot(): string {
-  return JSON.stringify({ SOLAR_MOTION, PLANET_STYLE, PLANET_LOD, SATURN_LOOK, PLANETS, MOONS, ASTEROIDS }, null, 2);
+  return JSON.stringify(
+    { SOLAR_MOTION, PLANET_STYLE, PLANET_LOD, SATURN_LOOK, PLANETS, MOONS, ASTEROIDS },
+    null,
+    2,
+  );
 }

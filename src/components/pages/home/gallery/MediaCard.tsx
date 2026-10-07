@@ -39,7 +39,7 @@ const MediaCard = ({ item, index, name, size, className, style, onOpen }: MediaC
       <MediaThumb item={item} index={index} />
     </span>
     {item.type === "video" && (
-      <span className="glass absolute top-1/2 left-1/2 z-2 grid size-12 -translate-1/2 place-items-center rounded-full text-white">
+      <span className="absolute top-1/2 left-1/2 z-2 grid size-12 -translate-1/2 place-items-center rounded-full glass text-white">
         <Icon icon={Play} size={16} filled className="ml-0.5" />
       </span>
     )}

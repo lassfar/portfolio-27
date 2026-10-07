@@ -49,7 +49,10 @@ const NavAssistantView = () => {
     setFrozen(null);
     onFolded.current();
   });
-  const { phase, folded } = useGlideHide({ root, lift, orb, gliding, visible, reveal: button }, contextSafe);
+  const { phase, folded } = useGlideHide(
+    { root, lift, orb, gliding, visible, reveal: button },
+    contextSafe,
+  );
   onFolded.current = folded;
   const shown = phase === "shown";
   const hover = useTimeout();
@@ -115,7 +118,12 @@ const NavAssistantView = () => {
   return (
     <div
       ref={root}
-      className={clsx("nav-assistant", visible && "is-visible", open && "is-open", !shown && "is-gliding")}
+      className={clsx(
+        "nav-assistant",
+        visible && "is-visible",
+        open && "is-open",
+        !shown && "is-gliding",
+      )}
       style={{ "--na-orb": `${PHASE_NAV.orbSize}px` } as CSSProperties}
       onPointerEnter={onPointerEnter}
       onPointerLeave={onPointerLeave}

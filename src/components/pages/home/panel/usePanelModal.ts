@@ -44,7 +44,8 @@ export function usePanelModal(
     const was = before.current;
     before.current = { open, photo, key };
     if (photo !== null && was.photo === null) focus(viewer.querySelector("[data-autofocus]"));
-    else if (open && photo === null && was.photo !== null) focus(panel.querySelector(`[data-photo="${was.photo}"]`));
+    else if (open && photo === null && was.photo !== null)
+      focus(panel.querySelector(`[data-photo="${was.photo}"]`));
     else if (open && !was.open) focus(panel.querySelector("[data-autofocus]"));
     else if (!open && was.open && was.key) {
       const label = document.querySelector<HTMLElement>(`[data-scene-label="${was.key}"]`);

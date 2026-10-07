@@ -12,7 +12,13 @@ const PLACEHOLDER_LIGHT = [
 ] as const;
 
 /** The placeholders' shapes in a grid (a real photo has its own, or its `aspect`). */
-export const PLACEHOLDER_RATIO = ["aspect-4/5", "aspect-square", "aspect-3/4", "aspect-4/3", "aspect-5/6"] as const;
+export const PLACEHOLDER_RATIO = [
+  "aspect-4/5",
+  "aspect-square",
+  "aspect-3/4",
+  "aspect-4/3",
+  "aspect-5/6",
+] as const;
 
 /**
  * A photo's stand-in until its file exists (the gallery's media are placeholders for now):
@@ -25,7 +31,7 @@ export const MediaPlaceholder = ({ index = 0 }: { index?: number }) => (
       PLACEHOLDER_LIGHT[index % PLACEHOLDER_LIGHT.length],
     )}
   >
-    <span className="grain absolute inset-0" />
+    <span className="absolute inset-0 grain" />
   </span>
 );
 
@@ -63,7 +69,15 @@ export function MediaThumb({ item, index }: { item: MediaItem; index: number }) 
  * stops when the viewer closes: `playing`). Its placeholder fits the viewer's size
  * container at 4:3.
  */
-export function MediaFull({ item, index, playing }: { item: MediaItem; index: number; playing: boolean }) {
+export function MediaFull({
+  item,
+  index,
+  playing,
+}: {
+  item: MediaItem;
+  index: number;
+  playing: boolean;
+}) {
   const [failed, setFailed] = useState(false);
   const video = useRef<HTMLVideoElement>(null);
   useEffect(() => {

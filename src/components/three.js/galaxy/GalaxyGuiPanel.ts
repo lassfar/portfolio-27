@@ -97,7 +97,10 @@ function buildPanel(gui: GUI) {
   fSpace.add(SPACE, "showStars").name("far stars");
   fSpace.add(SPACE, "starBrightness", 0, 3, 0.05).name("far stars brightness");
   fSpace.add(SPACE, "starSize", 0.5, 3, 0.05).name("far stars size (px)");
-  fSpace.add(SPACE, "starCount", 0, 40000, 1000).name("far stars count").onFinishChange(rebuildGalaxy);
+  fSpace
+    .add(SPACE, "starCount", 0, 40000, 1000)
+    .name("far stars count")
+    .onFinishChange(rebuildGalaxy);
   fSpace.add(SPACE, "showGalaxies").name("distant galaxies");
   fSpace.add(SPACE, "galaxyBrightness", 0, 3, 0.05).name("distant galaxies brightness");
   fSpace.add(SPACE, "galaxySize", 0.3, 3, 0.05).name("distant galaxies size");
@@ -122,7 +125,10 @@ function buildPanel(gui: GUI) {
   fShape.add(G, "pitchDeg", 8, 35, 1).name("armTightness").onFinishChange(rebuildGalaxy);
   fShape.add(G, "armWidth", 0.4, 2, 0.05).onFinishChange(rebuildGalaxy);
   fShape.add(G, "clumpiness", 0, 1, 0.05).name("knotty arms").onFinishChange(rebuildGalaxy);
-  fShape.add(G, "interArmDim", 0.1, 1, 0.05).name("between-arm brightness").onFinishChange(rebuildGalaxy);
+  fShape
+    .add(G, "interArmDim", 0.1, 1, 0.05)
+    .name("between-arm brightness")
+    .onFinishChange(rebuildGalaxy);
   fShape.add(G, "tBlue", 0.25, 0.75, 0.01).name("blue/peach balance").onFinishChange(rebuildGalaxy);
   fShape.add(G, "bulgeRadius", 0.8, 3.5, 0.1).onFinishChange(rebuildGalaxy);
   fShape
@@ -137,17 +143,16 @@ function buildPanel(gui: GUI) {
   fShape.add(G, "dustBreak", 0, 0.8, 0.01).name("dust gaps").onFinishChange(rebuildGalaxy);
   fShape.add(G, "featherRate", 0, 0.2, 0.005).name("dust feathers").onFinishChange(rebuildGalaxy);
   fShape.add(G, "seed", 1, 9999, 1).onFinishChange(rebuildGalaxy);
-  fShape
-    .add(
-      {
-        regenerate: () => {
-          G.seed = Math.floor(Math.random() * 9999) + 1;
-          refresh();
-          rebuildGalaxy();
-        },
+  fShape.add(
+    {
+      regenerate: () => {
+        G.seed = Math.floor(Math.random() * 9999) + 1;
+        refresh();
+        rebuildGalaxy();
       },
-      "regenerate"
-    );
+    },
+    "regenerate",
+  );
 
   const fTime = gui.addFolder("Scroll timing (0 = the probe → 1 = full galaxy)");
   fTime.add(G, "revealStart", 0, 1, 0.01).name("galaxy fades in from");

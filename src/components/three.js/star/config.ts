@@ -202,14 +202,31 @@ const SCROLL = (() => {
   const voyageEnd = craftFadeEnd + 2 * FLIGHT; // the fly-out + the dive (VOYAGE.flyoutEnd 0.5): the Earth has fully arrived
   const earthDwellEnd = voyageEnd + PAUSES.earth;
   const galaxyStart = earthDwellEnd + LAB_TRIP + PAUSES.probe; // the Lab: the trip + the close-up
-  const galaxyEnd = galaxyStart + GALAXY_PACE.toSolar + GALAXY_PACE.solarHold + GALAXY_PACE.toGalaxy;
+  const galaxyEnd =
+    galaxyStart + GALAXY_PACE.toSolar + GALAXY_PACE.solarHold + GALAXY_PACE.toGalaxy;
   const contactStart = galaxyEnd + PAUSES.galaxy;
   const contactEnd = contactStart + 160; // the form reveal
   const pinEnd = contactEnd + PAUSES.contact;
   return {
-    starEnd, assembleStart, assembleEnd, contentExit, revealStart, fillStart, exitStart, journeyEnd,
-    craftCoverStart, constellationEnd, craftFadeStart, craftFadeEnd, voyageEnd, earthDwellEnd,
-    galaxyStart, galaxyEnd, contactStart, contactEnd, pinEnd,
+    starEnd,
+    assembleStart,
+    assembleEnd,
+    contentExit,
+    revealStart,
+    fillStart,
+    exitStart,
+    journeyEnd,
+    craftCoverStart,
+    constellationEnd,
+    craftFadeStart,
+    craftFadeEnd,
+    voyageEnd,
+    earthDwellEnd,
+    galaxyStart,
+    galaxyEnd,
+    contactStart,
+    contactEnd,
+    pinEnd,
   };
 })();
 /** Master-progress fraction (mp) of an absolute scroll position (% of the viewport height). */
@@ -349,8 +366,7 @@ export const BURST = {
 // The vertical world-space height the camera sees at the star's resting
 // distance. Depends only on the (vertical) FOV and the camera distance — NOT on
 // aspect ratio — so a star scaled to this height fills 100vh on any screen.
-const VIEWPORT_WORLD_HEIGHT =
-  2 * CAMERA.z * Math.tan((CAMERA.fov * Math.PI) / 180 / 2);
+const VIEWPORT_WORLD_HEIGHT = 2 * CAMERA.z * Math.tan((CAMERA.fov * Math.PI) / 180 / 2);
 
 /**
  * Effective visible radius of the nebula in its own local units (i.e. before

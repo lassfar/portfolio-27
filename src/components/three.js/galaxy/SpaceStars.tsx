@@ -114,7 +114,7 @@ const SpaceStars = () => {
         vertexShader: SPACE_STAR_VERT,
         fragmentShader: SPACE_STAR_FRAG,
       }),
-    []
+    [],
   );
   useEffect(() => () => material.dispose(), [material]);
 
@@ -142,13 +142,7 @@ const SpaceStars = () => {
   });
 
   return (
-    <points
-      ref={ref}
-      material={material}
-      renderOrder={-3}
-      frustumCulled={false}
-      visible={false}
-    />
+    <points ref={ref} material={material} renderOrder={-3} frustumCulled={false} visible={false} />
   );
 };
 

@@ -7,9 +7,7 @@ type HalfSunShapeProps = {
 };
 
 const HalfSunShape = ({ className, ref }: HalfSunShapeProps) => {
-  return (
-    <div className={clsx("bg-peach rounded-t-full", className)} ref={ref} />
-  );
+  return <div className={clsx("rounded-t-full bg-peach", className)} ref={ref} />;
 };
 
 export default HalfSunShape;

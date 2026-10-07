@@ -65,7 +65,7 @@ const GalaxySparkles = ({ animate = true }: { animate?: boolean }) => {
     }
     // …and all around the rest of the sky (outside the end view).
     const around = mulberry32(11);
-    for (let i = 0, n = SP.count * AROUND_PER_VIEW; i < n; ) {
+    for (let i = 0, n = SP.count * AROUND_PER_VIEW; i < n;) {
       const u = around() * 2 - 1;
       const th = around() * Math.PI * 2;
       const s = Math.sqrt(1 - u * u);
@@ -105,7 +105,7 @@ const GalaxySparkles = ({ animate = true }: { animate?: boolean }) => {
         vertexShader: SPARKLE_VERT,
         fragmentShader: SPARKLE_FRAG,
       }),
-    []
+    [],
   );
   useEffect(() => () => material.dispose(), [material]);
 
@@ -130,13 +130,7 @@ const GalaxySparkles = ({ animate = true }: { animate?: boolean }) => {
   });
 
   return (
-    <points
-      ref={ref}
-      material={material}
-      renderOrder={10}
-      frustumCulled={false}
-      visible={false}
-    />
+    <points ref={ref} material={material} renderOrder={10} frustumCulled={false} visible={false} />
   );
 };
 

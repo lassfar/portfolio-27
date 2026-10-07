@@ -51,7 +51,9 @@ const Lightbox = ({ ref }: { ref?: Ref<HTMLDivElement> }) => {
       className={clsx(
         "fixed inset-0 z-60 flex flex-col items-center gap-6 bg-black/80 px-4 pt-20 pb-24 backdrop-blur-lg duration-350 ease-out motion-reduce:transition-none sm:px-30 sm:pt-22 sm:pb-10",
         // Shown at once (focus can move in), hidden only once faded out.
-        open ? "visible opacity-100 transition-opacity" : "invisible opacity-0 transition-[opacity,visibility]",
+        open
+          ? "visible opacity-100 transition-opacity"
+          : "invisible opacity-0 transition-[opacity,visibility]",
       )}
     >
       {item && index !== null && (
@@ -70,7 +72,12 @@ const Lightbox = ({ ref }: { ref?: Ref<HTMLDivElement> }) => {
             </>
           )}
           <div className="container-size grid min-h-0 w-full flex-1 place-items-center">
-            <MediaFull key={`${shownPlace?.id}-${index}`} item={item} index={index} playing={open} />
+            <MediaFull
+              key={`${shownPlace?.id}-${index}`}
+              item={item}
+              index={index}
+              playing={open}
+            />
           </div>
           <p className="flex max-w-full items-center gap-4 text-xs text-gray-slate/60 tabular-nums">
             <span className="shrink-0 tracking-eyebrow-sm text-peach">

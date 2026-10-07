@@ -11,10 +11,7 @@ import { STEP_BACK_IN_FULL_VIEW } from "#/components/pages/home/panel/layout";
 import { STORY_CHAPTERS, TIMELINE } from "./config";
 import { chapterAt, chapterPositions, fillAt, fillClip, railLayout } from "./layout";
 import StoryTimelineRail from "./StoryTimelineRail";
-import type {
-  StoryTimelineRest,
-  StoryTimelineToast,
-} from "./StoryTimeline.types";
+import type { StoryTimelineRest, StoryTimelineToast } from "./StoryTimeline.types";
 
 /**
  * The story timeline, live: it follows the pinned journey's scroll (useJourneyScroll).
@@ -48,8 +45,7 @@ const StoryTimeline = () => {
   useTimelineTuning((s) => s.rev); // re-render when the dev panel edits TIMELINE in place
   const { minGap, railLength } = TIMELINE;
   const { horizontal } = railLayout(TIMELINE);
-  const railPx =
-    ((horizontal ? viewport.width : viewport.height) * railLength) / 100;
+  const railPx = ((horizontal ? viewport.width : viewport.height) * railLength) / 100;
   const positions = useMemo(
     () => chapterPositions(STORY_CHAPTERS, minGap, railPx),
     [minGap, railPx],
@@ -88,10 +84,7 @@ const StoryTimeline = () => {
       setRest("awake");
       window.clearTimeout(dimTimer);
       window.clearTimeout(hideTimer);
-      dimTimer = window.setTimeout(
-        () => setRest("dim"),
-        TIMELINE.dimAfter * 1000,
-      );
+      dimTimer = window.setTimeout(() => setRest("dim"), TIMELINE.dimAfter * 1000);
       if (TIMELINE.hideAfter > 0) {
         hideTimer = window.setTimeout(
           () => setRest("hidden"),
@@ -139,15 +132,15 @@ const StoryTimeline = () => {
   return createPortal(
     <div className={STEP_BACK_IN_FULL_VIEW}>
       <StoryTimelineRail
-      chapters={STORY_CHAPTERS}
-      positions={positions}
-      current={current}
-      fillRef={fillRef}
-      shown={shown}
-      rest={rest}
-      phone={phone}
-      toast={toast}
-      onSelect={glideTo}
+        chapters={STORY_CHAPTERS}
+        positions={positions}
+        current={current}
+        fillRef={fillRef}
+        shown={shown}
+        rest={rest}
+        phone={phone}
+        toast={toast}
+        onSelect={glideTo}
       />
     </div>,
     document.body,

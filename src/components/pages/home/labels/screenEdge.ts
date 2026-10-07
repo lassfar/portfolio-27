@@ -18,7 +18,13 @@ export const LABEL_EDGE = 10;
  * edges) — but never off its anchor (`anchorX`, the point it names): a point that
  * leaves the screen takes its label with it, rather than leaving it stuck at the edge.
  */
-export function keepOnScreen(left: number, w: number, anchorX: number, vw: number, margin = LABEL_EDGE): number {
+export function keepOnScreen(
+  left: number,
+  w: number,
+  anchorX: number,
+  vw: number,
+  margin = LABEL_EDGE,
+): number {
   const inside = Math.min(Math.max(left, margin), vw - w - margin);
   return Math.min(Math.max(inside, anchorX - w), anchorX);
 }

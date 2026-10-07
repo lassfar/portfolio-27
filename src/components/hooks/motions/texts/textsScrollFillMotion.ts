@@ -43,7 +43,7 @@ type Options = {
 export function addTextsScrollFill(
   timeline: gsap.core.Timeline,
   elements: ScrollFillElement[],
-  { at, duration }: Options
+  { at, duration }: Options,
 ): SplitText[] {
   const splits = elements
     .map((el) =>
@@ -51,13 +51,12 @@ export function addTextsScrollFill(
         ? new SplitText(el.ref.current, {
             type: el.type === "words" ? "words" : "chars",
           })
-        : null
+        : null,
     )
     .filter((s): s is SplitText => s !== null);
 
   const reduce =
-    typeof window !== "undefined" &&
-    window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    typeof window !== "undefined" && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
   if (reduce) return splits; // natural colour, no scroll fill
 
   const totalWeight = elements.reduce((sum, el) => sum + (el.weight ?? 1), 0);
@@ -77,7 +76,7 @@ export function addTextsScrollFill(
         stagger: { amount: segment * 0.55 },
       },
       // First element starts at `at`; the rest cascade right after the previous.
-      i === 0 ? at : ">"
+      i === 0 ? at : ">",
     );
   });
 

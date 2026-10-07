@@ -25,7 +25,13 @@ function frame(ax: number, ay: number, az: number, sun: Vec3) {
 }
 
 /** The probe's orientation: its model's +Y (the shield) toward the Sun. */
-export function parkerQuaternion(out: Quaternion, ax: number, ay: number, az: number, sun: Vec3): Quaternion {
+export function parkerQuaternion(
+  out: Quaternion,
+  ax: number,
+  ay: number,
+  az: number,
+  sun: Vec3,
+): Quaternion {
   const f = frame(ax, ay, az, sun);
   return out.setFromRotationMatrix(_m.makeBasis(f.x, f.y, f.z));
 }
@@ -40,7 +46,13 @@ export function parkerSunDir(out: Vector3, ax: number, ay: number, az: number, s
  * by PARKER_CAM.side toward its front face (the high-gain antenna + the memory card),
  * a little above — so the Sun blazes behind the probe, off-centre, the 3/4 view.
  */
-export function parkerCloseUpDir(out: Vector3, ax: number, ay: number, az: number, sun: Vec3): Vector3 {
+export function parkerCloseUpDir(
+  out: Vector3,
+  ax: number,
+  ay: number,
+  az: number,
+  sun: Vec3,
+): Vector3 {
   const f = frame(ax, ay, az, sun);
   const s = Math.sin(PARKER_CAM.side);
   const c = Math.cos(PARKER_CAM.side);
@@ -64,7 +76,13 @@ export const parkerOrbit = { yaw: 0, pitch: 0 };
  * The close-up camera's direction from the probe, turned by the drag orbit
  * (parkerOrbit) — its elevation kept short of straight above / below.
  */
-export function parkerViewDir(out: Vector3, ax: number, ay: number, az: number, sun: Vec3): Vector3 {
+export function parkerViewDir(
+  out: Vector3,
+  ax: number,
+  ay: number,
+  az: number,
+  sun: Vec3,
+): Vector3 {
   parkerCloseUpDir(out, ax, ay, az, sun).applyAxisAngle(UP, parkerOrbit.yaw);
   const elev = Math.asin(Math.max(-1, Math.min(1, out.y)));
   const lifted = Math.max(-1.25, Math.min(1.25, elev + parkerOrbit.pitch));

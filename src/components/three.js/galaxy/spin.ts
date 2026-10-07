@@ -55,7 +55,7 @@ export function flyingSunPos(): [number, number, number] {
   // Sun's in-plane arm offset (R along local +X) revolved about the disc normal (local
   // +Y) by the fly angle, then rotated into world by the (live) disc tilt.
   _v.set(R * Math.cos(a), 0, -R * Math.sin(a)).applyEuler(
-    _tiltEuler.set(GALAXY_TILT[0], GALAXY_TILT[1], GALAXY_TILT[2])
+    _tiltEuler.set(GALAXY_TILT[0], GALAXY_TILT[1], GALAXY_TILT[2]),
   );
   _tmp[0] = GALAXY_CENTER[0] + _v.x;
   _tmp[1] = GALAXY_CENTER[1] + _v.y;
@@ -171,7 +171,7 @@ export function galaxyCenterPos(): [number, number, number] {
   const sy = sun[1];
   const sz = sun[2];
   _c.set(GALAXY_CENTER[0] - sx, GALAXY_CENTER[1] - sy, GALAXY_CENTER[2] - sz).applyQuaternion(
-    galaxyDrag
+    galaxyDrag,
   );
   _center[0] = sx + _c.x;
   _center[1] = sy + _c.y;

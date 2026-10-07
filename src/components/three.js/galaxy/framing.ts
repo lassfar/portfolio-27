@@ -63,7 +63,10 @@ export function frameGalaxy(camera: PerspectiveCamera, weight: number, distanceS
   let y1 = -Infinity;
   for (let i = 0; i < RIM_POINTS; i++) {
     const a = (i / RIM_POINTS) * Math.PI * 2;
-    _p.set(R * Math.cos(a), 0, R * Math.sin(a)).applyQuaternion(_disc).add(_center).project(endView);
+    _p.set(R * Math.cos(a), 0, R * Math.sin(a))
+      .applyQuaternion(_disc)
+      .add(_center)
+      .project(endView);
     x0 = Math.min(x0, _p.x);
     x1 = Math.max(x1, _p.x);
     y0 = Math.min(y0, _p.y);

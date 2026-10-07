@@ -30,7 +30,12 @@ type Props = {
 const BUILD_STEP = 2000;
 
 /** The shell's dots, as flat arrays (one entry per dot, ×3 for positions). */
-type ShellDots = { positions: Float32Array; scales: Float32Array; brights: Float32Array; seeds: Float32Array };
+type ShellDots = {
+  positions: Float32Array;
+  scales: Float32Array;
+  brights: Float32Array;
+  seeds: Float32Array;
+};
 
 const allocateShell = (count: number): ShellDots => ({
   positions: new Float32Array(count * 3),
@@ -122,7 +127,7 @@ const Sun = ({ animate = true }: Props) => {
       uRadius: { value: SUN.radius },
       uReveal: { value: 0 },
     }),
-    []
+    [],
   );
 
   const materials = useMemo(() => {
@@ -198,7 +203,13 @@ const Sun = ({ animate = true }: Props) => {
   // Far side → the old Sun's halo, glowing core + drifting corona → near side.
   return (
     <group>
-      <points ref={farRef} geometry={geometry ?? placeholder} material={materials.far} renderOrder={-4} frustumCulled={false} />
+      <points
+        ref={farRef}
+        geometry={geometry ?? placeholder}
+        material={materials.far}
+        renderOrder={-4}
+        frustumCulled={false}
+      />
       <SunCore
         count={isSmall ? SUN_CORE.countMobile : SUN_CORE.count}
         version={version}
@@ -214,7 +225,13 @@ const Sun = ({ animate = true }: Props) => {
         <sphereGeometry args={[1, 32, 16]} />
         <meshBasicMaterial colorWrite={false} transparent />
       </mesh>
-      <points ref={nearRef} geometry={geometry ?? placeholder} material={materials.near} renderOrder={-1} frustumCulled={false} />
+      <points
+        ref={nearRef}
+        geometry={geometry ?? placeholder}
+        material={materials.near}
+        renderOrder={-1}
+        frustumCulled={false}
+      />
     </group>
   );
 };

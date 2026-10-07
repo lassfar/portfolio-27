@@ -28,7 +28,7 @@ const IconButton = ({
     onPointerMove={pointerLight}
     className={clsx(
       BUTTON_BASE,
-      "glass liquid group/tip grid size-10 shrink-0 place-items-center rounded-full text-white/72 hover:text-peach focus-visible:text-peach",
+      "group/tip liquid grid size-10 shrink-0 place-items-center rounded-full glass text-white/72 hover:text-peach focus-visible:text-peach",
       className,
     )}
   >

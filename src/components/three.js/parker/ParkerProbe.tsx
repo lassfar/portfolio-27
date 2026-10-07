@@ -47,7 +47,7 @@ const TRUSS = Array.from({ length: 6 }, (_, i) => {
   const a = (i * Math.PI) / 3 + Math.PI / 6;
   return seg(
     [Math.sin(a) * P.truss.top, -P.shield.thickness / 2, Math.cos(a) * P.truss.top],
-    [Math.sin(a) * P.truss.bottom, P.bus.top, Math.cos(a) * P.truss.bottom]
+    [Math.sin(a) * P.truss.bottom, P.bus.top, Math.cos(a) * P.truss.bottom],
   );
 });
 
@@ -58,7 +58,7 @@ const WHIPS = Array.from({ length: 4 }, (_, i) => {
   const tip = P.whip.root + P.whip.length;
   return seg(
     [Math.sin(a) * P.whip.root, P.whip.y, Math.cos(a) * P.whip.root],
-    [Math.sin(a) * tip, P.whip.y, Math.cos(a) * tip]
+    [Math.sin(a) * tip, P.whip.y, Math.cos(a) * tip],
   );
 });
 
@@ -151,7 +151,10 @@ const ParkerProbe = () => {
       if (dragMode.current !== "probe" || !lock.allows(e)) return;
       orbitTarget.current.yaw -= dx * ROTATION.sensitivity;
       if (ROTATION.allowVerticalDrag) {
-        orbitTarget.current.pitch = Math.max(-1.2, Math.min(1.2, orbitTarget.current.pitch + dy * ROTATION.sensitivity));
+        orbitTarget.current.pitch = Math.max(
+          -1.2,
+          Math.min(1.2, orbitTarget.current.pitch + dy * ROTATION.sensitivity),
+        );
       }
     };
     const onUp = () => {
@@ -187,7 +190,7 @@ const ParkerProbe = () => {
         toneMapped: false,
         opacity: 0,
       }),
-    [glow]
+    [glow],
   );
 
   useFrame(() => {
@@ -219,11 +222,12 @@ const ParkerProbe = () => {
 
     // Its size on screen (the shield's width, CSS px) → the model or the marker.
     const fov = (camera as PerspectiveCamera).fov;
-    const pxPerRad = size.height / 2 / Math.tan(((fov * Math.PI) / 180) / 2);
+    const pxPerRad = size.height / 2 / Math.tan((fov * Math.PI) / 180 / 2);
     const px = ((2 * PARKER.shield.radius * METRE) / d) * pxPerRad;
     root.visible = px >= PARKER_VIEW.modelMinPx;
     const markerIn =
-      smoothstep(0, labAt(112), lab) * (1 - smoothstep(PARKER_CAM.markerOut[0], PARKER_CAM.markerOut[1], galaxy));
+      smoothstep(0, labAt(112), lab) *
+      (1 - smoothstep(PARKER_CAM.markerOut[0], PARKER_CAM.markerOut[1], galaxy));
     const markerOpacity =
       markerIn * (1 - smoothstep(PARKER_VIEW.markerFade[0], PARKER_VIEW.markerFade[1], px));
     marker.visible = markerOpacity > 0.001;
@@ -241,8 +245,7 @@ const ParkerProbe = () => {
     // Its label, with no gap between the two: its name while it's a dot or still small;
     // the memory card (clickable, it opens the Lab) once it's clearly recognisable, on
     // the way in and on the way back out (the finale's pull-out).
-    label.current =
-      markerIn < 0.5 ? "off" : px >= PARKER_VIEW.cardLabelPx ? "card" : "probe";
+    label.current = markerIn < 0.5 ? "off" : px >= PARKER_VIEW.cardLabelPx ? "card" : "probe";
   }, DRAW_PRIORITY);
 
   // Project the label's anchor once everything is placed, and lay it out in the same
@@ -359,7 +362,10 @@ const ParkerProbe = () => {
               <meshStandardMaterial color={c.light} metalness={0.5} roughness={0.45} />
             </mesh>
           ))}
-          <mesh position={[0, BUS_BOTTOM - P.boom.shortAntennaAt, 0]} rotation={[0, 0, Math.PI / 2]}>
+          <mesh
+            position={[0, BUS_BOTTOM - P.boom.shortAntennaAt, 0]}
+            rotation={[0, 0, Math.PI / 2]}
+          >
             <cylinderGeometry args={[0.008, 0.008, P.boom.shortAntenna, 6]} />
             <meshStandardMaterial color={c.niobium} metalness={0.8} roughness={0.3} />
           </mesh>
@@ -368,7 +374,12 @@ const ParkerProbe = () => {
           <group position={face(FRONT, 0.14, BUS_Y + 0.18)} rotation={[Math.PI / 2, 0, -FRONT]}>
             <mesh>
               <cylinderGeometry args={[P.hga.radius, 0.05, P.hga.depth, 28, 1, true]} />
-              <meshStandardMaterial color={c.light} metalness={0.4} roughness={0.5} side={DoubleSide} />
+              <meshStandardMaterial
+                color={c.light}
+                metalness={0.4}
+                roughness={0.5}
+                side={DoubleSide}
+              />
             </mesh>
           </group>
 
@@ -381,18 +392,23 @@ const ParkerProbe = () => {
               roughness={0.3}
               emissive={c.cardGlow}
               emissiveIntensity={0.6}
-             
             />
           </mesh>
 
           {/* WISPR — the camera, a small box in the shade. */}
-          <mesh position={face(FRONT + Math.PI * (2 / 3), 0.08, P.bus.top - 0.18)} rotation={[0, FRONT + Math.PI * (2 / 3), 0]}>
+          <mesh
+            position={face(FRONT + Math.PI * (2 / 3), 0.08, P.bus.top - 0.18)}
+            rotation={[0, FRONT + Math.PI * (2 / 3), 0]}
+          >
             <boxGeometry args={[0.3, 0.15, 0.16]} />
             <meshStandardMaterial color={c.light} metalness={0.5} roughness={0.45} />
           </mesh>
 
           {/* IS☉IS — an octagonal dome on the bus. */}
-          <mesh position={face(FRONT - Math.PI * (2 / 3), 0.1, P.bus.top - 0.2)} rotation={[Math.PI / 2, 0, -(FRONT - Math.PI * (2 / 3))]}>
+          <mesh
+            position={face(FRONT - Math.PI * (2 / 3), 0.1, P.bus.top - 0.2)}
+            rotation={[Math.PI / 2, 0, -(FRONT - Math.PI * (2 / 3))]}
+          >
             <cylinderGeometry args={[0.13, 0.15, 0.14, 8]} />
             <meshStandardMaterial color={c.light} metalness={0.45} roughness={0.5} />
           </mesh>

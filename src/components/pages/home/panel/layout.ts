@@ -25,7 +25,8 @@ export const COLUMN: Record<PanelView, string> = {
 };
 
 /** The content's swap (another place, or the other view): it fades out first (usePanelFrame). */
-export const SWAP = "transition-[opacity,translate] duration-240 ease-out motion-reduce:transition-none";
+export const SWAP =
+  "transition-[opacity,translate] duration-240 ease-out motion-reduce:transition-none";
 export const SWAPPING = "translate-y-2 opacity-0";
 
 /** The media (photos or experiments) under the header. */

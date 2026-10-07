@@ -49,10 +49,16 @@ describe("the panels' words", () => {
 
   it("head a place with its country and coordinates, and the Lab with Parker", () => {
     const london = PHOTO_LOCATIONS.find((l) => l.id === "london")!;
-    expect(placeHeader(london).eyebrow).toEqual({ place: "United Kingdom", detail: "51.51° N, 0.13° W" });
+    expect(placeHeader(london).eyebrow).toEqual({
+      place: "United Kingdom",
+      detail: "51.51° N, 0.13° W",
+    });
     expect(placeHeader(london).title).toBe("Back to *London*");
     expect(labHeader().eyebrow.place).toBe("Parker Solar Probe");
-    expect(labHeader().tags.map((t) => t.label)).toEqual(["3 experiments", "On Parker’s memory card"]);
+    expect(labHeader().tags.map((t) => t.label)).toEqual([
+      "3 experiments",
+      "On Parker’s memory card",
+    ]);
   });
 
   it("say on a place's label what it opens", () => {

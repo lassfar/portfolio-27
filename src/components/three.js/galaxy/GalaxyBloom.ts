@@ -50,7 +50,10 @@ export class GalaxyBloom {
   private readonly material: ShaderMaterial;
   private readonly quad: Mesh;
 
-  constructor(renderer: WebGLRenderer, { threshold, radius }: { threshold: number; radius: number }) {
+  constructor(
+    renderer: WebGLRenderer,
+    { threshold, radius }: { threshold: number; radius: number },
+  ) {
     this.material = new ShaderMaterial({
       depthTest: false,
       depthWrite: false,

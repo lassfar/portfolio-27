@@ -30,7 +30,9 @@ export const Side: Story = {
   play: async ({ canvas, userEvent, args }) => {
     await userEvent.click(canvas.getByRole("button", { name: "Previous place: Morocco" }));
     await expect(args.onPick).toHaveBeenCalledWith("morocco");
-    await userEvent.click(canvas.getByRole("button", { name: "Next place: New Forest — Brockenhurst" }));
+    await userEvent.click(
+      canvas.getByRole("button", { name: "Next place: New Forest — Brockenhurst" }),
+    );
     await expect(args.onPick).toHaveBeenLastCalledWith("brockenhurst");
   },
 };

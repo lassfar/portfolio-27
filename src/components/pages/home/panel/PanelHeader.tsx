@@ -28,7 +28,8 @@ const HEADER: Record<PanelView, HeaderSlots> = {
     title: "mt-3.5 max-w-[13ch] text-balance sm:mt-5",
     swash: "mt-0.5 w-45 sm:w-75",
     quote: "mt-4.5 max-w-[34ch] text-balance text-lg sm:mt-6 sm:text-quote",
-    longQuote: "mt-4.5 max-w-[46ch] text-balance text-base leading-relaxed sm:mt-6 sm:text-quote-long",
+    longQuote:
+      "mt-4.5 max-w-[46ch] text-balance text-base leading-relaxed sm:mt-6 sm:text-quote-long",
     tags: "mt-5 justify-center gap-2 sm:mt-7 sm:gap-2.5",
   },
   side: {
@@ -74,10 +75,16 @@ const PanelHeader = ({ view, model, titleId, children }: PanelHeaderProps) => {
       {model.blurb && (
         <p
           {...RISE}
-          className={clsx("font-light text-white/84", isLongQuote(model.blurb) ? slots.longQuote : slots.quote)}
+          className={clsx(
+            "font-light text-white/84",
+            isLongQuote(model.blurb) ? slots.longQuote : slots.quote,
+          )}
         >
           {/* The opening mark hangs a little low, like a printed quote (its own size: hence em). */}
-          <span aria-hidden="true" className="mr-1.5 align-[-0.38em] font-quote text-[2em] leading-0 text-peach">
+          <span
+            aria-hidden="true"
+            className="mr-1.5 align-[-0.38em] font-quote text-[2em] leading-0 text-peach"
+          >
             “
           </span>
           {model.blurb}

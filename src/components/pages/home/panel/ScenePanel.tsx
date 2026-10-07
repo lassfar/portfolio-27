@@ -15,7 +15,8 @@ import { PANEL_ID } from "./config";
 import { usePanelFrame } from "./usePanelFrame";
 
 /** Its size, shape and fill animate between the two views (and in and out). */
-const SHELL = "fixed right-0 bottom-0 z-50 flex flex-col duration-600 ease-out-quint motion-reduce:transition-none";
+const SHELL =
+  "fixed right-0 bottom-0 z-50 flex flex-col duration-600 ease-out-quint motion-reduce:transition-none";
 
 /** The full view covers the screen (the scene veiled behind it); the side panel is frosted glass — a bottom sheet on a phone. */
 const SHELL_VIEW: Record<PanelView, string> = {
@@ -28,12 +29,12 @@ const SHELL_VIEW: Record<PanelView, string> = {
  * side panel slides off too) and only then hides. Never a translate while open: it would
  * re-base fixed children.
  */
-const SHELL_OPEN = "visible transition-[opacity,width,height,translate,background-color,border-radius,box-shadow]";
+const SHELL_OPEN =
+  "visible transition-[opacity,width,height,translate,background-color,border-radius,box-shadow]";
 const SHELL_CLOSED: Record<PanelView, string> = {
   full: "invisible pointer-events-none opacity-0 transition-[opacity,visibility]",
   side: "invisible pointer-events-none translate-y-full opacity-0 transition-[opacity,visibility,translate] sm:translate-x-full sm:translate-y-0",
 };
-
 
 /**
  * The scene's panel (P27-80; was the gallery's and the Lab's side panels): a place's
@@ -87,9 +88,16 @@ const ScenePanel = ({ ref }: { ref?: Ref<HTMLElement> }) => {
       )}
       <PanelControls view={view} />
       {/* The content scrolls under the buttons, softly faded at the panel's top edge. */}
-      <div ref={scroll} className="min-h-0 flex-1 overflow-y-auto overscroll-contain scrollbar-thin mask-t-from-98%">
+      <div
+        ref={scroll}
+        className="min-h-0 flex-1 overflow-y-auto overscroll-contain mask-t-from-98% scrollbar-thin"
+      >
         {frame && (
-          <div ref={content} key={frame.key} className={clsx(COLUMN[frame.view], SWAP, morphing && SWAPPING)}>
+          <div
+            ref={content}
+            key={frame.key}
+            className={clsx(COLUMN[frame.view], SWAP, morphing && SWAPPING)}
+          >
             {eyebrow && <PanelEyebrow view={frame.view} eyebrow={eyebrow} />}
             {frame.content.kind === "place" ? (
               <PlaceContent id={frame.content.id} view={frame.view} titleId={titleId} />

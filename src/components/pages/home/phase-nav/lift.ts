@@ -34,7 +34,15 @@ export interface LiftStep {
 }
 
 /** The assistant shows past the hero's first screen, while there's a next chapter and no panel is open. */
-export function isAssistantVisible({ past, hasStop, panelOpen }: { past: boolean; hasStop: boolean; panelOpen: boolean }) {
+export function isAssistantVisible({
+  past,
+  hasStop,
+  panelOpen,
+}: {
+  past: boolean;
+  hasStop: boolean;
+  panelOpen: boolean;
+}) {
   return past && hasStop && !panelOpen;
 }
 
@@ -50,7 +58,11 @@ const step = (phase: LiftPhase, motion: LiftMotion = "none", resetReveal = false
  * settled, the dot rises again. Where the assistant shouldn't show, it's put back at once (its
  * root stays hidden by CSS).
  */
-export function liftStep(phase: LiftPhase, event: LiftEvent, { visible, revealIdle, gliding }: LiftContext): LiftStep {
+export function liftStep(
+  phase: LiftPhase,
+  event: LiftEvent,
+  { visible, revealIdle, gliding }: LiftContext,
+): LiftStep {
   switch (event) {
     case "glideStart":
       if (phase === "shown") {

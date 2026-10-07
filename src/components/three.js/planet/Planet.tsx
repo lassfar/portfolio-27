@@ -86,9 +86,7 @@ const Planet = ({
   useFrame((_, delta) => {
     // Assembly progress (0 dispersed → 1 fully built). Standalone/interactive
     // use has no assembly, so it counts as already built.
-    const built = interactive
-      ? 1
-      : clamp01(useAboutScroll.getState().progress);
+    const built = interactive ? 1 : clamp01(useAboutScroll.getState().progress);
 
     // Gentle self-rotation on the planet's own (tilted) axis — but only once
     // built. While assembling it's parked at a fixed phase so the body can land
@@ -107,13 +105,13 @@ const Planet = ({
         currentRot.current.x,
         targetRot.current.x,
         ROTATION.damping,
-        delta
+        delta,
       );
       currentRot.current.y = damp(
         currentRot.current.y,
         targetRot.current.y,
         ROTATION.damping,
-        delta
+        delta,
       );
     } else {
       // Shared scene: mirror the already-resolved scene rotation exactly, so

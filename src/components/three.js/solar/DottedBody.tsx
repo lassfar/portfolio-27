@@ -159,7 +159,7 @@ const DottedBody = ({ body, animate, reveal, spinRate, spinAngle, children }: Pr
         vertexShader: CORE_VERT,
         fragmentShader: CORE_FRAG,
       }),
-    [body]
+    [body],
   );
   useEffect(() => () => coreMaterial.dispose(), [coreMaterial]);
 
@@ -203,7 +203,7 @@ const DottedBody = ({ body, animate, reveal, spinRate, spinAngle, children }: Pr
     const cam = state.camera as PerspectiveCamera;
     const dist = Math.max(
       bodyRef.current ? bodyRef.current.getWorldPosition(_center).distanceTo(cam.position) : 1,
-      body.size * 1.05
+      body.size * 1.05,
     );
     const focal = state.size.height / 2 / Math.tan((cam.fov * DEG) / 2);
     const radiusPx = (body.size * focal) / dist;
@@ -221,7 +221,10 @@ const DottedBody = ({ body, animate, reveal, spinRate, spinAngle, children }: Pr
     const coverage =
       dotPx <= lod.minDotPx
         ? lod.farCoverage
-        : Math.min(lod.coverage * Math.pow(Math.max(dotPx / realPx, 1), lod.farPack), lod.farCoverage);
+        : Math.min(
+            lod.coverage * Math.pow(Math.max(dotPx / realPx, 1), lod.farPack),
+            lod.farCoverage,
+          );
     const wanted = (8 * coverage * (radiusPx / dotPx) ** 2) / (1 - Math.min(dust, 0.9)); // both halves (+ the dust)
     const budget = geometry.userData.count as number;
     const dots = Math.min(Math.max(wanted, lod.minDots), budget);
@@ -277,7 +280,9 @@ const DottedBody = ({ body, animate, reveal, spinRate, spinAngle, children }: Pr
     // The core sits just under the lowest dots and fades with them.
     if (coreRef.current) {
       coreRef.current.visible = PLANET_STYLE.core && u.uReveal.value > 0.001;
-      coreRef.current.scale.setScalar(body.size * (1 - (saturn ? saturn.shellJitter : PLANET_STYLE.shellJitter) / 2) * 0.98);
+      coreRef.current.scale.setScalar(
+        body.size * (1 - (saturn ? saturn.shellJitter : PLANET_STYLE.shellJitter) / 2) * 0.98,
+      );
       const c = coreMaterial.uniforms;
       c.uOpacity.value = u.uReveal.value;
       setHexIfChanged(c.uColor.value, L.base);

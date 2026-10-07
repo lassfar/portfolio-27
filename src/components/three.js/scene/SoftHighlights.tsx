@@ -67,5 +67,5 @@ export const SoftHighlights = forwardRef<SoftHighlightsEffect, { knee?: number }
     const effect = useMemo(() => new SoftHighlightsEffect({ knee }), [knee]);
     useEffect(() => () => effect.dispose(), [effect]); // (a new knee makes a new effect)
     return <primitive ref={ref} object={effect} dispose={null} />;
-  }
+  },
 );

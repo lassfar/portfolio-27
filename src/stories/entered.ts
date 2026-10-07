@@ -6,6 +6,12 @@ import { expect, waitFor } from "storybook/test";
  * the parts' colours, not their fade.
  */
 export const entered = (root: Element) =>
-  waitFor(() => root.querySelectorAll("[data-rise]").forEach((part) => expect(part).toHaveStyle({ opacity: "1" })), {
-    timeout: 3000, // a full panel's entrance: up to 12 staggered parts, ~1.3s
-  });
+  waitFor(
+    () =>
+      root
+        .querySelectorAll("[data-rise]")
+        .forEach((part) => expect(part).toHaveStyle({ opacity: "1" })),
+    {
+      timeout: 3000, // a full panel's entrance: up to 12 staggered parts, ~1.3s
+    },
+  );

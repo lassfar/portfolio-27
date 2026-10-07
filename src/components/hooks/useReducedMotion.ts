@@ -13,5 +13,9 @@ const subscribe = (onChange: () => void) => {
  * in the first client render (no hydration mismatch), then the media query's answer.
  */
 export function useReducedMotion(): boolean {
-  return useSyncExternalStore(subscribe, () => window.matchMedia(QUERY).matches, () => false);
+  return useSyncExternalStore(
+    subscribe,
+    () => window.matchMedia(QUERY).matches,
+    () => false,
+  );
 }

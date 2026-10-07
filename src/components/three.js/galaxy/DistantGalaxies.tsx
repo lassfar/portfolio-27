@@ -149,7 +149,7 @@ const DistantGalaxies = () => {
         vertexShader: FAR_GALAXY_VERT,
         fragmentShader: FAR_GALAXY_FRAG,
       }),
-    []
+    [],
   );
   useEffect(() => () => material.dispose(), [material]);
 
@@ -174,13 +174,7 @@ const DistantGalaxies = () => {
   });
 
   return (
-    <points
-      ref={ref}
-      material={material}
-      renderOrder={-2}
-      frustumCulled={false}
-      visible={false}
-    />
+    <points ref={ref} material={material} renderOrder={-2} frustumCulled={false} visible={false} />
   );
 };
 

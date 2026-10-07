@@ -31,7 +31,7 @@ export default function RootLayout({
             A plain script: next/script's beforeInteractive would run only once Next has loaded. */}
         <script dangerouslySetInnerHTML={{ __html: MOTION_SCRIPT }} />
       </head>
-      <body suppressHydrationWarning className="antialiased dark">
+      <body suppressHydrationWarning className="dark antialiased">
         <SmoothScrollProvider>{children}</SmoothScrollProvider>
       </body>
     </html>

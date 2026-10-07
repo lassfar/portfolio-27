@@ -75,7 +75,11 @@ async function loadMask(url: string): Promise<LandMask | null> {
     if (!ctx) return null;
     ctx.drawImage(image, 0, 0);
     image.close();
-    return { data: ctx.getImageData(0, 0, canvas.width, canvas.height).data, width: canvas.width, height: canvas.height };
+    return {
+      data: ctx.getImageData(0, 0, canvas.width, canvas.height).data,
+      width: canvas.width,
+      height: canvas.height,
+    };
   } catch {
     return null;
   }
@@ -120,16 +124,9 @@ function* sampleDots(count: number, mask: LandMask, out: DotBuffers) {
     const z = s * Math.sin(theta);
 
     const [u, v] = directionToUV(x, y, z);
-    const px = Math.min(
-      width - 1,
-      Math.max(0, Math.round(u * width))
-    );
-    const py = Math.min(
-      height - 1,
-      Math.max(0, Math.round(v * height))
-    );
-    const isLand =
-      data[(py * width + px) * 4] / 255 < EARTH.landThreshold; // dark = land
+    const px = Math.min(width - 1, Math.max(0, Math.round(u * width)));
+    const py = Math.min(height - 1, Math.max(0, Math.round(v * height)));
+    const isLand = data[(py * width + px) * 4] / 255 < EARTH.landThreshold; // dark = land
 
     // Bias toward land: keep every land dot, drop most ocean dots.
     if (!isLand) oceanTries++;
@@ -137,8 +134,7 @@ function* sampleDots(count: number, mask: LandMask, out: DotBuffers) {
     if (!isLand) oceanKept++;
 
     // Tiny radial shell jitter → grainy, dotty surface (like the Saturn shell).
-    const rr =
-      EARTH.radius * (1 + (Math.random() - 0.5) * EARTH.shellJitter);
+    const rr = EARTH.radius * (1 + (Math.random() - 0.5) * EARTH.shellJitter);
     positions[i * 3] = x * rr;
     positions[i * 3 + 1] = y * rr;
     positions[i * 3 + 2] = z * rr;
@@ -146,16 +142,14 @@ function* sampleDots(count: number, mask: LandMask, out: DotBuffers) {
     // Per-particle brightness jitter → the noisy grain the Saturn has.
     const j = 0.82 + Math.random() * 0.32;
     c.copy(isLand ? land : ocean).multiplyScalar(
-      (isLand ? EARTH.landBright : EARTH.oceanBright) * j
+      (isLand ? EARTH.landBright : EARTH.oceanBright) * j,
     );
     colors[i * 3] = c.r;
     colors[i * 3 + 1] = c.g;
     colors[i * 3 + 2] = c.b;
 
     // Land grains thicker than ocean → the continents read solid + prominent.
-    scales[i] =
-      (isLand ? EARTH.landDotScale : EARTH.oceanDotScale) *
-      (0.7 + Math.random() * 0.6);
+    scales[i] = (isLand ? EARTH.landDotScale : EARTH.oceanDotScale) * (0.7 + Math.random() * 0.6);
     seeds[i] = Math.random();
     i++;
   }
@@ -199,7 +193,9 @@ const DottedEarth = ({ animate = true, interactive = true }: Props) => {
   // sampled in small steps by the scene's build queue — done long before the Earth
   // first shows. Until then an empty geometry stands in (it draws nothing).
   const placeholder = useMemo(() => new BufferGeometry(), []);
-  const [built, setBuilt] = useState<{ geometry: BufferGeometry; oceanDensity: number } | null>(null);
+  const [built, setBuilt] = useState<{ geometry: BufferGeometry; oceanDensity: number } | null>(
+    null,
+  );
   useEffect(() => {
     let cancelled = false;
     let started = false;
@@ -243,10 +239,7 @@ const DottedEarth = ({ animate = true, interactive = true }: Props) => {
       uSize: { value: EARTH.dotSize },
       uMaxSize: { value: EARTH.dotMaxSize },
       uPixelRatio: {
-        value:
-          typeof window !== "undefined"
-            ? Math.min(window.devicePixelRatio, 2)
-            : 1.5,
+        value: typeof window !== "undefined" ? Math.min(window.devicePixelRatio, 2) : 1.5,
       },
       uReveal: { value: 0 },
       // The sun's direction in VIEW space — recomputed each frame from the sun's
@@ -258,7 +251,7 @@ const DottedEarth = ({ animate = true, interactive = true }: Props) => {
       uLodFade: { value: EARTH.lod.fadeBand },
     }),
     // eslint-disable-next-line react-hooks/exhaustive-deps -- `count` only seeds uLodCount (updated each frame)
-    []
+    [],
   );
   const earthPos = useMemo(() => new Vector3(), []);
 
@@ -276,7 +269,7 @@ const DottedEarth = ({ animate = true, interactive = true }: Props) => {
   // Scratch for the pointer-down hit-test (globe vs. empty space).
   const hit = useMemo(
     () => ({ rc: new Raycaster(), sphere: new Sphere(), point: new Vector3(), ndc: new Vector2() }),
-    []
+    [],
   );
 
   useEffect(() => {
@@ -357,7 +350,9 @@ const DottedEarth = ({ animate = true, interactive = true }: Props) => {
       dotMatRef.current.uniforms.uLightDir.value.copy(sunDir.current);
       // Daylight while the Earth is in full view: the night side fades away on the
       // arrival and back as the Lab pulls away (EARTH.light).
-      const arrived = easeInOutCubic(remap01(earthApproach(), EARTH.light.dayFrom, EARTH.light.dayTo));
+      const arrived = easeInOutCubic(
+        remap01(earthApproach(), EARTH.light.dayFrom, EARTH.light.dayTo),
+      );
       const leaving = remap01(clamp01(useLabScroll.getState().progress), 0, LAB.earthFadeEnd);
       const day = arrived * (1 - easeInOutCubic(leaving));
       dotMatRef.current.uniforms.uAmbient.value = lerp(EARTH.light.ambient, 1, day);
@@ -368,14 +363,20 @@ const DottedEarth = ({ animate = true, interactive = true }: Props) => {
       const points = pointsRef.current;
       if (points && built && r > 0.001) {
         const cam = state.camera as PerspectiveCamera;
-        const dist = Math.max(points.getWorldPosition(earthPos).distanceTo(cam.position), EARTH.radius * 1.05);
+        const dist = Math.max(
+          points.getWorldPosition(earthPos).distanceTo(cam.position),
+          EARTH.radius * 1.05,
+        );
         const focal = state.size.height / 2 / Math.tan((cam.fov * DEG) / 2);
         const radiusPx = (EARTH.radius * focal) / dist;
         const dots = Math.min(
           count,
-          (EARTH.lod.perPixel * 4 * Math.PI * radiusPx * radiusPx) / built.oceanDensity
+          (EARTH.lod.perPixel * 4 * Math.PI * radiusPx * radiusPx) / built.oceanDensity,
         );
-        points.geometry.setDrawRange(0, Math.min(count, Math.ceil(dots * (1 + EARTH.lod.fadeBand))));
+        points.geometry.setDrawRange(
+          0,
+          Math.min(count, Math.ceil(dots * (1 + EARTH.lod.fadeBand))),
+        );
         dotMatRef.current.uniforms.uLodCount.value = dots;
       }
     }
@@ -395,8 +396,7 @@ const DottedEarth = ({ animate = true, interactive = true }: Props) => {
     }
     yaw.current = damp(yaw.current, targetYaw.current, EARTH.dragDamping, delta);
     pitch.current = damp(pitch.current, targetPitch.current, EARTH.dragDamping, delta);
-    if (spinRef.current)
-      spinRef.current.rotation.set(pitch.current, yaw.current, 0);
+    if (spinRef.current) spinRef.current.rotation.set(pitch.current, yaw.current, 0);
 
     // Scene-mirror: when the SPACE is dragged the Earth turns WITH the whole cosmos
     // (like Saturn). This outer group mirrors the scene-rotation DELTA since the
@@ -411,11 +411,7 @@ const DottedEarth = ({ animate = true, interactive = true }: Props) => {
     }
     if (sceneMirrorRef.current) {
       const b = sceneBaseline.current;
-      sceneMirrorRef.current.rotation.set(
-        b ? sr.pitch - b.pitch : 0,
-        b ? sr.yaw - b.yaw : 0,
-        0
-      );
+      sceneMirrorRef.current.rotation.set(b ? sr.pitch - b.pitch : 0, b ? sr.yaw - b.yaw : 0, 0);
     }
   });
 
@@ -431,21 +427,27 @@ const DottedEarth = ({ animate = true, interactive = true }: Props) => {
               shows through its gaps; transparent so it fades with the Earth. */}
             <mesh ref={coreRef} renderOrder={-0.5} visible={false}>
               <sphereGeometry args={[1, 48, 32]} />
-              <meshBasicMaterial ref={coreMatRef} color={EARTH.coreColor} transparent depthWrite opacity={0} />
+              <meshBasicMaterial
+                ref={coreMatRef}
+                color={EARTH.coreColor}
+                transparent
+                depthWrite
+                opacity={0}
+              />
             </mesh>
 
             <points ref={pointsRef} renderOrder={2} geometry={built?.geometry ?? placeholder}>
-                <shaderMaterial
-                  ref={dotMatRef}
-                  transparent
-                  depthTest
-                  depthWrite={false}
-                  blending={NormalBlending}
-                  uniforms={uniforms}
-                  vertexShader={VERTEX_SHADER}
-                  fragmentShader={FRAGMENT_SHADER}
-                />
-              </points>
+              <shaderMaterial
+                ref={dotMatRef}
+                transparent
+                depthTest
+                depthWrite={false}
+                blending={NormalBlending}
+                uniforms={uniforms}
+                vertexShader={VERTEX_SHADER}
+                fragmentShader={FRAGMENT_SHADER}
+              />
+            </points>
 
             {/* Geo photo-pins — stick to the surface as the globe spins. */}
             <EarthPins />

@@ -271,8 +271,10 @@ export function updateGalaxyPlacement() {
   const [x, y, z] = GALAXY_TILT;
   const r = GALAXY_PLACEMENT.sunArmRadius;
   GALAXY_CENTER[0] = SUNPOS[0] - r * Math.cos(y) * Math.cos(z);
-  GALAXY_CENTER[1] = SUNPOS[1] - r * (Math.cos(x) * Math.sin(z) + Math.sin(x) * Math.sin(y) * Math.cos(z));
-  GALAXY_CENTER[2] = SUNPOS[2] - r * (Math.sin(x) * Math.sin(z) - Math.cos(x) * Math.sin(y) * Math.cos(z));
+  GALAXY_CENTER[1] =
+    SUNPOS[1] - r * (Math.cos(x) * Math.sin(z) + Math.sin(x) * Math.sin(y) * Math.cos(z));
+  GALAXY_CENTER[2] =
+    SUNPOS[2] - r * (Math.sin(x) * Math.sin(z) - Math.cos(x) * Math.sin(y) * Math.cos(z));
 }
 updateGalaxyPlacement();
 

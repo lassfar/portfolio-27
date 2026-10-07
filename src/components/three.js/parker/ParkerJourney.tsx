@@ -15,7 +15,10 @@ import {
 } from "three";
 import { flyingSunPos } from "#/components/three.js/galaxy/spin";
 import { setHexIfChanged } from "#/components/three.js/scene/colorCache";
-import { LABEL_PRIORITY, projectPointToViewport } from "#/components/three.js/scene/labelProjection";
+import {
+  LABEL_PRIORITY,
+  projectPointToViewport,
+} from "#/components/three.js/scene/labelProjection";
 import { sceneBuilds } from "#/components/three.js/scene/sceneBuilds";
 import { storyEase } from "#/components/three.js/scene/storyMotion";
 import { preupload, whenIdle } from "#/components/three.js/scene/warmUp";
@@ -195,7 +198,10 @@ const ParkerJourney = () => {
             onDone: () => {
               if (!result.line) return;
               const geometry = new BufferGeometry();
-              geometry.setAttribute("position", new Float32BufferAttribute(result.line.positions, 3));
+              geometry.setAttribute(
+                "position",
+                new Float32BufferAttribute(result.line.positions, 3),
+              );
               line.geometry.dispose();
               line.geometry = geometry;
               const markers = [
@@ -308,7 +314,11 @@ const ParkerJourney = () => {
     // The tip in the world (its dot is placed once the camera has moved), and how close
     // it has come to the Sun yet.
     tipDot.visible = !f.done;
-    if (rot) tipWorld.copy(tip).applyEuler(rot.rotation).add(scratch.set(sun[0], sun[1], sun[2]));
+    if (rot)
+      tipWorld
+        .copy(tip)
+        .applyEuler(rot.rotation)
+        .add(scratch.set(sun[0], sun[1], sun[2]));
     const km = millionKmFromSun(closestAt(b.line, day));
     if (km !== f.km) {
       f.km = km;
@@ -356,7 +366,8 @@ const ParkerJourney = () => {
       tipScreen.y = scratch.y;
       const a = useParkerAnchor.getState();
       projectPointToViewport(probe.set(a.x, a.y, a.z), camera, gl.domElement, probe);
-      tipScreen.shown = ahead && Math.hypot(scratch.x - probe.x, scratch.y - probe.y) > TIP_MEETS_PX;
+      tipScreen.shown =
+        ahead && Math.hypot(scratch.x - probe.x, scratch.y - probe.y) > TIP_MEETS_PX;
     }
 
     // The launch and flyby labels, with the planets (in the Lab, until the zoom focuses

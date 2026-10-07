@@ -2,7 +2,14 @@
 
 import { useFrame } from "@react-three/fiber";
 import { useEffect, useMemo, useRef, useState } from "react";
-import { BufferAttribute, BufferGeometry, Color, NormalBlending, Points, ShaderMaterial } from "three";
+import {
+  BufferAttribute,
+  BufferGeometry,
+  Color,
+  NormalBlending,
+  Points,
+  ShaderMaterial,
+} from "three";
 import { useVoyageScroll } from "#/stores/useVoyageScroll";
 import { ASTEROIDS, EARTH_ELEMENTS, orbitRadius, SOLAR_MOTION, SYSTEM_SHOWS_AT } from "./config";
 import { systemTime } from "./orbits";
@@ -15,7 +22,8 @@ import { setHexIfChanged } from "#/components/three.js/scene/colorCache";
 const DEG = Math.PI / 180;
 
 /** A normally distributed random number (Box–Muller). */
-const gaussian = () => Math.sqrt(-2 * Math.log(1 - Math.random())) * Math.cos(2 * Math.PI * Math.random());
+const gaussian = () =>
+  Math.sqrt(-2 * Math.log(1 - Math.random())) * Math.cos(2 * Math.PI * Math.random());
 
 /** Asteroids built per step of the build queue (~a fraction of a ms each). */
 const BUILD_STEP = 2000;
@@ -50,7 +58,9 @@ function* buildBelt(count: number, out: BeltOrbits) {
     // Densest mid-belt (two uniforms → a triangle), mostly empty in the gaps.
     let au = 0;
     do {
-      au = ASTEROIDS.inner + (ASTEROIDS.outer - ASTEROIDS.inner) * ((Math.random() + Math.random()) / 2);
+      au =
+        ASTEROIDS.inner +
+        (ASTEROIDS.outer - ASTEROIDS.inner) * ((Math.random() + Math.random()) / 2);
     } while (inGap(au) && Math.random() < 0.9);
     a[i] = orbitRadius(au);
     ecc[i] = Math.random() * ASTEROIDS.ecc;
@@ -126,7 +136,7 @@ const AsteroidBelt = () => {
         vertexShader: BELT_VERT,
         fragmentShader: BELT_FRAG,
       }),
-    []
+    [],
   );
   useEffect(() => () => material.dispose(), [material]);
   // Faded out (its shader draws nothing then) — skip the draw.
@@ -145,7 +155,14 @@ const AsteroidBelt = () => {
     if (pointsRef.current) pointsRef.current.visible = ASTEROIDS.show;
   });
 
-  return <points ref={pointsRef} geometry={geometry ?? placeholder} material={material} frustumCulled={false} />;
+  return (
+    <points
+      ref={pointsRef}
+      geometry={geometry ?? placeholder}
+      material={material}
+      frustumCulled={false}
+    />
+  );
 };
 
 export default AsteroidBelt;

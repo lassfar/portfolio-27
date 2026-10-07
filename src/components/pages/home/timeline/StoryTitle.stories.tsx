@@ -53,6 +53,8 @@ type Story = StoryObj<typeof meta>;
 export const Default: Story = {
   play: async ({ args }) => {
     const name = chapterOf(args.chapter).name;
-    await waitFor(() => expect(document.querySelector(".story-title__label")?.textContent).toBe(name));
+    await waitFor(() =>
+      expect(document.querySelector(".story-title__label")?.textContent).toBe(name),
+    );
   },
 };

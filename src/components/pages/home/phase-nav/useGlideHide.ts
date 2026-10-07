@@ -59,9 +59,22 @@ export function useGlideHide(
   const dispatch = useMemo(() => {
     const build = contextSafe((el: HTMLElement) =>
       gsap
-        .timeline({ paused: true, onComplete: () => dispatch("hideDone"), onReverseComplete: () => dispatch("returnDone") })
+        .timeline({
+          paused: true,
+          onComplete: () => dispatch("hideDone"),
+          onReverseComplete: () => dispatch("returnDone"),
+        })
         // A 1s timeline, sped to PHASE_NAV.hideSeconds; its values read live (the dev panel).
-        .to(el, { scale: () => PHASE_NAV.hideScale, y: () => PHASE_NAV.hideDrop, duration: 1, ease: "power2.in" }, 0)
+        .to(
+          el,
+          {
+            scale: () => PHASE_NAV.hideScale,
+            y: () => PHASE_NAV.hideDrop,
+            duration: 1,
+            ease: "power2.in",
+          },
+          0,
+        )
         // It fades only at the end, so most of the shrink and drop is seen.
         .to(el, { autoAlpha: 0, duration: 0.4, ease: "power1.in" }, 0.6),
     );
@@ -70,7 +83,10 @@ export function useGlideHide(
       const el = lift.current;
       if (!el) return;
       const tl = (timeline.current ??= build(el));
-      const next = liftStep(current.current, event, { ...live.current, revealIdle: reveal.isIdle() });
+      const next = liftStep(current.current, event, {
+        ...live.current,
+        revealIdle: reveal.isIdle(),
+      });
       if (event === "glideStart" && next.phase !== current.current) {
         hadFocus.current = root.current?.contains(document.activeElement) ?? false;
       }
@@ -100,7 +116,8 @@ export function useGlideHide(
       }
       if (event === "returnDone" && next.phase === "shown" && hadFocus.current) {
         hadFocus.current = false;
-        if (!document.activeElement || document.activeElement === document.body) orb.current?.focus({ preventScroll: true });
+        if (!document.activeElement || document.activeElement === document.body)
+          orb.current?.focus({ preventScroll: true });
       }
       setPhase(next.phase);
     };

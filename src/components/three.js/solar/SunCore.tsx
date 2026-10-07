@@ -176,7 +176,7 @@ const SunCore = ({ count, version, animate, time, reveal, renderOrder }: Props) 
         vertexShader: VERTEX_SHADER,
         fragmentShader: FRAGMENT_SHADER,
       }),
-    [time, reveal]
+    [time, reveal],
   );
   useEffect(() => () => material.dispose(), [material]);
   // Faded out with the Sun: its dots output nothing — skip the draw (read at draw time).
@@ -199,7 +199,8 @@ const SunCore = ({ count, version, animate, time, reveal, renderOrder }: Props) 
     setHexIfChanged(u.uEdge.value, SUN_CORE.edge);
     setHexIfChanged(u.uCorona.value, SUN_CORE.corona);
     u.uSplit.value = SUN_CORE.gradientSplit;
-    if (animate && !SUN.paused && pointsRef.current) pointsRef.current.rotation.y += delta * SUN_CORE.spin;
+    if (animate && !SUN.paused && pointsRef.current)
+      pointsRef.current.rotation.y += delta * SUN_CORE.spin;
     if (haloRef.current) {
       const size = SUN.radius * SUN_CORE.glowSize;
       haloRef.current.scale.set(size, size, 1);

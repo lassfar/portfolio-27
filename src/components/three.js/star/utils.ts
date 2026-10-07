@@ -4,19 +4,15 @@
  */
 
 /** Clamp a number into the 0..1 range. */
-export const clamp01 = (value: number): number =>
-  Math.max(0, Math.min(1, value));
+export const clamp01 = (value: number): number => Math.max(0, Math.min(1, value));
 
 /**
  * Remap `value` from the input range [inMin, inMax] onto 0..1 (clamped).
  *
  * @example remap01(scrollProgress, 0.3, 1) // "0 until 0.3, then ramps to 1"
  */
-export const remap01 = (
-  value: number,
-  inMin: number,
-  inMax: number
-): number => clamp01((value - inMin) / (inMax - inMin));
+export const remap01 = (value: number, inMin: number, inMax: number): number =>
+  clamp01((value - inMin) / (inMax - inMin));
 
 /**
  * The frame rate the damping factors were tuned at (P27-78): the feel judged on the dev
@@ -32,17 +28,11 @@ export const DAMPING = { referenceFps: 85 };
  * the frame's seconds), so motion feels the same on a 30, 60 or 120 Hz screen. (It used
  * to step per frame: half as fast at 30 FPS, twice at 120.)
  */
-export const damp = (
-  current: number,
-  target: number,
-  factor: number,
-  delta: number
-): number =>
+export const damp = (current: number, target: number, factor: number, delta: number): number =>
   current + (target - current) * (1 - Math.pow(1 - factor, delta * DAMPING.referenceFps));
 
 /** Linear interpolation between `a` and `b` by `t` (0..1). */
-export const lerp = (a: number, b: number, t: number): number =>
-  a + (b - a) * t;
+export const lerp = (a: number, b: number, t: number): number => a + (b - a) * t;
 
 /** Ease-out cubic — fast start, decelerating to a stop at t = 1. */
 export const easeOutCubic = (t: number): number => 1 - Math.pow(1 - t, 3);

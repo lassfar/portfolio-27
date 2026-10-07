@@ -18,11 +18,7 @@ const LabContent = ({ view, titleId }: { view: PanelView; titleId: string }) => 
     <div className={MEDIA[view]}>
       <div className={GRID[view]}>
         {EXPERIMENTS.map((experiment) => (
-          <ExperimentCard
-            key={experiment.id}
-            experiment={experiment}
-            view={view}
-          />
+          <ExperimentCard key={experiment.id} experiment={experiment} view={view} />
         ))}
       </div>
     </div>

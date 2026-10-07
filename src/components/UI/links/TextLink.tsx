@@ -3,7 +3,11 @@ import type { ReactNode } from "react";
 import { ArrowUpRight } from "lucide-react";
 import Icon from "#/components/UI/icons/Icon";
 import { CAPS_LABEL } from "#/components/UI/text/caps";
-import type { TextLinkOwnProps, TextLinkProps, TextLinkVariant } from "#/components/UI/links/link.types";
+import type {
+  TextLinkOwnProps,
+  TextLinkProps,
+  TextLinkVariant,
+} from "#/components/UI/links/link.types";
 
 const VARIANT: Record<TextLinkVariant, string> = {
   plain: "text-sm text-white/55",
@@ -35,7 +39,7 @@ const elementOf = <T extends TextLinkOwnProps & { children?: ReactNode }>({
 const TextLink = (props: TextLinkProps) => {
   const variant = props.variant ?? "plain";
   const className = clsx(
-    "tap-target inline-flex cursor-pointer items-center gap-1.5 transition-colors duration-300 focus-ring hover:text-peach focus-visible:text-peach max-sm:relative",
+    "tap-target inline-flex cursor-pointer items-center gap-1.5 focus-ring transition-colors duration-300 hover:text-peach focus-visible:text-peach max-sm:relative",
     VARIANT[variant],
     props.className,
   );

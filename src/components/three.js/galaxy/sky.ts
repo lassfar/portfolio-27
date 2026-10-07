@@ -17,8 +17,8 @@ export const SKY_END_VIEW = new Quaternion().setFromRotationMatrix(
   new Matrix4().lookAt(
     new Vector3(...GALAXY_ZOOM.endDir),
     new Vector3(0, 0, 0),
-    new Vector3(0, 1, 0)
-  )
+    new Vector3(0, 1, 0),
+  ),
 );
 
 /** Small seeded RNG, so the sky is the same on every visit. */

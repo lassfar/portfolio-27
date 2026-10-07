@@ -35,7 +35,10 @@ describe("the story's subtitles", () => {
     const startIn = ([from, to]: [number, number]) => from + SUBTITLE_START * (to - from);
     // The star: once the hero copy has lifted away too.
     const origin = chapter("origin");
-    expect(byId("star").window).toEqual([Math.max(startIn(origin), jp(JOURNEY.contentExit)), origin[1]]);
+    expect(byId("star").window).toEqual([
+      Math.max(startIn(origin), jp(JOURNEY.contentExit)),
+      origin[1],
+    ]);
     expect(byId("star").window[0]).toBeGreaterThanOrEqual(jp(JOURNEY.contentExit)); // the hero copy
     // The Maker: until the About text slides in.
     expect(byId("saturn").window).toEqual([startIn(chapter("maker")), jp(JOURNEY.revealStart)]);
@@ -50,8 +53,13 @@ describe("the story's subtitles", () => {
 
   it("each start in their own chapter", () => {
     const chapterOf: Record<string, string> = { star: "origin", saturn: "maker" };
-    for (const { id, window: [from] } of STORY_SUBTITLES) {
-      expect(STORY_CHAPTERS[chapterAt(STORY_CHAPTERS, from + EPS)].id, id).toBe(chapterOf[id] ?? id);
+    for (const {
+      id,
+      window: [from],
+    } of STORY_SUBTITLES) {
+      expect(STORY_CHAPTERS[chapterAt(STORY_CHAPTERS, from + EPS)].id, id).toBe(
+        chapterOf[id] ?? id,
+      );
     }
   });
 

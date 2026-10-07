@@ -98,14 +98,10 @@ export default function useCosmicJourney(refs: CosmicJourneyRefs): void {
       const easeInOut = gsap.parseEase("power2.inOut");
 
       // Cached once (never re-queried per frame).
-      const cosmos = containerRef.current?.querySelector<HTMLElement>(
-        ".home-hero__canvas"
-      );
-      const contactInner = contactRef.current?.querySelector<HTMLElement>(
-        ".home-contact__inner"
-      );
+      const cosmos = containerRef.current?.querySelector<HTMLElement>(".home-hero__canvas");
+      const contactInner = contactRef.current?.querySelector<HTMLElement>(".home-contact__inner");
       const contactPieces = Array.from(
-        contactRef.current?.querySelectorAll<HTMLElement>(".home-contact__piece") ?? []
+        contactRef.current?.querySelectorAll<HTMLElement>(".home-contact__piece") ?? [],
       );
 
       // ── The cosmos behind the overlays: blurred + dimmed under the About and the
@@ -209,16 +205,13 @@ export default function useCosmicJourney(refs: CosmicJourneyRefs): void {
       };
       const aboutTitle = makeTitleWriteIn(aboutTitleRef.current);
       const craftTitle = makeTitleWriteIn(
-        craftRef.current?.querySelector<HTMLElement>(".skills__title") ?? null
+        craftRef.current?.querySelector<HTMLElement>(".skills__title") ?? null,
       );
       const contactTitle = makeTitleWriteIn(
-        contactRef.current?.querySelector<HTMLElement>(".home-contact__title") ?? null
+        contactRef.current?.querySelector<HTMLElement>(".home-contact__title") ?? null,
       );
 
-      const toggleTitle = (
-        t: ReturnType<typeof makeTitleWriteIn>,
-        past: boolean
-      ) => {
+      const toggleTitle = (t: ReturnType<typeof makeTitleWriteIn>, past: boolean) => {
         if (!t) return;
         if (past && !t.shown) {
           t.shown = true;
@@ -278,13 +271,9 @@ export default function useCosmicJourney(refs: CosmicJourneyRefs): void {
       tl.to(
         contentRef.current,
         { yPercent: -60, autoAlpha: 0, ease: "power1.in", duration: contentExit },
-        0
+        0,
       )
-        .to(
-          logoRef.current,
-          { autoAlpha: 0, ease: "power1.in", duration: contentExit },
-          0
-        )
+        .to(logoRef.current, { autoAlpha: 0, ease: "power1.in", duration: contentExit }, 0)
         // Spacer so the pin (and the scrubbed progress) spans the whole pin.
         .to({}, { duration: 1 - contentExit });
 
@@ -298,7 +287,7 @@ export default function useCosmicJourney(refs: CosmicJourneyRefs): void {
         {
           at: JOURNEY.fillStart * JE,
           duration: (JOURNEY.exitStart - JOURNEY.fillStart) * JE,
-        }
+        },
       );
 
       // Craft constellation — scrubbed assembly over the cover→fade window.
@@ -315,13 +304,12 @@ export default function useCosmicJourney(refs: CosmicJourneyRefs): void {
           {
             ref: {
               current:
-                contactRef.current?.querySelector<HTMLElement>(".home-contact__intro") ??
-                null,
+                contactRef.current?.querySelector<HTMLElement>(".home-contact__intro") ?? null,
             },
             type: "words",
           },
         ],
-        { at: JOURNEY.contactStart + 0.2 * contactSpan, duration: 0.3 * contactSpan }
+        { at: JOURNEY.contactStart + 0.2 * contactSpan, duration: 0.3 * contactSpan },
       );
 
       return () => {
@@ -344,6 +332,6 @@ export default function useCosmicJourney(refs: CosmicJourneyRefs): void {
         }
       };
     },
-    { scope: containerRef }
+    { scope: containerRef },
   );
 }

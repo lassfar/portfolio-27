@@ -6,7 +6,11 @@ import { STORY_CHAPTERS, TIMELINE } from "./config";
 import { chapterAt, chapterPositions, fillAt } from "./layout";
 
 // The rail as it sits on a 760px-tall screen.
-const positions = chapterPositions(STORY_CHAPTERS, TIMELINE.minGap, (760 * TIMELINE.railLength) / 100);
+const positions = chapterPositions(
+  STORY_CHAPTERS,
+  TIMELINE.minGap,
+  (760 * TIMELINE.railLength) / 100,
+);
 
 /** The rail's state a share `t` of the way through chapter `i`. */
 function at(i: number, t = 0.4) {
@@ -55,8 +59,13 @@ type Story = StoryObj<typeof meta>;
 export const Default: Story = {
   play: async ({ canvas }) => {
     await expect(canvas.getAllByRole("button")).toHaveLength(STORY_CHAPTERS.length);
-    await expect(canvas.getByRole("button", { name: "The Lab" })).toHaveAttribute("aria-current", "step");
-    await expect(canvas.getByRole("button", { name: "The Earth" })).not.toHaveAttribute("aria-current");
+    await expect(canvas.getByRole("button", { name: "The Lab" })).toHaveAttribute(
+      "aria-current",
+      "step",
+    );
+    await expect(canvas.getByRole("button", { name: "The Earth" })).not.toHaveAttribute(
+      "aria-current",
+    );
   },
 };
 
@@ -67,7 +76,10 @@ export const AtTheStart: Story = { args: at(1, 0.1) };
 export const AtTheEnd: Story = {
   args: at(STORY_CHAPTERS.length - 1),
   play: async ({ canvas }) => {
-    await expect(canvas.getByRole("button", { name: "Contact" })).toHaveAttribute("aria-current", "step");
+    await expect(canvas.getByRole("button", { name: "Contact" })).toHaveAttribute(
+      "aria-current",
+      "step",
+    );
   },
 };
 

@@ -52,7 +52,9 @@ describe("Parker's journey line", () => {
     expect(Math.abs(v.length() - orbitRadius(EARTH_ELEMENTS.au))).toBeLessThan(0.15);
     expect(data.flybys).toHaveLength(7);
     for (const { at } of data.flybys) {
-      expect(Math.abs(journeyPoint(at[0], at[1], at[2], v).length() - orbitRadius(0.723))).toBeLessThan(0.1);
+      expect(
+        Math.abs(journeyPoint(at[0], at[1], at[2], v).length() - orbitRadius(0.723)),
+      ).toBeLessThan(0.1);
     }
   });
 
@@ -60,7 +62,8 @@ describe("Parker's journey line", () => {
     const now = data.endJD + 30;
     const line = build(now);
     expect(line.count).toBe(data.days.length + 60);
-    for (let i = 1; i < line.count; i++) expect(line.days[i]).toBeGreaterThanOrEqual(line.days[i - 1]);
+    for (let i = 1; i < line.count; i++)
+      expect(line.days[i]).toBeGreaterThanOrEqual(line.days[i - 1]);
     const end = new Vector3().fromArray(line.positions, (line.count - 1) * 3);
     expect(end.distanceTo(parkerOffset(new Vector3(), now))).toBeLessThan(1e-4);
     expect(pointsUpTo(line, -1)).toBe(0);

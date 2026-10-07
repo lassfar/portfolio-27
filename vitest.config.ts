@@ -1,14 +1,14 @@
-import path from 'node:path';
-import { fileURLToPath } from 'node:url';
+import path from "node:path";
+import { fileURLToPath } from "node:url";
 
-import { defineConfig } from 'vitest/config';
+import { defineConfig } from "vitest/config";
 
-import { storybookTest } from '@storybook/addon-vitest/vitest-plugin';
+import { storybookTest } from "@storybook/addon-vitest/vitest-plugin";
 
-import { playwright } from '@vitest/browser-playwright';
+import { playwright } from "@vitest/browser-playwright";
 
 const dirname =
-  typeof __dirname !== 'undefined' ? __dirname : path.dirname(fileURLToPath(import.meta.url));
+  typeof __dirname !== "undefined" ? __dirname : path.dirname(fileURLToPath(import.meta.url));
 
 // More info at: https://storybook.js.org/docs/next/writing-tests/integrations/vitest-addon
 export default defineConfig({
@@ -19,28 +19,28 @@ export default defineConfig({
         plugins: [
           // The plugin will run tests for the stories defined in your Storybook config
           // See options at: https://storybook.js.org/docs/next/writing-tests/integrations/vitest-addon#storybooktest
-          storybookTest({ configDir: path.join(dirname, '.storybook') }),
+          storybookTest({ configDir: path.join(dirname, ".storybook") }),
         ],
         test: {
-          name: 'storybook',
+          name: "storybook",
           browser: {
             enabled: true,
             headless: true,
             provider: playwright({}),
-            instances: [{ browser: 'chromium' }],
+            instances: [{ browser: "chromium" }],
           },
-          setupFiles: ['.storybook/vitest.setup.ts'],
+          setupFiles: [".storybook/vitest.setup.ts"],
         },
       },
       {
         // Plain unit tests, no browser: the scene's pure logic (e.g. the quality tiers).
         resolve: {
-          alias: [{ find: /^#\/(.*)$/, replacement: path.join(dirname, 'src/$1') }],
+          alias: [{ find: /^#\/(.*)$/, replacement: path.join(dirname, "src/$1") }],
         },
         test: {
-          name: 'unit',
-          environment: 'node',
-          include: ['src/**/*.test.ts'],
+          name: "unit",
+          environment: "node",
+          include: ["src/**/*.test.ts"],
         },
       },
     ],

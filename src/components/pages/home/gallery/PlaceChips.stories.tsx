@@ -28,7 +28,10 @@ type Story = StoryObj<typeof meta>;
 /** At the side: "Places" above the pills, the one showing filled peach; another opens there. */
 export const Side: Story = {
   play: async ({ canvas, userEvent, args }) => {
-    await expect(canvas.getByRole("button", { name: "London" })).toHaveAttribute("aria-current", "true");
+    await expect(canvas.getByRole("button", { name: "London" })).toHaveAttribute(
+      "aria-current",
+      "true",
+    );
     await userEvent.click(canvas.getByRole("button", { name: "New Forest" }));
     await expect(args.onPick).toHaveBeenCalledWith("brockenhurst");
   },

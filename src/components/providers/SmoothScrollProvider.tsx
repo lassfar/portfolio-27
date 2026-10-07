@@ -27,9 +27,7 @@ const SmoothScrollProvider = ({ children }: Props) => {
 
   useGSAP(() => {
     // Respect users who prefer reduced motion — skip smoothing entirely.
-    const prefersReducedMotion = window.matchMedia(
-      "(prefers-reduced-motion: reduce)"
-    ).matches;
+    const prefersReducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
     if (prefersReducedMotion) return;
 
     const smoother = ScrollSmoother.create({

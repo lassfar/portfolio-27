@@ -9,13 +9,7 @@ import { useJourneyScroll } from "#/stores/useJourneyScroll";
 import { useQuality } from "#/stores/useQuality";
 import { QUALITY_STEPS } from "./quality";
 import { jumpToJourney } from "./devPanel";
-import {
-  buildReport,
-  currentChapterName,
-  gpuInfo,
-  resetRecords,
-  type GpuInfo,
-} from "./perfReport";
+import { buildReport, currentChapterName, gpuInfo, resetRecords, type GpuInfo } from "./perfReport";
 
 const TOUR_SECONDS = 120; // the whole story at one steady pace, so runs compare
 const TOUR_LEAD_MS = 1500; // settle at the top before the glide starts
@@ -33,8 +27,7 @@ const TOUR_NOTE: Record<Tour, string> = {
   stopped: "Tour stopped",
 };
 
-const button =
-  "rounded border border-peach/40 px-1.5 py-0.5 hover:bg-peach/10 disabled:opacity-40";
+const button = "rounded border border-peach/40 px-1.5 py-0.5 hover:bg-peach/10 disabled:opacity-40";
 
 /**
  * The `?perf` HUD (P27-78): live FPS, the chapter, the GPU and the canvas, plus a tour

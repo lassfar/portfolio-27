@@ -54,7 +54,13 @@ type ChapterRecord = {
   longTaskMs: number;
 };
 
-const empty = (): ChapterRecord => ({ frameMs: [], calls: 0, points: 0, longTasks: 0, longTaskMs: 0 });
+const empty = (): ChapterRecord => ({
+  frameMs: [],
+  calls: 0,
+  points: 0,
+  longTasks: 0,
+  longTaskMs: 0,
+});
 
 let records: ChapterRecord[] = STORY_CHAPTERS.map(empty);
 let recordsFrom = 0; // ms (performance.now) when the records started
@@ -96,7 +102,13 @@ export function recordQualityStart(step: number, gpu: string): void {
 }
 
 export function recordQualityChange(from: number, to: number, fps: number): void {
-  qualityChanges.push({ at: performance.now(), chapter: STORY_CHAPTERS[current].name, from, to, fps });
+  qualityChanges.push({
+    at: performance.now(),
+    chapter: STORY_CHAPTERS[current].name,
+    from,
+    to,
+    fps,
+  });
 }
 
 export function setGpuReader(read: (() => GpuInfo) | null): void {
@@ -166,7 +178,10 @@ export function buildReport(label: string): string {
     `- Quality changes: ${
       qualityChanges.length
         ? qualityChanges
-            .map((c) => `${fixed((c.at - recordsFrom) / 1000)} s, ${c.chapter}: ${c.from} → ${c.to} (${fixed(c.fps)} FPS)`)
+            .map(
+              (c) =>
+                `${fixed((c.at - recordsFrom) / 1000)} s, ${c.chapter}: ${c.from} → ${c.to} (${fixed(c.fps)} FPS)`,
+            )
             .join("; ")
         : "none"
     }`,

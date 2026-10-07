@@ -32,7 +32,12 @@ export function drawSwash(swash: Element | null, delay = 0): void {
   const stroke = strokeOf(swash);
   if (!stroke) return;
   if (isCalm()) gsap.set(stroke, { strokeDashoffset: 0 });
-  else gsap.fromTo(stroke, { strokeDashoffset: HIDDEN }, { strokeDashoffset: 0, ...SWASH_DRAW, delay });
+  else
+    gsap.fromTo(
+      stroke,
+      { strokeDashoffset: HIDDEN },
+      { strokeDashoffset: 0, ...SWASH_DRAW, delay },
+    );
 }
 
 /**
@@ -47,5 +52,10 @@ export function addSwashDraw(
 ): gsap.core.Timeline {
   const stroke = strokeOf(swash);
   if (!stroke || isCalm()) return timeline;
-  return timeline.fromTo(stroke, { strokeDashoffset: HIDDEN }, { strokeDashoffset: 0, ...SWASH_DRAW }, position);
+  return timeline.fromTo(
+    stroke,
+    { strokeDashoffset: HIDDEN },
+    { strokeDashoffset: 0, ...SWASH_DRAW },
+    position,
+  );
 }

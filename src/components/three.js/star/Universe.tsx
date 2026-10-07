@@ -24,9 +24,7 @@ import { createTouchAxisLock } from "#/components/three.js/scene/touchAxisLock";
  * completion, landing Saturn on its canonical pose while staying in sync.
  */
 const FLOW_END =
-  (JOURNEY.introTurns + JOURNEY.scrollTurnsStar + JOURNEY.scrollTurnsPlanet) *
-  Math.PI *
-  2;
+  (JOURNEY.introTurns + JOURNEY.scrollTurnsStar + JOURNEY.scrollTurnsPlanet) * Math.PI * 2;
 
 type Props = {
   animate?: boolean;
@@ -136,23 +134,12 @@ const Universe = ({ animate = true, count, starfieldRef }: Props) => {
     if (animate && !built) {
       targetRot.current.y += delta * ROTATION.idleDrift;
     }
-    currentRot.current.x = damp(
-      currentRot.current.x,
-      targetRot.current.x,
-      ROTATION.damping,
-      delta
-    );
-    currentRot.current.y = damp(
-      currentRot.current.y,
-      targetRot.current.y,
-      ROTATION.damping,
-      delta
-    );
+    currentRot.current.x = damp(currentRot.current.x, targetRot.current.x, ROTATION.damping, delta);
+    currentRot.current.y = damp(currentRot.current.y, targetRot.current.y, ROTATION.damping, delta);
 
     // One-time intro spin (horizontal). Its progress + easing are driven by the
     // Hero's text-intro timeline (full speed immediately, finishing together).
-    const introYaw =
-      useSceneIntro.getState().progress * JOURNEY.introTurns * Math.PI * 2;
+    const introYaw = useSceneIntro.getState().progress * JOURNEY.introTurns * Math.PI * 2;
 
     // Scroll-driven horizontal rotation: a full turn over the star, another
     // over the planet assembly (reuses both scroll stores). All amounts live in
@@ -161,15 +148,8 @@ const Universe = ({ animate = true, count, starfieldRef }: Props) => {
     const starP = useHeroScroll.getState().progress;
     const aboutP = useAboutScroll.getState().progress;
     const targetScrollYaw =
-      (starP * JOURNEY.scrollTurnsStar + aboutP * JOURNEY.scrollTurnsPlanet) *
-      Math.PI *
-      2;
-    scrollYaw.current = damp(
-      scrollYaw.current,
-      targetScrollYaw,
-      JOURNEY.scrollSpinDamping,
-      delta
-    );
+      (starP * JOURNEY.scrollTurnsStar + aboutP * JOURNEY.scrollTurnsPlanet) * Math.PI * 2;
+    scrollYaw.current = damp(scrollYaw.current, targetScrollYaw, JOURNEY.scrollSpinDamping, delta);
 
     // Resolve the deterministic scroll/intro turn to Saturn's canonical pose as
     // it assembles — spinning a little extra and decelerating into place — then

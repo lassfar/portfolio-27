@@ -15,4 +15,3 @@ export type StorySubtitle = {
   /** Where it sits; SUBTITLE_PLACEMENT unless given. */
   placement?: SubtitlePlacement;
 };
-

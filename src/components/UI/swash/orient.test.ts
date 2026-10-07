@@ -25,7 +25,11 @@ describe("turning a swash", () => {
 
   it("comes back to the original when turned twice, every shape", () => {
     for (const shape of Object.values(SWASHES)) {
-      for (const flip of [{ flipX: true, flipY: false }, { flipX: false, flipY: true }, { flipX: true, flipY: true }]) {
+      for (const flip of [
+        { flipX: true, flipY: false },
+        { flipX: false, flipY: true },
+        { flipX: true, flipY: true },
+      ]) {
         const twice = orientPath({ viewBox: shape.viewBox, d: orientPath(shape, flip) }, flip);
         const [a, b] = [numbers(twice), numbers(shape.d)];
         expect(a).toHaveLength(b.length);

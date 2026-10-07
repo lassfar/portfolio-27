@@ -70,12 +70,8 @@ const Starfield = ({ count = STARFIELD.count, animate = true }: Props) => {
 
       // A few rare, larger + brighter "standout" stars among lots of faint dust.
       const standout = Math.random() < STARFIELD.brightFraction;
-      scales[i] = standout
-        ? 1.4 + Math.random() * STARFIELD.brightSize
-        : 0.5 + Math.random() * 0.7;
-      brights[i] = standout
-        ? 1.1 + Math.random() * 0.5
-        : 0.3 + Math.random() * 0.6;
+      scales[i] = standout ? 1.4 + Math.random() * STARFIELD.brightSize : 0.5 + Math.random() * 0.7;
+      brights[i] = standout ? 1.1 + Math.random() * 0.5 : 0.3 + Math.random() * 0.6;
       seeds[i] = Math.random();
     }
 
@@ -101,13 +97,10 @@ const Starfield = ({ count = STARFIELD.count, animate = true }: Props) => {
       uPulseAmount: { value: 0 },
       uStandoutSize: { value: STARFIELD.brightSize },
       uPixelRatio: {
-        value:
-          typeof window !== "undefined"
-            ? Math.min(window.devicePixelRatio, 2)
-            : 1.5,
+        value: typeof window !== "undefined" ? Math.min(window.devicePixelRatio, 2) : 1.5,
       },
     }),
-    []
+    [],
   );
 
   // Only the twinkle animates here; the parent (Universe) owns the rotation so

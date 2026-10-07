@@ -2,7 +2,11 @@
 
 import { useEffect, useRef } from "react";
 import { MemoryStick } from "lucide-react";
-import { recordLabel, recordScreen, type RecordScreen } from "#/components/three.js/voyager/recordScreen";
+import {
+  recordLabel,
+  recordScreen,
+  type RecordScreen,
+} from "#/components/three.js/voyager/recordScreen";
 import { usePanelStore } from "#/stores/usePanelStore";
 import { PHONE_QUERY, keepOnScreen } from "#/components/pages/home/labels/screenEdge";
 import { ANCHORED, showAnchored } from "#/components/pages/home/labels/anchored";

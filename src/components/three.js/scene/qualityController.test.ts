@@ -1,5 +1,9 @@
 import { describe, expect, it } from "vitest";
-import { createQualityController, QUALITY_TUNING, type QualityController } from "./qualityController";
+import {
+  createQualityController,
+  QUALITY_TUNING,
+  type QualityController,
+} from "./qualityController";
 import { startStep } from "./quality";
 
 const LOWEST = 4;

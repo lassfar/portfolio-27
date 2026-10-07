@@ -7,7 +7,11 @@
  */
 export function inertOutside(el: HTMLElement): () => void {
   const changed: HTMLElement[] = [];
-  for (let node: HTMLElement | null = el; node && node !== document.body; node = node.parentElement) {
+  for (
+    let node: HTMLElement | null = el;
+    node && node !== document.body;
+    node = node.parentElement
+  ) {
     const parent: HTMLElement | null = node.parentElement;
     if (!parent) break;
     for (const sibling of Array.from(parent.children)) {

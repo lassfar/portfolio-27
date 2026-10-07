@@ -14,7 +14,11 @@ export function jumpToVoyage(v: number) {
 }
 
 /** Briefly relabel a button (feedback), then restore it. */
-export function flash(controller: { name: (label: string) => unknown }, label: string, restore: string) {
+export function flash(
+  controller: { name: (label: string) => unknown },
+  label: string,
+  restore: string,
+) {
   controller.name(label);
   window.setTimeout(() => controller.name(restore), 1600);
 }
@@ -24,7 +28,7 @@ export function copyValues(
   controller: { name: (label: string) => unknown },
   json: string,
   label: string,
-  tag: string
+  tag: string,
 ) {
   navigator.clipboard
     .writeText(json)

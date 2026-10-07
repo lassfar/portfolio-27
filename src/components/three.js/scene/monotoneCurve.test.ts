@@ -43,7 +43,7 @@ function original(x: number, xs: readonly number[], ys: readonly number[]): numb
 describe("monotoneCurve (reused scratch arrays)", () => {
   it("returns exactly what the original did, across key sets of different sizes", () => {
     let seed = 7;
-    const rnd = () => ((seed = (seed * 16807) % 2147483647) / 2147483647);
+    const rnd = () => (seed = (seed * 16807) % 2147483647) / 2147483647;
     for (let trial = 0; trial < 300; trial++) {
       const n = 2 + Math.floor(rnd() * 6);
       const xs = Array.from({ length: n }, (_, i) => i + rnd() * 0.9);

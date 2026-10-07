@@ -37,10 +37,7 @@ import { JOURNEY, labAt } from "#/components/three.js/star/config";
 export const SUNPOS: [number, number, number] = [12, 0, -18];
 
 /** LOCAL position (relative to the sun) of a body at orbit radius `r`, angle `φ`. */
-export function orbitPosition(
-  r: number,
-  phi: number
-): [number, number, number] {
+export function orbitPosition(r: number, phi: number): [number, number, number] {
   return [r * Math.cos(phi), 0, r * Math.sin(phi)];
 }
 
@@ -73,12 +70,24 @@ export type OrbitElements = {
  * used: the whole system is turned so its real position today lands on that spot.
  */
 export const SATURN_ELEMENTS: OrbitElements = {
-  au: 9.53668, e: 0.05386, i: 2.48599, node: 113.66242, peri: 92.59888, L0: 49.95424, rate: 1222.49362,
+  au: 9.53668,
+  e: 0.05386,
+  i: 2.48599,
+  node: 113.66242,
+  peri: 92.59888,
+  L0: 49.95424,
+  rate: 1222.49362,
 };
 
 /** The Earth's real elements — the 3rd planet, between Venus and Mars. */
 export const EARTH_ELEMENTS: OrbitElements = {
-  au: 1.00000261, e: 0.01671, i: 0, node: 0, peri: 102.93768, L0: 100.46457, rate: 35999.37245,
+  au: 1.00000261,
+  e: 0.01671,
+  i: 0,
+  node: 0,
+  peri: 102.93768,
+  L0: 100.46457,
+  rate: 35999.37245,
 };
 
 /**
@@ -312,7 +321,6 @@ export const SATURN_LOOK = {
   dustBreath: 0, // how much it drifts in and out (× radius) — still
 };
 
-
 /**
  * A planet's surface, drawn by one shared shader (planetShaders.ts). Every feature is
  * noise on the body's own frame, so it turns with the planet; 0 switches it off.
@@ -356,7 +364,15 @@ export type PlanetDef = {
 export const PLANETS: PlanetDef[] = [
   {
     id: "mercury",
-    orbit: { au: 0.38710, e: 0.20564, i: 7.00498, node: 48.33077, peri: 77.45780, L0: 252.25032, rate: 149472.67411 },
+    orbit: {
+      au: 0.3871,
+      e: 0.20564,
+      i: 7.00498,
+      node: 48.33077,
+      peri: 77.4578,
+      L0: 252.25032,
+      rate: 149472.67411,
+    },
     size: 0.383 * EARTH_RADIUS,
     tilt: 0.03,
     look: {
@@ -384,7 +400,15 @@ export const PLANETS: PlanetDef[] = [
   },
   {
     id: "venus",
-    orbit: { au: 0.72334, e: 0.00678, i: 3.39468, node: 76.67984, peri: 131.60247, L0: 181.97910, rate: 58517.81539 },
+    orbit: {
+      au: 0.72334,
+      e: 0.00678,
+      i: 3.39468,
+      node: 76.67984,
+      peri: 131.60247,
+      L0: 181.9791,
+      rate: 58517.81539,
+    },
     size: 0.949 * EARTH_RADIUS,
     tilt: 177.4, // upside down → it spins backwards
     look: {
@@ -413,7 +437,15 @@ export const PLANETS: PlanetDef[] = [
   // (The Earth — 3rd from the Sun — is the interactive dotted globe; see EARTH_ELEMENTS.)
   {
     id: "mars",
-    orbit: { au: 1.52371, e: 0.09339, i: 1.84969, node: 49.55954, peri: -23.94363, L0: -4.55343, rate: 19140.30268 },
+    orbit: {
+      au: 1.52371,
+      e: 0.09339,
+      i: 1.84969,
+      node: 49.55954,
+      peri: -23.94363,
+      L0: -4.55343,
+      rate: 19140.30268,
+    },
     size: 0.532 * EARTH_RADIUS,
     tilt: 25.2,
     look: {
@@ -441,7 +473,15 @@ export const PLANETS: PlanetDef[] = [
   },
   {
     id: "jupiter",
-    orbit: { au: 5.20289, e: 0.04839, i: 1.30440, node: 100.47391, peri: 14.72848, L0: 34.39644, rate: 3034.74613 },
+    orbit: {
+      au: 5.20289,
+      e: 0.04839,
+      i: 1.3044,
+      node: 100.47391,
+      peri: 14.72848,
+      L0: 34.39644,
+      rate: 3034.74613,
+    },
     size: 11.21 * EARTH_RADIUS, // bigger than the Saturn, as in reality
     tilt: 3.1,
     look: {
@@ -471,7 +511,15 @@ export const PLANETS: PlanetDef[] = [
   },
   {
     id: "uranus",
-    orbit: { au: 19.18916, e: 0.04726, i: 0.77264, node: 74.01693, peri: 170.95428, L0: 313.23810, rate: 428.48203 },
+    orbit: {
+      au: 19.18916,
+      e: 0.04726,
+      i: 0.77264,
+      node: 74.01693,
+      peri: 170.95428,
+      L0: 313.2381,
+      rate: 428.48203,
+    },
     size: 4.01 * EARTH_RADIUS,
     tilt: 97.8, // rolls on its side
     look: {
@@ -500,7 +548,15 @@ export const PLANETS: PlanetDef[] = [
   },
   {
     id: "neptune",
-    orbit: { au: 30.06992, e: 0.00859, i: 1.77004, node: 131.78423, peri: 44.96476, L0: -55.12003, rate: 218.45945 },
+    orbit: {
+      au: 30.06992,
+      e: 0.00859,
+      i: 1.77004,
+      node: 131.78423,
+      peri: 44.96476,
+      L0: -55.12003,
+      rate: 218.45945,
+    },
     size: 3.88 * EARTH_RADIUS,
     tilt: 28.3,
     look: {

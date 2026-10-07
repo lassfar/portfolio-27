@@ -41,7 +41,5 @@ export const GALAXY_FLIGHT = { rise: 2, settle: 5.1 };
 
 /** The flight out to the Milky Way's curve (GALAXY_FLIGHT), t in 0..1. */
 export function galaxyFlightEase(t: number): number {
-  return (
-    1 - Math.pow(1 - Math.pow(t, GALAXY_FLIGHT.rise), GALAXY_FLIGHT.settle)
-  );
+  return 1 - Math.pow(1 - Math.pow(t, GALAXY_FLIGHT.rise), GALAXY_FLIGHT.settle);
 }

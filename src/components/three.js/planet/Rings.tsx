@@ -85,10 +85,7 @@ const Rings = ({ count = RING.count, animate = true }: Props) => {
       uShimmer: { value: RING.shimmer },
       uFlowSpeed: { value: RING.flowSpeed },
       uPixelRatio: {
-        value:
-          typeof window !== "undefined"
-            ? Math.min(window.devicePixelRatio, 2)
-            : 1.5,
+        value: typeof window !== "undefined" ? Math.min(window.devicePixelRatio, 2) : 1.5,
       },
       uOpacity: { value: 1 },
       uLodCount: { value: 1e9 }, // level of detail: Saturn's share (every dot until set each frame)
@@ -100,7 +97,7 @@ const Rings = ({ count = RING.count, animate = true }: Props) => {
       uOvershoot: { value: GROWTH.overshoot },
       uThin: { value: 0 }, // 0 = full ring, 1 = fully thinned away (fly-away)
     }),
-    []
+    [],
   );
 
   useFrame((state, delta) => {
@@ -124,7 +121,10 @@ const Rings = ({ count = RING.count, animate = true }: Props) => {
     }
     // Level of detail: the same share of dots as Saturn itself (P27-78).
     const drawn = count * saturnLod.share;
-    pointsRef.current?.geometry.setDrawRange(0, Math.min(count, Math.ceil(drawn * (1 + PLANET_LOD.fadeBand))));
+    pointsRef.current?.geometry.setDrawRange(
+      0,
+      Math.min(count, Math.ceil(drawn * (1 + PLANET_LOD.fadeBand))),
+    );
     m.uniforms.uLodCount.value = drawn;
     m.uniforms.uLodFade.value = PLANET_LOD.fadeBand;
     // Fly-out: thin the ring a little with distance, in lockstep with the body.

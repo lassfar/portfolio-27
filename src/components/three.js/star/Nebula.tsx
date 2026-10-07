@@ -4,14 +4,7 @@ import { useFrame } from "@react-three/fiber";
 import { useMemo, useRef, type ReactNode } from "react";
 import { AdditiveBlending, Color, Group, Points, Quaternion, ShaderMaterial } from "three";
 import { useHeroScroll } from "#/stores/useHeroScroll";
-import {
-  BURST,
-  GLOW_PALETTE,
-  LAYOUT,
-  NEBULA_PALETTE,
-  PARTICLES,
-  ZOOM,
-} from "./config";
+import { BURST, GLOW_PALETTE, LAYOUT, NEBULA_PALETTE, PARTICLES, ZOOM } from "./config";
 import { remap01 } from "./utils";
 import { PERFORMANCE } from "#/components/three.js/scene/performance";
 import { useDrawGate } from "#/components/three.js/scene/useDrawGate";
@@ -131,10 +124,7 @@ const Nebula = ({ count = PARTICLES.count, animate = true }: Props) => {
     return { positions, colors, scales, seeds };
   }, [count]);
 
-  const glowUniforms = useMemo(
-    () => ({ uOpacity: { value: GLOW_OPACITY } }),
-    []
-  );
+  const glowUniforms = useMemo(() => ({ uOpacity: { value: GLOW_OPACITY } }), []);
 
   const uniforms = useMemo(
     () => ({
@@ -146,13 +136,10 @@ const Nebula = ({ count = PARTICLES.count, animate = true }: Props) => {
       uNearA: { value: PARTICLES.nearFade[0] }, // the near fade (set each frame)
       uNearB: { value: PARTICLES.nearFade[1] },
       uPixelRatio: {
-        value:
-          typeof window !== "undefined"
-            ? Math.min(window.devicePixelRatio, 2)
-            : 1.5,
+        value: typeof window !== "undefined" ? Math.min(window.devicePixelRatio, 2) : 1.5,
       },
     }),
-    []
+    [],
   );
 
   useFrame((state, delta) => {
@@ -170,11 +157,7 @@ const Nebula = ({ count = PARTICLES.count, animate = true }: Props) => {
     const progress = useHeroScroll.getState().progress;
 
     // Burst the particles outward once the star has centered.
-    u.uExplosion.value = remap01(
-      progress,
-      BURST.explosionStart,
-      BURST.explosionEnd
-    );
+    u.uExplosion.value = remap01(progress, BURST.explosionStart, BURST.explosionEnd);
 
     // Fade the whole nebula out as the debris flies through the camera.
     const fade = 1 - remap01(progress, BURST.fadeStart, 1);
@@ -183,16 +166,14 @@ const Nebula = ({ count = PARTICLES.count, animate = true }: Props) => {
     // Inner blue circle shrinks (local scale 1 → 0) as the star nears full
     // screen, reaching 0 exactly when the explosion starts.
     if (glowGroupRef.current) {
-      const glowScale =
-        1 - remap01(progress, ZOOM.centerEnd, BURST.explosionStart);
+      const glowScale = 1 - remap01(progress, ZOOM.centerEnd, BURST.explosionStart);
       glowGroupRef.current.scale.setScalar(glowScale);
     }
 
     // Core glow scales with the star (it lives inside this group) and dissolves
     // as the star bursts, so the explosion is particles — not a lingering blob.
     if (glowMatRef.current) {
-      glowMatRef.current.uniforms.uOpacity.value =
-        GLOW_OPACITY * (1 - u.uExplosion.value) * fade;
+      glowMatRef.current.uniforms.uOpacity.value = GLOW_OPACITY * (1 - u.uExplosion.value) * fade;
     }
   });
 
@@ -412,9 +393,7 @@ void main(){
   float grad = pow(smoothstep(1.0, 0.0, dist), 1.7);
 
   // Light blue-white center → blue outward (from config.GLOW_PALETTE).
-  vec3 col = mix(${glslVec3(GLOW_PALETTE.center)}, ${glslVec3(
-    GLOW_PALETTE.edge
-  )}, pow(dist, 0.7));
+  vec3 col = mix(${glslVec3(GLOW_PALETTE.center)}, ${glslVec3(GLOW_PALETTE.edge)}, pow(dist, 0.7));
 
   float alpha = grad * uOpacity;
   if (alpha < 0.003) discard;

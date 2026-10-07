@@ -16,9 +16,12 @@ export function seg(a: Vec3, b: Vec3) {
   const dir = vb.clone().sub(va);
   const len = dir.length();
   const mid = va.clone().add(vb).multiplyScalar(0.5).toArray() as Vec3;
-  const quat = new Quaternion()
-    .setFromUnitVectors(UP, dir.clone().normalize())
-    .toArray() as [number, number, number, number];
+  const quat = new Quaternion().setFromUnitVectors(UP, dir.clone().normalize()).toArray() as [
+    number,
+    number,
+    number,
+    number,
+  ];
   return { mid, quat, len };
 }
 

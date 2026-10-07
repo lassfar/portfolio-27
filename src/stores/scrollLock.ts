@@ -24,7 +24,14 @@ const locks = new Set<string>();
  * (window, capture; listened to before the smoother pauses) and kept from scrolling the
  * frozen page.
  */
-const OUTSIDE_BODY_EVENTS = ["wheel", "scroll", "touchstart", "touchmove", "pointerdown", "pointermove"];
+const OUTSIDE_BODY_EVENTS = [
+  "wheel",
+  "scroll",
+  "touchstart",
+  "touchmove",
+  "pointerdown",
+  "pointermove",
+];
 const insideBody = (target: EventTarget | null) =>
   target instanceof Element && target !== document.body && document.body.contains(target);
 const stopOutsideBody = (e: Event) => {

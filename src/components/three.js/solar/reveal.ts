@@ -17,9 +17,7 @@ import { SOLAR, VOYAGE } from "./config";
  */
 export function finaleReturn(): number {
   const galaxy = clamp01(useGalaxyScroll.getState().progress);
-  return easeOutCubic(
-    remap01(galaxy, SOLAR.finaleReturn[0], SOLAR.finaleReturn[1])
-  );
+  return easeOutCubic(remap01(galaxy, SOLAR.finaleReturn[0], SOLAR.finaleReturn[1]));
 }
 
 /**

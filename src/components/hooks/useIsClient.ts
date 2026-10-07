@@ -7,5 +7,9 @@ const subscribe = () => () => {};
  * render (no hydration mismatch), true after. For what needs the DOM, e.g. a portal to `<body>`.
  */
 export function useIsClient(): boolean {
-  return useSyncExternalStore(subscribe, () => true, () => false);
+  return useSyncExternalStore(
+    subscribe,
+    () => true,
+    () => false,
+  );
 }
