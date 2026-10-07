@@ -1,0 +1,761 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Calm story — prototype</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Great+Vibes&family=Krona+One&display=swap" rel="stylesheet" />
+<style>
+  :root {
+    --rich-black:#19191C; --dark:#27272A; --peach:#FFA14A; --dark-peach:#EF7D14; --light-peach:#FFE3C7;
+    --baby-blue:#2489FF; --gray-slate:#D9D9D9;
+    --glass-bg:rgba(25,25,28,0.55); --glass-ring:inset 0 0 0 1px rgba(255,255,255,0.10);
+  }
+  * { box-sizing:border-box; }
+  html { background:var(--rich-black); scroll-behavior:auto; }
+  body { margin:0; color:#fff; font-family:"Helvetica Neue",Helvetica,Arial,sans-serif; font-weight:300; -webkit-font-smoothing:antialiased; }
+  em { font-style:normal; color:var(--peach); }
+  button { font:inherit; }
+  :focus-visible { outline:2px solid rgba(255,161,74,0.7); outline-offset:3px; }
+
+  /* ── The prototype's own toolbar (not part of the design) ── */
+  .proto { position:fixed; top:18px; left:50%; transform:translateX(-50%); z-index:40; display:flex; align-items:center; gap:6px; padding:5px; border-radius:999px;
+    background:rgba(25,25,28,0.82); box-shadow:var(--glass-ring), 0 10px 30px -14px rgba(0,0,0,0.8); backdrop-filter:blur(12px); -webkit-backdrop-filter:blur(12px); }
+  .proto .tag { padding:0 10px 0 12px; font-family:"Krona One",sans-serif; font-size:9px; letter-spacing:1.6px; text-transform:uppercase; color:rgba(255,255,255,0.5); white-space:nowrap; }
+  .proto button { border:0; border-radius:999px; padding:8px 13px; background:transparent; color:rgba(255,255,255,0.65); font-family:"Krona One",sans-serif; font-size:9px; letter-spacing:1.4px; text-transform:uppercase; cursor:pointer; white-space:nowrap; }
+  .proto button:hover { color:var(--light-peach); }
+  .proto button[aria-pressed="true"] { background:rgba(255,161,74,0.14); color:var(--peach); box-shadow:inset 0 0 0 1px rgba(255,161,74,0.45); }
+  .proto .sep { width:1px; height:18px; background:rgba(255,255,255,0.12); }
+
+  /* ── The switch (top-right) ── */
+  .switch { position:fixed; top:18px; right:20px; z-index:40; width:42px; height:42px; border-radius:999px; border:0; cursor:pointer; display:grid; place-items:center; color:var(--peach);
+    background:var(--glass-bg); box-shadow:var(--glass-ring), 0 8px 24px -10px rgba(0,0,0,0.6); backdrop-filter:blur(12px) saturate(1.5); -webkit-backdrop-filter:blur(12px) saturate(1.5); }
+  .switch:hover { box-shadow:inset 0 0 0 1px rgba(255,161,74,0.55), 0 0 26px -4px rgba(255,161,74,0.45); }
+  .switch[aria-pressed="false"] { color:var(--light-peach); }
+  .switch svg { width:18px; height:18px; }
+  .switch-tip { position:fixed; top:68px; right:20px; z-index:40; padding:6px 12px; border-radius:999px; background:rgba(25,25,28,0.88); box-shadow:var(--glass-ring);
+    font-size:11px; color:var(--light-peach); opacity:0; pointer-events:none; transition:opacity 200ms; white-space:nowrap; }
+  .switch:hover + .switch-tip, .switch:focus-visible + .switch-tip { opacity:1; }
+  .toast { position:fixed; top:68px; right:20px; z-index:41; max-width:320px; padding:12px 16px; border-radius:14px; background:rgba(25,25,28,0.94); box-shadow:var(--glass-ring);
+    font-size:12.5px; line-height:1.55; color:rgba(255,255,255,0.82); opacity:0; transition:opacity 250ms; pointer-events:none; }
+  .toast.on { opacity:1; }
+
+  /* ── The chapter rail (left, like the story timeline) ── */
+  .rail { position:fixed; left:22px; top:50%; transform:translateY(-50%); z-index:30; display:flex; flex-direction:column; gap:14px; padding:6px 0; }
+  .rail::before { content:""; position:absolute; left:8px; top:0; bottom:0; width:1px; background:rgba(217,217,217,0.15); }
+  .rail a { position:relative; display:flex; align-items:center; gap:12px; width:18px; height:18px; color:rgba(217,217,217,0.4); text-decoration:none; }
+  .rail a svg { width:17px; height:17px; flex:none; }
+  .rail a.passed { color:rgba(255,161,74,0.65); }
+  .rail a.current { color:var(--peach); filter:drop-shadow(0 0 6px rgba(255,161,74,0.7)); }
+  .rail a span { position:absolute; left:28px; padding:5px 10px; border-radius:999px; background:rgba(25,25,28,0.88); box-shadow:var(--glass-ring); font-size:11px; color:var(--light-peach);
+    white-space:nowrap; opacity:0; pointer-events:none; transition:opacity 200ms; }
+  .rail a:hover span, .rail a:focus-visible span, .rail a.current span { opacity:1; }
+
+  /* ── Dotted shapes: a canvas of dots + a layer of labels ── */
+  [data-shape] canvas, [data-shape] .marks { position:absolute; inset:0; width:100%; height:100%; display:block; }
+  [data-shape] .marks { pointer-events:none; overflow:visible; }
+  .mark-label { font:300 11.5px "Helvetica Neue",Helvetica,Arial,sans-serif; fill:rgba(255,227,199,0.92); paint-order:stroke; stroke:#19191C; stroke-width:4px; stroke-linejoin:round; }
+  .mark-label.hub { font-size:13px; fill:#fff; }
+  .mark-ring { fill:none; stroke:rgba(255,161,74,0.9); stroke-width:1; }
+  .mark-line { stroke:rgba(255,227,199,0.45); stroke-width:1; }
+
+  /* ── The cover (Origin) ── */
+  .cover { position:relative; min-height:100vh; display:grid; place-items:center; text-align:center; overflow:hidden; }
+  .cover .cover-art { position:absolute; inset:0; }
+  .cover::after { content:""; position:absolute; inset:0; pointer-events:none; background:radial-gradient(ellipse 60% 40% at center 72%, rgba(25,25,28,0.75), rgba(25,25,28,0)); }
+  .cover .inner { position:relative; z-index:1; padding:120px 24px 80px; max-width:820px; margin-top:40vh; }
+  .eyebrow { font-family:"Krona One",sans-serif; font-size:10px; letter-spacing:2.2px; text-transform:uppercase; color:rgba(255,255,255,0.55); }
+  .eyebrow b { color:var(--peach); font-weight:400; }
+  .display { font-family:"Great Vibes",cursive; font-weight:400; line-height:1.02; margin:10px 0 16px; color:#fff; }
+  .cover .display { font-size:clamp(46px, 7vw, 92px); }
+  .lead { font-size:clamp(16px, 1.6vw, 19px); line-height:1.7; color:rgba(255,255,255,0.75); margin:0 auto; max-width:560px; }
+  .voice { font-size:clamp(15px, 1.4vw, 17px); line-height:1.7; color:rgba(255,255,255,0.92); margin:22px 0 0; padding-left:14px; border-left:2px solid rgba(255,161,74,0.55); }
+  .cover .voice { display:inline-block; text-align:left; margin-top:34px; }
+  .hint { margin-top:46px; font-family:"Krona One",sans-serif; font-size:9px; letter-spacing:2px; text-transform:uppercase; color:rgba(255,255,255,0.35); }
+
+  /* ── Bridges: the lines that say what the motion used to show ── */
+  .bridge { display:flex; flex-direction:column; align-items:center; gap:12px; padding:40px 24px; text-align:center; }
+  .bridge::before, .bridge::after { content:""; width:1px; height:34px; background:linear-gradient(to bottom, transparent, rgba(255,161,74,0.5), transparent); }
+  [data-bridge] { margin:0; max-width:640px; font-family:"Great Vibes",cursive; font-size:clamp(28px, 3.4vw, 40px); line-height:1.25; color:rgba(255,255,255,0.88); border-bottom:1px dashed transparent; cursor:text; }
+  [data-bridge]:hover { border-bottom-color:rgba(255,227,199,0.3); }
+  [data-bridge]:focus { outline:none; border-bottom-color:rgba(255,161,74,0.7); }
+  .bridge .said { margin:8px 0; max-width:620px; font-size:clamp(15px, 1.4vw, 17px); line-height:1.7; color:rgba(255,255,255,0.82); }
+  .edit-hint { font-family:"Krona One",sans-serif; font-size:8.5px; letter-spacing:1.6px; text-transform:uppercase; color:rgba(255,255,255,0.3); }
+
+  /* ── Chapter spreads ── */
+  .spread { position:relative; padding:40px clamp(24px, 6vw, 96px) 40px clamp(64px, 8vw, 120px); }
+  .figure { margin:0; position:relative; }
+  .text h2 { font-size:clamp(40px, 5vw, 66px); }
+  .text p.body { font-size:clamp(15.5px, 1.35vw, 17.5px); line-height:1.85; color:rgba(255,255,255,0.8); margin:0 0 14px; max-width:560px; }
+
+  /* The shape one side, the words the other, alternating */
+  .spread { display:grid; grid-template-columns:minmax(0, 1.15fr) minmax(0, 1fr); gap:clamp(28px, 4vw, 64px); align-items:center; padding-top:72px; padding-bottom:72px; }
+  .spread.flip .figure { order:2; }
+  .figure { aspect-ratio:5 / 4; }
+
+  /* The 2D drawings (the Craft, the Lab) */
+  .figure svg.drawing { position:absolute; inset:0; width:100%; height:100%; display:block; overflow:hidden; }
+  .craft-node .dot { transition:transform 250ms ease; transform-box:fill-box; transform-origin:center; }
+  .craft-node:hover .dot { transform:scale(1.7); }
+  .craft-node text { transition:fill 250ms ease; }
+  .craft-node:hover text { fill:#fff; }
+  #lab-drawing { pointer-events:none; }
+  #lab-drawing .mark-label { font-size:14px; }
+  #lab-drawing { -webkit-mask-image:linear-gradient(to bottom, transparent, #000 8%, #000 80%, transparent); mask-image:linear-gradient(to bottom, transparent, #000 8%, #000 80%, transparent); }
+
+  /* Things to open: the places, the memory card */
+  .chips { display:flex; flex-wrap:wrap; gap:10px; margin-top:24px; }
+  .chip { display:inline-flex; align-items:center; gap:8px; padding:9px 14px 9px 11px; border-radius:999px; border:0; cursor:pointer; color:var(--light-peach); font-size:13px;
+    background:var(--glass-bg); box-shadow:inset 0 1px 0 rgba(255,255,255,0.22), inset 0 0 0 1px rgba(255,255,255,0.08), 0 8px 24px -10px rgba(0,0,0,0.6);
+    backdrop-filter:blur(12px) saturate(1.5); -webkit-backdrop-filter:blur(12px) saturate(1.5); transition:box-shadow 300ms, color 300ms; }
+  .chip:hover { color:#fff; box-shadow:inset 0 1px 0 rgba(255,255,255,0.32), inset 0 0 0 1px rgba(255,161,74,0.45), 0 0 24px -6px rgba(255,161,74,0.5); }
+  .chip svg { width:15px; height:15px; color:var(--peach); flex:none; }
+  .chip .meta { color:rgba(255,227,199,0.55); }
+
+  /* The panel (a place, the Lab): frosted, from the right */
+  .scrim { position:fixed; inset:0; z-index:50; background:rgba(10,10,12,0.45); opacity:0; pointer-events:none; transition:opacity 250ms; }
+  .panel { position:fixed; top:0; right:0; bottom:0; z-index:51; width:min(460px, 100vw); padding:72px 34px 40px; overflow:auto; opacity:0; visibility:hidden;
+    background:rgba(25,25,28,0.86); box-shadow:inset 1px 0 0 rgba(255,255,255,0.10), -30px 0 60px -30px rgba(0,0,0,0.9);
+    backdrop-filter:blur(24px) saturate(1.5); -webkit-backdrop-filter:blur(24px) saturate(1.5); transition:opacity 250ms, visibility 250ms; }
+  .panel.open, .scrim.open { opacity:1; visibility:visible; pointer-events:auto; }
+  .panel .close { position:absolute; top:18px; right:18px; width:38px; height:38px; border-radius:999px; border:0; cursor:pointer; display:grid; place-items:center; color:var(--light-peach); background:var(--glass-bg); box-shadow:var(--glass-ring); }
+  .panel .close svg { width:16px; height:16px; }
+  .panel h3 { font-family:"Great Vibes",cursive; font-weight:400; font-size:48px; line-height:1.05; margin:8px 0 14px; }
+  .panel p { font-size:15px; line-height:1.75; color:rgba(255,255,255,0.78); }
+  .shots { display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-top:22px; }
+  .shot { aspect-ratio:4 / 3; border-radius:14px; display:grid; place-items:end start; padding:10px; font-size:10.5px; color:rgba(255,255,255,0.5);
+    background:linear-gradient(135deg, rgba(255,161,74,0.18), rgba(36,137,255,0.12)), #1d1d21; box-shadow:inset 0 0 0 1px rgba(255,255,255,0.06); }
+  .experiments { display:grid; gap:10px; margin-top:22px; }
+  .experiment { padding:16px 18px; border-radius:16px; background:rgba(255,255,255,0.03); box-shadow:inset 0 0 0 1px rgba(255,255,255,0.08); }
+  .experiment b { display:block; font-weight:400; color:#fff; font-size:15px; }
+  .experiment span { font-size:13px; color:rgba(255,255,255,0.6); }
+  .experiment i { float:right; font-style:normal; font-family:"Krona One",sans-serif; font-size:8.5px; letter-spacing:1.4px; text-transform:uppercase; color:rgba(255,227,199,0.55); padding:4px 8px; border-radius:999px; box-shadow:inset 0 0 0 1px rgba(255,227,199,0.25); }
+
+  /* The ending: one line, on its own page */
+  .ending { min-height:100vh; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:18px; padding:80px 24px; text-align:center; }
+  .ending .you { width:7px; height:7px; border-radius:50%; background:var(--light-peach); margin-bottom:26px;
+    box-shadow:0 0 0 7px rgba(255,161,74,0.16), 0 0 0 8px rgba(255,161,74,0.5), 0 0 30px 10px rgba(255,161,74,0.18); }
+  .ending [data-bridge] { font-size:clamp(42px, 6.2vw, 86px); line-height:1.12; max-width:900px; color:#fff; }
+
+  /* Contact */
+  .contact { min-height:100vh; display:grid; place-items:center; padding:90px 24px 80px; text-align:center; }
+  .contact .display { font-size:clamp(52px, 6.5vw, 86px); }
+  .form { width:min(560px, 100%); margin:34px auto 0; text-align:left; display:grid; grid-template-columns:1fr 1fr; gap:24px 22px; }
+  .form label { display:flex; flex-direction:column; gap:8px; font-family:"Krona One",sans-serif; font-size:9px; letter-spacing:1.8px; text-transform:uppercase; color:rgba(255,255,255,0.5); }
+  .form .wide { grid-column:1 / -1; }
+  .form input, .form textarea { background:transparent; border:0; border-bottom:1px solid rgba(217,217,217,0.25); color:#fff; padding:8px 0; font:300 15px "Helvetica Neue",Helvetica,Arial,sans-serif; letter-spacing:0; text-transform:none; resize:vertical; }
+  .form input::placeholder, .form textarea::placeholder { color:rgba(255,255,255,0.35); }
+  .form input:focus, .form textarea:focus { outline:none; border-bottom-color:var(--peach); }
+  .send { grid-column:1 / -1; justify-self:center; display:inline-flex; align-items:center; gap:9px; padding:12px 24px; border-radius:999px; border:0; cursor:pointer; color:var(--peach);
+    background:rgba(255,161,74,0.06); box-shadow:inset 0 0 0 1px rgba(255,161,74,0.7); }
+  .send:hover { background:rgba(255,161,74,0.12); box-shadow:inset 0 0 0 1px var(--peach), 0 0 26px -4px rgba(255,161,74,0.45); }
+  .send svg { width:15px; height:15px; }
+  .links { display:flex; justify-content:center; gap:26px; margin-top:34px; font-size:13px; }
+  .links a { display:inline-flex; align-items:center; gap:7px; color:rgba(255,255,255,0.7); text-decoration:none; }
+  .links a:hover { color:var(--peach); }
+  .links svg { width:14px; height:14px; }
+  .thanks[hidden], .form[hidden] { display:none; }
+
+  /* Calm reveal: a short fade only (no movement) */
+  .reveal { opacity:0; transition:opacity 500ms ease; }
+  .reveal.in { opacity:1; }
+
+  .sr-only { position:absolute; width:1px; height:1px; overflow:hidden; clip:rect(0 0 0 0); white-space:nowrap; }
+
+  @media (max-width:767px) {
+    .rail { display:none; }
+    .proto .tag { display:none; }
+    .proto { top:auto; bottom:14px; }
+    .cover .inner { margin-top:28vh; }
+    .spread { grid-template-columns:1fr; padding:30px 20px; }
+    .spread.flip .figure { order:0; }
+    .spread { padding:30px 20px; }
+    .form { grid-template-columns:1fr; }
+  }
+</style>
+</head>
+<body>
+
+<div class="proto" role="toolbar" aria-label="Prototype controls">
+  <span class="tag">Prototype · calm story v3</span>
+  <button type="button" id="copy-lines">Copy my lines</button>
+</div>
+
+<button class="switch" id="switch" type="button" aria-pressed="true" aria-label="Reduce motion">
+  <svg id="icon-calm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><path d="M4 8h16M4 12h16M4 16h16"/></svg>
+  <svg id="icon-motion" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" style="display:none"><path d="M3 8c3-3 6 3 9 0s6 3 9 0M3 12c3-3 6 3 9 0s6 3 9 0M3 16c3-3 6 3 9 0s6 3 9 0"/></svg>
+</button>
+<div class="switch-tip" id="switch-tip">Calm motion · on</div>
+<div class="toast" id="toast" role="status"></div>
+
+<nav class="rail" id="rail" aria-label="Chapters"></nav>
+
+<main>
+  <!-- 1 · Origin: the cover -->
+  <section class="cover" id="origin" data-chapter="Origin" aria-labelledby="t-origin">
+    <div class="cover-art" data-shape="star" role="img" aria-label="A star drawn in dots: a bright peach core, blue and peach dust around it, and long rays of light."></div>
+    <div class="inner reveal">
+      <div class="eyebrow">I’m Aymane —</div>
+      <h1 class="display" id="t-origin">A quiet maker of <em>Small Universes</em></h1>
+      <p class="lead">I notice light. I’ve been drawing since before I could write. Now I do it with code.</p>
+      <p class="voice">Before anything takes shape, it has to <em>come apart</em>.</p>
+      <div class="hint">Scroll to read · seven short chapters</div>
+    </div>
+  </section>
+
+  <div class="bridge reveal">
+    <p contenteditable="true" spellcheck="false" data-bridge="1" aria-label="Bridge line 1 (editable)">A star burst. From its dust, a planet took shape.</p>
+    <span class="edit-hint">Draft · click to rewrite</span>
+  </div>
+
+  <!-- 2 · The Maker -->
+  <section class="spread" id="maker" data-chapter="The Maker" aria-labelledby="t-maker">
+    <figure class="figure reveal" data-shape="saturn" role="img" aria-label="Saturn drawn in dots: peach bands on the planet, its rings tilted around it."></figure>
+    <div class="text reveal">
+      <div class="eyebrow">Chapter 2 · <b>The Maker</b></div>
+      <h2 class="display" id="t-maker">Small, Patient <em>Details</em></h2>
+      <p class="body">I don’t fill rooms — I notice them. I’ve always been the quiet one, more at home watching than performing. That’s where the work comes from: a love of small, patient details — the right easing curve, the soft edge of a shadow, the moment a page finally breathes.</p>
+      <p class="body">I build the way I drew as a kid: slowly, and for the love of it. Only now, other people get to live inside what I make. I care less about looking impressive than about being honest — quiet interfaces that feel considered, and a little bit alive.</p>
+      <p class="voice"><em>Dot by dot.</em> I’ve never known another way to make something.</p>
+    </div>
+  </section>
+
+  <div class="bridge reveal">
+    <p contenteditable="true" spellcheck="false" data-bridge="2" aria-label="Bridge line 2 (editable)">Every world is made of smaller things. These are mine.</p>
+    <span class="edit-hint">Draft · click to rewrite</span>
+  </div>
+
+  <!-- 3 · The Craft -->
+  <section class="spread flip" id="craft" data-chapter="The Craft" aria-labelledby="t-craft">
+    <figure class="figure reveal" role="img" aria-label="A constellation of what I am drawn to: Photography, Drawing and Motion above; React, TypeScript, Next.js and GSAP below; Three.js / R3F in the middle, where they meet."><svg class="drawing" viewBox="0 0 600 420" aria-hidden="true">
+      <g id="craft-stars"></g>
+      <g stroke="#2489FF" stroke-opacity="0.4" stroke-width="1"><line x1="110" y1="95" x2="300" y2="58"/><line x1="300" y1="58" x2="488" y2="104"/><line x1="104" y1="330" x2="250" y2="362"/><line x1="250" y1="362" x2="410" y2="348"/><line x1="410" y1="348" x2="522" y2="298"/><line x1="300" y1="212" x2="300" y2="58"/><line x1="300" y1="212" x2="488" y2="104"/><line x1="300" y1="212" x2="104" y2="330"/><line x1="300" y1="212" x2="410" y2="348"/><line x1="522" y1="298" x2="488" y2="104"/></g>
+      <g class="craft-node"><circle cx="110" cy="95" r="17" fill="transparent"/><circle class="dot" cx="110" cy="95" r="5" fill="#FFA14A"/><text x="110" y="81" text-anchor="middle" fill="#C5E0FF" font-size="11.5" font-family="Helvetica Neue, Helvetica, Arial, sans-serif">Photography</text></g>
+      <g class="craft-node"><circle cx="300" cy="58" r="17" fill="transparent"/><circle class="dot" cx="300" cy="58" r="5" fill="#FFA14A"/><text x="300" y="44" text-anchor="middle" fill="#C5E0FF" font-size="11.5" font-family="Helvetica Neue, Helvetica, Arial, sans-serif">Drawing</text></g>
+      <g class="craft-node"><circle cx="488" cy="104" r="17" fill="transparent"/><circle class="dot" cx="488" cy="104" r="5" fill="#FFA14A"/><text x="488" y="90" text-anchor="middle" fill="#C5E0FF" font-size="11.5" font-family="Helvetica Neue, Helvetica, Arial, sans-serif">Motion</text></g>
+      <g class="craft-node"><circle cx="300" cy="212" r="21" fill="transparent"/><circle class="dot" cx="300" cy="212" r="18" fill="#FFA14A" opacity="0.12"/><circle class="dot" cx="300" cy="212" r="9" fill="#FFA14A"/><text x="300" y="238" text-anchor="middle" fill="#C5E0FF" font-size="13" font-family="Helvetica Neue, Helvetica, Arial, sans-serif">Three.js / R3F</text></g>
+      <g class="craft-node"><circle cx="104" cy="330" r="17" fill="transparent"/><circle class="dot" cx="104" cy="330" r="5" fill="#FFA14A"/><text x="104" y="352" text-anchor="middle" fill="#C5E0FF" font-size="11.5" font-family="Helvetica Neue, Helvetica, Arial, sans-serif">React</text></g>
+      <g class="craft-node"><circle cx="250" cy="362" r="17" fill="transparent"/><circle class="dot" cx="250" cy="362" r="5" fill="#FFA14A"/><text x="250" y="384" text-anchor="middle" fill="#C5E0FF" font-size="11.5" font-family="Helvetica Neue, Helvetica, Arial, sans-serif">TypeScript</text></g>
+      <g class="craft-node"><circle cx="410" cy="348" r="17" fill="transparent"/><circle class="dot" cx="410" cy="348" r="5" fill="#FFA14A"/><text x="410" y="370" text-anchor="middle" fill="#C5E0FF" font-size="11.5" font-family="Helvetica Neue, Helvetica, Arial, sans-serif">Next.js</text></g>
+      <g class="craft-node"><circle cx="522" cy="298" r="17" fill="transparent"/><circle class="dot" cx="522" cy="298" r="5" fill="#FFA14A"/><text x="522" y="320" text-anchor="middle" fill="#C5E0FF" font-size="11.5" font-family="Helvetica Neue, Helvetica, Arial, sans-serif">GSAP</text></g>
+    </svg></figure>
+    <div class="text reveal">
+      <div class="eyebrow">Chapter 3 · <b>The Craft</b></div>
+      <h2 class="display" id="t-craft">What I’m <em>drawn to</em></h2>
+      <p class="body">The tools I reach for and the things that pull my eye — connected, because the way I see is the way I build.</p>
+      <p class="body">Up top, what pulls my eye: photography, drawing, motion. Below, the tools I build with: React, TypeScript, Next.js, GSAP. In the middle, where they meet: Three.js.</p>
+    </div>
+  </section>
+
+  <!-- The Voyage, told as a passage -->
+  <div class="bridge reveal">
+    <p contenteditable="true" spellcheck="false" data-bridge="3" aria-label="Bridge line 3 (editable)">Then I stepped back, far enough to see the whole system.</p>
+    <p class="said">I like to zoom out. That’s where <em>the small things</em> start to make sense.</p>
+    <p contenteditable="true" spellcheck="false" data-bridge="4" aria-label="Bridge line 4 (editable)">Down to the third planet: the places I carry with me.</p>
+    <span class="edit-hint">Drafts · click to rewrite</span>
+  </div>
+
+  <!-- 4 · The Earth -->
+  <section class="spread" id="earth" data-chapter="The Earth" aria-labelledby="t-earth">
+    <figure class="figure reveal" data-shape="earth" role="img" aria-label="The Earth drawn in dots: peach continents, blue oceans, and pins on London, the New Forest and Morocco."></figure>
+    <div class="text reveal">
+      <div class="eyebrow">Chapter 4 · <b>The Earth</b></div>
+      <h2 class="display" id="t-earth">The <em>Earth</em></h2>
+      <p class="voice">Wherever I go, I carry a camera, not to keep the places, but <em>the light</em>.</p>
+      <div class="chips">
+        <button class="chip" type="button" data-open="london"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14.5 4h-5L7 7H4a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-3l-2.5-3z"/><circle cx="12" cy="13" r="3"/></svg> London <span class="meta">· 5 shots</span> <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 7h10v10"/><path d="M7 17 17 7"/></svg></button>
+        <button class="chip" type="button" data-open="brockenhurst"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14.5 4h-5L7 7H4a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-3l-2.5-3z"/><circle cx="12" cy="13" r="3"/></svg> New Forest — Brockenhurst <span class="meta">· 4 shots</span> <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 7h10v10"/><path d="M7 17 17 7"/></svg></button>
+        <button class="chip" type="button" data-open="morocco"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14.5 4h-5L7 7H4a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-3l-2.5-3z"/><circle cx="12" cy="13" r="3"/></svg> Morocco <span class="meta">· 4 shots</span> <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 7h10v10"/><path d="M7 17 17 7"/></svg></button>
+      </div>
+    </div>
+  </section>
+
+  <div class="bridge reveal">
+    <p contenteditable="true" spellcheck="false" data-bridge="5" aria-label="Bridge line 5 (editable)">Out past the Earth, a small probe keeps looping toward the Sun.</p>
+    <span class="edit-hint">Draft · click to rewrite</span>
+  </div>
+
+  <!-- 5 · The Lab -->
+  <section class="spread flip" id="lab" data-chapter="The Lab" aria-labelledby="t-lab">
+    <figure class="figure reveal" data-shape="sun" role="img" aria-label="The Parker Solar Probe beside a big Sun, on its loops around it, each one closer: the closest passes 6.1 million km from the Sun."><svg class="drawing" id="lab-drawing" viewBox="0 0 500 400" aria-hidden="true"></svg></figure>
+    <div class="text reveal">
+      <div class="eyebrow">Chapter 5 · <b>The Lab</b></div>
+      <h2 class="display" id="t-lab">The <em>Lab</em></h2>
+      <p class="voice">It never flies straight at the Sun. It loops — and every loop takes it <em>a little closer</em>. That’s how I learn.</p>
+      <div class="chips">
+        <button class="chip" type="button" data-open="lab"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 19v-3M10 19v-3M14 19v-3M18 19v-3M8 11V9M16 11V9M12 11V9M2 15h20"/><path d="M2 7a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v1.1a2 2 0 0 0 0 3.837V17a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2v-5.1a2 2 0 0 0 0-3.837Z"/></svg> Memory card <span class="meta">· open the Lab</span> <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 7h10v10"/><path d="M7 17 17 7"/></svg></button>
+      </div>
+    </div>
+  </section>
+
+  <!-- The Way Out, told as a passage -->
+  <div class="bridge reveal">
+    <p contenteditable="true" spellcheck="false" data-bridge="6" aria-label="Bridge line 6 (editable)">From the probe, back out to the whole system.</p>
+    <p class="said">Up close, it’s all details. From here, it’s <em>one quiet system</em>. That’s what I try to build.</p>
+    <p contenteditable="true" spellcheck="false" data-bridge="7" aria-label="Bridge line 7 (editable)">Further still, until the Sun is one star among billions.</p>
+    <span class="edit-hint">Drafts · click to rewrite</span>
+  </div>
+
+  <!-- 6 · The Milky Way -->
+  <section class="spread" id="milky-way" data-chapter="The Milky Way" aria-labelledby="t-milky-way">
+    <figure class="figure reveal" data-shape="galaxy" role="img" aria-label="The Milky Way drawn in dots: a warm core, spiral arms of peach and blue, and one dot marked “You are here”."></figure>
+    <div class="text reveal">
+      <div class="eyebrow">Chapter 6 · <b>The Milky Way</b></div>
+      <h2 class="display" id="t-milky-way">The Milky <em>Way</em></h2>
+      <p class="voice">A hundred billion stars, and we still <em>find each other</em>.</p>
+    </div>
+  </section>
+
+  <!-- The ending: one line on its own page, before Contact -->
+  <section class="ending reveal" aria-label="You are here">
+    <span class="you" aria-hidden="true"></span>
+    <p contenteditable="true" spellcheck="false" data-bridge="8" aria-label="Bridge line 8 (editable)">And somewhere in all of it, you’re reading this.</p>
+    <span class="edit-hint">Draft · click to rewrite</span>
+  </section>
+
+  <!-- 7 · Contact -->
+  <section class="contact" id="contact" data-chapter="Contact" aria-labelledby="t-contact">
+    <div class="reveal" style="width:100%">
+      <div class="eyebrow">Chapter 7 · <b>Contact</b></div>
+      <h2 class="display" id="t-contact">Say <em>Hello</em></h2>
+      <p class="lead">Parker carries over a million names toward the Sun. Leave yours here, and I’ll write back.</p>
+      <form class="form" id="form">
+        <label>Name<input name="name" placeholder="Your name" autocomplete="name" /></label>
+        <label>Email<input name="email" type="email" placeholder="you@somewhere.com" autocomplete="email" /></label>
+        <label class="wide">Message<textarea name="message" rows="3" placeholder="A project, a question, or just hello."></textarea></label>
+        <button class="send" type="submit">Send it <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m22 2-7 20-4-9-9-4Z"/><path d="M22 2 11 13"/></svg></button>
+      </form>
+      <div class="thanks" id="thanks" hidden>
+        <h3 class="display" style="font-size:54px">Thank <em>you</em></h3>
+        <p class="lead">Your message is on its way (in this prototype, it goes nowhere).</p>
+        <button class="send" type="button" id="again" style="margin-top:22px">Write another</button>
+      </div>
+      <div class="links">
+        <a href="mailto:hello@example.com"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect width="20" height="16" x="2" y="4" rx="2"/><path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"/></svg> Email</a>
+        <a href="https://github.com/" target="_blank" rel="noopener">GitHub ↗</a>
+        <a href="https://www.linkedin.com/" target="_blank" rel="noopener">LinkedIn ↗</a>
+      </div>
+    </div>
+  </section>
+</main>
+
+<div class="scrim" id="scrim"></div>
+<aside class="panel" id="panel" role="dialog" aria-modal="true" aria-labelledby="panel-title">
+  <button class="close" type="button" id="panel-close" aria-label="Close"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg></button>
+  <div id="panel-body"></div>
+</aside>
+
+<p class="sr-only" id="live" aria-live="polite"></p>
+
+<script>
+  const STORE = "p27-calm-story-prototype";
+  const load = () => { try { return JSON.parse(localStorage.getItem(STORE)) || {}; } catch { return {}; } };
+  const save = (v) => { try { localStorage.setItem(STORE, JSON.stringify(v)); } catch {} };
+  const state = load();
+
+  // ── Bridge lines: editable, kept in this browser ──
+  const bridges = [...document.querySelectorAll("[data-bridge]")];
+  bridges.forEach((p) => {
+    const saved = state.bridges && state.bridges[p.dataset.bridge];
+    if (saved) p.textContent = saved;
+    p.addEventListener("input", () => { state.bridges = { ...(state.bridges || {}), [p.dataset.bridge]: p.textContent.trim() }; save(state); });
+    p.addEventListener("keydown", (e) => { if (e.key === "Enter") { e.preventDefault(); p.blur(); } });
+  });
+  const toast = document.getElementById("toast");
+  let toastTimer = 0;
+  const say = (text) => { toast.textContent = text; toast.classList.add("on"); clearTimeout(toastTimer); toastTimer = setTimeout(() => toast.classList.remove("on"), 3400); };
+  document.getElementById("copy-lines").addEventListener("click", async () => {
+    const text = bridges.map((p, i) => `${i + 1}. ${p.textContent.trim()}`).join("\n");
+    try { await navigator.clipboard.writeText(text); say("Your bridge lines are copied: paste them in the chat."); }
+    catch { say(text); }
+  });
+
+  // ── The switch ──
+  const sw = document.getElementById("switch");
+  sw.addEventListener("click", () => {
+    const calm = sw.getAttribute("aria-pressed") !== "true";
+    sw.setAttribute("aria-pressed", String(calm));
+    document.getElementById("icon-calm").style.display = calm ? "" : "none";
+    document.getElementById("icon-motion").style.display = calm ? "none" : "";
+    document.getElementById("switch-tip").textContent = calm ? "Calm motion · on" : "Calm motion · off";
+    say(calm ? "Calm motion is on: the story as a calm read." : "On the site, this brings back the full journey: the 3D story in motion (not part of this prototype).");
+  });
+
+  // ── The chapter rail + the calm reveal ──
+  const STAR = '<svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 2.5l1.6 7.9 7.9 1.6-7.9 1.6L12 21.5l-1.6-7.9L2.5 12l7.9-1.6z"/></svg>';
+  const chapters = [...document.querySelectorAll("[data-chapter]")];
+  const rail = document.getElementById("rail");
+  chapters.forEach((c) => {
+    const a = document.createElement("a");
+    a.href = `#${c.id}`; a.innerHTML = `${STAR}<span>${c.dataset.chapter}</span>`; a.setAttribute("aria-label", c.dataset.chapter);
+    a.addEventListener("click", (e) => { e.preventDefault(); c.scrollIntoView({ behavior: "auto", block: "start" }); });
+    rail.appendChild(a);
+  });
+  const links = [...rail.children];
+  let current = -1;
+  const mark = (i) => {
+    if (i === current) return; current = i;
+    links.forEach((a, j) => { a.classList.toggle("current", j === i); a.classList.toggle("passed", j < i); if (j === i) a.setAttribute("aria-current", "step"); else a.removeAttribute("aria-current"); });
+    document.getElementById("live").textContent = chapters[i].dataset.chapter;
+  };
+  // The current chapter is the last one whose top has passed the middle of the screen, so a bridge keeps the chapter before it.
+  let queued = false;
+  const track = () => {
+    queued = false;
+    const middle = window.innerHeight / 2;
+    let i = 0;
+    chapters.forEach((c, j) => { if (c.getBoundingClientRect().top <= middle) i = j; });
+    mark(i);
+  };
+  const queue = () => { if (!queued) { queued = true; requestAnimationFrame(track); } };
+  window.addEventListener("scroll", queue, { passive: true });
+  window.addEventListener("resize", queue);
+  track();
+  const reveal = new IntersectionObserver((entries) => {
+    entries.forEach((e) => { if (e.isIntersecting) { e.target.classList.add("in"); reveal.unobserve(e.target); } });
+  }, { threshold: 0.12 });
+  document.querySelectorAll(".reveal").forEach((el) => reveal.observe(el));
+
+  // ── The panels: a place, the Lab ──
+  const PLACES = {
+    london: { eyebrow: "United Kingdom", title: "Back to <em>London</em>", blurb: "The city I keep coming back to — grey light, warm corners.", shots: 5 },
+    brockenhurst: { eyebrow: "United Kingdom", title: "New Forest, <em>Brockenhurst</em>", blurb: "Wild ponies, low mist, and the quiet of the New Forest.", shots: 4 },
+    morocco: { eyebrow: "Morocco", title: "Home, <em>Morocco</em>", blurb: "Home — warm light, warmer people.", shots: 4 },
+  };
+  const LAB = `<div class="eyebrow">Parker Solar Probe · <b>6.1 million km from the Sun</b></div>
+    <h3 id="panel-title">On the <em>Card</em></h3>
+    <p>Small experiments in motion, shaders and code — carried on Parker’s memory card, beside 1.1 million names, closer to the Sun than anything we’ve ever built. More will drift into orbit soon.</p>
+    <div class="experiments">
+      <div class="experiment"><i>Soon</i><b>Worlds</b><span>A little solar system, turning in the dark.</span></div>
+      <div class="experiment"><i>Soon</i><b>Shader study</b><span>Noise, light, and grain.</span></div>
+      <div class="experiment"><i>Soon</i><b>Motion sketch</b><span>A small experiment in easing.</span></div>
+    </div>`;
+  const panel = document.getElementById("panel"), scrim = document.getElementById("scrim"), body = document.getElementById("panel-body");
+  let opener = null;
+  const open = (id, from) => {
+    opener = from;
+    if (id === "lab") body.innerHTML = LAB;
+    else {
+      const p = PLACES[id];
+      body.innerHTML = `<div class="eyebrow">${p.eyebrow}</div><h3 id="panel-title">${p.title}</h3><p>${p.blurb}</p>
+        <div class="shots">${Array.from({ length: p.shots }, (_, i) => `<div class="shot">${i === p.shots - 1 ? "Clip" : `Photo ${i + 1}`}</div>`).join("")}</div>`;
+    }
+    panel.classList.add("open"); scrim.classList.add("open");
+    document.getElementById("panel-close").focus();
+  };
+  const close = () => { panel.classList.remove("open"); scrim.classList.remove("open"); if (opener) opener.focus(); };
+  document.querySelectorAll("[data-open]").forEach((b) => b.addEventListener("click", () => open(b.dataset.open, b)));
+  document.getElementById("panel-close").addEventListener("click", close);
+  scrim.addEventListener("click", close);
+  window.addEventListener("keydown", (e) => { if (e.key === "Escape" && panel.classList.contains("open")) close(); });
+
+  // ── The form (no network) ──
+  const form = document.getElementById("form"), thanks = document.getElementById("thanks");
+  form.addEventListener("submit", (e) => { e.preventDefault(); form.hidden = true; thanks.hidden = false; });
+  document.getElementById("again").addEventListener("click", () => { form.reset(); thanks.hidden = true; form.hidden = false; form.querySelector("input").focus(); });
+
+  // ── Dotted shapes ──
+  // The star, Saturn, the Earth and the Milky Way are drawn in dots. Nothing moves on its own: the pointer
+  // touches the dots one by one, each one pushed aside and swelling a little, then springing back to its place.
+  const BG = "#19191C", PEACH = "#FFA14A", DARK_PEACH = "#EF7D14", LIGHT_PEACH = "#FFE3C7", BLUE = "#2489FF", LIGHT_BLUE = "#C5E0FF", SLATE = "#D9D9D9", WHITE = "#FFFFFF";
+  const REACH = 50, PUSH = 0.7, SPRING = 0.08, FRICTION = 0.78, PAD = 8, CELL = 32;
+  const D = Math.PI / 180, GOLDEN = 2.39996;
+
+  const seeded = (seed) => () => { seed = (seed + 0x6d2b79f5) | 0; let t = Math.imul(seed ^ (seed >>> 15), 1 | seed); t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t; return ((t ^ (t >>> 14)) >>> 0) / 4294967296; };
+  const gauss = (rnd) => Math.sqrt(-2 * Math.log(1 - rnd())) * Math.cos(2 * Math.PI * rnd());
+  const hash = (s) => [...s].reduce((h, ch) => (Math.imul(h, 31) + ch.charCodeAt(0)) | 0, 7);
+
+  // The land map (1 bit per degree, from the site's earth-land-mask.png).
+  const LAND = Uint8Array.from(atob("AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAADg/wAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA/P8fAID//z8AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAD8//+D/////z9/AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAPDP/n/8//////8HAAAAAAAAAEAwAAAAAB4AAAAAAAAAAAAAAAAAAAAAAAAAAMD//wP4//////8BAACAfxwAAAAAAAAAAPwAAAAAAAAAAAAAAAAAAAAAAAAg8Izn//H//////38AAAAAewIAAAAAAAAAAAAfAAAAAAAAAAAAAAAAAAAAAOAQAADwH+D///////8AAAAAPAAAAAAAAAAAAAAcAAAAAAAAAAAAAAAAAAAAAHwCEPPxP4D//////38AAAAAAAAAAAAA4AEAAAD/DwAAAAAAAAAAAAAAAAAAAIDvgzP/BwAA/P////8AAAAAAAAAAADgBwAA4P//HwAA4A8AAAAAAAAAAAAAAAcIAAAwAAAA+P////8AAAAAAAAAAABwAAAA/P//BwAAAAAAAAAAAAAAAAAAAP8AhvcxPwAA8P///38AAAAAAAAAAAAcAADg/////AMDAAYAAAAAAAAAAAAAgN9/hy+c7wEA8P///z8AAAAAAAAAAAAGAB7s//////8fAB8AAAAAAwAAAAAAAMf/B3L8/w8AoP///z8AAAAAAAAAAAAPAG++//////8f2f8DAAAAAAD4fwAAEID7P/D4/38AwP///zcAAAAAAPgDAAAAgN//////////////DwAAAAD+//+hv4b/P+SBA/8AYP7//w8AAAAAwP8fAAAAD9///////////////58/A8D///////8BBs7Pg/0BgP//fwAAAAAA+P//B4P7/5//////////////////HwD////////////vg/EPwP//BwAAAAAA+P//H/H//8///////////////////4H8/////+f/////Afw/gP//AQAAAAAA/v//X////+//////////////////8OD///////H///9fAPwZgP8fAMA/AAAA/+N/8P//////////////////////QMD7///////////Pw/8HAP8HAMAfAACA//F//v////////////////////8/AAD8///////////BAPAHAP4HAAACAADwf/z///////////////////////9/AID////////f/38AA4ABAPwDAAAAAAD8P/7/////////////////////f/9fAMD////////4/z8AwA8AAPgDAAAAAAD+H/5z////////////////////Mf8BAID/7/z//////x8AwD8AAMABAAAAAAD+P/zn//////////////////9/wG8AAAD8EwD+//+//x8AwD8MAAAAAAAAAAD8f3D///////////////////84cAAAAACAAwD4/////38AwP8eAAAAAAAAgACcH3D/+////////////////wEAOAAAAADABADw//////8AgP8/AAAAAAAAwAEAH/T//////////////////wAAfgAAAAAwAADA//////8PAP9/AAAAAAAAwAEwDv7/////////////////PwAAfwAAAAAEAACA//////8/wP//AAAAAAAAgAOwAv7/////////////////HwAAPwAAAAAAAAAA/v//////8///AwAAAAAAOAZgcP//////////////////HwAAHwAAAAAAAACA/P////3/4///DwAAAAAAPA74//////////////9//v///wEADwAAAAAAAAAA+P////v/4///DwAAAAAAPD/+//////////////+//////wUAAwAAAAAAAAAA8P//////7///DwAAAAAAAJ///////////////////////wUAAgAAAAAAAAAA8P//////////CAAAAAAAAOD//////////////////////w0AAAAAAAAAAAAAYP////////8hPAAAAAAAAPD//////////////////////w0AAAAAAAAAAAAAgP7////H//8HPgAAAAAAAP///////////////////////wQAAAAAAAAAAAAAAP////+B//8HUAAAAAAAAP7/////////////////////fwQAAAAAAAAAAAAAAP////+///+PAAAAAAAAAPz////3/D/+/v//////////PwQAAAAAAAAAAAAAAP////+f8P9/AAAAAAAAAPj//f9j/g9/////////////HwAAAAAAAAAAAAAAAP/////P+f8MAAAAAAAAAPj/+P8B/Id/////////////DwQAAAAAAAAAAAAAAP/////PvT8AAAAAAAAA+P3G4/8A8If/////////////Bx4AAAAAAAAAAAAAgP/////P4x8AAAAAAAAA+H+Aw/8A4A/+///9//////9/AAUAAAAAAAAAAAAAAP/3/////w8AAAAAAAAA+D8Ajv/w4R/8//////////8/AAAAAAAAAAAAAAAAAP///////wMAAAAAAAAA+B8wuM/+/z/+/////////98fAAMAAAAAAAAAAAAAAP///////wEAAAAAAAAA+A8wEMf//x/8/////////0cOAAMAAAAAAAAAAAAAAP7//////wEAAAAAAAAA+A8AAI7//x/8/////////wMOAAEAAAAAAAAAAAAAAPz//////wAAAAAAAAAA+AcABob//x/8/////////xcYgAEAAAAAAAAAAAAAAPz//////wAAAAAAAAAAQOB/AAAy/////////////x8c8AEAAAAAAAAAAAAAAPj//////wAAAAAAAAAAQPh/AAAA/////////////w8Y/gAAAAAAAAAAAAAAAPD/////fwAAAAAAAAAA4P8/AAAA/////////////w+ACwAAAAAAAAAAAAAAAMD/////HwAAAAAAAAAA8P9/AACA/////////////x9AAwAAAAAAAAAAAAAAAID/////DwAAAAAAAAAA+P//BwaA/////////////x/AAAAAAAAAAAAAAAAAAAD9////BwAAAAAAAAAA/P//D3/A/////////////z8AAAAAAAAAAAAAAAAAAAD5////BwAAAAAAAAAA/P///////////////////z8AAAAAAAAAAAAAAAAAAAD6/x8CBgAAAAAAAAAA/P///////4///////////z8AAAAAAAAAAAAAAAAAAAD0/w8ABgAAAAAAAAAA/v///////4///////////x8AAAAAAAAAAAAAAAAAAADs/wcADAAAAAAAAACA//////8//x/+/////////w8AAAAAAAAAAAAAAAAAAACI/wMADAAAAAAAAADA//////8//z/g/////////w8AAAAAAAAAAAAAAAAAAACQ/wcACAAAAAAAAADg//////9//v+I/////////wcAAAAAAAAAAAAAAAAAAAAQ/wMAAAAAAAAAAADg//////9//n8cgP///////yMAAAAAAAAAAAAAAAAAAAAA/gMAAAAAAAAAAADw////////+P9/AP///////xEAAAAAAAAAAAAAAAAAAAAA/AMAHQAAAAAAAAD4////////+P//APz/////PxAAAAAAAAAAAAAAAAAAAAAA+AMYYAAAAAAAAAD4////////+f9/AOz/B///BgAAAAAAAAAAAAAAAAAAAAAA+AcewAEAAAAAAADw////////8f8/AOD/B/5/AAAAAAAAAAAAAAAAAQAAAAAA+A8OADgAAAAAAADw////////4f8/AOD/Afw/BgAAAAAAAAAAAAAAAAAAAAAA8J8PAHgCAAAAAADw////////4/8fAOD/APw/AiAAAAAAAAAAAAAAAAAAAAAAgP8PAAAAAAAAAADw////////x/8HAOB/APx/ADAAAAAAAAAAAAAAAAAAAAAAAP4HAAAAAAAAAAD4////////h/8BAOA/AMz/ADAAAAAAAAAAAAAAAAAAAAAAAID/AAAAAAAAAAD4////////j/8AAMAPAMD/ATAAAAAAAAAAAAAAAAAAAAAAAAD/AQAAAAAAAAD4////////nx8AAMAPAMD/ASAAAAAAAAAAAAAAAAAAAAAAAAD4AAAAAAAAAAD4////////vwcAAIAPAMD/AYAAAAAAAAAAAAAAAAAAAAAAAADgAAAAAAAAAAD4////////fwAAAIAPAID8AQAAAAAAAAAAAAAAAAAAAAAAAACAAEgAAAAAAADg////////f0AAAAAPAID4AUAAAAAAAAAAAAAAAAAAAAAAAADAAf4RAAAAAADg/////////34AAAAPAEDwAAAAAAAAAAAAAAAAAAAAAAAAAAAAE+9/AAAAAACA/////////38AAAAHAEAgAAAAAAAAAAAAAAAAAAAAAAAAAAAAzv//AAAAAACA/////////z8AAAASAMAAAAADAAAAAAAAAAAAAAAAAAAAAAAAyP//AQAAAAAA/////////z8AAAAwAIAAAAAHAAAAAAAAAAAAAAAAAAAAAAAAwP//AwAAAAAA/v///////x8AAAAwAAADAAMBAAAAAAAAAAAAAAAAAAAAAAAAwP//fwAAAAAA/Af+/////w8AAAAAAAAHAAcAAAAAAAAAAAAAAAAAAAAAAAAAwP///wAAAAAAAADs/////w8AAAAAADAOwAMAAAAAAAAAAAAAAAAAAAAAAAAAgP///wEAAAAAAADA/////wcAAAAAAGAG4AMAAAAAAAAAAAAAAAAAAAAAAAAAwP///wEAAAAAAADA/////wMAAAAAAMAM+AMAAAAAAAAAAAAAAAAAAAAAAAAA4P///wMAAAAAAADA/////wEAAAAAAIAL/gMAAAAAAAAAAAAAAAAAAAAAAAAA8P///wMAAAAAAADA////fwAAAAAAAIAH/tMAAAAAAAAAAAAAAAAAAAAAAAAA8P///wcAAAAAAADg///PPwAAAAAAAAAP/gMAAQAAAAAAAAAAAAAAAAAAAAAA+P///38AAAAAAADg///PPwAAAAAAAAAe/DgAAwAAAAAAAAAAAAAAAAAAAAAA8P////8BAAAAAADA////HwAAAAAAAAAe/DgA8gEAAAAAAAAAAAAAAAAAAAAA+P////8fAAAAAACA////DwAAAAAAAAA8wCgA/g8AAAAAAAAAAAAAAAAAAAAA+P////8/AAAAAAAA///9BwAAAAAAAAA4AEAA8B8AAAAAAAAAAAAAAAAAAAAA+P//////AQAAAAAA///9BwAAAAAAAAAQAAAAwD8OAAAAAAAAAAAAAAAAAAAA8P//////AQAAAAAA////BwAAAAAAAADAAQAAwP+AAAAAAAAAAAAAAAAAAAAA8P//////AQAAAAAA/v//BwAAAAAAAACAHwAAwH8AAAAAAAAAAAAAAAAAAAAA4P//////AQAAAAAA/v//BwAAAAAAAAAAABYCAMcAAAAAAAAAAAAAAAAAAAAAwP//////AAAAAAAA/v//DwAAAAAAAAAAAAABAIABAAAAAAAAAAAAAAAAAAAAwP////9/AAAAAAAA/P//DwAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAgP////9/AAAAAAAA/P//HwAAAAAAAAAAAAAAAAQAAAAAAAAAAAAAAAAAAAAAgP////8/AAAAAAAA/v+/HyAAAAAAAAAAAACAHwQAAAAAAAAAAAAAAAAAAAAAAP////8fAAAAAAAA/v//HzAAAAAAAAAAAADADwwAAAAAAAAAAAAAAAAAAAAAAP////8fAAAAAAAA////HzAAAAAAAAAAAADsDxwAAAAAAAAAAAAAAAAAAAAAAL7///8fAAAAAAAA////DzwAAAAAAAAAAAD+Dx4AAAAAAAAAAAAAAAAAAAAAAPj///8fAAAAAAAA////Dz4AAAAAAAAAAAD/Px4AAAAAAAAAAAAAAAAAAAAAAOD///8fAAAAAAAA////AT8AAAAAAAAAAMD//z8AAAAAAAAAAAAAAAAAAAAAAOD///8PAAAAAAAA////AR8AAAAAAAAAAMD//z8AAAAAAAAAAAAAAAAAAAAAAMD///8PAAAAAAAA/v9/AB8AAAAAAAAAAOD//38AAAAAAAAAAAAAAAAAAAAAAMD///8PAAAAAAAA/v9/AA8AAAAAAAAAAPz///8BAAAAAAAAAAAAAAAAAAAAAMD///8HAAAAAAAA/P9/AA8AAAAAAAAAgP////8BAAAAAAAAAAAAAAAAAAAAAMD///8DAAAAAAAA/P9/gA8AAAAAAAAAwP////8DAAAAAAAAAAAAAAAAAAAAAOD//38AAAAAAAAA/P9/AA8AAAAAAAAAwP////8HAAAAAAAAAAAAAAAAAAAAAOD//x8AAAAAAAAA+P9/AAcAAAAAAAAA4P////8PAAAAAAAAAAAAAAAAAAAAAOD//w8AAAAAAAAA+P8fAAIAAAAAAAAAwP////8fAAAAAAAAAAAAAAAAAAAAAOD//w8AAAAAAAAA+P8fAAAAAAAAAAAAwP////8fAAAAAAAAAAAAAAAAAAAAAOD//w8AAAAAAAAA+P8fAAAAAAAAAAAAwP////8fAAAAAAAAAAAAAAAAAAAAAOD//wcAAAAAAAAA8P8PAAAAAAAAAAAAwP////8/AAAAAAAAAAAAAAAAAAAAAOD//wMAAAAAAAAA4P8HAAAAAAAAAAAAgP////8fAAAAAAAAAAAAAAAAAAAAAPD//wEAAAAAAAAA4P8DAAAAAAAAAAAAgP////8fAAAAAAAAAAAAAAAAAAAAAPD//wAAAAAAAAAAwP8DAAAAAAAAAAAAAP////8fAAAAAAAAAAAAAAAAAAAAAPD//wAAAAAAAAAAwP8AAAAAAAAAAAAAAP8B/P8PAAAAAAAAAAAAAAAAAAAAAPD/fwAAAAAAAAAAwH8AAAAAAAAAAAAAgP8A2P8HAAAAAAAAAAAAAAAAAAAAAPD/PwAAAAAAAAAAgAEAAAAAAAAAAAAAAAcA4P8HAAAAAAAAAAAAAAAAAAAAAPj/BwAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAgP8DAAACAAAAAAAAAAAAAAAAAPj/BwAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAP8DAAAAAAAAAAAAAAAAAAAAAPz/BwAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAP8DAAAIAAAAAAAAAAAAAAAAAPj/AQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAGgAAAA4AAAAAAAAAAAAAAAAAPg/AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAcAAAAAAAAAAAAAAAAAPw/AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAYAAAAAAAAAAAAAAAAAPwHAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAOAAAAADAAAAAAAAAAAAAAAAAPwHAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAOAAAIADAAAAAAAAAAAAAAAAAPgHAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAEAAAMABAAAAAAAAAAAAAAAAAPwHAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAHAAAAAAAAAAAAAAAAAAAPwBAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAHgAAAAAAAAAAAAAAAAAAP4BAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAP4DAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAP8BAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAP4AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAH4AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAHwAAgAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAHwAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAANgAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAPADAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAADgAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAABwAAAAAAAAAAAAAAAAAAAAAAAAADgMAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAD8AAAAAAAAAAAAAAAAAIAfAADAn///fMDH/wAAAAAAAAAAAAAAAAAAAAAAAIB/AAAAAAAAAAAAAAAAAPz/CwDA/////////w8AAAAAAAAAAAAAAAAAAAAAAAB+AAAAAAAAAAAAAAAg4P///z/8//////////8/AAAAAAAAAAAAAAAAAAAAAPh/AAAAAAAAABgADAB+8P//////////////////DwAAAAAAAAAAAAAAAAAAAPx/AAAAAAAA6P//////////////////////////XwAAAAAAAAAAAAAAAAAAAP7/AAAAAACA/////////////////////////////z8AAAAAAAAAAAAA4F8AAPj/AAAAAAD6/////////////////////////////z8AAAAAAAAA4AAA4P//+f9/AAAAAAD//////////////////////////////wMAAAAAAADg//8fwP////9/AAAAAPD//////////////////////////////wEAAAAAAPz/////////////AwAAAP7/////////////////////////////fwAAAAAAwP//////////////HwAAwP//////////////////////////////fwAAAADA/////////////////w8Y/v////////////////////////////////gP////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////"), (ch) => ch.charCodeAt(0));
+  const isLand = (lat, lon) => { const x = Math.min(359, Math.floor(lon + 180)), y = Math.min(179, Math.max(0, Math.floor(90 - lat))), i = y * 360 + x; return (LAND[i >> 3] >> (i & 7)) & 1; };
+
+  const frame = (w, h) => ({ cx: w / 2, cy: h / 2, S: Math.min(w, h) });
+  const label = (x, y, text, anchor = "start") => `<text class="mark-label" x="${x.toFixed(1)}" y="${y.toFixed(1)}" text-anchor="${anchor}">${text}</text>`;
+  const ring = (x, y, r) => `<circle class="mark-ring" cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="${r}"/>`;
+  const line = (x1, y1, x2, y2) => `<line class="mark-line" x1="${x1.toFixed(1)}" y1="${y1.toFixed(1)}" x2="${x2.toFixed(1)}" y2="${y2.toFixed(1)}"/>`;
+
+  // A faint field of stars, fading out at the edges so the canvas has no visible border.
+  const sky = (pen, w, h, rnd, density = 1) => {
+    const n = Math.round((w * h / 4200) * density);
+    for (let i = 0; i < n; i++) {
+      const x = rnd() * w, y = rnd() * h, edge = Math.min(1, Math.min(x, w - x, y, h - y) / 70);
+      pen.dot(x, y, 0.4 + rnd() * 0.7, WHITE, (0.1 + rnd() * 0.35) * edge);
+    }
+  };
+  // Dots spread evenly over a disc (a sunflower pattern); style() decides each dot's look, or skips it.
+  const disc = (pen, cx, cy, R, n, style) => {
+    for (let i = 0; i < n; i++) {
+      const t = (i + 0.5) / n, r = R * Math.sqrt(t), a = i * GOLDEN, x = cx + Math.cos(a) * r, y = cy + Math.sin(a) * r;
+      const s = style(x, y, r / R);
+      if (s) pen.dot(x, y, s.r, s.c, s.a);
+    }
+  };
+  const glow = (pen, cx, cy, R, rnd, n, colors) => {
+    for (let i = 0; i < n; i++) {
+      const r = R * (1 + Math.abs(gauss(rnd)) * 1.5), a = rnd() * Math.PI * 2;
+      pen.dot(cx + Math.cos(a) * r, cy + Math.sin(a) * r, 0.6 + rnd() * 0.8, colors[Math.floor(rnd() * colors.length)], Math.max(0.06, 0.55 - (r / R - 1) * 0.22));
+    }
+  };
+
+  // The Lab's Sun, in the Lab drawing's 500 × 400 frame (drawn on a canvas under it, so the pointer can touch its dots).
+  const LAB_SUN = { x: 130, y: 225, r: 58 };
+
+  const SHAPES = {
+    // Origin: the star before it bursts: a white-hot core warming to light peach, golden peach gas fading out, a faint
+    // dark peach glow, and four long, thin sparkle points of white and warm soft gray. Its dots sit in the same even pattern as Saturn's and the Earth's.
+    star(pen, w, h, rnd) {
+      sky(pen, w, h, rnd, 1.2);
+      const vh = Math.min(h, window.innerHeight), phone = w < 768;
+      const cx = w / 2, cy = vh * (phone ? 0.28 : 0.34), A = Math.min(w, vh) * (phone ? 0.44 : 0.34);
+      // The sparkle: a four-point star with thin curved sides (|x|^0.4 + |y|^0.4 = A^0.4), A being its points' length.
+      const sparkle = (dx, dy) => (Math.abs(dx) ** 0.4 + Math.abs(dy) ** 0.4) ** 2.5 / A;
+      disc(pen, cx, cy, A, Math.round((Math.PI * A * A) / 30), (x, y) => {
+        const dx = x - cx, dy = y - cy, t = Math.hypot(dx, dy) / A + (rnd() - 0.5) * 0.03;
+        if (t < 0.07) return { r: 2.1, c: WHITE, a: 1 };
+        if (t < 0.12) return { r: 1.9, c: "#FFF1DE", a: 0.97 };
+        if (t < 0.17) return { r: 1.7, c: LIGHT_PEACH, a: 0.92 };
+        const sp = sparkle(dx, dy) + (rnd() - 0.5) * 0.06;
+        if (sp < 1) {
+          const fall = Math.min(1, (t - 0.17) / 0.83);
+          return { r: 1.6 - 0.5 * fall, c: sp < 0.3 ? WHITE : sp < 0.6 ? "#F3E6D6" : "#D8C8B6", a: (0.95 - 0.6 * fall) * (sp < 0.85 ? 1 : 1 - (sp - 0.85) * 3) };
+        }
+        if (t < 0.55) {
+          const k = (t - 0.17) / 0.38, warm = rnd();
+          return { r: 1.7 - 0.6 * k, c: k < 0.35 ? (warm < 0.5 ? "#FFC27A" : PEACH) : warm < 0.3 * (1 - k) ? DARK_PEACH : PEACH, a: 1 - 0.88 * k ** 1.5 };
+        }
+        const glow = 0.3 * (1 - (t - 0.55) / 0.2);
+        return glow > 0.04 ? { r: 1.1, c: DARK_PEACH, a: glow } : null;
+      });
+    },
+
+    // The Maker: Saturn, made of its dust.
+    saturn(pen, w, h, rnd) {
+      sky(pen, w, h, rnd, 0.8);
+      const { cx, cy, S } = frame(w, h), R = S * 0.24, tilt = -0.32, flat = 0.27;
+      const place = (x, y) => [cx + x * Math.cos(tilt) - y * Math.sin(tilt), cy + x * Math.sin(tilt) + y * Math.cos(tilt)];
+      const RINGS = [1.3, 1.4, 1.5, 1.6, 1.7, 1.88, 1.98, 2.08];
+      const rings = (front) => RINGS.forEach((k, j) => {
+        const n = Math.round((2 * Math.PI * R * k) / 5.2);
+        for (let i = 0; i < n; i++) {
+          const t = (i / n) * 2 * Math.PI + j, s = Math.sin(t);
+          if ((s >= 0) !== front) continue;
+          const lx = Math.cos(t) * R * k, ly = s * R * k * flat;
+          if (!front && lx * lx + ly * ly < R * R) continue;
+          const [x, y] = place(lx, ly);
+          pen.dot(x, y, 1.1 + rnd() * 0.3, k > 1.8 ? LIGHT_PEACH : PEACH, (front ? 0.78 : 0.4) * (k > 1.8 ? 0.8 : 1));
+        }
+      });
+      rings(false);
+      disc(pen, cx, cy, R, Math.min(3000, Math.round((Math.PI * R * R) / 30)), (x, y) => {
+        const dx = (x - cx) / R, dy = (y - cy) / R, nz = Math.sqrt(Math.max(0, 1 - dx * dx - dy * dy));
+        const lx = dx * Math.cos(tilt) + dy * Math.sin(tilt), ly = -dx * Math.sin(tilt) + dy * Math.cos(tilt);
+        const band = Math.sin(ly * 9 + Math.sin(lx * 3) * 0.5);
+        const light = Math.min(1, Math.max(0, -dx * 0.45 - dy * 0.55 + nz * 0.75));
+        return { r: 1.55, c: band > 0.45 ? DARK_PEACH : band < -0.55 ? LIGHT_PEACH : PEACH, a: 0.16 + 0.84 * light };
+      });
+      rings(true);
+    },
+
+    // The Earth: the real land map, turned towards the places. Its dots sit in the same even pattern as Saturn's,
+    // each one looked up on the globe behind it, and it is lit the same way (brightest up and to the left).
+    earth(pen, w, h, rnd) {
+      sky(pen, w, h, rnd, 0.8);
+      const { cx, cy, S } = frame(w, h), R = S * 0.4, lat0 = 30 * D, lon0 = -6 * D;
+      const project = (lat, lon) => {
+        const cl = Math.cos(lat), dl = lon - lon0;
+        return { x: cl * Math.sin(dl), y: Math.cos(lat0) * Math.sin(lat) - Math.sin(lat0) * cl * Math.cos(dl), z: Math.sin(lat0) * Math.sin(lat) + Math.cos(lat0) * cl * Math.cos(dl) };
+      };
+      disc(pen, cx, cy, R, Math.round((Math.PI * R * R) / 30), (x, y) => {
+        const nx = (x - cx) / R, ny = -(y - cy) / R, nz = Math.sqrt(Math.max(0, 1 - nx * nx - ny * ny));
+        const lat = Math.asin(Math.max(-1, Math.min(1, ny * Math.cos(lat0) + nz * Math.sin(lat0))));
+        let lon = lon0 + Math.atan2(nx, nz * Math.cos(lat0) - ny * Math.sin(lat0));
+        if (lon > Math.PI) lon -= 2 * Math.PI;
+        if (lon < -Math.PI) lon += 2 * Math.PI;
+        const light = Math.min(1, Math.max(0, -nx * 0.45 + ny * 0.55 + nz * 0.75));
+        return isLand(lat / D, lon / D) ? { r: 1.55, c: PEACH, a: 0.2 + 0.8 * light } : { r: 1.15, c: BLUE, a: 0.08 + 0.34 * light };
+      });
+      const rim = Math.round((2 * Math.PI * R) / 5.2);
+      for (let i = 0; i < rim; i++) { const a = (i / rim) * 2 * Math.PI; pen.dot(cx + Math.cos(a) * R, cy + Math.sin(a) * R, 1, LIGHT_BLUE, 0.3); }
+      const mx = cx - R * 1.22, my = cy - R * 0.78, mr = R * 0.085;
+      disc(pen, mx, my, mr, 70, (x, y) => ({ r: 0.9, c: SLATE, a: 0.25 + 0.6 * Math.max(0, -(x - mx) / mr * 0.5 - (y - my) / mr * 0.5 + 0.5) }));
+      const reach = Math.max(16, Math.min(40, R * 0.16));
+      [
+        { lat: 51.5074, lng: -0.1278, name: "London", dx: 1, dy: -1 },
+        { lat: 50.8198, lng: -1.573, name: "New Forest", dx: -1.2, dy: -0.7 },
+        { lat: 31.6295, lng: -7.9811, name: "Morocco", dx: -1.2, dy: 0.5 },
+      ].forEach(({ lat, lng, name, dx, dy }) => {
+        const q = project(lat * D, lng * D), x = cx + q.x * R, y = cy - q.y * R;
+        pen.dot(x, y, 2, LIGHT_PEACH, 1);
+        const ex = x + dx * reach, ey = y + dy * reach;
+        pen.mark(ring(x, y, 5.5) + line(x + dx * 5, y + dy * 4, ex, ey) + label(ex + dx * 5, ey + 4, name, dx > 0 ? "start" : "end"));
+      });
+    },
+
+    // The Lab's Sun, on a canvas under the Lab's 2D drawing (placed in that drawing's 500 × 400 frame): round rings of dots
+    // from a white-hot middle to a dark peach rim, then a soft glow of fading peach dots, set a little apart so it stays round.
+    sun(pen, w, h, rnd) {
+      const k = Math.min(w / 500, h / 400), ox = (w - 500 * k) / 2, oy = (h - 400 * k) / 2;
+      const sx = ox + LAB_SUN.x * k, sy = oy + LAB_SUN.y * k, sunR = LAB_SUN.r * k, RINGS = 13, step = sunR / RINGS;
+      for (let i = 0; i <= RINGS; i++) {
+        const r = i * step, t = r / sunR, n = i === 0 ? 1 : Math.round((2 * Math.PI * r) / step), turn = rnd() * 2 * Math.PI;
+        const [c, size] = t < 0.3 ? [WHITE, 1.8] : t < 0.55 ? [LIGHT_PEACH, 1.7] : t < 0.85 ? [PEACH, 1.6] : [DARK_PEACH, 1.5];
+        for (let j = 0; j < n; j++) { const a = turn + (j / n) * 2 * Math.PI; pen.dot(sx + Math.cos(a) * r, sy + Math.sin(a) * r, size * k, c, 1); }
+      }
+      const glowR = sunR * 2.1, n = Math.round((Math.PI * glowR * glowR) / (18 * k * k));
+      for (let i = 0; i < n; i++) {
+        const r = glowR * Math.sqrt((i + 0.5) / n), t = r / sunR;
+        if (t < 1.15) continue;
+        const f = (t - 1.15) / (glowR / sunR - 1.15), o = 0.42 * (1 - f) ** 2;
+        if (o < 0.04) continue;
+        const a = i * GOLDEN;
+        pen.dot(sx + Math.cos(a) * r, sy + Math.sin(a) * r, (1.3 - 0.5 * f) * k, PEACH, o);
+      }
+    },
+
+    // The Milky Way: and one dot that is you.
+    galaxy(pen, w, h, rnd) {
+      sky(pen, w, h, rnd, 0.6);
+      const { cx, cy, S } = frame(w, h), Rg = S * 0.46, tilt = -0.35, flat = 0.6, r0 = Rg * 0.1, pitch = 0.3;
+      const place = (r, a) => { const x = Math.cos(a) * r, y = Math.sin(a) * r * flat; return [cx + x * Math.cos(tilt) - y * Math.sin(tilt), cy + x * Math.sin(tilt) + y * Math.cos(tilt)]; };
+      for (let i = 0; i < 1400; i++) { const [x, y] = place(Rg * Math.sqrt(rnd()), rnd() * 2 * Math.PI); pen.dot(x, y, 0.5 + rnd() * 0.5, rnd() < 0.5 ? LIGHT_BLUE : WHITE, 0.05 + rnd() * 0.12); }
+      for (let arm = 0; arm < 4; arm++) {
+        const main = arm % 2 === 0, n = main ? 1800 : 1000;
+        for (let i = 0; i < n; i++) {
+          const t = Math.pow(rnd(), 0.85), r = r0 + t * (Rg - r0), a = (arm * Math.PI) / 2 + Math.log(r / r0) / pitch + gauss(rnd) * (0.14 + 0.1 * t);
+          const [x, y] = place(r + gauss(rnd) * Rg * 0.022, a);
+          pen.dot(x, y, 0.5 + rnd() * 0.8, rnd() < (1 - t) * 0.85 ? PEACH : rnd() < 0.55 ? LIGHT_BLUE : BLUE, (0.18 + rnd() * 0.55) * (main ? 1 : 0.75));
+        }
+      }
+      for (let i = 0; i < 1200; i++) { const [x, y] = place(Math.abs(gauss(rnd)) * Rg * 0.09, rnd() * 2 * Math.PI); pen.dot(x, y, 0.7 + rnd() * 0.6, rnd() < 0.5 ? LIGHT_PEACH : PEACH, 0.5 + rnd() * 0.45); }
+      const yr = Rg * 0.62, [yx, yy] = place(yr, Math.PI / 2 + Math.log(yr / r0) / pitch + 0.2);
+      pen.dot(yx, yy, 2.2, LIGHT_PEACH, 1);
+      pen.mark(ring(yx, yy, 7) + line(yx + 6, yy + 6, yx + 30, yy + 30) + label(yx + 34, yy + 38, "You are here"));
+    },
+  };
+
+  const fields = [...document.querySelectorAll("[data-shape]")].map((host) => {
+    const canvas = document.createElement("canvas"), marks = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+    canvas.setAttribute("aria-hidden", "true"); marks.setAttribute("aria-hidden", "true"); marks.classList.add("marks");
+    host.prepend(canvas, marks);
+    return { host, canvas, marks, ctx: canvas.getContext("2d"), dots: [], grid: new Map(), w: 0, h: 0, x: 0, y: 0, inside: false, moved: false, active: new Set(), box: null, raf: 0 };
+  });
+
+  // A dot where it is now: pushed dots swell and brighten a little.
+  const paint = (ctx, d) => {
+    const pop = Math.min(1, Math.hypot(d.ox, d.oy) / 5);
+    ctx.globalAlpha = Math.min(1, d.a + 0.3 * pop); ctx.fillStyle = d.c;
+    ctx.beginPath(); ctx.arc(d.x + d.ox, d.y + d.oy, d.r * (1 + 0.9 * pop), 0, 2 * Math.PI); ctx.fill();
+  };
+  const within = function* (f, x0, y0, x1, y1) {
+    for (let gx = Math.floor(x0 / CELL); gx <= Math.floor(x1 / CELL); gx++)
+      for (let gy = Math.floor(y0 / CELL); gy <= Math.floor(y1 / CELL); gy++) yield* f.grid.get(gx * 4096 + gy) || [];
+  };
+  // Repaint a box from scratch: the background, then every dot in it where it is now.
+  const repaint = (f, [x0, y0, x1, y1]) => {
+    const { ctx } = f;
+    ctx.save(); ctx.beginPath(); ctx.rect(x0, y0, x1 - x0, y1 - y0); ctx.clip();
+    ctx.globalAlpha = 1; ctx.fillStyle = BG; ctx.fillRect(x0, y0, x1 - x0, y1 - y0);
+    for (const d of within(f, x0 - PAD, y0 - PAD, x1 + PAD, y1 + PAD)) paint(ctx, d);
+    ctx.restore();
+  };
+  const build = (f) => {
+    const w = Math.round(f.host.clientWidth), h = Math.round(f.host.clientHeight);
+    if (!w || !h || (w === f.w && h === f.h)) return;
+    Object.assign(f, { w, h, active: new Set(), box: null });
+    const dpr = Math.min(2, window.devicePixelRatio || 1);
+    const pen = { dots: [], marks: [], dot(x, y, r, c, a) { this.dots.push({ x, y, r, c, a, ox: 0, oy: 0, vx: 0, vy: 0 }); }, mark(svg) { this.marks.push(svg); } };
+    SHAPES[f.host.dataset.shape](pen, w, h, seeded(hash(f.host.dataset.shape)));
+    f.dots = pen.dots; f.grid = new Map();
+    pen.dots.forEach((d) => { const key = Math.floor(d.x / CELL) * 4096 + Math.floor(d.y / CELL); if (!f.grid.has(key)) f.grid.set(key, []); f.grid.get(key).push(d); });
+    f.canvas.width = w * dpr; f.canvas.height = h * dpr;
+    f.ctx.setTransform(dpr, 0, 0, dpr, 0, 0); f.ctx.globalAlpha = 1; f.ctx.fillStyle = BG; f.ctx.fillRect(0, 0, w, h);
+    pen.dots.forEach((d) => paint(f.ctx, d));
+    f.marks.setAttribute("viewBox", `0 0 ${w} ${h}`); f.marks.innerHTML = pen.marks.join("");
+  };
+  // One frame: the pointer pushes the dots it touches; every pushed dot springs back to its place.
+  const step = (f) => {
+    f.raf = 0;
+    if (f.inside) for (const d of within(f, f.x - REACH - PAD, f.y - REACH - PAD, f.x + REACH + PAD, f.y + REACH + PAD)) {
+      const dx = d.x + d.ox - f.x, dy = d.y + d.oy - f.y, dist = Math.hypot(dx, dy) || 0.01;
+      if (dist >= REACH) continue;
+      const k = (1 - dist / REACH) ** 2 * PUSH;
+      d.vx += (dx / dist) * k; d.vy += (dy / dist) * k; f.active.add(d);
+    }
+    let box = null, moving = false;
+    const grow = (x, y) => { if (!box) box = [x, y, x, y]; else { box[0] = Math.min(box[0], x); box[1] = Math.min(box[1], y); box[2] = Math.max(box[2], x); box[3] = Math.max(box[3], y); } };
+    for (const d of f.active) {
+      grow(d.x, d.y); grow(d.x + d.ox, d.y + d.oy);
+      d.vx = (d.vx - SPRING * d.ox) * FRICTION; d.vy = (d.vy - SPRING * d.oy) * FRICTION;
+      d.ox += d.vx; d.oy += d.vy;
+      grow(d.x + d.ox, d.y + d.oy);
+      const held = f.inside && Math.hypot(d.x - f.x, d.y - f.y) < REACH;
+      if (Math.abs(d.vx) + Math.abs(d.vy) > 0.02 || (!held && Math.abs(d.ox) + Math.abs(d.oy) > 0.3)) moving = true;
+      else if (!held) { d.ox = d.oy = d.vx = d.vy = 0; f.active.delete(d); }
+    }
+    if (box) box = [box[0] - PAD, box[1] - PAD, box[2] + PAD, box[3] + PAD];
+    const dirty = box && f.box ? [Math.min(box[0], f.box[0]), Math.min(box[1], f.box[1]), Math.max(box[2], f.box[2]), Math.max(box[3], f.box[3])] : box || f.box;
+    if (dirty) repaint(f, dirty);
+    f.box = box;
+    if (moving || f.moved) { f.moved = false; f.raf = requestAnimationFrame(() => step(f)); }
+  };
+  const wake = (f) => { if (!f.raf) f.raf = requestAnimationFrame(() => step(f)); };
+  fields.forEach((f) => {
+    const follow = (e) => { const r = f.host.getBoundingClientRect(); f.x = e.clientX - r.left; f.y = e.clientY - r.top; f.inside = true; f.moved = true; wake(f); };
+    const release = () => { f.inside = false; f.moved = true; wake(f); };
+    f.host.addEventListener("pointermove", follow);
+    f.host.addEventListener("pointerdown", follow);
+    f.host.addEventListener("pointerleave", release);
+    f.host.addEventListener("pointercancel", release);
+    f.host.addEventListener("pointerup", (e) => { if (e.pointerType !== "mouse") release(); });
+  });
+  const resized = new ResizeObserver((entries) => entries.forEach((e) => { const f = fields.find((g) => g.host === e.target); if (f) build(f); }));
+  fields.forEach((f) => resized.observe(f.host));
+
+  // ── 2D drawings (not dotted) ──
+  const stars = (w, h, n, rnd) => Array.from({ length: n }, () => `<circle cx="${(rnd() * w).toFixed(1)}" cy="${(rnd() * h).toFixed(1)}" r="${(0.4 + rnd() * 0.8).toFixed(2)}" fill="#fff" opacity="${(0.12 + rnd() * 0.4).toFixed(2)}"/>`).join("");
+
+  // The Craft: the site's constellation as it is; a node grows when the pointer touches it.
+  document.getElementById("craft-stars").innerHTML = stars(600, 420, 70, seeded(11));
+
+  // The Lab: a big Sun, Parker's loops around it (each one closer), and the probe itself.
+  // The probe is drawn in metres from its real proportions (three.js/parker/config.ts), its heat shield facing the Sun.
+  const PROBE = `
+    <path d="M-0.9 0.08 L-2.9 -0.32 M-0.85 0.14 L-2.75 0.52 M0.9 0.08 L2.9 -0.32 M0.85 0.14 L2.75 0.52" stroke="#C9CCD2" stroke-width="1" vector-effect="non-scaling-stroke" fill="none"/>
+    <path d="M0 1.75 V5.25 M-0.3 4.83 H0.3" stroke="#A9AEB6" stroke-width="1.4" vector-effect="non-scaling-stroke" fill="none"/>
+    <rect x="-0.1" y="3.25" width="0.2" height="0.2" fill="#D7D9DD"/><rect x="-0.1" y="4.05" width="0.2" height="0.2" fill="#D7D9DD"/><rect x="-0.12" y="5.13" width="0.24" height="0.24" fill="#D7D9DD"/>
+    <path d="M0.5 0.84 L1.13 1.74 L1.47 1.6 L0.84 0.7 Z M-0.5 0.84 L-1.13 1.74 L-1.47 1.6 L-0.84 0.7 Z" fill="#1E2F55" stroke="#A9AEB6" stroke-width="0.8" vector-effect="non-scaling-stroke"/>
+    <rect x="-0.3" y="0.22" width="0.6" height="0.4" fill="#D7D9DD" opacity="0.75"/>
+    <path d="M-0.6 0.12 L-0.38 0.75 M0.6 0.12 L0.38 0.75 M-0.22 0.12 L-0.16 0.75 M0.22 0.12 L0.16 0.75" stroke="#7A7D85" stroke-width="1" vector-effect="non-scaling-stroke" fill="none"/>
+    <path d="M-0.5 0.75 H-0.25 V1.75 H-0.5 Z" fill="#141417"/><rect x="-0.25" y="0.75" width="0.5" height="1" fill="#2A2A30"/><path d="M0.25 0.75 H0.5 V1.75 H0.25 Z" fill="#1C1C20"/>
+    <rect x="-0.5" y="0.75" width="1" height="1" fill="none" stroke="#55555E" stroke-width="0.8" vector-effect="non-scaling-stroke"/>
+    <ellipse cx="0" cy="1.04" rx="0.2" ry="0.15" fill="#D7D9DD"/><ellipse cx="0" cy="1.04" rx="0.07" ry="0.05" fill="#8E9198"/>
+    <circle cx="0" cy="1.46" r="0.4" fill="url(#card-glow)"/><rect x="-0.14" y="1.36" width="0.28" height="0.2" rx="0.02" fill="#FFA14A"/>
+    <rect x="-1.15" y="-0.12" width="2.3" height="0.24" rx="0.12" fill="#2A2A2E" stroke="#5A5A62" stroke-width="0.6" vector-effect="non-scaling-stroke"/>
+    <rect x="-1.15" y="-0.12" width="2.3" height="0.11" rx="0.055" fill="#F2F2EE"/>
+    <rect x="0.86" y="-0.3" width="0.12" height="0.18" fill="#D7D9DD"/>`;
+  (() => {
+    const { x: sx, y: sy } = LAB_SUN, far = 330, u = 24;
+    const loops = [144, 120, 96, 76], turn = (j) => (-9 + j * 3) * D;
+    const ellipse = (q) => { const a = (q + far) / 2; return { a, c: a - q, b: Math.sqrt(q * far) }; };
+    let out = `<defs>
+      <radialGradient id="card-glow"><stop offset="0" stop-color="#FFA14A" stop-opacity="0.7"/><stop offset="1" stop-color="#FFA14A" stop-opacity="0"/></radialGradient>
+    </defs>${stars(500, 400, 60, seeded(23))}`;
+    loops.forEach((q, j) => {
+      const { a, c, b } = ellipse(q), last = j === loops.length - 1;
+      out += `<ellipse cx="${(sx + c).toFixed(1)}" cy="${sy}" rx="${a.toFixed(1)}" ry="${b.toFixed(1)}" transform="rotate(${(turn(j) / D).toFixed(1)} ${sx} ${sy})" fill="none" stroke="${last ? PEACH : LIGHT_PEACH}" stroke-opacity="${last ? 0.9 : (0.16 + j * 0.08).toFixed(2)}" stroke-width="${last ? 1.5 : 1}"/>`;
+    });
+    const j = loops.length - 1, q = loops[j], r = turn(j), { a, c, b } = ellipse(q);
+    const qx = sx - q * Math.cos(r), qy = sy - q * Math.sin(r);
+    out += `<circle cx="${qx.toFixed(1)}" cy="${qy.toFixed(1)}" r="2.5" fill="${LIGHT_PEACH}"/>` + line(qx - 2, qy + 5, 34, qy + 70) + label(16, qy + 88, "Closest: 6.1 million km");
+    const t = -1.0, lx = c + a * Math.cos(t), ly = b * Math.sin(t);
+    const px = sx + lx * Math.cos(r) - ly * Math.sin(r), py = sy + lx * Math.sin(r) + ly * Math.cos(r);
+    const angle = Math.atan2(sy - py, sx - px) / D + 90;
+    out += `<g transform="translate(${px.toFixed(1)} ${py.toFixed(1)}) rotate(${angle.toFixed(1)}) scale(${u}) translate(0 -1)">${PROBE}</g>`;
+    out += line(px - 18, py + 30, px - 32, py + 56) + label(px - 36, py + 70, "Parker Solar Probe", "end");
+    document.getElementById("lab-drawing").innerHTML = out;
+  })();
+</script>
+</body>
+</html>
