@@ -25,20 +25,41 @@ Goal: prove production-grade code quality and creative frontend skill to recruit
 
 ```
 src/
-├── app/                        # Next.js App Router (layout, page, favicon)
+├── app/                        # Next.js App Router (layout, page, fonts, icons)
 ├── components/
-│   ├── UI/                     # Reusable design system components (Button, etc.)
+│   ├── UI/                     # Design system: buttons, cards, forms, glass, icons, labels, links, swash, tags, text, tooltip
 │   ├── assets/pictures/        # SVG components (logos, shapes)
-│   ├── hooks/motions/          # Reusable GSAP animation hooks
-│   │   ├── backgrounds/        # Background animation hooks
-│   │   ├── shapes/             # Shape animation hooks
-│   │   └── texts/              # Text animation hooks
-│   ├── pages/                  # Page-level section components
-│   │   └── home/               # Home page sections (Hero, About, etc.)
-│   └── three.js/               # React Three Fiber components
-├── stories/                    # Storybook stories
+│   ├── hooks/                  # Shared hooks (useIsClient, useTimeout, …)
+│   │   ├── a11y/               # Accessibility helpers (inert outside a dialog)
+│   │   └── motions/            # Reusable GSAP animation hooks: backgrounds/, blocks/, shapes/, texts/
+│   ├── pages/home/             # The home page
+│   │   ├── Hero.tsx            # The pinned journey: hero, About, Craft and Contact overlays
+│   │   ├── hooks/              # useCosmicJourney: one scroll drives the whole story
+│   │   ├── story/              # The story's words, shared by the journey and the calm book
+│   │   ├── scroll/             # Glides, the chapter map, goTo()
+│   │   ├── timeline/           # The story timeline and the chapter title
+│   │   ├── subtitles/          # The voice lines
+│   │   ├── phase-nav/          # The navigation assistant (the orb)
+│   │   ├── panel/              # The side panel (a place, the Lab)
+│   │   ├── gallery/            # Photos: chips, stepper, Lightbox
+│   │   ├── labels/             # Labels anchored to the 3D scene
+│   │   ├── lab/                # The Lab: the memory card, experiments
+│   │   ├── skills/             # The Craft: the constellation
+│   │   └── contact/            # The contact form
+│   ├── providers/              # SmoothScrollProvider (ScrollSmoother)
+│   └── three.js/               # React Three Fiber
+│       ├── scene/              # The canvas, quality, performance, dev panel
+│       ├── star/               # The star, and the scroll map (config.ts: JOURNEY)
+│       ├── planet/             # Saturn
+│       ├── solar/              # The solar system and the Sun
+│       ├── earth/              # The dotted Earth, and the places (data.ts)
+│       ├── parker/             # The Parker Solar Probe
+│       ├── voyager/            # The Lab's config and copy (data.ts)
+│       └── galaxy/             # The Milky Way
+├── stores/                     # Zustand stores and small shared state, one per file (incl. useMotion)
+├── stories/                    # Storybook helpers (Introduction, galleries); stories sit next to their component
 └── styles/
-    └── globals.css             # Global styles + Tailwind v4 @theme tokens
+    └── globals.css             # Global styles, Tailwind v4 @theme tokens and custom variants
 ```
 
 ## Path Aliases
