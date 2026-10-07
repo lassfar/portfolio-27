@@ -1,7 +1,7 @@
 import { create } from "zustand";
 
 /** Who started a glide of the journey (glideToJourney). */
-export type GlideSource = "assistant" | "timeline" | "tour";
+export type GlideSource = "assistant" | "timeline" | "tour" | "hero";
 
 /**
  * The glide in progress, if any, and who started it (P27-79): the story's subtitles

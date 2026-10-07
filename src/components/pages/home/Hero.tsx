@@ -16,6 +16,7 @@ import Swash from "#/components/UI/swash/Swash";
 import DisplayTitle from "#/components/UI/text/DisplayTitle";
 import { TITLE_SWASH } from "#/components/pages/home/swashes";
 import { ABOUT, HERO } from "#/components/pages/home/story/copy";
+import { goTo } from "#/components/pages/home/scroll/goTo";
 import { useSceneIntro } from "#/stores/useSceneIntro";
 
 gsap.registerPlugin(useGSAP, ScrollTrigger, ScrollSmoother, SplitText);
@@ -128,8 +129,10 @@ const Hero = () => {
     contactRef,
   });
 
-  // Nudge the scroll to kick off the journey (the star → Saturn sequence).
+  // "To wander": glide to The Maker (P27-91), the star bursting and Saturn forming on the
+  // way, onto the About text. Without the pinned journey (reduced motion), just scroll on down.
   const handleWander = () => {
+    if (goTo("maker", { by: "hero" })) return;
     const y = window.innerHeight * 1.2;
     const smoother = ScrollSmoother.get();
     if (smoother) {
