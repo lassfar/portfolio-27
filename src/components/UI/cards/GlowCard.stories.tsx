@@ -1,7 +1,8 @@
 import type { Meta, StoryObj } from "@storybook/nextjs-vite";
-import { expect, fn } from "storybook/test";
+import { expect, fn, waitFor } from "storybook/test";
 
 import Gallery from "#/stories/Gallery";
+import { inCalm } from "#/stories/motion";
 import GlowCard from "./GlowCard";
 import { GLOW_CARD_SIZES } from "./card.types";
 
@@ -39,8 +40,24 @@ export const Default: Story = {
     const card = canvas.getByRole("button", { name: "Open London 01" });
     await userEvent.pointer({ target: card, coords: { clientX: 60, clientY: 80 } });
     await expect(card.style.getPropertyValue("--mx")).not.toBe("");
+    await userEvent.tab();
+    await waitFor(() => expect(getComputedStyle(card).translate).not.toBe("none")); // it lifts
     await userEvent.click(card);
     await expect(args.onClick).toHaveBeenCalledOnce();
+  },
+};
+
+/** In calm motion: it only glows, its edge lit; no lift, and the lights stay put. */
+export const Calm: Story = {
+  beforeEach: inCalm,
+  play: async ({ canvas, userEvent }) => {
+    const card = canvas.getByRole("button", { name: "Open London 01" });
+    await userEvent.pointer({ target: card, coords: { clientX: 60, clientY: 80 } });
+    await expect(card.style.getPropertyValue("--mx")).toBe("");
+    await userEvent.tab();
+    await expect(card).toHaveFocus();
+    await new Promise((settle) => setTimeout(settle, 600)); // past the lift's 550ms, had there been one
+    await expect(getComputedStyle(card).translate).toBe("none");
   },
 };
 

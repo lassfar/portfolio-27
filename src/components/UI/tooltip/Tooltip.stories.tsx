@@ -3,6 +3,7 @@ import type { CSSProperties, ReactNode } from "react";
 import { expect, waitFor } from "storybook/test";
 
 import Gallery from "#/stories/Gallery";
+import { inCalm } from "#/stories/motion";
 import Tooltip from "./Tooltip";
 import { TOOLTIP_ALIGNS, TOOLTIP_SIDES } from "./tooltip.types";
 
@@ -54,6 +55,37 @@ export const Default: Story = {
     await userEvent.tab();
     await expect(canvas.getByRole("button", { name: "Saturn" })).toHaveFocus();
     await waitFor(() => expect(tip).toBeVisible());
+  },
+};
+
+/** Escape closes it without moving the pointer or the focus (WCAG 1.4.13); it shows again once you move on and come back. */
+export const Dismiss: Story = {
+  // Never leave the tooltips closed for the next story.
+  beforeEach: () => () => {
+    delete document.documentElement.dataset.tooltips;
+  },
+  play: async ({ canvas, userEvent }) => {
+    const tip = canvas.getByText("Saturn");
+    await userEvent.tab();
+    await waitFor(() => expect(tip).toBeVisible());
+    await userEvent.keyboard("{Escape}");
+    await waitFor(() => expect(tip).not.toBeVisible());
+    await expect(canvas.getByRole("button", { name: "Saturn" })).toHaveFocus();
+    await userEvent.tab({ shift: true });
+    await userEvent.tab();
+    await waitFor(() => expect(tip).toBeVisible());
+  },
+};
+
+/** In calm motion: it only fades in, from its place (no slide out of its trigger). */
+export const Calm: Story = {
+  beforeEach: inCalm,
+  play: async ({ canvas, userEvent }) => {
+    const tip = canvas.getByText("Saturn");
+    const waiting = getComputedStyle(tip).translate; // centred under its trigger: -50%, no offset
+    await userEvent.tab();
+    await waitFor(() => expect(tip).toBeVisible());
+    await expect(getComputedStyle(tip).translate).toBe(waiting);
   },
 };
 

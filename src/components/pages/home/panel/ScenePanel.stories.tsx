@@ -3,6 +3,7 @@ import { expect, waitFor, within } from "storybook/test";
 
 import { usePanelStore, type PanelContent, type PanelView } from "#/stores/usePanelStore";
 import { entered } from "#/stories/entered";
+import { inCalm } from "#/stories/motion";
 import SceneOverlays from "./SceneOverlays";
 
 const london: PanelContent = { kind: "place", id: "london" };
@@ -57,6 +58,17 @@ export const Side: Story = {
     ).toBeNull();
     await userEvent.click(page().getByRole("button", { name: "Open the full view" }));
     await waitFor(() => expect(panel).toHaveAttribute("aria-modal", "true"));
+    await entered(panel);
+  },
+};
+
+/** In calm motion: it only fades in and out, shorter (no slide), and its content fades in at once. */
+export const Calm: Story = {
+  beforeEach: [inCalm, opened(london)],
+  play: async () => {
+    const panel = await page().findByRole("dialog", { name: "Back to London" });
+    await expect(getComputedStyle(panel).transitionProperty).toBe("opacity");
+    await expect(getComputedStyle(panel).translate).toBe("none");
     await entered(panel);
   },
 };

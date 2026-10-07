@@ -116,6 +116,7 @@ The visitor's motion preference is `full` or `calm`: the device setting, unless 
 
 - **CSS:** gate every movement with `moving:` (a lift, a slide, a scale, a pulse), so calm never gets it; put calm-only styles under `calm:` (e.g. a shorter fade). Never `motion-reduce:` / `motion-safe:`: they follow the device alone, not the site's switch
 - **JS / GSAP:** check `isCalm()` when building an animation, or `useCalm()` in a component that must re-render
+- **In Storybook:** the toolbar's **Motion** switch shows any story in calm; a component whose calm differs has a `Calm` story (`beforeEach: inCalm`, from `src/stories/motion.ts`)
 
 ## Git Workflow
 
