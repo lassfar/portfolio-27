@@ -2,7 +2,8 @@ import type { Meta, StoryObj } from "@storybook/nextjs-vite";
 import { expect, waitFor } from "storybook/test";
 
 import { BOOK_CHAPTERS, titleId } from "#/components/pages/home/book/chapters";
-import { BOOK } from "#/components/pages/home/story/copy";
+import { landInBook } from "#/components/pages/home/book/place";
+import { BOOK, CHAPTER_NAMES } from "#/components/pages/home/story/copy";
 import { inCalm } from "#/stories/motion";
 import { revealed } from "#/stories/reveal";
 import CalmBook from "./CalmBook";
@@ -38,6 +39,24 @@ export const Default: Story = {
       for (const label of Object.values(BOOK.figures))
         await expect(canvas.getByRole("img", { name: label })).toBeInTheDocument();
       await expect(canvas.getByText(BOOK.ending)).toBeInTheDocument();
+    });
+
+    await step("each chapter's heading says its name first, once; one timeline", async () => {
+      for (const id of BOOK_CHAPTERS.filter((c) => c !== "origin" && c !== "contact")) {
+        const heading = document.getElementById(titleId(id))!.textContent!;
+        // First, and only there: "The Maker: Small, Patient Details", "The Earth".
+        await expect(heading.lastIndexOf(CHAPTER_NAMES[id]), heading).toBe(0);
+      }
+      // (Hidden on the cover, so counted by its label.)
+      await expect(canvasElement.querySelectorAll("nav[aria-label='Story timeline']")).toHaveLength(
+        1,
+      );
+      await expect(canvas.getByRole("region", { name: BOOK.youAreHere })).toBeInTheDocument();
+    });
+
+    await step("a passage takes the focus where the mode switch lands on it", async () => {
+      landInBook("voyage", true);
+      await expect(canvas.getByRole("group", { name: CHAPTER_NAMES.voyage })).toHaveFocus();
     });
 
     await step("past the cover, the timeline jumps to the Milky Way, at once", async () => {

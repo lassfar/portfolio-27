@@ -19,6 +19,8 @@ export interface DisplayTitleProps extends Omit<ComponentPropsWithRef<"h2">, "ch
   /** Its heading level (h2 by default). */
   as?: "h1" | "h2" | "h3";
   size: DisplayTitleSize;
+  /** Read before its words, not shown: what it heads (a chapter's name, P27-95), so heading navigation says it. */
+  srPrefix?: string;
   /** Places it. */
   className?: string;
 }

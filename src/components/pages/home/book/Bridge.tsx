@@ -29,7 +29,7 @@ const Bridge = ({ after }: { after: ChapterId }) => {
       className={clsx(
         REVEAL,
         HAIRLINES,
-        "flex flex-col items-center gap-3 px-12 py-10 text-center outline-none md:px-6",
+        "flex flex-col items-center gap-3 px-12 py-10 text-center focus-ring md:px-6",
       )}
     >
       <p className={BRIDGE_LINE}>{first}</p>

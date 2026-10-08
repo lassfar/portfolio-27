@@ -1,5 +1,6 @@
 import type { ReactNode } from "react";
 import clsx from "clsx";
+import { plainText } from "#/components/UI/text/accent";
 import DisplayTitle from "#/components/UI/text/DisplayTitle";
 import { chapterNumber, titleId } from "#/components/pages/home/book/chapters";
 import { EYEBROW, REVEAL } from "#/components/pages/home/book/layout";
@@ -21,7 +22,9 @@ type Props = {
 /**
  * A chapter of the calm book (P27-93), a spread: its shape on one side, its words on the
  * other, alternating; on a phone, the shape above the words. Both fade in as they show. Its
- * heading takes the focus when the timeline jumps here.
+ * heading takes the focus when the timeline jumps here (its ring shown from the keyboard), and
+ * says the chapter's name first (P27-95: heading navigation reads "The Maker: Small, Patient
+ * Details"), unless its title already is the name ("The Earth").
  */
 const Spread = ({ id, title, figure, flip = false, children }: Props) => (
   <section
@@ -45,7 +48,8 @@ const Spread = ({ id, title, figure, flip = false, children }: Props) => (
         tabIndex={-1}
         size="chapter"
         text={title}
-        className="mt-2.5 mb-4 outline-none"
+        srPrefix={plainText(title) === CHAPTER_NAMES[id] ? undefined : `${CHAPTER_NAMES[id]}: `}
+        className="mt-2.5 mb-4 focus-ring"
       />
       {children}
     </div>

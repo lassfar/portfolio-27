@@ -39,7 +39,7 @@ const Cover = () => (
         tabIndex={-1}
         size="hero"
         text={HERO.headline}
-        className="mt-2.5 mb-4 outline-none"
+        className="mt-2.5 mb-4 focus-ring"
       />
       <p className="mx-auto max-w-140 text-[clamp(16px,1.6vw,19px)] leading-[1.7] text-white/75">
         {HERO.intro}

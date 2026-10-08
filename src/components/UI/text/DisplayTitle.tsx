@@ -18,11 +18,19 @@ const SIZE: Record<DisplayTitleSize, string> = {
  * key words (`*…*`) in peach — the hero's headline, the sections' titles, the panels'.
  * The page writes it in, letter by letter (GSAP SplitText); `className` places it.
  */
-const DisplayTitle = ({ text, as: Tag = "h2", size, className, ...props }: DisplayTitleProps) => (
+const DisplayTitle = ({
+  text,
+  as: Tag = "h2",
+  size,
+  srPrefix,
+  className,
+  ...props
+}: DisplayTitleProps) => (
   <Tag
     {...props}
     className={clsx("font-great-vibes font-normal text-white", SIZE[size], className)}
   >
+    {srPrefix && <span className="sr-only">{srPrefix}</span>}
     <AccentText text={text} />
   </Tag>
 );
