@@ -18,10 +18,21 @@ import { usePanelFrame } from "./usePanelFrame";
 const SHELL =
   "fixed right-0 bottom-0 z-50 flex flex-col duration-600 ease-out-quint calm:duration-300";
 
-/** The full view covers the screen (the scene veiled behind it); the side panel is frosted glass — a bottom sheet on a phone. */
+/** The full view covers the screen; the side panel is frosted glass — a bottom sheet on a phone. */
 const SHELL_VIEW: Record<PanelView, string> = {
-  full: "h-dvh w-full bg-rich-black/30",
+  full: "h-dvh w-full",
   side: "h-2/3 w-full rounded-t-3xl bg-rich-black/76 shadow-sheet inset-shadow-sheet backdrop-blur-xl backdrop-saturate-150 sm:h-dvh sm:w-panel-side sm:rounded-none sm:border-l sm:border-white/10 sm:shadow-panel sm:inset-shadow-none",
+};
+
+/**
+ * The full view's fill. Over the journey the scene behind it is veiled already (blurred and
+ * dimmed in WebGL, PANEL_VEIL): a light tint is enough. Over the calm book (`modal`) nothing
+ * veils the page, so the panel frosts it itself, darker, for its words to read over the
+ * book's (WCAG 1.4.3).
+ */
+const FULL_FILL = {
+  scene: "bg-rich-black/30",
+  page: "bg-rich-black/85 backdrop-blur-xl",
 };
 
 /**
@@ -85,7 +96,12 @@ const ScenePanel = ({ ref, modal = false }: ScenePanelProps) => {
       role="dialog"
       aria-modal={modal || view === "full"}
       aria-labelledby={titleId}
-      className={clsx(SHELL, SHELL_VIEW[view], open ? SHELL_OPEN : SHELL_CLOSED[view])}
+      className={clsx(
+        SHELL,
+        SHELL_VIEW[view],
+        view === "full" && FULL_FILL[modal ? "page" : "scene"],
+        open ? SHELL_OPEN : SHELL_CLOSED[view],
+      )}
     >
       {view === "side" && (
         <span

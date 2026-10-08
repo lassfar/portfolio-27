@@ -2,8 +2,10 @@ import type { Meta, StoryObj } from "@storybook/nextjs-vite";
 import { expect, waitFor, within } from "storybook/test";
 
 import { usePanelStore, type PanelContent, type PanelView } from "#/stores/usePanelStore";
+import { contrastOnFill } from "#/stories/contrast";
 import { entered } from "#/stories/entered";
 import { inCalm } from "#/stories/motion";
+import PanelHost from "./PanelHost";
 import SceneOverlays from "./SceneOverlays";
 
 const london: PanelContent = { kind: "place", id: "london" };
@@ -92,6 +94,22 @@ export const Full: Story = {
     await expect(
       page().getByRole("button", { name: "Outside", hidden: true }).closest("[inert]"),
     ).not.toBeNull();
+    await entered(panel);
+  },
+};
+
+/** The calm book's full view (`PanelHost modal`): no scene is veiled behind it, so it frosts the page itself, darker and blurred; its words read over whatever the book shows (WCAG 1.4.3, at worst over white). */
+export const FullOverTheBook: Story = {
+  render: () => <PanelHost modal />,
+  beforeEach: [inCalm, opened(london, "full")],
+  play: async () => {
+    const panel = await page().findByRole("dialog", { name: "Back to London" });
+    const fill = getComputedStyle(panel);
+    await expect(fill.backdropFilter).toMatch(/blur/);
+    await expect(contrastOnFill("#ffa14a", fill.backgroundColor)).toBeGreaterThanOrEqual(4.5);
+    await expect(
+      contrastOnFill("rgb(255 255 255 / 0.55)", fill.backgroundColor),
+    ).toBeGreaterThanOrEqual(4.5);
     await entered(panel);
   },
 };

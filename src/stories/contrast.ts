@@ -19,6 +19,27 @@ const luminance = (rgb: number[]) => {
   return 0.2126 * r + 0.7152 * g + 0.0722 * b;
 };
 
+/** A colour's relative luminance (WCAG), as painted over `ground` (RGB) if see-through. */
+const luminanceOver = (css: string, ground: number[]) => {
+  const [r, g, b, a] = rgba(css);
+  return luminance([r, g, b].map((c, i) => c * (a / 255) + ground[i] * (1 - a / 255)));
+};
+
+const ratio = (x: number, y: number) => {
+  const [hi, lo] = [x, y].sort((p, q) => q - p);
+  return (hi + 0.05) / (lo + 0.05);
+};
+
+/**
+ * WCAG's contrast ratio of a text colour on a see-through fill (a panel), at worst: the fill
+ * over white, the brightest anything behind it can be (P27-94). For a play test to pin 1.4.3.
+ */
+export const contrastOnFill = (text: string, fill: string) => {
+  const [r, g, b, a] = rgba(fill);
+  const ground = [r, g, b].map((c) => c * (a / 255) + 255 * (1 - a / 255));
+  return ratio(luminanceOver(text, ground), luminance(ground));
+};
+
 /**
  * WCAG's contrast ratio of a colour (as painted over the page, if see-through) against the
  * page (P27-93): for a play test to pin 1.4.3 (text, 4.5:1) or 1.4.11 (a control, 3:1).
