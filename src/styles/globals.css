@@ -212,6 +212,9 @@
 /* `panel-open:` — while a panel is open, in either view (the motion switch steps away). */
 @custom-variant panel-open (&:where([data-panel] *));
 
+/* `short:` — a short screen (P27-95): a phone held sideways, under 500px tall. */
+@custom-variant short (@media (max-height: 500px));
+
 /* `switching:` — while the modes switch behind the transition screen (P27-94,
    `<html data-mode-switching>`): the motion switch stays above it, with the focus. */
 @custom-variant switching (&:where([data-mode-switching] *));
@@ -235,6 +238,7 @@
 }
 :root[data-motion="calm"][data-panel] {
   overflow: hidden;
+  overscroll-behavior: none; /* nor bounces, pulled from the panel (iOS, P27-95) */
 }
 
 @keyframes twinkle {

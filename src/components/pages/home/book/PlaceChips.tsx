@@ -13,6 +13,8 @@ type OpenerProps = {
   content: PanelContent;
   icon: LucideIcon;
   name: string;
+  /** A shorter name, shown on a phone (P27-95: "New Forest"); the full one is still read. */
+  short?: string;
   meta: string;
 };
 
@@ -21,7 +23,7 @@ type OpenerProps = {
  * its scene labels. Marked as their label (`data-scene-label`), so the focus comes back to it
  * when the panel closes (usePanelModal).
  */
-const Opener = ({ content, icon, name, meta }: OpenerProps) => {
+const Opener = ({ content, icon, name, short, meta }: OpenerProps) => {
   const key = panelKey(content);
   const open = usePanelStore(selectKey) === key;
   return (
@@ -34,7 +36,16 @@ const Opener = ({ content, icon, name, meta }: OpenerProps) => {
       className="gap-2"
     >
       <Icon icon={icon} size={15} className="text-peach" />
-      {name}
+      {short ? (
+        <>
+          <span aria-hidden="true" className="sm:hidden">
+            {short}
+          </span>
+          <span className="max-sm:sr-only">{name}</span>
+        </>
+      ) : (
+        name
+      )}
       <span className="text-light-peach/55">· {meta}</span>
       <Icon icon={ArrowUpRight} size={15} />
     </Chip>
@@ -54,6 +65,7 @@ export const PlaceChips = () => (
         content={{ kind: "place", id: place.id }}
         icon={Camera}
         name={place.place}
+        short={place.short}
         meta={`${place.media.length} ${BOOK.shots}`}
       />
     ))}

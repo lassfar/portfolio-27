@@ -65,7 +65,7 @@ const Contact = ({ layout = "overlay", overlayRef, titleId }: ContactProps) => {
       className={clsx(
         "home-contact",
         page
-          ? "relative z-20 min-h-screen"
+          ? "relative z-20 min-h-svh"
           : "pointer-events-none invisible absolute inset-0 z-20 opacity-0",
         "flex flex-col items-center justify-center text-center",
         "px-10 py-16 md:px-6", // (wider on phones, so the fields clear the section spine)

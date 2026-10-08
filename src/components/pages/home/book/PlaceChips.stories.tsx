@@ -64,3 +64,14 @@ export const Lab: Story = {
     await entered(await page().findByRole("dialog", { name: /Card/ }));
   },
 };
+
+/** On a phone (320 px wide): a long place shows its short name ("New Forest"), so its chip stays on one line; its full name is still read. */
+export const Phone: Story = {
+  globals: { viewport: { value: "mobile1", isRotated: false } },
+  play: async ({ canvas }) => {
+    await expect(window.innerWidth).toBe(320);
+    const chip = canvas.getByRole("button", { name: /New Forest — Brockenhurst/ });
+    await expect(chip).toHaveTextContent("New Forest");
+    await expect(chip.getBoundingClientRect().height).toBeLessThan(48);
+  },
+};

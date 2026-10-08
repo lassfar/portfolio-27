@@ -15,7 +15,7 @@ const Ending = () => (
     data-reveal
     className={clsx(
       REVEAL,
-      "flex min-h-screen flex-col items-center justify-center gap-4.5 px-12 py-20 text-center md:px-6",
+      "flex min-h-svh flex-col items-center justify-center gap-4.5 px-12 py-20 text-center md:px-[clamp(64px,8vw,120px)]",
     )}
   >
     <h2 id={ENDING_TITLE} className="sr-only">

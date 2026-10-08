@@ -22,10 +22,12 @@ export const star: Shape = (pen, { w, h, rnd, viewportHeight }) => {
   sky(pen, w, h, rnd, 1.2);
   // Sized from the screen, not the cover: the words sit below it.
   const vh = Math.min(h, viewportHeight);
+  // A short screen (a phone held sideways, P27-95): smaller and higher, the title under it.
+  const short = viewportHeight < 500;
   const phone = w < 768;
   const cx = w / 2;
-  const cy = vh * (phone ? 0.28 : 0.34);
-  const A = Math.min(w, vh) * (phone ? 0.44 : 0.34);
+  const cy = vh * (short ? 0.24 : phone ? 0.28 : 0.34);
+  const A = Math.min(w, vh) * (short ? 0.3 : phone ? 0.44 : 0.34);
   // The sparkle: a four-point star with thin curved sides, |x|^0.4 + |y|^0.4 = A^0.4.
   const sparkle = (dx: number, dy: number) =>
     (Math.abs(dx) ** 0.4 + Math.abs(dy) ** 0.4) ** 2.5 / A;
