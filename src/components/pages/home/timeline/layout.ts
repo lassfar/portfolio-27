@@ -14,6 +14,14 @@ export type RailLayout = {
 const HIT = 24;
 
 /**
+ * The room a vertical rail leaves at the screen's top and bottom (px, P27-95). At the top, the
+ * Reduce motion switch's corner (MotionSwitch: 24px down, 40px tall, a 44px tap area) and the
+ * top star's own tap area below it; at the bottom, a margin. On a short screen (a phone held
+ * sideways) the rail starts below the switch, not under it.
+ */
+export const RAIL_CLEAR = { top: 88, bottom: 16 } as const;
+
+/**
  * Where the rail sits (TIMELINE.position / orientation / edge / railLength). `edge` is
  * measured to the rail LINE on the side it runs along (0 = the line flush with the
  * screen edge; the stars' hit area may overhang it), and to the rail's end otherwise.
@@ -28,13 +36,41 @@ export function railLayout(t: StoryTimelineTuning): RailLayout {
   let ty = "0";
   if (v === "top") place.top = horizontal ? line : end;
   else if (v === "bottom") place.bottom = horizontal ? line : end;
-  else [place.top, ty] = ["50%", "-50%"];
+  else if (horizontal) [place.top, ty] = ["50%", "-50%"];
+  // Centred, but below the switch's corner on a short screen.
+  else [place.top, ty] = [`max(50%, calc(${RAIL_CLEAR.top}px + var(--tl-length) / 2))`, "-50%"];
   if (h === "left") place.left = horizontal ? end : line;
   else if (h === "right") place.right = horizontal ? end : line;
   else [place.left, tx] = ["50%", "-50%"];
   place.transform = `translate(${tx}, ${ty})`;
   const tip = horizontal ? (v === "bottom" ? "above" : "below") : h === "right" ? "left" : "right";
   return { horizontal, tip, place };
+}
+
+/**
+ * Phones and touch screens (P27-95): no hover, so no names on hover; a new chapter's name
+ * pops up by its star instead. Narrow screens, and any without hover (a landscape phone, a
+ * tablet).
+ */
+export const phoneQuery = (t: StoryTimelineTuning) =>
+  `(max-width: ${t.phoneMaxWidth}px), (hover: none)`;
+
+/**
+ * The stars' spacing wanted (px, P27-95): their 24px buttons 32px apart, so on a short screen
+ * (a phone held sideways) they don't touch (WCAG 2.5.8). Closer only where the rail can't fit it
+ * (railPxFor).
+ */
+export const STAR_SPACING = 32;
+
+/**
+ * The rail's length (px) on a screen `screenPx` along it: its share, but long enough to space
+ * `count` stars. A vertical one fits the room it leaves (RAIL_CLEAR): on a screen that short,
+ * its stars come closer.
+ */
+export function railPxFor(t: StoryTimelineTuning, screenPx: number, count: number): number {
+  const wanted = Math.max((screenPx * t.railLength) / 100, (count - 1) * STAR_SPACING);
+  if (railLayout(t).horizontal) return wanted;
+  return Math.min(wanted, screenPx - RAIL_CLEAR.top - RAIL_CLEAR.bottom);
 }
 
 /**

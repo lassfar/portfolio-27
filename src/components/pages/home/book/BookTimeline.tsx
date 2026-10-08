@@ -6,7 +6,7 @@ import type {
   StoryChapter,
   StoryTimelineToast,
 } from "#/components/pages/home/timeline/StoryTimeline.types";
-import { chapterPositions } from "#/components/pages/home/timeline/layout";
+import { chapterPositions, phoneQuery, railPxFor } from "#/components/pages/home/timeline/layout";
 import { BOOK_CHAPTERS } from "#/components/pages/home/book/chapters";
 import { landInBook, placeOnScreen } from "#/components/pages/home/book/place";
 import { BOOK_TIMELINE } from "#/components/pages/home/book/timeline";
@@ -57,7 +57,7 @@ const BookTimeline = () => {
   const toastTimer = useRef(0);
 
   useEffect(() => {
-    const small = window.matchMedia(`(max-width: ${BOOK_TIMELINE.phoneMaxWidth}px)`);
+    const small = window.matchMedia(phoneQuery(BOOK_TIMELINE));
     let frame = 0;
     const track = () => {
       frame = 0;
@@ -69,7 +69,7 @@ const BookTimeline = () => {
     };
     const measure = () => {
       setChapters(measureChapters());
-      setRailPx((window.innerHeight * BOOK_TIMELINE.railLength) / 100);
+      setRailPx(railPxFor(BOOK_TIMELINE, window.innerHeight, BOOK_CHAPTERS.length));
       setPhone(small.matches);
       queue();
     };

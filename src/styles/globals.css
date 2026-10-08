@@ -466,6 +466,14 @@
   background: none;
   cursor: pointer;
 }
+/* On a touch screen, a 44px target around each 24px star (P27-95). */
+@media (pointer: coarse) {
+  .story-timeline__star::after {
+    content: "";
+    position: absolute;
+    inset: -10px;
+  }
+}
 /* The site's focus ring, 3:1 or more against the page (P27-97, WCAG 1.4.11). */
 .story-timeline__star:focus-visible {
   outline: 2px solid color-mix(in srgb, var(--color-peach) 70%, transparent);

@@ -9,7 +9,15 @@ import { useJourneyScroll } from "#/stores/useJourneyScroll";
 import { useTimelineTuning } from "#/stores/useTimelineTuning";
 import { STEP_BACK_IN_FULL_VIEW } from "#/components/pages/home/panel/layout";
 import { STORY_CHAPTERS, TIMELINE } from "./config";
-import { chapterAt, chapterPositions, fillAt, fillClip, railLayout } from "./layout";
+import {
+  chapterAt,
+  chapterPositions,
+  fillAt,
+  fillClip,
+  phoneQuery,
+  railLayout,
+  railPxFor,
+} from "./layout";
 import StoryTimelineRail from "./StoryTimelineRail";
 import type { StoryTimelineRest, StoryTimelineToast } from "./StoryTimeline.types";
 
@@ -41,9 +49,13 @@ const StoryTimeline = () => {
   const toastTimer = useRef(0);
 
   useTimelineTuning((s) => s.rev); // re-render when the dev panel edits TIMELINE in place
-  const { minGap, railLength } = TIMELINE;
+  const { minGap } = TIMELINE;
   const { horizontal } = railLayout(TIMELINE);
-  const railPx = ((horizontal ? viewport.width : viewport.height) * railLength) / 100;
+  const railPx = railPxFor(
+    TIMELINE,
+    horizontal ? viewport.width : viewport.height,
+    STORY_CHAPTERS.length,
+  );
   const positions = useMemo(
     () => chapterPositions(STORY_CHAPTERS, minGap, railPx),
     [minGap, railPx],
@@ -52,7 +64,7 @@ const StoryTimeline = () => {
   // The viewport: the phone layout, and its height (the rail's, for the gaps).
   useEffect(() => {
     setMounted(true);
-    const small = window.matchMedia(`(max-width: ${TIMELINE.phoneMaxWidth}px)`);
+    const small = window.matchMedia(phoneQuery(TIMELINE));
     const measure = () => {
       setPhone(small.matches);
       setViewport({ width: window.innerWidth, height: window.innerHeight });

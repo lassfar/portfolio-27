@@ -3,8 +3,10 @@ import { expect, waitFor, within } from "storybook/test";
 
 import { BOOK_CHAPTERS, titleId } from "#/components/pages/home/book/chapters";
 import { CHAPTER_NAMES } from "#/components/pages/home/story/copy";
+import { RAIL_CLEAR } from "#/components/pages/home/timeline/layout";
 import { contrastOnPage } from "#/stories/contrast";
 import { inCalm } from "#/stories/motion";
+import { sideways } from "#/stories/viewports";
 import BookTimeline from "./BookTimeline";
 
 const timeline = () => document.querySelector<HTMLElement>("nav.story-timeline")!;
@@ -104,5 +106,21 @@ export const Phone: Story = {
     });
     await expect(name).toHaveAttribute("aria-hidden", "true");
     await expect(starOf("The Craft").querySelector("span[aria-hidden='true'] + span")).toBeNull();
+  },
+};
+
+/** On a phone held sideways (568 × 320): a touch screen, so a new chapter's name shows by its star; the rail stays long enough to keep the stars 32 px apart (WCAG 2.5.8), and starts below the Reduce motion switch's corner. */
+export const PhoneSideways: Story = {
+  ...sideways,
+  play: async () => {
+    await expect(window.innerHeight).toBe(320);
+    document.getElementById("maker")!.scrollIntoView({ behavior: "instant" });
+    await shown();
+    const centres = [...timeline().querySelectorAll("button")].map((b) => {
+      const r = b.getBoundingClientRect();
+      return r.top + r.height / 2;
+    });
+    centres.slice(1).forEach((y, i) => expect(y - centres[i]).toBeGreaterThanOrEqual(31.5));
+    await expect(centres[0]).toBeGreaterThanOrEqual(RAIL_CLEAR.top);
   },
 };

@@ -3,7 +3,7 @@ import type { CSSProperties } from "react";
 import Tooltip from "#/components/UI/tooltip/Tooltip";
 import type { TooltipSide } from "#/components/UI/tooltip/tooltip.types";
 import { TIMELINE } from "./tuning";
-import { fillClip, railLayout } from "./layout";
+import { fillClip, RAIL_CLEAR, railLayout, STAR_SPACING } from "./layout";
 import type {
   StoryTimelineColor,
   StoryTimelineRailProps,
@@ -18,9 +18,9 @@ const tone = (color: StoryTimelineColor, custom: string) =>
  * The tuned values as the custom properties the `.story-timeline` styles read
  * (globals.css). Read on every render, so dev-panel edits (TimelineGui) show at once.
  */
-const railVars = (t: StoryTimelineTuning, horizontal: boolean): CSSProperties =>
+const railVars = (t: StoryTimelineTuning, horizontal: boolean, count: number): CSSProperties =>
   ({
-    "--tl-length": `${t.railLength}${horizontal ? "vw" : "vh"}`,
+    "--tl-length": railLength(t, horizontal, count),
     "--tl-color": tone(t.color, t.customColor),
     "--tl-rail-color": tone(t.railColor, t.customRailColor),
     "--color-tooltip": tone(t.tipColor, t.customTipColor), // its tooltips' text
@@ -32,6 +32,16 @@ const railVars = (t: StoryTimelineTuning, horizontal: boolean): CSSProperties =>
     "--tl-upcoming-alpha": t.upcomingAlpha,
     "--tl-dim": t.dimOpacity,
   }) as CSSProperties;
+
+/**
+ * Its share of the screen, but long enough to space its stars; a vertical one within the room
+ * it leaves for the switch (railPxFor).
+ */
+function railLength(t: StoryTimelineTuning, horizontal: boolean, count: number): string {
+  const wanted = `max(${t.railLength}${horizontal ? "vw" : "vh"}, ${(count - 1) * STAR_SPACING}px)`;
+  if (horizontal) return wanted;
+  return `min(${wanted}, calc(100dvh - ${RAIL_CLEAR.top + RAIL_CLEAR.bottom}px))`;
+}
 
 /** The name pill's spot: 24px into the screen from the rail (it opens 6px past it, like a tooltip). */
 const PILL_SPOT: Record<TooltipSide, string> = {
@@ -82,7 +92,7 @@ const StoryTimelineRail = ({
         phone && "is-phone",
         tuning.pulse && "is-pulse",
       )}
-      style={{ ...railVars(tuning, horizontal), ...place }}
+      style={{ ...railVars(tuning, horizontal, chapters.length), ...place }}
     >
       <div className="story-timeline__rail" />
       <div
