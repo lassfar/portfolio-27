@@ -20,7 +20,8 @@ import { useGateLive } from "#/components/pages/home/motion/gateLive";
 // the starfield, the star, the Saturn that assembles from its debris, and (as
 // the journey continues) the Saturn's fly-away out into the wider voyage.
 // The canvas mounts once the journey is live (ModeGate, P27-93); its code is fetched as the
-// page loads with motion on (loadJourney), else only before a switch to motion.
+// page loads with motion on (loadJourney), else once the pointer or focus lingers on the
+// Reduce motion switch (MotionSwitch), or at the switch to motion.
 const CosmicScene = dynamic(loadScene, { ssr: false });
 
 const Hero = () => {
