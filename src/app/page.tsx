@@ -10,7 +10,7 @@ export default function Home() {
           the calm mode (reduced motion). The first paint shows the right one. */}
       <ModeGate reloadOnChange full={<Journey />} calm={<CalmBook />} />
 
-      {/* The "Reduce motion" switch, top-right (with ?calm until the calm book ships). */}
+      {/* The "Reduce motion" switch, top-right: calm or full motion, for every visitor. */}
       <MotionSwitch />
     </main>
   );

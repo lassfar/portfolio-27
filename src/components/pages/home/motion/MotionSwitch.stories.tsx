@@ -19,7 +19,6 @@ const meta = {
     // Fixed to the screen: on the docs page, each story in its own frame.
     docs: { story: { inline: false, height: "10rem" } },
   },
-  args: { always: true },
   // Never leave a choice saved, nor the page calm, for the next story.
   beforeEach: () => () => {
     localStorage.removeItem(MOTION_STORAGE_KEY);
