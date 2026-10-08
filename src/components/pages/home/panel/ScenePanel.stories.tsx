@@ -24,6 +24,28 @@ const opened =
 
 const page = () => within(document.body);
 
+/** A pointer pulling the sheet's grip down by `dy` px, then letting go. */
+const pull = async (panel: HTMLElement, dy: number) => {
+  const grip = panel.querySelector<HTMLElement>(".touch-none")!;
+  const { left, top } = grip.getBoundingClientRect();
+  const at = (type: string, y: number) =>
+    grip.dispatchEvent(
+      new PointerEvent(type, {
+        bubbles: true,
+        pointerId: 7,
+        pointerType: "touch",
+        clientX: left + 40,
+        clientY: y,
+      }),
+    );
+  at("pointerdown", top + 10);
+  for (let y = 12; y <= dy; y += 12) {
+    at("pointermove", top + 10 + y);
+    await new Promise((resolve) => setTimeout(resolve, 30));
+  }
+  at("pointerup", top + 10 + dy);
+};
+
 /** The panel, as the site mounts it (with its labels and the photo viewer, portalled to the body). */
 const meta = {
   title: "Home/Panel/ScenePanel",
@@ -70,11 +92,31 @@ export const Side: Story = {
 /** In calm motion: it only fades in and out, shorter (no slide), and its content fades in at once. */
 export const Calm: Story = {
   beforeEach: [inCalm, opened(london)],
+  globals: { viewport: { value: "mobile1", isRotated: false } },
   play: async () => {
     const panel = await page().findByRole("dialog", { name: "Back to London" });
     await expect(getComputedStyle(panel).transitionProperty).toBe("opacity");
     await expect(getComputedStyle(panel).translate).toBe("none");
     await entered(panel);
+    // A phone's sheet, pulled a little: it follows the finger only, back at once (no slide).
+    await pull(panel, 48);
+    await expect(panel.style.translate).toBe("");
+    await expect(getComputedStyle(panel).transitionProperty).toBe("opacity");
+  },
+};
+
+/** On a phone, the sheet swiped down: it follows the finger; a short pull goes back, a longer one (or a flick) closes it. Close and Escape still do (WCAG 2.5.1, 2.5.7). */
+export const Swipe: Story = {
+  beforeEach: opened(london),
+  globals: { viewport: { value: "mobile1", isRotated: false } },
+  play: async () => {
+    const panel = await page().findByRole("dialog", { name: "Back to London" });
+    await entered(panel);
+    await pull(panel, 48);
+    await waitFor(() => expect(panel.style.translate).toBe(""));
+    await expect(usePanelStore.getState().content).not.toBeNull();
+    await pull(panel, 240);
+    await waitFor(() => expect(usePanelStore.getState().content).toBeNull());
   },
 };
 

@@ -1,7 +1,7 @@
 "use client";
 
 import clsx from "clsx";
-import { useEffect, useId, useRef, type Ref } from "react";
+import { useEffect, useId, useLayoutEffect, useRef, type Ref } from "react";
 import { selectIsOpen, usePanelStore, type PanelView } from "#/stores/usePanelStore";
 import { cosmicVeil } from "#/stores/cosmicVeil";
 import PlaceContent from "#/components/pages/home/gallery/PlaceContent";
@@ -13,6 +13,7 @@ import { COLUMN, SWAP, SWAPPING } from "./layout";
 import { usePanelEntrance } from "./usePanelEntrance";
 import { PANEL_ID } from "./config";
 import { usePanelFrame } from "./usePanelFrame";
+import { useSheetDrag } from "./useSheetDrag";
 
 /** Its size, shape and fill animate between the two views (and in and out). */
 const SHELL =
@@ -66,12 +67,24 @@ type ScenePanelProps = {
 const ScenePanel = ({ ref, modal = false }: ScenePanelProps) => {
   const open = usePanelStore(selectIsOpen);
   const view = usePanelStore((s) => s.view);
+  const photo = usePanelStore((s) => s.photo);
   const titleId = useId();
   const scroll = useRef<HTMLDivElement>(null);
+  const grip = useRef<HTMLDivElement>(null);
   const { frame, morphing } = usePanelFrame(scroll);
   const content = useRef<HTMLDivElement>(null);
 
   usePanelEntrance(content, frame?.key);
+  // A phone's bottom sheet: swiped down, it closes (P27-95).
+  useSheetDrag(grip, scroll, open && view === "side" && photo === null);
+  // Opening again: where a swipe left it is forgotten.
+  useLayoutEffect(() => {
+    const sheet = scroll.current?.parentElement;
+    if (open && sheet) {
+      sheet.style.translate = "";
+      sheet.style.transition = "";
+    }
+  }, [open]);
   const eyebrow = frame ? headerOf(frame.content)?.eyebrow : undefined;
 
   // The full view veils the scene (WebGL) and the story's overlays step back (`panel-full:`).
@@ -104,10 +117,14 @@ const ScenePanel = ({ ref, modal = false }: ScenePanelProps) => {
       )}
     >
       {view === "side" && (
-        <span
+        // The bottom sheet's grip: pull it down to close (useSheetDrag). Under the controls.
+        <div
+          ref={grip}
           aria-hidden="true"
-          className="absolute top-2.25 left-1/2 z-3 h-1 w-9.5 -translate-x-1/2 rounded-full bg-white/22 sm:hidden"
-        />
+          className="absolute inset-x-0 top-0 z-2 h-12 touch-none sm:hidden"
+        >
+          <span className="absolute top-2.25 left-1/2 h-1 w-9.5 -translate-x-1/2 rounded-full bg-white/22" />
+        </div>
       )}
       <PanelControls view={view} />
       {/* The content scrolls under the buttons, softly faded at the panel's top edge. */}
