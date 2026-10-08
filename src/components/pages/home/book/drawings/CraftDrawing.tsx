@@ -10,7 +10,11 @@ const nodeOf = Object.fromEntries(NODES.map((n) => [n.id, n]));
  * SVG: that one carries the hooks its scroll assembly animates.
  */
 const CraftDrawing = () => (
-  <svg viewBox="0 0 600 420" aria-hidden="true" className="absolute inset-0 size-full">
+  <svg
+    viewBox="0 0 600 420"
+    aria-hidden="true"
+    className="absolute inset-0 size-full animate-[fade_0.5s_ease-out]"
+  >
     <SvgStars w={600} h={420} count={70} seed={11} />
     <g stroke="var(--color-baby-blue)" strokeOpacity={0.4} strokeWidth={1}>
       {LINES.map(([a, b]) => (

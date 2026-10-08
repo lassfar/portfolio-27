@@ -133,6 +133,9 @@
    alone, not the site's switch. */
 @custom-variant moving (&:where(:root:not([data-motion="calm"]) *));
 @custom-variant calm (&:where([data-motion="calm"] *));
+/* `full:` only once the head script has said so (P27-93): without a script there's no
+   `data-motion`, and the page shows the calm book (motion/ModeGate). */
+@custom-variant full (&:where([data-motion="full"] *));
 
 /* `tooltips-off:` — after Escape (WCAG 1.4.13), until the pointer or the focus moves on to
    something else (UI/tooltip/dismiss). */

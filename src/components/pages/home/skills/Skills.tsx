@@ -118,7 +118,6 @@ const Skills = ({ overlayRef, reduced = false }: Props) => {
 
   return (
     <div
-      id="skills"
       ref={overlayRef}
       className={clsx(
         "home-skills home-craft",

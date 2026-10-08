@@ -9,8 +9,7 @@ import { LabChip, PlaceChips } from "#/components/pages/home/book/PlaceChips";
 import Spread from "#/components/pages/home/book/Spread";
 import { titleId } from "#/components/pages/home/book/chapters";
 import DotField from "#/components/pages/home/book/dots/DotField";
-import CraftDrawing from "#/components/pages/home/book/drawings/CraftDrawing";
-import ParkerDrawing from "#/components/pages/home/book/drawings/ParkerDrawing";
+import LiveDrawing from "#/components/pages/home/book/drawings/LiveDrawing";
 import { BODY, FIGURE, VOICE_LINE } from "#/components/pages/home/book/layout";
 import Contact from "#/components/pages/home/contact/Contact";
 import PanelHost from "#/components/pages/home/panel/PanelHost";
@@ -64,7 +63,7 @@ const CalmBook = () => (
       title={CRAFT.title}
       figure={
         <figure role="img" aria-label={BOOK.figures.craft} className={clsx(FIGURE, "m-0")}>
-          <CraftDrawing />
+          <LiveDrawing name="craft" />
         </figure>
       }
     >
@@ -89,7 +88,7 @@ const CalmBook = () => (
       title={BOOK.titles.lab}
       figure={
         <DotField shape="sun" label={BOOK.figures.lab} className={FIGURE}>
-          <ParkerDrawing />
+          <LiveDrawing name="parker" />
         </DotField>
       }
     >

@@ -95,7 +95,7 @@ const ParkerDrawing = () => {
     <svg
       viewBox={`0 0 ${LAB_FRAME.w} ${LAB_FRAME.h}`}
       aria-hidden="true"
-      className="pointer-events-none absolute inset-0 size-full [mask-image:linear-gradient(to_bottom,transparent,#000_8%,#000_80%,transparent)]"
+      className="pointer-events-none absolute inset-0 size-full animate-[fade_0.5s_ease-out] [mask-image:linear-gradient(to_bottom,transparent,#000_8%,#000_80%,transparent)]"
     >
       <defs>
         <radialGradient id="lab-card-glow">

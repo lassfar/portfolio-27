@@ -1,5 +1,4 @@
 import type { Metadata } from "next";
-import SmoothScrollProvider from "#/components/providers/SmoothScrollProvider";
 import { MOTION_SCRIPT } from "#/stores/motionPreference";
 import "#/styles/globals.css";
 import { greatVibes, kronaOne } from "./fonts";
@@ -31,8 +30,10 @@ export default function RootLayout({
             A plain script: next/script's beforeInteractive would run only once Next has loaded. */}
         <script dangerouslySetInnerHTML={{ __html: MOTION_SCRIPT }} />
       </head>
-      <body suppressHydrationWarning className="dark antialiased">
-        <SmoothScrollProvider>{children}</SmoothScrollProvider>
+      {/* The page's black on the body: the journey's smooth scroll fixes its content, so the
+          page itself has no height to paint (P27-93). */}
+      <body suppressHydrationWarning className="dark bg-rich-black antialiased">
+        {children}
       </body>
     </html>
   );

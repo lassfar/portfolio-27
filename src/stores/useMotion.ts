@@ -2,6 +2,7 @@ import { create } from "zustand";
 import {
   MOTION_QUERY,
   MOTION_STORAGE_KEY,
+  choiceInUrl,
   motionMode,
   parseChoice,
   resolveCalm,
@@ -51,8 +52,8 @@ export const useCalm = () => useMotion(selectCalm);
 
 /**
  * In the browser, as soon as this module loads (so before any component reads it): the
- * device setting and the stored choice, the setting followed live, and `data-motion` on
- * <html> kept in sync.
+ * device setting and the visitor's choice (the address's, or the stored one), the setting
+ * followed live, and `data-motion` on <html> kept in sync.
  */
 function start(): void {
   let query: MediaQueryList | null = null;
@@ -67,7 +68,10 @@ function start(): void {
   } catch {
     // Storage blocked: no choice.
   }
-  useMotion.setState({ device: query?.matches ?? false, choice: parseChoice(stored) });
+  useMotion.setState({
+    device: query?.matches ?? false,
+    choice: choiceInUrl(window.location.search) ?? parseChoice(stored),
+  });
   query?.addEventListener("change", (event) => useMotion.setState({ device: event.matches }));
 
   const mirror = () => document.documentElement.setAttribute("data-motion", motionMode(isCalm()));

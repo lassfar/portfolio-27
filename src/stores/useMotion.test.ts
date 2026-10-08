@@ -5,16 +5,19 @@ type Change = { matches: boolean };
 
 /**
  * A browser for the store (the unit tests run in Node): the reduced-motion setting, which
- * can change, a storage, which can be blocked, and <html>'s attributes.
+ * can change, a storage, which can be blocked, the address, and <html>'s attributes.
  */
 function fakeBrowser({
   device,
   stored = null,
   blocked = false,
+  search = "",
 }: {
   device: boolean;
   stored?: string | null;
   blocked?: boolean;
+  /** The address's query (`?motion=calm`). */
+  search?: string;
 }) {
   const listeners = new Set<(event: Change) => void>();
   const query = {
@@ -35,7 +38,9 @@ function fakeBrowser({
       };
   const attributes = new Map<string, string>();
   const matchMedia = () => query;
-  vi.stubGlobal("window", { matchMedia });
+  const location = { search };
+  vi.stubGlobal("window", { matchMedia, location });
+  vi.stubGlobal("location", location);
   vi.stubGlobal("matchMedia", matchMedia);
   vi.stubGlobal("localStorage", storage);
   vi.stubGlobal("document", {
@@ -92,6 +97,17 @@ describe("the motion preference", () => {
     expect(isCalm()).toBe(true);
   });
 
+  it("takes a choice from the address first (the browser couldn't keep it), and ignores anything else there", async () => {
+    fakeBrowser({ device: false, stored: "full", search: "?motion=calm" });
+    expect((await loadStore()).isCalm()).toBe(true);
+    vi.resetModules();
+    fakeBrowser({ device: true, blocked: true, search: "?x=1&motion=full" });
+    expect((await loadStore()).isCalm()).toBe(false);
+    vi.resetModules();
+    fakeBrowser({ device: false, stored: "calm", search: "?motion=slow" });
+    expect((await loadStore()).isCalm()).toBe(true);
+  });
+
   it("falls back to the device setting when storage is blocked, and a choice still applies", async () => {
     fakeBrowser({ device: true, blocked: true });
     const { isCalm, useMotion } = await loadStore();
@@ -125,12 +141,14 @@ describe("the motion preference", () => {
   it("marks the first paint the same way the store decides", async () => {
     for (const device of [false, true]) {
       for (const stored of [null, "calm", "full"]) {
-        vi.resetModules();
-        const browser = fakeBrowser({ device, stored });
-        new Function(MOTION_SCRIPT)();
-        const painted = browser.mode();
-        const { isCalm } = await loadStore();
-        expect(painted).toBe(isCalm() ? "calm" : "full");
+        for (const search of ["", "?motion=calm", "?motion=full", "?motion=slow"]) {
+          vi.resetModules();
+          const browser = fakeBrowser({ device, stored, search });
+          new Function(MOTION_SCRIPT)();
+          const painted = browser.mode();
+          const { isCalm } = await loadStore();
+          expect(painted, `${device} ${stored} ${search}`).toBe(isCalm() ? "calm" : "full");
+        }
       }
     }
   });
