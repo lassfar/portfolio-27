@@ -29,12 +29,13 @@ src/
 ├── components/
 │   ├── UI/                     # Design system: buttons, cards, forms, glass, icons, labels, links, swash, tags, text, tooltip
 │   ├── assets/pictures/        # SVG components (logos, shapes)
-│   ├── hooks/                  # Shared hooks (useIsClient, useTimeout, …)
+│   ├── hooks/                  # Shared hooks (useIsClient, useTimeout, …), loadOnce and useLoaded (lazy modules)
 │   │   ├── a11y/               # Accessibility helpers (inert outside a dialog)
 │   │   └── motions/            # Reusable GSAP animation hooks: backgrounds/, blocks/, shapes/, texts/
 │   ├── pages/home/             # The home page: the journey with motion, the calm book in the calm mode
 │   │   ├── Journey.tsx         # The journey: the smooth scroll, Hero and the overlays below
-│   │   ├── Hero.tsx            # The pinned journey: hero, About, Craft and Contact overlays
+│   │   ├── Hero.tsx            # The pinned journey: hero, About, Craft and Contact overlays (markup)
+│   │   ├── loadJourney.ts      # Fetches the journey's motion code (journeyMotion.ts: HeroMotion, Smoother, JourneyParts…)
 │   │   ├── book/               # The calm book: cover, spreads, bridges, rail; dots/ (dotted shapes), drawings/
 │   │   ├── motion/             # ModeGate (journey or book), the Reduce motion switch, the live switch and its screen
 │   │   ├── hooks/              # useCosmicJourney: one scroll drives the whole story
@@ -49,7 +50,7 @@ src/
 │   │   ├── lab/                # The Lab: the memory card, experiments
 │   │   ├── skills/             # The Craft: the constellation
 │   │   └── contact/            # The contact form
-│   ├── providers/              # SmoothScrollProvider (ScrollSmoother, the journey's only)
+│   ├── providers/              # SmoothScrollProvider (ScrollSmoother, the journey's only; its Smoother loads apart)
 │   └── three.js/               # React Three Fiber
 │       ├── scene/              # The canvas, quality, performance, dev panel
 │       ├── star/               # The star, and the scroll map (config.ts: JOURNEY)
@@ -60,7 +61,8 @@ src/
 │       ├── voyager/            # The Lab's config and copy (data.ts)
 │       └── galaxy/             # The Milky Way
 ├── stores/                     # Zustand stores and small shared state, one per file (incl. useMotion)
-├── stories/                    # Storybook helpers (Introduction, galleries); stories sit next to their component
+├── stories/                    # Storybook helpers (Introduction, galleries, viewports); stories sit next to their component
+├── test/                       # Test helpers (imports.ts: what a module loads, for the boundary tests)
 └── styles/
     └── globals.css             # Global styles, Tailwind v4 @theme tokens and custom variants
 ```
@@ -125,11 +127,14 @@ The visitor's motion preference is `full` or `calm`: the device setting, unless 
 
 **Switching live** (P27-94): when the mode changes (the switch, or the device setting during the visit, which drops a saved choice), `motion/modeSwitch` swaps the trees without a reload, behind the transition screen (`motion/ModeVeil`), on the same chapter: capture the place, cover (the page inert, the scroll input held, `<html data-mode-switching>`), swap, land, reveal. `data-motion` is held on the tree on screen until the swap (`holdMotionAttribute`).
 
-- **A tree can mount again:** anything global it sets up (listeners, module state, GSAP tweens, a render target) is reset or released when it unmounts
+- **A tree can mount again:** anything global it sets up (listeners, module state, GSAP tweens and ticker listeners, a render target) is reset or released when it unmounts. ScrollTrigger can't be turned off and on again (GSAP 3.13 breaks on `enable()` after `disable()`): once loaded, it stays
+- **The journey's motion code loads apart** (P27-95): GSAP's scroll plugins (ScrollTrigger, ScrollSmoother, SplitText) and what uses them live behind `loadJourneyMotion` (`pages/home/loadJourney.ts`; motion visitors fetch it as the page loads), rendered with `useLoaded` (not `next/dynamic`: React holds a suspended part back ~300 ms). The calm side never imports them: `motion/boundary.test.ts` walks the page's static imports
+- **The page's controls come first:** the layout's `#page-controls` (before the page, kept above the switch's screen) holds the Reduce motion switch: the first Tab stop
+- **The panel:** its layers portal together (`data-panel-layer`); on a phone its sheet swipes down to close (`panel/useSheetDrag`); in the book a tap on the dimmed page closes it (`data-panel-scrim`)
 - **Land on a chapter:** the journey with `scroll/land.ts` (`landJourney`, after `waitForJourney`), the book with `book/place.ts` (`landInBook`, `placeOnScreen`); a passage's place in the book is its bridge
 
 - **The journey is motion-only:** no calm branches in it. Anything that must not run before the gate says so (a pin, ScrollSmoother, the 3D, a canvas) waits for `useGateLive()`
-- **The book:** nothing moves on its own (fades are opacity only, the rail jumps); the pointer only lights its dots (`book/dots/engine.ts`): a dot never moves or grows. It imports nothing that loads `three` (`book/boundary.test.ts` walks its imports)
+- **The book:** nothing moves on its own (fades are opacity only, the rail jumps); the pointer only lights its dots (`book/dots/engine.ts`): a dot never moves or grows. Each dotted figure is drawn only near the screen (`DotCanvas`). It imports nothing that loads `three` (`book/boundary.test.ts` walks its imports)
 - **Read the device setting only through `useMotion`:** `stores/motionSources.test.ts` fails on any other `prefers-reduced-motion`, and on `motion-reduce:` / `motion-safe:`
 
 ## Git Workflow
