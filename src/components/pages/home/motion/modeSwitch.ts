@@ -1,12 +1,10 @@
-import { ScrollTrigger } from "gsap/all";
 import { inertExcept } from "#/components/hooks/a11y/inertExcept";
 import { landInBook, placeOnScreen } from "#/components/pages/home/book/place";
 import { preloadBook } from "#/components/pages/home/book/preload";
 import { keepDraft } from "#/components/pages/home/contact/draft";
+import { loadJourneyMotion } from "#/components/pages/home/loadJourney";
 import { holdInput } from "#/components/pages/home/motion/holdInput";
 import { chapterIdAt } from "#/components/pages/home/scroll/chapters";
-import { stopGlide } from "#/components/pages/home/scroll/glide";
-import { holdJourneyOn, landJourney, waitForJourney } from "#/components/pages/home/scroll/land";
 import { CHAPTER_NAMES, SWITCH } from "#/components/pages/home/story/copy";
 import type { ChapterId } from "#/components/pages/home/story/story.types";
 import { preloadScene } from "#/components/three.js/scene/preload";
@@ -24,7 +22,7 @@ const TIMING = {
   fadeOut: 500,
   /** How long it stays opaque at least, so it reads. */
   hold: { calm: 1400, full: 1700 },
-  /** Waiting for the journey's pin, then for the 3D's code, then for its first frames. */
+  /** Waiting for the journey's pin, for its code and the 3D's, then for the 3D's first frames. */
   pin: 3000,
   code: 20000,
   scene: 8000,
@@ -83,14 +81,11 @@ function refocus(mode: MotionChoice, place: ChapterId) {
  * keeps it landed until the reveal.
  */
 async function swap(to: MotionChoice, place: ChapterId, signal: AbortSignal) {
-  // The journey's pin measures from the top.
-  if (to === "full") window.scrollTo(0, 0);
-  // The page's CSS turns to the new mode with it (a link drawing in starts now).
-  holdMotionAttribute(to);
-  useModeSwitch.setState({ shown: to });
-  await nextFrame();
-
   if (to === "calm") {
+    // The page's CSS turns to the new mode with it.
+    holdMotionAttribute(to);
+    useModeSwitch.setState({ shown: to });
+    await nextFrame();
     landInBook(place, false);
     // Its figures draw in and its length changes: landed again until the reveal.
     const resized = new ResizeObserver(() => landInBook(place, false));
@@ -101,18 +96,27 @@ async function swap(to: MotionChoice, place: ChapterId, signal: AbortSignal) {
     return () => resized.disconnect();
   }
 
-  let release = () => {};
-  if (await waitForJourney(TIMING.pin, signal)) {
-    ScrollTrigger.refresh();
-    landJourney(place);
-    release = holdJourneyOn(place);
-  }
-  // The 3D: its code, then a couple of frames drawn, then a moment to settle.
   const slow = setTimeout(() => {
     setVeil({ slow: true });
     useModeSwitch.setState({ status: SWITCH.slow });
   }, TIMING.slow);
   try {
+    // The journey's motion code first (P27-95: the calm mode never fetched it), so it mounts
+    // ready and the wait for its pin isn't spent on a fetch.
+    await within(loadJourneyMotion(), TIMING.code);
+    // Its pin measures from the top; the page's CSS turns to motion (a link drawing in).
+    window.scrollTo(0, 0);
+    holdMotionAttribute(to);
+    useModeSwitch.setState({ shown: to });
+    await nextFrame();
+    let release = () => {};
+    const journey = loadJourneyMotion.loaded;
+    if (journey && (await journey.waitForJourney(TIMING.pin, signal))) {
+      journey.refreshJourney();
+      journey.landJourney(place);
+      release = journey.holdJourneyOn(place);
+    }
+    // The 3D: its code, then a couple of frames drawn, then a moment to settle.
     await within(preloadScene(), TIMING.code);
     const from = sceneFrames.count;
     const until = performance.now() + TIMING.scene;
@@ -120,10 +124,10 @@ async function swap(to: MotionChoice, place: ChapterId, signal: AbortSignal) {
       await nextFrame();
     }
     await delay(TIMING.settle);
+    return release;
   } finally {
     clearTimeout(slow);
   }
-  return release;
 }
 
 /**
@@ -133,8 +137,8 @@ async function swap(to: MotionChoice, place: ChapterId, signal: AbortSignal) {
  */
 async function switchOnce(from: MotionChoice, signal: AbortSignal) {
   const root = document.documentElement;
-  // Capture, in the click's own task.
-  stopGlide();
+  // Capture, in the click's own task. (No glide without the journey's code.)
+  loadJourneyMotion.loaded?.stopGlide();
   const place = placeIn(from);
   const refocusAfter = focusInPage();
   keepDraft();
@@ -142,7 +146,9 @@ async function switchOnce(from: MotionChoice, signal: AbortSignal) {
   holdMotionAttribute(from);
   root.setAttribute("data-mode-switching", "");
   let to = motionMode(isCalm());
-  void (to === "full" ? preloadScene() : preloadBook()).catch(() => undefined);
+  void (to === "full" ? Promise.all([loadJourneyMotion(), preloadScene()]) : preloadBook()).catch(
+    () => undefined,
+  );
   useModeSwitch.setState({ veil: { to, place, shown: true, slow: false }, status: "" });
 
   // Cover: once the panel's close has committed, the page goes inert under the screen.
@@ -164,7 +170,7 @@ async function switchOnce(from: MotionChoice, signal: AbortSignal) {
     await delay(Math.max(0, TIMING.hold[to] - (performance.now() - opaqueAt)));
   } finally {
     // Reveal: landed once more, the page given back.
-    if (shown === "full") landJourney(place);
+    if (shown === "full") loadJourneyMotion.loaded?.landJourney(place);
     else landInBook(place, false);
     landed();
     releaseInput();
@@ -202,6 +208,9 @@ export function startModeSwitch(initial: MotionChoice): () => void {
       while (!abort.signal.aborted && motionMode(isCalm()) !== shown()) {
         await switchOnce(shown(), abort.signal);
       }
+    } catch (error) {
+      // The page was given back (switchOnce's finally); a broken switch is only reported.
+      console.error(error);
     } finally {
       running = false;
     }

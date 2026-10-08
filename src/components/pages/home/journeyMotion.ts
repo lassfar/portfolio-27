@@ -1,0 +1,12 @@
+/**
+ * The journey's motion code (P27-95): everything that needs GSAP's scroll plugins, in one
+ * chunk, reached only through `loadJourneyMotion` (loadJourney.ts). The calm mode never
+ * fetches it, unless the visitor switches to motion.
+ */
+export { stopGlide } from "#/components/pages/home/scroll/glide";
+export {
+  holdJourneyOn,
+  landJourney,
+  refreshJourney,
+  waitForJourney,
+} from "#/components/pages/home/scroll/land";

@@ -26,6 +26,9 @@ export function waitForJourney(timeout: number, signal?: AbortSignal): Promise<b
   });
 }
 
+/** Measures the journey again (its pin, its parts), as the page is now. */
+export const refreshJourney = (): void => ScrollTrigger.refresh();
+
 /**
  * Lands the journey on chapter `id`'s resting view at once (P27-94: the mode switch), the
  * scrubbed story there too rather than catching up behind. Returns whether it could (not

@@ -3,12 +3,12 @@ import { ScrollSmoother, ScrollTrigger } from "gsap/all";
 import { journeyTrigger } from "#/stores/journeyTrigger";
 import { restOf } from "./chapters";
 import { jumpToJourney, stopGlide } from "./glide";
-import { holdJourneyOn, landJourney, waitForJourney } from "./land";
+import { holdJourneyOn, landJourney, refreshJourney, waitForJourney } from "./land";
 
 // No GSAP in the unit tests: the smoother, the pin and the scroll are stood in for.
 vi.mock("gsap/all", () => ({
   ScrollSmoother: { get: vi.fn() },
-  ScrollTrigger: { addEventListener: vi.fn(), removeEventListener: vi.fn() },
+  ScrollTrigger: { addEventListener: vi.fn(), removeEventListener: vi.fn(), refresh: vi.fn() },
 }));
 vi.mock("./glide", () => ({ jumpToJourney: vi.fn(() => true), stopGlide: vi.fn() }));
 
@@ -40,6 +40,11 @@ describe("landJourney", () => {
     journeyTrigger.current = pin as unknown as ScrollTrigger;
     expect(landJourney("earth")).toBe(false);
     expect(jumpToJourney).not.toHaveBeenCalled();
+  });
+
+  it("measures the journey again on request", () => {
+    refreshJourney();
+    expect(ScrollTrigger.refresh).toHaveBeenCalled();
   });
 
   it("lands again on each refresh, until stopped", () => {
