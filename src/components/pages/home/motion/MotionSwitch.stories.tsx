@@ -2,7 +2,7 @@ import type { Meta, StoryObj } from "@storybook/nextjs-vite";
 import { expect, waitFor, within } from "storybook/test";
 
 import { inCalm } from "#/stories/motion";
-import { MOTION_STORAGE_KEY } from "#/stores/motionPreference";
+import { MOTION_STORAGE_KEY, storedChoice } from "#/stores/motionPreference";
 import { useMotion } from "#/stores/useMotion";
 import MotionSwitch from "./MotionSwitch";
 
@@ -39,7 +39,9 @@ export const Default: Story = {
     await userEvent.click(button);
     await expect(button).toHaveAttribute("aria-pressed", "true");
     await expect(document.documentElement.dataset.motion).toBe("calm");
-    await expect(localStorage.getItem(MOTION_STORAGE_KEY)).toBe("calm");
+    await expect(localStorage.getItem(MOTION_STORAGE_KEY)).toBe(
+      storedChoice("calm", useMotion.getState().device),
+    );
   },
 };
 

@@ -1,4 +1,9 @@
-import { MOTION_PARAM, MOTION_STORAGE_KEY, type MotionChoice } from "#/stores/motionPreference";
+import {
+  MOTION_PARAM,
+  MOTION_STORAGE_KEY,
+  parseStored,
+  type MotionChoice,
+} from "#/stores/motionPreference";
 
 /**
  * The address to reload into `mode` (P27-93): the same page, at the top of the other mode,
@@ -13,10 +18,10 @@ export function reloadAddress(href: string, mode: MotionChoice, kept: boolean): 
   return url.pathname + url.search;
 }
 
-/** Whether this browser kept the visitor's choice (it can't when storage is blocked). */
-export function choiceKept(mode: MotionChoice): boolean {
+/** Whether this browser kept the visitor's choice, against this device setting (it can't when storage is blocked). */
+export function choiceKept(mode: MotionChoice, device: boolean): boolean {
   try {
-    return localStorage.getItem(MOTION_STORAGE_KEY) === mode;
+    return parseStored(localStorage.getItem(MOTION_STORAGE_KEY), device) === mode;
   } catch {
     return false;
   }

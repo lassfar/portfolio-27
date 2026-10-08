@@ -115,7 +115,7 @@ All tokens are defined in `src/styles/globals.css` under `@theme`. Do not add co
 
 ### Calm motion (reduced motion)
 
-The visitor's motion preference is `full` or `calm`: the device setting, unless they chose on the site (`src/stores/useMotion.ts`), mirrored as `<html data-motion>` before the first paint. Calm allows short opacity fades only: nothing slides, scales, lifts or moves on its own (WCAG 2.3.3, 2.2.2).
+The visitor's motion preference is `full` or `calm`: the device setting, unless they chose on the site (`src/stores/useMotion.ts`), mirrored as `<html data-motion>` before the first paint. A choice is kept with the device setting it was made against, and goes once that setting changes (`stores/motionPreference.ts`). Calm allows short opacity fades only: nothing slides, scales, lifts or moves on its own (WCAG 2.3.3, 2.2.2).
 
 - **CSS:** gate every movement with `moving:` (a lift, a slide, a scale, a pulse), so calm never gets it; put calm-only styles under `calm:` (e.g. a shorter fade). Never `motion-reduce:` / `motion-safe:`: they follow the device alone, not the site's switch
 - **JS / GSAP:** check `isCalm()` when building an animation, or `useCalm()` in a component that must re-render

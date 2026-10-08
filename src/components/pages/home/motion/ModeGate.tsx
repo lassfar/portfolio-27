@@ -22,8 +22,12 @@ const LOADING: Record<MotionChoice, string> = {
 };
 
 /** Reloads the page into the visitor's new mode, at its top. */
-function reloadInto(mode: MotionChoice) {
-  history.replaceState(history.state, "", reloadAddress(location.href, mode, choiceKept(mode)));
+function reloadInto(mode: MotionChoice, device: boolean) {
+  history.replaceState(
+    history.state,
+    "",
+    reloadAddress(location.href, mode, choiceKept(mode, device)),
+  );
   // Don't bring back where the other mode was scrolled to.
   ScrollTrigger.clearScrollMemory("manual");
   location.reload();
@@ -60,7 +64,7 @@ const ModeGate = ({ full, calm, reloadOnChange = false }: Props) => {
     return useMotion.subscribe((now, before) => {
       if (now.choice === before.choice) return;
       const next = motionMode(selectCalm(now));
-      if (next !== mode) reloadInto(next);
+      if (next !== mode) reloadInto(next, now.device);
     });
   }, [mode, reloadOnChange]);
 

@@ -83,11 +83,25 @@ describe("the motion preference", () => {
   });
 
   it("lets a stored choice override the device setting, both ways", async () => {
-    fakeBrowser({ device: false, stored: "calm" });
+    fakeBrowser({ device: false, stored: "calm:none" });
     expect((await loadStore()).isCalm()).toBe(true);
     vi.resetModules();
-    fakeBrowser({ device: true, stored: "full" });
+    fakeBrowser({ device: true, stored: "full:reduce" });
     expect((await loadStore()).isCalm()).toBe(false);
+  });
+
+  it("drops a stored choice once the device setting has changed since, or an old one without it", async () => {
+    // Full motion, chosen while the device asked for nothing; the device now asks for calm.
+    const browser = fakeBrowser({ device: true, stored: "full:none" });
+    const { isCalm, useMotion } = await loadStore();
+    expect(isCalm()).toBe(true);
+    expect(useMotion.getState().choice).toBeNull();
+    expect(browser.items.has(MOTION_STORAGE_KEY)).toBe(false);
+    vi.resetModules();
+    // Kept before the device setting was kept with it (P27-92).
+    const old = fakeBrowser({ device: true, stored: "full" });
+    expect((await loadStore()).isCalm()).toBe(true);
+    expect(old.items.has(MOTION_STORAGE_KEY)).toBe(false);
   });
 
   it("ignores anything else in storage", async () => {
@@ -98,13 +112,13 @@ describe("the motion preference", () => {
   });
 
   it("takes a choice from the address first (the browser couldn't keep it), and ignores anything else there", async () => {
-    fakeBrowser({ device: false, stored: "full", search: "?motion=calm" });
+    fakeBrowser({ device: false, stored: "full:none", search: "?motion=calm" });
     expect((await loadStore()).isCalm()).toBe(true);
     vi.resetModules();
     fakeBrowser({ device: true, blocked: true, search: "?x=1&motion=full" });
     expect((await loadStore()).isCalm()).toBe(false);
     vi.resetModules();
-    fakeBrowser({ device: false, stored: "calm", search: "?motion=slow" });
+    fakeBrowser({ device: false, stored: "calm:none", search: "?motion=slow" });
     expect((await loadStore()).isCalm()).toBe(true);
   });
 
@@ -122,7 +136,8 @@ describe("the motion preference", () => {
     const listener = vi.fn();
     useMotion.subscribe(listener);
     useMotion.getState().setChoice("calm");
-    expect(browser.items.get(MOTION_STORAGE_KEY)).toBe("calm");
+    // Kept with the device setting it was made against.
+    expect(browser.items.get(MOTION_STORAGE_KEY)).toBe("calm:none");
     expect(browser.mode()).toBe("calm");
     useMotion.getState().setChoice("calm");
     expect(listener).toHaveBeenCalledTimes(1);
@@ -133,14 +148,22 @@ describe("the motion preference", () => {
   });
 
   it("keeps the server's state as its initial state (hydration renders from it)", async () => {
-    fakeBrowser({ device: true, stored: "calm" });
+    fakeBrowser({ device: true, stored: "calm:reduce" });
     const { useMotion } = await loadStore();
     expect(useMotion.getInitialState()).toMatchObject({ device: false, choice: null });
   });
 
   it("marks the first paint the same way the store decides", async () => {
     for (const device of [false, true]) {
-      for (const stored of [null, "calm", "full"]) {
+      for (const stored of [
+        null,
+        "calm:none",
+        "calm:reduce",
+        "full:none",
+        "full:reduce",
+        "full",
+        "slow",
+      ]) {
         for (const search of ["", "?motion=calm", "?motion=full", "?motion=slow"]) {
           vi.resetModules();
           const browser = fakeBrowser({ device, stored, search });
