@@ -79,6 +79,8 @@ export const Side: Story = {
   play: async ({ userEvent }) => {
     const panel = await page().findByRole("dialog", { name: "Back to London" });
     await expect(panel).toHaveAttribute("aria-modal", "false");
+    // Around it is the scene, still usable: no scrim to tap (that's the calm book's).
+    await expect(document.querySelector("[data-panel-scrim]")).toBeNull();
     await expect(document.documentElement.dataset.panel).toBe("side");
     await expect(
       page().getByRole("button", { name: "Outside", hidden: true }).closest("[inert]"),
@@ -143,19 +145,27 @@ export const Full: Story = {
   },
 };
 
-/** The calm book's full view (`PanelHost modal`): no scene is veiled behind it, so it frosts the page itself, darker and blurred; its words read over whatever the book shows (WCAG 1.4.3, at worst over white). */
-export const FullOverTheBook: Story = {
+/** In the calm book (`PanelHost modal`): modal in both views, the page behind inert. A tap on the dimmed page (its scrim) closes it. Its full view frosts the page itself (no scene is veiled behind it), its words readable over whatever the book shows (WCAG 1.4.3, at worst over white). */
+export const Modal: Story = {
   render: () => <PanelHost modal />,
-  beforeEach: [inCalm, opened(london, "full")],
+  beforeEach: [inCalm, opened(london)],
   play: async () => {
     const panel = await page().findByRole("dialog", { name: "Back to London" });
-    const fill = getComputedStyle(panel);
+    await expect(panel).toHaveAttribute("aria-modal", "true");
+    await entered(panel);
+    const scrim = document.querySelector<HTMLElement>("[data-panel-scrim]")!;
+    await expect(scrim.inert).toBe(false);
+    scrim.click();
+    await waitFor(() => expect(usePanelStore.getState().content).toBeNull());
+
+    usePanelStore.setState({ content: london, view: "full" });
+    const full = await page().findByRole("dialog", { name: "Back to London" });
+    const fill = getComputedStyle(full);
     await expect(fill.backdropFilter).toMatch(/blur/);
     await expect(contrastOnFill("#ffa14a", fill.backgroundColor)).toBeGreaterThanOrEqual(4.5);
     await expect(
       contrastOnFill("rgb(255 255 255 / 0.55)", fill.backgroundColor),
     ).toBeGreaterThanOrEqual(4.5);
-    await entered(panel);
   },
 };
 

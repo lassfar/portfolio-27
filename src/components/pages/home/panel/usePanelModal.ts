@@ -43,7 +43,10 @@ export function usePanelModal(
     panel.inert = !open;
     viewer.inert = photo === null;
     const modal = photo !== null ? viewer : open && (alwaysModal || view === "full") ? panel : null;
-    const undo = modal ? inertOutside(modal) : undefined;
+    // The panel's scrim (the calm book's) stays: a tap on it closes the panel (P27-95).
+    const undo = modal
+      ? inertOutside(modal, (el) => modal === panel && el.hasAttribute("data-panel-scrim"))
+      : undefined;
 
     const was = before.current;
     before.current = { open, photo, key };

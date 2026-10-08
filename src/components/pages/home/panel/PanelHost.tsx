@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import clsx from "clsx";
 import { createPortal } from "react-dom";
+import { usePanelStore } from "#/stores/usePanelStore";
 import Lightbox from "#/components/pages/home/gallery/Lightbox";
 import ScenePanel from "./ScenePanel";
 import { usePanelKeys } from "./usePanelKeys";
@@ -23,7 +24,8 @@ type Props = {
  * The panel and the photo viewer (P27-80), for the journey (SceneOverlays) and the calm
  * book (P27-93) alike. From the bottom up:
  *   `children`  what opens them, if it lives here (the journey's scene labels, z-45);
- *   z-48  the full view's vignette (darker edges, so its text reads over the page);
+ *   z-48  the full view's vignette (darker edges, so its text reads over the page); in the
+ *         calm book, the panel's scrim too: a tap on it closes the panel;
  *   z-50  the panel (ScenePanel);
  *   z-60  the photo viewer — beside the panel, not in it: the side panel moves with
  *         `translate`, which would re-base the viewer's `position: fixed`.
@@ -49,11 +51,17 @@ const PanelHost = ({ children, modal = false }: Props) => {
   return createPortal(
     <div data-panel-layer>
       {children}
+      {/* The vignette. In the calm book it's the panel's scrim: a tap on it closes the panel
+          (P27-95; Close and Escape do too). In the journey that area is the 3D scene. */}
       <div
         aria-hidden="true"
+        data-panel-scrim={modal || undefined}
+        onClick={modal ? () => usePanelStore.getState().close() : undefined}
         className={clsx(
           "pointer-events-none fixed inset-0 z-48 bg-radial-[120%_90%_at_50%_40%] from-transparent from-25% to-black/80 opacity-0 transition-opacity duration-700 ease-out-quint",
-          modal ? "panel-open:opacity-100" : "panel-full:opacity-100",
+          modal
+            ? "panel-open:pointer-events-auto panel-open:opacity-100"
+            : "panel-full:opacity-100",
         )}
       />
       <ScenePanel ref={panel} modal={modal} />
