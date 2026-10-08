@@ -1,3 +1,4 @@
+import clsx from "clsx";
 import { LINES, NODES } from "#/components/pages/home/skills/constellation";
 import SvgStars from "#/components/pages/home/book/drawings/SvgStars";
 
@@ -40,15 +41,18 @@ const CraftDrawing = () => (
           cy={n.y}
           r={n.r + 8}
           fill="var(--color-peach)"
-          className="opacity-0 transition-opacity duration-300 group-hover:opacity-30"
+          className="opacity-0 transition-opacity duration-300 group-hover:opacity-30 group-active:opacity-30"
         />
         <circle cx={n.x} cy={n.y} r={n.r} fill="var(--color-peach)" />
         <text
           x={n.x}
           y={n.y + n.labelDy}
           textAnchor="middle"
-          fontSize={n.bridge ? 13 : 11.5}
-          className="fill-light-baby-blue font-sans transition-[fill] duration-300 group-hover:fill-white"
+          className={clsx(
+            n.bridge ? "book-label--bridge" : "book-label",
+            n.labelDy > 0 && "book-label--below",
+            "fill-light-baby-blue font-sans transition-[fill] duration-300 group-hover:fill-white group-active:fill-white",
+          )}
         >
           {n.label}
         </text>

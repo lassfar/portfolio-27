@@ -317,6 +317,38 @@
   }
 }
 
+/* ── The calm book's drawing labels on phones and tablets (P27-95) ────────────────────
+   The Craft (600 units wide) and the Lab (500) scale with their figure, so a fixed size in
+   their units renders 5–9px on a phone or a tablet. Instead: a size in their units that grows
+   as the figure shrinks (a straight line close to 11px ÷ the figure's scale: the figure is
+   about 100vw − 68px below `md`, about 0.39 × 100vw beside its words), never under its own.
+   Labels under their dot hang from their point, so the bigger text doesn't grow up into it. */
+.book-label {
+  font-size: max(11.5px, calc(34.7px - 1.58vw));
+}
+.book-label--bridge {
+  font-size: max(13px, calc((34.7px - 1.58vw) * 1.1304));
+}
+.book-label--wide {
+  font-size: max(14px, calc(32.9px - 1.84vw));
+}
+@media (width < 48rem) {
+  .book-label {
+    font-size: max(11.5px, calc(39px - 3.76vw));
+  }
+  .book-label--bridge {
+    font-size: max(13px, calc((39px - 3.76vw) * 1.1304));
+  }
+  .book-label--wide {
+    font-size: max(14px, calc(35px - 3.81vw));
+  }
+}
+@media (width < 90rem) {
+  .book-label--below {
+    dominant-baseline: hanging;
+  }
+}
+
 /* ── Parker's journey labels on touch screens (P27-31) ─────────────────────────────────
    No hover there: a tapped label (JourneyLabels sets `data-open`) shows its full text. */
 @media (hover: none) {

@@ -3,6 +3,7 @@ import { expect } from "storybook/test";
 
 import DotField from "#/components/pages/home/book/dots/DotField";
 import { BOOK } from "#/components/pages/home/story/copy";
+import { renderedPx } from "#/stories/svgText";
 import ParkerDrawing from "./ParkerDrawing";
 
 const meta = {
@@ -36,5 +37,18 @@ export const Default: Story = {
     await expect(svg).toHaveTextContent(BOOK.closest);
     await expect(svg).toHaveTextContent(BOOK.probe);
     await expect(getComputedStyle(svg).pointerEvents).toBe("none");
+  },
+};
+
+/** On a phone (320 px wide): its two labels ("Closest: 6.1 million km", the probe's name) grow as the drawing shrinks, so they read at 11 px or more. */
+export const Phone: Story = {
+  globals: { viewport: { value: "mobile1", isRotated: false } },
+  play: async ({ canvasElement }) => {
+    await expect(window.innerWidth).toBe(320);
+    const svg = canvasElement.querySelector("svg[viewBox='0 0 500 400']")!;
+    const labels = [...svg.querySelectorAll<SVGTextElement>("text")];
+    await expect(labels).toHaveLength(2);
+    for (const label of labels)
+      await expect(renderedPx(label), label.textContent ?? "").toBeGreaterThanOrEqual(11);
   },
 };

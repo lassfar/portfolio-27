@@ -126,7 +126,7 @@ const ParkerDrawing = () => {
         x2={34}
         y2={fixed(near.y + 70)}
       />
-      <text className={clsx(MARK.label, "text-sm")} x={16} y={fixed(near.y + 88)}>
+      <text className={clsx(MARK.label, "book-label--wide")} x={16} y={fixed(near.y + 88)}>
         {BOOK.closest}
       </text>
       <g
@@ -142,7 +142,7 @@ const ParkerDrawing = () => {
         y2={fixed(at.y + 56)}
       />
       <text
-        className={clsx(MARK.label, "text-sm")}
+        className={clsx(MARK.label, "book-label--wide")}
         x={fixed(at.x - 36)}
         y={fixed(at.y + 70)}
         textAnchor="end"
