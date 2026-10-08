@@ -34,6 +34,8 @@ function reach(target: EventTarget | null): void {
 
 /** The pointer or the focus left: once the closed trigger is neither hovered nor focused, they show again. */
 function leave(): void {
+  // Only while a tooltip is closed (P27-95: not a frame for every pointer that leaves something).
+  if (document.documentElement.dataset.tooltips !== "off") return;
   // After the event: the focus and the hover have moved by then.
   requestAnimationFrame(() => {
     if (document.documentElement.dataset.tooltips !== "off") return;
