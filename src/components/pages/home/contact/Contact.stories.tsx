@@ -4,6 +4,7 @@ import { expect, waitFor } from "storybook/test";
 import { CONTACT } from "#/components/pages/home/story/copy";
 import { inCalm } from "#/stories/motion";
 import Contact from "./Contact";
+import { contactDraft, keepDraft } from "./draft";
 
 /**
  * Contact, the site's last beat. Shown here as a page (the calm book's): over the journey
@@ -48,5 +49,36 @@ export const Sent: Story = {
     const thanks = await canvas.findByRole("status", {}, { timeout: 3000 });
     await expect(thanks).toHaveTextContent(CONTACT.thanks.line);
     await waitFor(() => expect(thanks).toHaveStyle({ opacity: "1" }));
+  },
+};
+
+/** A message being written when the modes switch is carried over (P27-94): the other mode's form opens with it. In memory only, and gone once sent. */
+export const CarriedOver: Story = {
+  beforeEach: () => {
+    contactDraft.current = { name: "Ada", email: "", message: "Half a thought" };
+    return () => {
+      contactDraft.current = null;
+    };
+  },
+  play: async ({ canvas, userEvent }) => {
+    const email = canvas.getByRole("textbox", { name: CONTACT.fields.email.label });
+    await expect(canvas.getByRole("textbox", { name: CONTACT.fields.name.label })).toHaveValue(
+      "Ada",
+    );
+    await expect(canvas.getByRole("textbox", { name: CONTACT.fields.message.label })).toHaveValue(
+      "Half a thought",
+    );
+    await expect(email).toHaveValue("");
+    // Taken from the form again, as a switch does.
+    await userEvent.type(email, "ada@example.com");
+    keepDraft();
+    await expect(contactDraft.current).toEqual({
+      name: "Ada",
+      email: "ada@example.com",
+      message: "Half a thought",
+    });
+    await userEvent.click(canvas.getByRole("button", { name: CONTACT.send }));
+    await canvas.findByRole("status", {}, { timeout: 3000 });
+    await expect(contactDraft.current).toBeNull();
   },
 };

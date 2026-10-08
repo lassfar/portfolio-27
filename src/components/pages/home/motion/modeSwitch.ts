@@ -2,6 +2,7 @@ import { ScrollTrigger } from "gsap/all";
 import { inertExcept } from "#/components/hooks/a11y/inertExcept";
 import { landInBook, placeOnScreen } from "#/components/pages/home/book/place";
 import { preloadBook } from "#/components/pages/home/book/preload";
+import { keepDraft } from "#/components/pages/home/contact/draft";
 import { holdInput } from "#/components/pages/home/motion/holdInput";
 import { chapterIdAt } from "#/components/pages/home/scroll/chapters";
 import { stopGlide } from "#/components/pages/home/scroll/glide";
@@ -136,6 +137,7 @@ async function switchOnce(from: MotionChoice, signal: AbortSignal) {
   stopGlide();
   const place = placeIn(from);
   const refocusAfter = focusInPage();
+  keepDraft();
   usePanelStore.getState().close();
   holdMotionAttribute(from);
   root.setAttribute("data-mode-switching", "");

@@ -11,6 +11,7 @@ import DisplayTitle from "#/components/UI/text/DisplayTitle";
 import { TITLE_SWASH } from "#/components/pages/home/swashes";
 import { CONTACT } from "#/components/pages/home/story/copy";
 import { CONTACT_LINKS, CONTACT_SEND_DELAY_MS } from "#/components/pages/home/contact/config";
+import { contactDraft } from "#/components/pages/home/contact/draft";
 import { ContactMessage, ContactProps } from "#/components/pages/home/contact/contact.types";
 
 type Status = "idle" | "sending" | "sent";
@@ -32,12 +33,14 @@ const sendMessage = (message: ContactMessage) =>
  * Driven entirely by the master pinned journey (`useCosmicJourney` → renderContact):
  * the overlay's `.home-contact__piece`s are revealed one after another, so the whole
  * thing reverses on scroll-up. This component owns only the markup + the form state
- * (idle → sending → sent → "write another").
+ * (idle → sending → sent → "write another"). A message being written when the modes switch
+ * is carried over (P27-94, contactDraft): the form opens with it.
  */
 const Contact = ({ layout = "overlay", overlayRef, titleId }: ContactProps) => {
   const page = layout === "page";
   const formRef = useRef<HTMLFormElement | null>(null);
   const [status, setStatus] = useState<Status>("idle");
+  const [draft] = useState(() => contactDraft.current);
 
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -50,6 +53,7 @@ const Contact = ({ layout = "overlay", overlayRef, titleId }: ContactProps) => {
       message: String(data.get("message") ?? ""),
     });
     formRef.current?.reset();
+    contactDraft.current = null;
     setStatus("sent");
   };
 
@@ -125,6 +129,7 @@ const Contact = ({ layout = "overlay", overlayRef, titleId }: ContactProps) => {
               required
               maxLength={80}
               autoComplete="name"
+              defaultValue={draft?.name}
               placeholder={CONTACT.fields.name.placeholder}
               className="home-contact__piece"
             />
@@ -135,6 +140,7 @@ const Contact = ({ layout = "overlay", overlayRef, titleId }: ContactProps) => {
               required
               maxLength={120}
               autoComplete="email"
+              defaultValue={draft?.email}
               placeholder={CONTACT.fields.email.placeholder}
               className="home-contact__piece"
             />
@@ -145,6 +151,7 @@ const Contact = ({ layout = "overlay", overlayRef, titleId }: ContactProps) => {
               required
               rows={3}
               maxLength={2000}
+              defaultValue={draft?.message}
               placeholder={CONTACT.fields.message.placeholder}
               className="home-contact__piece sm:col-span-2"
             />
