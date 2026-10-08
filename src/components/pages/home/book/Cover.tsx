@@ -22,7 +22,7 @@ const Cover = () => (
       aria-hidden="true"
       className="pointer-events-none absolute inset-0 bg-radial-[ellipse_60%_40%_at_center_72%] from-rich-black/75 to-transparent"
     />
-    <div className="relative z-1 mt-[28vh] max-w-205 animate-[fade_0.5s_ease-out] px-6 pt-30 pb-20 md:mt-[40vh]">
+    <div className="relative z-1 mt-[28vh] max-w-205 animate-[fade_0.5s_ease-out] px-12 pt-30 pb-20 md:mt-[40vh] md:px-6">
       <p className={EYEBROW}>{HERO.eyebrow}</p>
       <DisplayTitle
         as="h1"

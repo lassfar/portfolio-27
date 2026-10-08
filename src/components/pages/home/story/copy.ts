@@ -88,8 +88,6 @@ export const CONTACT = {
 export const BOOK = {
   /** Over a chapter: "Chapter 2 · The Maker". */
   chapter: "Chapter",
-  /** The chapter rail's name. */
-  chapters: "Chapters",
   /** Under the cover's words. */
   hint: "Scroll to read · seven short chapters",
   /** The chapters titled by their figure alone in the journey. */

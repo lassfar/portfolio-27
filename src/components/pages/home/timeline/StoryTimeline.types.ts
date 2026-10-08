@@ -99,4 +99,8 @@ export type StoryTimelineRailProps = {
   phone: boolean;
   toast?: StoryTimelineToast;
   onSelect?: (index: number) => void;
+  /** Its look and behaviour: the journey's (TIMELINE), unless given (the calm book's, P27-93). */
+  tuning?: StoryTimelineTuning;
+  /** Screen readers hear the name as it pops up (the journey). The book leaves it out: its chapters are headings. */
+  announce?: boolean;
 };

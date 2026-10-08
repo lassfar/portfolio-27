@@ -21,15 +21,16 @@ type Props = {
 /**
  * A chapter of the calm book (P27-93), a spread: its shape on one side, its words on the
  * other, alternating; on a phone, the shape above the words. Both fade in as they show. Its
- * heading takes the focus when the rail jumps here.
+ * heading takes the focus when the timeline jumps here.
  */
 const Spread = ({ id, title, figure, flip = false, children }: Props) => (
   <section
     id={id}
     aria-labelledby={titleId(id)}
     className={clsx(
-      "grid items-center gap-[clamp(28px,4vw,64px)] px-5 py-7.5",
-      "md:grid-cols-[minmax(0,1.15fr)_minmax(0,1fr)] md:py-18 md:pr-[clamp(24px,6vw,96px)] md:pl-[clamp(64px,8vw,120px)]",
+      // Room on the right for the timeline (BookTimeline), on phones too.
+      "grid items-center gap-[clamp(28px,4vw,64px)] py-7.5 pr-12 pl-5",
+      "md:grid-cols-[minmax(0,1.15fr)_minmax(0,1fr)] md:py-18 md:pr-[clamp(64px,8vw,120px)] md:pl-[clamp(24px,6vw,96px)]",
     )}
   >
     <div data-reveal className={clsx(REVEAL, flip && "md:order-2")}>

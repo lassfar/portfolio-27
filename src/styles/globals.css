@@ -536,6 +536,22 @@
     filter: drop-shadow(0 0 calc(var(--tl-current) * 0.95) var(--tl-glow-soft));
   }
 }
+/* In the calm mode (the calm book's timeline, P27-93): nothing breathes or grows (WCAG 2.2.2,
+   2.3.3). The current mark is bigger at once; a hovered mark only lightens. */
+:root[data-motion="calm"] .story-timeline .story-timeline__star .story-timeline__glyph {
+  animation: none;
+}
+:root[data-motion="calm"] .story-timeline .story-timeline__glyph::before {
+  transition:
+    background-color 0.3s ease,
+    box-shadow 0.3s ease;
+}
+:root[data-motion="calm"]
+  .story-timeline
+  .story-timeline__star:hover
+  .story-timeline__glyph::before {
+  transform: rotate(var(--tl-rot)) scale(var(--tl-scale));
+}
 /* Orbit: small dots; the current one wears a thin orbit ring (a planet on its path)
    instead of the glow. */
 .story-timeline.shape-orbit .story-timeline__star.is-current .story-timeline__glyph {

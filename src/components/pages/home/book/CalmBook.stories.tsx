@@ -27,7 +27,7 @@ export default meta;
 
 type Story = StoryObj<typeof meta>;
 
-/** The story as a book: the star's cover, then the chapters, each shape beside its words, bridges between them, "You are here", and Contact. The rail jumps to any chapter. */
+/** The story as a book: the star's cover, then the chapters, each shape beside its words, bridges between them, "You are here", and Contact. Past the cover, the journey's timeline (on the right) jumps to any chapter. */
 export const Default: Story = {
   play: async ({ canvas, canvasElement, userEvent, step }) => {
     await step("one h1, a heading for each chapter, a figure for each shape", async () => {
@@ -40,17 +40,18 @@ export const Default: Story = {
       await expect(canvas.getByText(BOOK.ending)).toBeInTheDocument();
     });
 
-    await step("the rail jumps to the Milky Way, at once", async () => {
-      await userEvent.click(canvas.getByRole("link", { name: "The Milky Way" }));
+    await step("past the cover, the timeline jumps to the Milky Way, at once", async () => {
+      document.getElementById("maker")!.scrollIntoView({ behavior: "instant" });
+      const star = () =>
+        document.querySelector<HTMLButtonElement>(
+          'nav.story-timeline button[aria-label="The Milky Way"]',
+        )!;
+      await waitFor(() => expect(star()).toBeVisible());
+      await userEvent.click(star());
       const chapter = document.getElementById("milky-way")!;
       await waitFor(() => expect(Math.abs(chapter.getBoundingClientRect().top)).toBeLessThan(2));
-      await waitFor(() =>
-        expect(canvas.getByRole("link", { name: "The Milky Way" })).toHaveAttribute(
-          "aria-current",
-          "location",
-        ),
-      );
-      await waitFor(() => expect(document.getElementById(titleId("milky-way"))).toHaveFocus());
+      await waitFor(() => expect(star()).toHaveAttribute("aria-current", "step"));
+      await expect(document.getElementById(titleId("milky-way"))).toHaveFocus();
     });
 
     await revealed(canvasElement);

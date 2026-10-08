@@ -2,9 +2,13 @@ import clsx from "clsx";
 import type { CSSProperties } from "react";
 import Tooltip from "#/components/UI/tooltip/Tooltip";
 import type { TooltipSide } from "#/components/UI/tooltip/tooltip.types";
-import { TIMELINE } from "./config";
+import { TIMELINE } from "./tuning";
 import { fillClip, railLayout } from "./layout";
-import type { StoryTimelineColor, StoryTimelineRailProps } from "./StoryTimeline.types";
+import type {
+  StoryTimelineColor,
+  StoryTimelineRailProps,
+  StoryTimelineTuning,
+} from "./StoryTimeline.types";
 
 /** A design-system colour's token (globals.css @theme), or the custom hex. */
 const tone = (color: StoryTimelineColor, custom: string) =>
@@ -14,19 +18,19 @@ const tone = (color: StoryTimelineColor, custom: string) =>
  * The tuned values as the custom properties the `.story-timeline` styles read
  * (globals.css). Read on every render, so dev-panel edits (TimelineGui) show at once.
  */
-const railVars = (horizontal: boolean): CSSProperties =>
+const railVars = (t: StoryTimelineTuning, horizontal: boolean): CSSProperties =>
   ({
-    "--tl-length": `${TIMELINE.railLength}${horizontal ? "vw" : "vh"}`,
-    "--tl-color": tone(TIMELINE.color, TIMELINE.customColor),
-    "--tl-rail-color": tone(TIMELINE.railColor, TIMELINE.customRailColor),
-    "--color-tooltip": tone(TIMELINE.tipColor, TIMELINE.customTipColor), // its tooltips' text
-    "--tl-rail": `${TIMELINE.railWidth}px`,
-    "--tl-star": `${TIMELINE.starSize}px`,
-    "--tl-current": `${TIMELINE.currentSize}px`,
-    "--tl-glow": TIMELINE.glow,
-    "--tl-rail-alpha": TIMELINE.railAlpha,
-    "--tl-upcoming-alpha": TIMELINE.upcomingAlpha,
-    "--tl-dim": TIMELINE.dimOpacity,
+    "--tl-length": `${t.railLength}${horizontal ? "vw" : "vh"}`,
+    "--tl-color": tone(t.color, t.customColor),
+    "--tl-rail-color": tone(t.railColor, t.customRailColor),
+    "--color-tooltip": tone(t.tipColor, t.customTipColor), // its tooltips' text
+    "--tl-rail": `${t.railWidth}px`,
+    "--tl-star": `${t.starSize}px`,
+    "--tl-current": `${t.currentSize}px`,
+    "--tl-glow": t.glow,
+    "--tl-rail-alpha": t.railAlpha,
+    "--tl-upcoming-alpha": t.upcomingAlpha,
+    "--tl-dim": t.dimOpacity,
   }) as CSSProperties;
 
 /** The name pill's spot: 24px into the screen from the rail (it opens 6px past it, like a tooltip). */
@@ -59,8 +63,10 @@ const StoryTimelineRail = ({
   phone,
   toast,
   onSelect,
+  tuning = TIMELINE,
+  announce = true,
 }: StoryTimelineRailProps) => {
-  const { horizontal, tip, place } = railLayout(TIMELINE);
+  const { horizontal, tip, place } = railLayout(tuning);
   const along = horizontal ? "left" : "top"; // places things along the rail
   return (
     <nav
@@ -68,15 +74,15 @@ const StoryTimelineRail = ({
       className={clsx(
         "story-timeline",
         horizontal ? "is-horizontal" : "is-vertical",
-        `shape-${TIMELINE.shape}`,
-        TIMELINE.upcoming === "hollow" && "is-hollow",
+        `shape-${tuning.shape}`,
+        tuning.upcoming === "hollow" && "is-hollow",
         shown && "is-shown",
         rest !== "awake" && "is-idle",
         rest === "hidden" && "is-asleep",
         phone && "is-phone",
-        TIMELINE.pulse && "is-pulse",
+        tuning.pulse && "is-pulse",
       )}
-      style={{ ...railVars(horizontal), ...place }}
+      style={{ ...railVars(tuning, horizontal), ...place }}
     >
       <div className="story-timeline__rail" />
       <div
@@ -113,7 +119,7 @@ const StoryTimelineRail = ({
         className={clsx("absolute size-0", PILL_SPOT[tip])}
         style={{ [along]: `${(positions[toast?.index ?? current] ?? 0) * 100}%` }}
       >
-        <Tooltip side={tip} open={toast?.on ?? false} live>
+        <Tooltip side={tip} open={toast?.on ?? false} live={announce}>
           {toast ? chapters[toast.index]?.name : ""}
         </Tooltip>
       </div>

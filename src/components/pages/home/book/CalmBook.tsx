@@ -2,7 +2,7 @@ import clsx from "clsx";
 import AccentText from "#/components/UI/text/AccentText";
 import BookReveal from "#/components/pages/home/book/BookReveal";
 import Bridge from "#/components/pages/home/book/Bridge";
-import ChapterRail from "#/components/pages/home/book/ChapterRail";
+import BookTimeline from "#/components/pages/home/book/BookTimeline";
 import Cover from "#/components/pages/home/book/Cover";
 import Ending from "#/components/pages/home/book/Ending";
 import { LabChip, PlaceChips } from "#/components/pages/home/book/PlaceChips";
@@ -29,7 +29,7 @@ const Voice = ({ text, spaced = false }: { text: string; spaced?: boolean }) => 
  * Agreed in the prototype docs/design/mockups/14-calm-story.html.
  *
  * Nothing moves on its own: parts fade in as they show, the pointer lights the dots it
- * touches, the rail jumps. No 3D: its words are the journey's (story/copy.ts), its shapes are
+ * touches, the timeline (the journey's, on the right) jumps. No 3D: its words are the journey's (story/copy.ts), its shapes are
  * 2D. The places and Parker's memory card open the same panels as in the journey.
  */
 const CalmBook = () => (
@@ -38,7 +38,7 @@ const CalmBook = () => (
     <noscript>
       <style>{"[data-reveal]{opacity:1}"}</style>
     </noscript>
-    <ChapterRail />
+    <BookTimeline />
 
     <Cover />
     <Bridge after="origin" />

@@ -12,7 +12,7 @@ const Ending = () => (
     data-reveal
     className={clsx(
       REVEAL,
-      "flex min-h-screen flex-col items-center justify-center gap-4.5 px-6 py-20 text-center",
+      "flex min-h-screen flex-col items-center justify-center gap-4.5 px-12 py-20 text-center md:px-6",
     )}
   >
     <span

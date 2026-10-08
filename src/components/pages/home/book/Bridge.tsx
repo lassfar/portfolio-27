@@ -19,7 +19,11 @@ const Bridge = ({ after }: { after: ChapterId }) => {
   return (
     <div
       data-reveal
-      className={clsx(REVEAL, HAIRLINES, "flex flex-col items-center gap-3 px-6 py-10 text-center")}
+      className={clsx(
+        REVEAL,
+        HAIRLINES,
+        "flex flex-col items-center gap-3 px-12 py-10 text-center md:px-6",
+      )}
     >
       <p className={BRIDGE_LINE}>{first}</p>
       {"passage" in bridge && (
