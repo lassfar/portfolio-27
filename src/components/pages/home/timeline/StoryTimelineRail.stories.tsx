@@ -1,6 +1,7 @@
 import type { Meta, StoryObj } from "@storybook/nextjs-vite";
 import { expect, waitFor } from "storybook/test";
 
+import { contrastOnPage } from "#/stories/contrast";
 import StoryTimelineRail from "./StoryTimelineRail";
 import { STORY_CHAPTERS, TIMELINE } from "./config";
 import { chapterAt, chapterPositions, fillAt } from "./layout";
@@ -83,8 +84,26 @@ export const AtTheEnd: Story = {
   },
 };
 
-/** After a moment without scrolling it dims (hover brings it back). */
-export const Dimmed: Story = { args: { rest: "dim" } };
+/** At rest (a moment without scrolling): it stays as it is, every mark at 3:1 or more against the page (P27-97, WCAG 1.4.11). */
+export const Resting: Story = {
+  args: { rest: "dim" },
+  play: async ({ canvasElement }) => {
+    const rail = canvasElement.querySelector<HTMLElement>(".story-timeline")!;
+    await waitFor(() => expect(getComputedStyle(rail).opacity).toBe("1"));
+  },
+};
+
+/** Focused from the keyboard: the site's focus ring, 3:1 or more (WCAG 1.4.11). */
+export const Focused: Story = {
+  play: async ({ canvasElement, userEvent }) => {
+    await userEvent.tab();
+    const star = canvasElement.ownerDocument.activeElement as HTMLElement;
+    await expect(star).toHaveClass("story-timeline__star");
+    const ring = getComputedStyle(star);
+    await expect(ring.outlineStyle).toBe("solid");
+    await expect(contrastOnPage(ring.outlineColor)).toBeGreaterThanOrEqual(3);
+  },
+};
 
 /** Phones: no hover tooltips; a new chapter's name pops up by its star, read out. */
 export const Phone: Story = {

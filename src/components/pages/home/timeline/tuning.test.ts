@@ -29,30 +29,26 @@ const contrast = (a: string, b: string) => {
   return (hi + 0.05) / (lo + 0.05);
 };
 
-describe("the calm book's timeline", () => {
+describe.each([
+  ["the journey's timeline (P27-97)", TIMELINE],
+  ["the calm book's timeline (P27-93)", BOOK_TIMELINE],
+])("%s", (_, timeline) => {
   it("shows its marks at 3:1 or more against the page (WCAG 1.4.11)", () => {
     // The passed chapters, the current one and the fill.
-    expect(contrast(BOOK_TIMELINE.customColor, PAGE)).toBeGreaterThanOrEqual(3);
+    expect(contrast(timeline.customColor, PAGE)).toBeGreaterThanOrEqual(3);
     // The chapters ahead: shown, not hidden.
-    expect(BOOK_TIMELINE.upcoming).toBe("dim");
-    expect(contrast(over(SLATE, BOOK_TIMELINE.upcomingAlpha), PAGE)).toBeGreaterThanOrEqual(3);
+    expect(timeline.upcoming).toBe("dim");
+    expect(contrast(over(SLATE, timeline.upcomingAlpha), PAGE)).toBeGreaterThanOrEqual(3);
   });
 
-  it("doesn't breathe (WCAG 2.2.2)", () => {
-    expect(BOOK_TIMELINE.pulse).toBe(false);
+  it("keeps them so at rest: it neither dims nor hides", () => {
+    expect(timeline.dimOpacity).toBe(1);
+    expect(timeline.hideAfter).toBe(0);
   });
+});
 
-  it("is the journey's in place and shape", () => {
-    for (const key of [
-      "position",
-      "orientation",
-      "edge",
-      "railLength",
-      "railWidth",
-      "shape",
-    ] as const)
-      expect(BOOK_TIMELINE[key], key).toBe(TIMELINE[key]);
-    expect(BOOK_TIMELINE.starSize).toBe(TIMELINE.starSize);
-    expect(BOOK_TIMELINE.currentSize).toBe(TIMELINE.currentSize);
+describe("the calm book's timeline", () => {
+  it("is the journey's, but doesn't breathe (WCAG 2.2.2)", () => {
+    expect(BOOK_TIMELINE).toEqual({ ...TIMELINE, pulse: false });
   });
 });

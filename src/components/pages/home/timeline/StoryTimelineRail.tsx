@@ -43,10 +43,10 @@ const PILL_SPOT: Record<TooltipSide, string> = {
 
 /**
  * The story timeline's look: a thin rail on any edge or corner of the screen
- * (TIMELINE.position, vertical or horizontal) that fills with peach, with one small
+ * (TIMELINE.position, vertical or horizontal) that fills as you go, with one small
  * four-point star per chapter.
- * - Passed stars are peach; the current one is bigger and glows; stars not reached yet
- *   stay hidden until you get there (TIMELINE.upcomingAlpha).
+ * - Passed stars and the fill are a warm grey; the current one is bigger and glows; stars not
+ *   reached yet show softly (TIMELINE.upcomingAlpha). Every mark is 3:1 or more (P27-97).
  * - Each star names its chapter on hover / keyboard focus, and clicking it calls
  *   `onSelect`.
  *

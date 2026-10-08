@@ -434,9 +434,10 @@
   background: none;
   cursor: pointer;
 }
+/* The site's focus ring, 3:1 or more against the page (P27-97, WCAG 1.4.11). */
 .story-timeline__star:focus-visible {
-  outline: none;
-  box-shadow: 0 0 0 2px color-mix(in srgb, var(--tl-color) 60%, transparent);
+  outline: 2px solid color-mix(in srgb, var(--color-peach) 70%, transparent);
+  outline-offset: 3px;
 }
 /* Each chapter's mark. Its shape (TIMELINE.shape → `shape-*`) only sets these variables
    — the size normal / current, rotation, scale, corner, clip — circle is the base. */
@@ -572,13 +573,6 @@
   .story-timeline__star:hover
   .story-timeline__glyph::before {
   transform: rotate(var(--tl-rot)) scale(var(--tl-scale));
-}
-/* …and its focus ring is the site's own, 3:1 or more against the page (WCAG 1.4.11): the
-   rail's colour at 60% falls under it. */
-:root[data-motion="calm"] .story-timeline .story-timeline__star:focus-visible {
-  box-shadow: none;
-  outline: 2px solid color-mix(in srgb, var(--color-peach) 70%, transparent);
-  outline-offset: 3px;
 }
 /* Orbit: small dots; the current one wears a thin orbit ring (a planet on its path)
    instead of the glow. */
