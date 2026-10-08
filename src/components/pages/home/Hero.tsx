@@ -1,139 +1,33 @@
 "use client";
 
-import { useRef, type RefObject } from "react";
+import { useRef } from "react";
 import dynamic from "next/dynamic";
-import useTextsWritingMotion from "#/components/hooks/motions/texts/useTextsWritingMotion";
 import SunriseLogo from "#/components/assets/pictures/logos/sunrise-logo";
 import Button from "#/components/UI/buttons/Button";
 import Skills from "#/components/pages/home/skills/Skills";
 import Contact from "#/components/pages/home/contact/Contact";
-import useCosmicJourney from "#/components/pages/home/hooks/useCosmicJourney";
-import { useGSAP } from "@gsap/react";
-import gsap from "gsap";
-import { ScrollSmoother, ScrollTrigger, SplitText } from "gsap/all";
 import clsx from "clsx";
 import Swash from "#/components/UI/swash/Swash";
 import DisplayTitle from "#/components/UI/text/DisplayTitle";
 import { TITLE_SWASH } from "#/components/pages/home/swashes";
 import { ABOUT, HERO } from "#/components/pages/home/story/copy";
-import { goTo } from "#/components/pages/home/scroll/goTo";
-import { useSceneIntro } from "#/stores/useSceneIntro";
-import { isCalm } from "#/stores/useMotion";
-import { loadScene, preloadScene } from "#/components/three.js/scene/preload";
+import { useLoaded } from "#/components/hooks/useLoaded";
+import { loadJourneyMotion } from "#/components/pages/home/loadJourney";
+import { loadScene } from "#/components/three.js/scene/preload";
 import { useGateLive } from "#/components/pages/home/motion/gateLive";
-
-gsap.registerPlugin(useGSAP, ScrollTrigger, ScrollSmoother, SplitText);
 
 // WebGL-only — load on the client, never during SSR. The unified scene holds
 // the starfield, the star, the Saturn that assembles from its debris, and (as
 // the journey continues) the Saturn's fly-away out into the wider voyage.
+// The canvas mounts once the journey is live (ModeGate, P27-93); its code is fetched as the
+// page loads with motion on (loadJourney), else only before a switch to motion.
 const CosmicScene = dynamic(loadScene, { ssr: false });
-// The canvas mounts once the journey is live (ModeGate, P27-93): its code is fetched as the
-// page loads, as before, unless the visitor is calm (then only before a switch to motion).
-if (typeof window !== "undefined" && !isCalm()) {
-  void preloadScene().catch(() => undefined);
-}
-
-type HeroRefs = {
-  containerRef: RefObject<HTMLDivElement | null>;
-  logoRef: RefObject<HTMLDivElement | null>;
-  eyebrowRef: RefObject<HTMLParagraphElement | null>;
-  headlineRef: RefObject<HTMLHeadingElement | null>;
-  subRef: RefObject<HTMLParagraphElement | null>;
-  ctaRef: RefObject<HTMLDivElement | null>;
-  contentRef: RefObject<HTMLDivElement | null>;
-  aboutRevealRef: RefObject<HTMLDivElement | null>;
-  aboutTitleRef: RefObject<HTMLHeadingElement | null>;
-  aboutPara1Ref: RefObject<HTMLParagraphElement | null>;
-  aboutPara2Ref: RefObject<HTMLParagraphElement | null>;
-  craftRef: RefObject<HTMLDivElement | null>;
-  contactRef: RefObject<HTMLDivElement | null>;
-};
-
-/**
- * The Hero's motion: the headline writing in, the intro around it, and the whole journey.
- * Mounted once the journey is the mode on screen (ModeGate, P27-93), after Hero's markup, so
- * every ref is set; renders nothing.
- */
-const HeroMotion = ({
-  containerRef,
-  logoRef,
-  eyebrowRef,
-  headlineRef,
-  subRef,
-  ctaRef,
-  contentRef,
-  aboutRevealRef,
-  aboutTitleRef,
-  aboutPara1Ref,
-  aboutPara2Ref,
-  craftRef,
-  contactRef,
-}: HeroRefs) => {
-  // Headline writes in, character by character.
-  useTextsWritingMotion({
-    elements: [
-      {
-        ref: headlineRef,
-        vars: {
-          translateX: 0,
-          scale: 1,
-          y: 24,
-          stagger: 0.03,
-          duration: 0.6,
-          ease: "power3.out",
-        },
-      },
-    ],
-  });
-
-  // Logo, eyebrow, sub-line and button fade up around the headline.
-  useGSAP(() => {
-    const tl = gsap.timeline();
-    tl.from(logoRef.current, {
-      opacity: 0,
-      y: -10,
-      duration: 0.8,
-      ease: "power2.out",
-    })
-      .from(eyebrowRef.current, { opacity: 0, y: 14, duration: 0.6, ease: "power2.out" }, 0.2)
-      .from(subRef.current, { opacity: 0, y: 18, duration: 0.9, ease: "power2.out" }, 1.0)
-      .from(ctaRef.current, { opacity: 0, y: 14, duration: 0.7, ease: "power2.out" }, 1.4);
-
-    // Intro scene spin — runs over the SAME duration as this text intro, so the
-    // cosmos finishes turning exactly when the text has landed. Full speed
-    // immediately (ease-out).
-    const setIntro = useSceneIntro.getState().setProgress;
-    const spin = { v: 0 };
-    setIntro(0);
-    gsap.to(spin, {
-      v: 1,
-      duration: tl.totalDuration(),
-      ease: "power2.out",
-      onUpdate: () => setIntro(spin.v),
-    });
-  });
-
-  // The whole cosmic journey — one pinned ScrollTrigger drives the star, the
-  // Saturn assembly, the About reveal, the folded-in Craft, the fly-away, and (at
-  // the very end, over the galaxy) the Contact form.
-  useCosmicJourney({
-    containerRef,
-    contentRef,
-    logoRef,
-    aboutRevealRef,
-    aboutTitleRef,
-    aboutPara1Ref,
-    aboutPara2Ref,
-    craftRef,
-    contactRef,
-  });
-
-  return null;
-};
 
 const Hero = () => {
   const live = useGateLive();
+  // The headline writing in, the intro around it and the whole journey (HeroMotion): the
+  // journey's motion code (P27-95), fetched apart so the calm mode never loads it.
+  const journey = useLoaded(loadJourneyMotion, live);
   const containerRef = useRef<HTMLDivElement | null>(null);
   const logoRef = useRef<HTMLDivElement | null>(null);
   const eyebrowRef = useRef<HTMLParagraphElement | null>(null);
@@ -150,7 +44,10 @@ const Hero = () => {
 
   // "To wander": glide to The Maker (P27-91), the star bursting and Saturn forming on the
   // way, onto the About text.
-  const handleWander = () => goTo("maker", { by: "hero" });
+  const handleWander = () =>
+    void loadJourneyMotion()
+      .then((journey) => journey.goTo("maker", { by: "hero" }))
+      .catch(() => undefined);
 
   return (
     <>
@@ -278,8 +175,8 @@ const Hero = () => {
         <Contact overlayRef={contactRef} />
       </div>
       {/* After the root, not in it: by then its ref (the pin's trigger) is set too. */}
-      {live && (
-        <HeroMotion
+      {live && journey && (
+        <journey.HeroMotion
           containerRef={containerRef}
           logoRef={logoRef}
           eyebrowRef={eyebrowRef}

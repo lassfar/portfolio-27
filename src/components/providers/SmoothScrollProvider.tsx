@@ -1,49 +1,9 @@
 "use client";
 
-import { ReactNode, RefObject, useRef, useState } from "react";
-import { useGSAP } from "@gsap/react";
-import gsap from "gsap";
-import { ScrollSmoother, ScrollTrigger } from "gsap/all";
+import { ReactNode, useRef, useState } from "react";
+import { useLoaded } from "#/components/hooks/useLoaded";
+import { loadJourneyMotion } from "#/components/pages/home/loadJourney";
 import { GateLive, useGateLive } from "#/components/pages/home/motion/gateLive";
-
-gsap.registerPlugin(useGSAP, ScrollTrigger, ScrollSmoother);
-
-type SmootherProps = {
-  wrapperRef: RefObject<HTMLDivElement | null>;
-  contentRef: RefObject<HTMLDivElement | null>;
-  /** Called once the smoother is in place. */
-  onReady: () => void;
-};
-
-/**
- * Creates the smoother (and kills it when it unmounts). Renders nothing. It renders after the
- * wrapper (P27-94): on a client-side mount (the mode switch) its effect runs as its siblings
- * commit, so the wrapper and content refs must already be set.
- */
-const Smoother = ({ wrapperRef, contentRef, onReady }: SmootherProps) => {
-  useGSAP(() => {
-    const smoother = ScrollSmoother.create({
-      wrapper: wrapperRef.current,
-      content: contentRef.current,
-      smooth: 1.2, // seconds it takes to "catch up" to the scroll position
-      effects: true, // enable data-speed / data-lag parallax
-      normalizeScroll: true, // smooth out mobile address-bar jumps
-      // On focus it scrolls to the focused element if it's off screen — only for the page's
-      // own content: the overlays portalled outside it (the panel, the photo viewer) are
-      // fixed, so a control still sliding in (a panel's Close) mustn't scroll the story.
-      onFocusIn: (_: ScrollSmoother, e: Event) =>
-        e.target instanceof Node && contentRef.current?.contains(e.target) === true,
-    });
-    onReady();
-    return () => {
-      // A glide still in flight would go on driving a dead smoother (P27-94: the mode switch
-      // unmounts the journey mid-glide).
-      gsap.killTweensOf(smoother);
-      smoother.kill();
-    };
-  });
-  return null;
-};
 
 /**
  * Wraps the journey in GSAP ScrollSmoother for inertia-based smooth scrolling (the calm
@@ -66,6 +26,9 @@ const SmoothScrollProvider = ({ children }: { children: ReactNode }) => {
   const wrapperRef = useRef<HTMLDivElement | null>(null);
   const contentRef = useRef<HTMLDivElement | null>(null);
   const live = useGateLive();
+  // The smoother itself is the journey's motion code (P27-95), fetched apart: the calm mode
+  // never loads ScrollSmoother.
+  const journey = useLoaded(loadJourneyMotion, live);
   const [ready, setReady] = useState(false);
 
   return (
@@ -75,8 +38,12 @@ const SmoothScrollProvider = ({ children }: { children: ReactNode }) => {
           <GateLive value={live && ready}>{children}</GateLive>
         </div>
       </div>
-      {live && (
-        <Smoother wrapperRef={wrapperRef} contentRef={contentRef} onReady={() => setReady(true)} />
+      {live && journey && (
+        <journey.Smoother
+          wrapperRef={wrapperRef}
+          contentRef={contentRef}
+          onReady={() => setReady(true)}
+        />
       )}
     </>
   );
