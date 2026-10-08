@@ -1,7 +1,7 @@
 import clsx from "clsx";
 import AccentText from "#/components/UI/text/AccentText";
 import { BRIDGE_LINE, REVEAL } from "#/components/pages/home/book/layout";
-import { BRIDGES, VOICE } from "#/components/pages/home/story/copy";
+import { BRIDGES, CHAPTER_NAMES, VOICE } from "#/components/pages/home/story/copy";
 import type { ChapterId } from "#/components/pages/home/story/story.types";
 
 /** A thin peach line, fading at both ends, above and below a bridge. */
@@ -10,25 +10,32 @@ const HAIRLINES =
 
 /**
  * The bridge after a chapter of the calm book (P27-93): a line in Aymane's voice saying what
- * the motion used to show. A passage (The Voyage, The Way Out) sits between its two lines.
+ * the motion used to show. A passage (The Voyage, The Way Out) sits between its two lines:
+ * the bridge is then that chapter's place in the book, under its id (P27-94: the mode switch
+ * lands there and gives it the focus, named after the passage).
  */
 const Bridge = ({ after }: { after: ChapterId }) => {
   const bridge = BRIDGES.find((b) => b.after === after);
   if (!bridge) return null;
   const [first, second] = bridge.lines;
+  const passage = "passage" in bridge ? bridge.passage : undefined;
   return (
     <div
+      id={passage}
+      role={passage && "group"}
+      aria-label={passage && CHAPTER_NAMES[passage]}
+      tabIndex={passage && -1}
       data-reveal
       className={clsx(
         REVEAL,
         HAIRLINES,
-        "flex flex-col items-center gap-3 px-12 py-10 text-center md:px-6",
+        "flex flex-col items-center gap-3 px-12 py-10 text-center outline-none md:px-6",
       )}
     >
       <p className={BRIDGE_LINE}>{first}</p>
-      {"passage" in bridge && (
+      {passage && (
         <p className="my-2 max-w-155 text-[clamp(15px,1.4vw,17px)] leading-[1.7] text-white/82">
-          <AccentText text={VOICE[bridge.passage]} />
+          <AccentText text={VOICE[passage]} />
         </p>
       )}
       {second && <p className={BRIDGE_LINE}>{second}</p>}

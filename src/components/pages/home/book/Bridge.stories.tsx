@@ -23,16 +23,21 @@ type Story = StoryObj<typeof meta>;
 export const Default: Story = {
   play: async ({ canvas, canvasElement }) => {
     await expect(canvas.getByText(BRIDGES[0].lines[0])).toBeInTheDocument();
+    // Not a place of its own: nothing to land on or focus.
+    await expect(canvas.queryByRole("group")).toBeNull();
     await revealed(canvasElement);
   },
 };
 
-/** A passage (here The Voyage, no longer a chapter in the book): its voice line between the bridge's two lines. */
+/** A passage (here The Voyage, no longer a chapter in the book): its voice line between the bridge's two lines. The bridge is the passage's place in the book: a mode switch lands there and focuses it, named after it. */
 export const Passage: Story = {
   args: { after: "craft" },
-  play: async ({ canvasElement }) => {
+  play: async ({ canvas, canvasElement }) => {
     await expect(canvasElement.querySelectorAll("p")).toHaveLength(3);
     await expect(canvasElement).toHaveTextContent("I like to zoom out.");
+    const place = canvas.getByRole("group", { name: "The Voyage" });
+    await expect(place).toHaveAttribute("id", "voyage");
+    await expect(place).toHaveAttribute("tabindex", "-1");
     await revealed(canvasElement);
   },
 };

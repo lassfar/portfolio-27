@@ -7,7 +7,8 @@ import type {
   StoryTimelineToast,
 } from "#/components/pages/home/timeline/StoryTimeline.types";
 import { chapterPositions } from "#/components/pages/home/timeline/layout";
-import { BOOK_CHAPTERS, titleId } from "#/components/pages/home/book/chapters";
+import { BOOK_CHAPTERS } from "#/components/pages/home/book/chapters";
+import { landInBook, placeOnScreen } from "#/components/pages/home/book/place";
 import { BOOK_TIMELINE } from "#/components/pages/home/book/timeline";
 import { CHAPTER_NAMES } from "#/components/pages/home/story/copy";
 
@@ -27,23 +28,11 @@ const measureChapters = (): StoryChapter[] => {
   });
 };
 
-/** The chapter on screen: the last one whose top has passed the middle of the screen (a bridge keeps the one before it). */
-const chapterOnScreen = () => {
-  const middle = window.innerHeight / 2;
-  let current = 0;
-  BOOK_CHAPTERS.forEach((id, i) => {
-    const top = document.getElementById(id)?.getBoundingClientRect().top;
-    if (top !== undefined && top <= middle) current = i;
-  });
-  return current;
-};
+/** The chapter on screen (a bridge, a passage's too, keeps the one before it). */
+const chapterOnScreen = () => BOOK_CHAPTERS.indexOf(placeOnScreen(BOOK_CHAPTERS));
 
 /** Jumps to a chapter, at once (nothing scrolls on its own in the calm mode), and gives its heading the focus. */
-const jumpTo = (index: number) => {
-  const id = BOOK_CHAPTERS[index];
-  document.getElementById(id)?.scrollIntoView({ behavior: "instant", block: "start" });
-  document.getElementById(titleId(id))?.focus({ preventScroll: true });
-};
+const jumpTo = (index: number) => landInBook(BOOK_CHAPTERS[index], true);
 
 /**
  * The calm book's timeline (P27-93): the journey's story timeline (StoryTimelineRail), on

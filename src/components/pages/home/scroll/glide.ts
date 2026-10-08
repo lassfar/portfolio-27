@@ -1,5 +1,5 @@
 import gsap from "gsap";
-import { ScrollSmoother } from "gsap/all";
+import { ScrollSmoother, ScrollTrigger } from "gsap/all";
 import { journeyTrigger } from "#/stores/journeyTrigger";
 import { isScrollLocked } from "#/stores/scrollLock";
 import { useGlide, type GlideSource } from "#/stores/useGlide";
@@ -56,14 +56,23 @@ export function glideToJourney(
 
 /**
  * Jump straight to a point of the pinned journey (master progress 0..1): the dev panel, an
- * instant goTo. Returns whether it could (not without the pinned journey).
+ * instant goTo, the mode switch's landing. Returns whether it could (not without the pinned
+ * journey).
+ *
+ * Not when it's already there (P27-94): ScrollSmoother would mark the scroll as set by code
+ * with nothing to draw, so the mark would stay, and swallow the visitor's next scroll (a key,
+ * the scrollbar).
  */
 export function jumpToJourney(mp: number): boolean {
   const y = journeyY(mp);
   if (y === null) return false;
   const smoother = ScrollSmoother.get();
-  if (smoother) smoother.scrollTo(y, false);
-  else window.scrollTo(0, y);
+  if (!smoother) {
+    window.scrollTo(0, y);
+    return true;
+  }
+  const to = Math.max(0, Math.min(y, ScrollTrigger.maxScroll(window)));
+  if (Math.abs(smoother.scrollTop() - to) >= 0.5) smoother.scrollTo(to, false);
   return true;
 }
 
