@@ -141,10 +141,11 @@
    something else (UI/tooltip/dismiss). */
 @custom-variant tooltips-off (&:where([data-tooltips="off"] *));
 
-/* A tap area of at least 44×44px on phones (P27-31), invisible: an `::after` centred on
-   the element (which must be positioned). Nothing changes from `sm` up. */
+/* A tap area of at least 44×44px on phones (P27-31) and any touch screen (P27-95: a tablet,
+   a phone held sideways), invisible: an `::after` centred on the element (which must be
+   positioned). Nothing changes for a mouse from `sm` up. */
 @utility tap-target {
-  @media (width < theme(--breakpoint-sm)) {
+  @media (width < theme(--breakpoint-sm)), (pointer: coarse) {
     &::after {
       content: "";
       position: absolute;
