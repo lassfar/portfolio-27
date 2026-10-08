@@ -56,7 +56,12 @@ export function setScrollLock(key: string, on: boolean): void {
   const isLocked = locks.size > 0;
   if (wasLocked === isLocked) return;
   const smoother = ScrollSmoother.get();
-  if (!smoother) return;
+  // The guards come off even with no smoother left (P27-94: the mode switch unmounts the
+  // journey with a panel open): left on, they would block the calm book's scroll events.
+  if (!smoother) {
+    if (!isLocked) guardOutsideBody(false);
+    return;
+  }
   if (isLocked) guardOutsideBody(true); // first: before the smoother's own listeners
   smoother.paused(isLocked);
   if (!isLocked) guardOutsideBody(false);

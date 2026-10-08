@@ -15,7 +15,11 @@ type SmootherProps = {
   onReady: () => void;
 };
 
-/** Creates the smoother (and kills it when it unmounts). Renders nothing. */
+/**
+ * Creates the smoother (and kills it when it unmounts). Renders nothing. It renders after the
+ * wrapper (P27-94): on a client-side mount (the mode switch) its effect runs as its siblings
+ * commit, so the wrapper and content refs must already be set.
+ */
 const Smoother = ({ wrapperRef, contentRef, onReady }: SmootherProps) => {
   useGSAP(() => {
     const smoother = ScrollSmoother.create({
@@ -31,7 +35,12 @@ const Smoother = ({ wrapperRef, contentRef, onReady }: SmootherProps) => {
         e.target instanceof Node && contentRef.current?.contains(e.target) === true,
     });
     onReady();
-    return () => smoother.kill();
+    return () => {
+      // A glide still in flight would go on driving a dead smoother (P27-94: the mode switch
+      // unmounts the journey mid-glide).
+      gsap.killTweensOf(smoother);
+      smoother.kill();
+    };
   });
   return null;
 };
@@ -61,14 +70,14 @@ const SmoothScrollProvider = ({ children }: { children: ReactNode }) => {
 
   return (
     <>
-      {live && (
-        <Smoother wrapperRef={wrapperRef} contentRef={contentRef} onReady={() => setReady(true)} />
-      )}
       <div id="smooth-wrapper" ref={wrapperRef}>
         <div id="smooth-content" ref={contentRef}>
           <GateLive value={live && ready}>{children}</GateLive>
         </div>
       </div>
+      {live && (
+        <Smoother wrapperRef={wrapperRef} contentRef={contentRef} onReady={() => setReady(true)} />
+      )}
     </>
   );
 };

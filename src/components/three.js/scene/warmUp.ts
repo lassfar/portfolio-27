@@ -82,6 +82,16 @@ export function preupload(gl: WebGLRenderer, object: Object3D, camera: Camera): 
   restore.forEach((undo) => undo());
 }
 
+/**
+ * The canvas is going (P27-94: the mode switch unmounts the journey): drop its target and
+ * free the upload target, which a new canvas makes afresh.
+ */
+export function releaseWarmUp(): void {
+  targetOf = () => null;
+  uploadTarget?.dispose();
+  uploadTarget = null;
+}
+
 /** Run `fn` when the browser is idle (at the latest after `timeout` ms). Returns the cancel. */
 export function whenIdle(fn: () => void, timeout: number): () => void {
   if (typeof window.requestIdleCallback === "function") {

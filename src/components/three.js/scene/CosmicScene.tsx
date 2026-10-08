@@ -3,7 +3,7 @@
 import { Canvas, useFrame, useThree } from "@react-three/fiber";
 import { EffectComposer } from "@react-three/postprocessing";
 import { BlendFunction, BloomEffect, EffectComposer as EffectComposerImpl } from "postprocessing";
-import { ReactNode, RefObject, useEffect, useMemo, useRef } from "react";
+import { ReactNode, RefObject, useEffect, useLayoutEffect, useMemo, useRef } from "react";
 import { Euler, Group, PerspectiveCamera, Vector3 } from "three";
 import Universe from "#/components/three.js/star/Universe";
 import {
@@ -29,7 +29,12 @@ import {
   SUNPOS,
   VOYAGE,
 } from "#/components/three.js/solar/config";
-import { orbitPositionAt, saturnAngle, systemTime } from "#/components/three.js/solar/orbits";
+import {
+  orbitPositionAt,
+  resetSystemTime,
+  saturnAngle,
+  systemTime,
+} from "#/components/three.js/solar/orbits";
 import { ORBIT_PRIORITY, planetInspect } from "#/components/three.js/solar/planetTuning";
 import EarthMoon from "#/components/three.js/solar/EarthMoon";
 import DottedEarth from "#/components/three.js/earth/DottedEarth";
@@ -47,7 +52,7 @@ import { GALAXY, GALAXY_FX, GALAXY_SCALE, GALAXY_ZOOM } from "#/components/three
 import { SoftHighlights, SoftHighlightsEffect } from "./SoftHighlights";
 import { VeilEffect } from "./VeilEffect";
 import { cosmicVeil } from "#/stores/cosmicVeil";
-import { flyingSunPos, galaxyCenterPos } from "#/components/three.js/galaxy/spin";
+import { flyingSunPos, galaxyCenterPos, resetGalaxyDrag } from "#/components/three.js/galaxy/spin";
 import { frameGalaxy } from "#/components/three.js/galaxy/framing";
 import { useAboutScroll } from "#/stores/useAboutScroll";
 import { useVoyageScroll } from "#/stores/useVoyageScroll";
@@ -64,7 +69,7 @@ import { storyEase } from "./storyMotion";
 import { fitRamp, portraitFit, spanOf } from "./portraitFit";
 import { monotoneCurve } from "./monotoneCurve";
 import { onPerformanceChange, PERFORMANCE, PERFORMANCE_DEFAULTS } from "./performance";
-import { precompile, setWarmUpTarget, whenIdle } from "./warmUp";
+import { precompile, releaseWarmUp, setWarmUpTarget, whenIdle } from "./warmUp";
 import { gpuClass, gpuRenderer, LOWEST_STEP, QUALITY_STEPS, startStep } from "./quality";
 import { createQualityController, type QualityController } from "./qualityController";
 import { recordQualityChange, recordQualityStart } from "./perfReport";
@@ -128,6 +133,12 @@ const CosmicScene = () => {
   // The starfield group — CameraRig pins it to the camera each frame (see below),
   // so it's shared between Universe (which rotates it) and CameraRig.
   const starfieldRef = useRef<Group>(null);
+  // A new canvas, a new clock (P27-94: the mode switch mounts the journey again): what the
+  // modules kept from the one before goes, before its first frame, as on the first load.
+  useLayoutEffect(() => {
+    resetSystemTime();
+    resetGalaxyDrag();
+  }, []);
 
   return (
     <>
@@ -966,6 +977,7 @@ const ShaderWarmUp = ({
     return () => {
       cancelled = true;
       cancelIdle();
+      releaseWarmUp();
     };
   }, [gl, scene, camera, composerRef, veil]);
   return null;

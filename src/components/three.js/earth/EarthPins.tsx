@@ -1,7 +1,7 @@
 "use client";
 
 import { ThreeEvent, useFrame, useThree } from "@react-three/fiber";
-import { useMemo, useRef } from "react";
+import { useEffect, useMemo, useRef } from "react";
 import { AdditiveBlending, CanvasTexture, Group, Quaternion, SpriteMaterial, Vector3 } from "three";
 import { clamp01, damp, remap01 } from "#/components/three.js/star/utils";
 import { useVoyageScroll } from "#/stores/useVoyageScroll";
@@ -50,6 +50,16 @@ function makeGlowTexture() {
  */
 const EarthPins = () => {
   const glow = useMemo(makeGlowTexture, []);
+  useEffect(() => () => glow.dispose(), [glow]);
+  // Unmounted (P27-94: the mode switch): no pin stays lit, labelled or pointing.
+  useEffect(
+    () => () => {
+      pinHover.id = null;
+      document.body.style.cursor = "";
+      for (const s of Object.values(pinScreen)) s.shown = false;
+    },
+    [],
+  );
   // Once every pin is projected (its own callbacks, at LABEL_PRIORITY), lay out the
   // DOM labels — in the same frame, before it's drawn.
   useFrame(() => pinLabels.update?.(), LABEL_PRIORITY + 0.05);

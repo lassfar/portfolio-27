@@ -76,6 +76,15 @@ export function systemTime(elapsed: number, voyage: number): number {
 }
 
 /**
+ * A new canvas starts a new clock (P27-94: the mode switch mounts the journey again): from
+ * 0, as on the first load. Else, landing past the voyage, the system's time would start
+ * below 0 (the old canvas's start), so the planets would be off their real places.
+ */
+export function resetSystemTime(): void {
+  startedAt = 0;
+}
+
+/**
  * A point of an orbit (at eccentric anomaly E), in display coordinates — `a` in any
  * unit (the scene's compressed radius for the planets; AU for the Parker Solar Probe,
  * whose distance is compressed point by point — see parker/orbit.ts).

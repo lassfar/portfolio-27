@@ -118,6 +118,17 @@ const _up = new Vector3(0, 1, 0);
 let _hasPrev = false;
 let _prevE = 0;
 
+/**
+ * Forget the kept turn (P27-94): a new canvas starts from the designed pose, as on the first
+ * load. Else the scene's rotation, back at its start, would read as one big drag.
+ */
+export function resetGalaxyDrag(): void {
+  _dragKept.identity();
+  galaxyDrag.identity();
+  _hasPrev = false;
+  _prevE = 0;
+}
+
 /** The galaxy progress at which its space first shows (galaxy or deep stars). */
 export function galaxySpaceAppearsAt(): number {
   return Math.min(GALAXY.revealStart, GALAXY_SPACE.starsIn[0]);
