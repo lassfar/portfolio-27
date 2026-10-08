@@ -70,6 +70,7 @@ import { fitRamp, portraitFit, spanOf } from "./portraitFit";
 import { monotoneCurve } from "./monotoneCurve";
 import { onPerformanceChange, PERFORMANCE, PERFORMANCE_DEFAULTS } from "./performance";
 import { precompile, releaseWarmUp, setWarmUpTarget, whenIdle } from "./warmUp";
+import { sceneFrames } from "./sceneFrames";
 import { gpuClass, gpuRenderer, LOWEST_STEP, QUALITY_STEPS, startStep } from "./quality";
 import { createQualityController, type QualityController } from "./qualityController";
 import { recordQualityChange, recordQualityStart } from "./perfReport";
@@ -894,6 +895,7 @@ const RenderPause = ({ composerRef }: { composerRef: RefObject<EffectComposerImp
     if (!composer) return;
     const original = composer.render;
     composer.render = (deltaTime?: number) => {
+      sceneFrames.count++;
       if (renderPause.paused && !renderPause.drawOnce) return;
       renderPause.drawOnce = false;
       original.call(composer, deltaTime);

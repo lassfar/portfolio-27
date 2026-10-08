@@ -1,15 +1,14 @@
 "use client";
 
 import { useEffect, useState, type ReactNode } from "react";
-import gsap from "gsap";
-import { ScrollTrigger } from "gsap/all";
+import { createPortal } from "react-dom";
 import { useIsClient } from "#/components/hooks/useIsClient";
 import { GateLive } from "#/components/pages/home/motion/gateLive";
-import { choiceKept, reloadAddress } from "#/components/pages/home/motion/reload";
+import { startModeSwitch } from "#/components/pages/home/motion/modeSwitch";
+import ModeVeil from "#/components/pages/home/motion/ModeVeil";
 import { motionMode, type MotionChoice } from "#/stores/motionPreference";
-import { isCalm, selectCalm, useMotion } from "#/stores/useMotion";
-
-gsap.registerPlugin(ScrollTrigger);
+import { useModeSwitch } from "#/stores/useModeSwitch";
+import { isCalm } from "#/stores/useMotion";
 
 /**
  * While the page loads both modes are in it, and CSS shows the one `data-motion` names (set
@@ -21,25 +20,30 @@ const LOADING: Record<MotionChoice, string> = {
   calm: "contents full:hidden",
 };
 
-/** Reloads the page into the visitor's new mode, at its top. */
-function reloadInto(mode: MotionChoice, device: boolean) {
-  history.replaceState(
-    history.state,
-    "",
-    reloadAddress(location.href, mode, choiceKept(mode, device)),
+/** The transition screen and the switch's status line (P27-94), above the page. */
+const SwitchScreen = () => {
+  const veil = useModeSwitch((s) => s.veil);
+  const status = useModeSwitch((s) => s.status);
+  return (
+    <>
+      {veil && <ModeVeil {...veil} />}
+      {createPortal(
+        <p role="status" data-mode-keep className="sr-only">
+          {status}
+        </p>,
+        document.body,
+      )}
+    </>
   );
-  // Don't bring back where the other mode was scrolled to.
-  ScrollTrigger.clearScrollMemory("manual");
-  location.reload();
-}
+};
 
 type Props = {
   /** The journey: the story in motion (3D). */
   full: ReactNode;
   /** The calm book: the story as a book (reduced motion). */
   calm: ReactNode;
-  /** When the visitor switches modes, reload into the other one (the site; never Storybook). */
-  reloadOnChange?: boolean;
+  /** When the mode changes, switch to the other one live (the site; never Storybook's stand-ins unless asked). */
+  switchLive?: boolean;
 };
 
 /**
@@ -50,22 +54,18 @@ type Props = {
  * and 3D; the book's dots). Each slot keeps the same element throughout, so React keeps
  * what it hydrated.
  *
- * Switching modes reloads the page (the live swap is Phase 3, P27-94): the visitor's choice,
- * or the device setting changed during the visit.
+ * When the mode changes (the visitor's switch, or the device setting during the visit), it
+ * switches live (P27-94, motion/modeSwitch): behind the transition screen, the other mode
+ * mounts on the client and lands on the same chapter. No reload.
  */
-const ModeGate = ({ full, calm, reloadOnChange = false }: Props) => {
+const ModeGate = ({ full, calm, switchLive = false }: Props) => {
   const client = useIsClient();
   // The store's real state: read in the browser's first render (the hydration's store
-  // snapshot is the server's), and kept for this page.
-  const [mode] = useState(() => motionMode(isCalm()));
+  // snapshot is the server's), and kept as the mode the page loaded in.
+  const [initial] = useState(() => motionMode(isCalm()));
+  const mode = useModeSwitch((s) => s.shown) ?? initial;
 
-  useEffect(() => {
-    if (!reloadOnChange) return;
-    return useMotion.subscribe((now) => {
-      const next = motionMode(selectCalm(now));
-      if (next !== mode) reloadInto(next, now.device);
-    });
-  }, [mode, reloadOnChange]);
+  useEffect(() => (switchLive ? startModeSwitch(initial) : undefined), [initial, switchLive]);
 
   const slot = (slotMode: MotionChoice, tree: ReactNode) =>
     client && slotMode !== mode ? null : (
@@ -78,6 +78,7 @@ const ModeGate = ({ full, calm, reloadOnChange = false }: Props) => {
     <>
       {slot("full", full)}
       {slot("calm", calm)}
+      {client && switchLive && <SwitchScreen />}
     </>
   );
 };
