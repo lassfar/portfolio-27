@@ -1,17 +1,14 @@
 "use client";
 
 import dynamic from "next/dynamic";
+import { loadCraftDrawing, loadParkerDrawing } from "#/components/pages/home/book/preload";
 import { useGateLive } from "#/components/pages/home/motion/gateLive";
 
 // Drawn in the browser, like the dots: kept out of the page's HTML, so visitors with motion
 // on (who never see the book) don't download them.
 const DRAWINGS = {
-  craft: dynamic(() => import("#/components/pages/home/book/drawings/CraftDrawing"), {
-    ssr: false,
-  }),
-  parker: dynamic(() => import("#/components/pages/home/book/drawings/ParkerDrawing"), {
-    ssr: false,
-  }),
+  craft: dynamic(loadCraftDrawing, { ssr: false }),
+  parker: dynamic(loadParkerDrawing, { ssr: false }),
 };
 
 /**

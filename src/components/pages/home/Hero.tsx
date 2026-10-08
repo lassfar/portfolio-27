@@ -19,7 +19,7 @@ import { ABOUT, HERO } from "#/components/pages/home/story/copy";
 import { goTo } from "#/components/pages/home/scroll/goTo";
 import { useSceneIntro } from "#/stores/useSceneIntro";
 import { isCalm } from "#/stores/useMotion";
-import { preloadScene } from "#/components/three.js/scene/preload";
+import { loadScene, preloadScene } from "#/components/three.js/scene/preload";
 import { useGateLive } from "#/components/pages/home/motion/gateLive";
 
 gsap.registerPlugin(useGSAP, ScrollTrigger, ScrollSmoother, SplitText);
@@ -27,9 +27,7 @@ gsap.registerPlugin(useGSAP, ScrollTrigger, ScrollSmoother, SplitText);
 // WebGL-only — load on the client, never during SSR. The unified scene holds
 // the starfield, the star, the Saturn that assembles from its debris, and (as
 // the journey continues) the Saturn's fly-away out into the wider voyage.
-const CosmicScene = dynamic(() => import("#/components/three.js/scene/CosmicScene"), {
-  ssr: false,
-});
+const CosmicScene = dynamic(loadScene, { ssr: false });
 // The canvas mounts once the journey is live (ModeGate, P27-93): its code is fetched as the
 // page loads, as before, unless the visitor is calm (then only before a switch to motion).
 if (typeof window !== "undefined" && !isCalm()) {

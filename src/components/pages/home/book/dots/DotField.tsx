@@ -4,12 +4,11 @@ import type { ReactNode } from "react";
 import dynamic from "next/dynamic";
 import clsx from "clsx";
 import type { ShapeName } from "#/components/pages/home/book/dots/dots.types";
+import { loadDotCanvas } from "#/components/pages/home/book/preload";
 import { useGateLive } from "#/components/pages/home/motion/gateLive";
 
 // The dots need the browser (a canvas, the figure's size): loaded there only, with the shapes.
-const DotCanvas = dynamic(() => import("#/components/pages/home/book/dots/DotCanvas"), {
-  ssr: false,
-});
+const DotCanvas = dynamic(loadDotCanvas, { ssr: false });
 
 type Props = {
   shape: ShapeName;
