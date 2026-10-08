@@ -36,7 +36,7 @@ src/
 │   │   ├── Journey.tsx         # The journey: the smooth scroll, Hero and the overlays below
 │   │   ├── Hero.tsx            # The pinned journey: hero, About, Craft and Contact overlays
 │   │   ├── book/               # The calm book: cover, spreads, bridges, rail; dots/ (dotted shapes), drawings/
-│   │   ├── motion/             # ModeGate (journey or book), the Reduce motion switch
+│   │   ├── motion/             # ModeGate (journey or book), the Reduce motion switch, the live switch and its screen
 │   │   ├── hooks/              # useCosmicJourney: one scroll drives the whole story
 │   │   ├── story/              # The story's words, shared by the journey and the calm book
 │   │   ├── scroll/             # Glides, the chapter map, goTo()
@@ -121,7 +121,12 @@ The visitor's motion preference is `full` or `calm`: the device setting, unless 
 - **JS / GSAP:** check `isCalm()` when building an animation, or `useCalm()` in a component that must re-render
 - **In Storybook:** the toolbar's **Motion** switch shows any story in calm; a component whose calm differs has a `Calm` story (`beforeEach: inCalm`, from `src/stories/motion.ts`)
 
-**One page, two trees** (P27-93): with motion, the 3D journey (`pages/home/Journey.tsx`); in calm, the calm book (`pages/home/book/`), a 2D read that never loads the 3D. `motion/ModeGate` renders both on the server, and CSS shows the right one at the first paint (`full:` = `data-motion="full"`; with no script, the book). Once the page has loaded, the other tree is removed and this one goes **live** (`useGateLive()`, from `motion/gateLive`). Switching modes reloads the page.
+**One page, two trees** (P27-93): with motion, the 3D journey (`pages/home/Journey.tsx`); in calm, the calm book (`pages/home/book/`), a 2D read that never loads the 3D. `motion/ModeGate` renders both on the server, and CSS shows the right one at the first paint (`full:` = `data-motion="full"`; with no script, the book). Once the page has loaded, the other tree is removed and this one goes **live** (`useGateLive()`, from `motion/gateLive`).
+
+**Switching live** (P27-94): when the mode changes (the switch, or the device setting during the visit, which drops a saved choice), `motion/modeSwitch` swaps the trees without a reload, behind the transition screen (`motion/ModeVeil`), on the same chapter: capture the place, cover (the page inert, the scroll input held, `<html data-mode-switching>`), swap, land, reveal. `data-motion` is held on the tree on screen until the swap (`holdMotionAttribute`).
+
+- **A tree can mount again:** anything global it sets up (listeners, module state, GSAP tweens, a render target) is reset or released when it unmounts
+- **Land on a chapter:** the journey with `scroll/land.ts` (`landJourney`, after `waitForJourney`), the book with `book/place.ts` (`landInBook`, `placeOnScreen`); a passage's place in the book is its bridge
 
 - **The journey is motion-only:** no calm branches in it. Anything that must not run before the gate says so (a pin, ScrollSmoother, the 3D, a canvas) waits for `useGateLive()`
 - **The book:** nothing moves on its own (fades are opacity only, the rail jumps); the pointer only lights its dots (`book/dots/engine.ts`): a dot never moves or grows. It imports nothing that loads `three` (`book/boundary.test.ts` walks its imports)
