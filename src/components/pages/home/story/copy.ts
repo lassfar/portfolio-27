@@ -81,7 +81,9 @@ export const CONTACT = {
   },
 } as const;
 
-/** The calm book's own words (P27-93): the marks on its dotted shapes. */
+/** The calm book's own words (P27-93): the marks on its figures. */
 export const BOOK = {
   youAreHere: "You are here",
+  closest: "Closest: 6.1 million km",
+  probe: "Parker Solar Probe",
 } as const;
