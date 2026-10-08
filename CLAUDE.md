@@ -32,8 +32,11 @@ src/
 │   ├── hooks/                  # Shared hooks (useIsClient, useTimeout, …)
 │   │   ├── a11y/               # Accessibility helpers (inert outside a dialog)
 │   │   └── motions/            # Reusable GSAP animation hooks: backgrounds/, blocks/, shapes/, texts/
-│   ├── pages/home/             # The home page
+│   ├── pages/home/             # The home page: the journey with motion, the calm book in the calm mode
+│   │   ├── Journey.tsx         # The journey: the smooth scroll, Hero and the overlays below
 │   │   ├── Hero.tsx            # The pinned journey: hero, About, Craft and Contact overlays
+│   │   ├── book/               # The calm book: cover, spreads, bridges, rail; dots/ (dotted shapes), drawings/
+│   │   ├── motion/             # ModeGate (journey or book), the Reduce motion switch
 │   │   ├── hooks/              # useCosmicJourney: one scroll drives the whole story
 │   │   ├── story/              # The story's words, shared by the journey and the calm book
 │   │   ├── scroll/             # Glides, the chapter map, goTo()
@@ -46,7 +49,7 @@ src/
 │   │   ├── lab/                # The Lab: the memory card, experiments
 │   │   ├── skills/             # The Craft: the constellation
 │   │   └── contact/            # The contact form
-│   ├── providers/              # SmoothScrollProvider (ScrollSmoother)
+│   ├── providers/              # SmoothScrollProvider (ScrollSmoother, the journey's only)
 │   └── three.js/               # React Three Fiber
 │       ├── scene/              # The canvas, quality, performance, dev panel
 │       ├── star/               # The star, and the scroll map (config.ts: JOURNEY)
@@ -117,6 +120,12 @@ The visitor's motion preference is `full` or `calm`: the device setting, unless 
 - **CSS:** gate every movement with `moving:` (a lift, a slide, a scale, a pulse), so calm never gets it; put calm-only styles under `calm:` (e.g. a shorter fade). Never `motion-reduce:` / `motion-safe:`: they follow the device alone, not the site's switch
 - **JS / GSAP:** check `isCalm()` when building an animation, or `useCalm()` in a component that must re-render
 - **In Storybook:** the toolbar's **Motion** switch shows any story in calm; a component whose calm differs has a `Calm` story (`beforeEach: inCalm`, from `src/stories/motion.ts`)
+
+**One page, two trees** (P27-93): with motion, the 3D journey (`pages/home/Journey.tsx`); in calm, the calm book (`pages/home/book/`), a 2D read that never loads the 3D. `motion/ModeGate` renders both on the server, and CSS shows the right one at the first paint (`full:` = `data-motion="full"`; with no script, the book). Once the page has loaded, the other tree is removed and this one goes **live** (`useGateLive()`, from `motion/gateLive`). Switching modes reloads the page.
+
+- **The journey is motion-only:** no calm branches in it. Anything that must not run before the gate says so (a pin, ScrollSmoother, the 3D, a canvas) waits for `useGateLive()`
+- **The book:** nothing moves on its own (fades are opacity only, the rail jumps); the pointer only lights its dots (`book/dots/engine.ts`): a dot never moves or grows. It imports nothing that loads `three` (`book/boundary.test.ts` walks its imports)
+- **Read the device setting only through `useMotion`:** `stores/motionSources.test.ts` fails on any other `prefers-reduced-motion`, and on `motion-reduce:` / `motion-safe:`
 
 ## Git Workflow
 

@@ -101,12 +101,12 @@ Why this works for you:
 ```
 src/
 ├── app/
-│   ├── layout.tsx              # SmoothScrollProvider wraps everything
-│   └── page.tsx               # composes home sections
+│   ├── layout.tsx              # the head's motion script (data-motion), fonts, globals
+│   └── page.tsx               # ModeGate: the journey (motion) or the calm book (P27-93)
 ├── components/
 │   ├── UI/                     # design-system primitives (Button, etc.)
 │   ├── providers/
-│   │   ├── SmoothScrollProvider.tsx   # ✅ ScrollSmoother
+│   │   ├── SmoothScrollProvider.tsx   # ✅ ScrollSmoother (the journey's only, P27-93)
 │   │   └── DayCycleProvider.tsx       # ⬜ global scroll-progress context
 │   ├── hooks/motions/          # reusable GSAP hooks (see §4)
 │   ├── three/                  # R3F scenes (rename from three.js/)
