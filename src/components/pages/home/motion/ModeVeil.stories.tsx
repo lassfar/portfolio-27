@@ -110,6 +110,9 @@ export const Slow: Story = {
 export const Hidden: Story = {
   args: { shown: false },
   play: async () => {
+    // At once: clicks and the focus go through while it fades.
+    await expect(getComputedStyle(veil()).pointerEvents).toBe("none");
+    await expect(veil()).toHaveAttribute("aria-hidden", "true");
     await waitFor(() => expect(getComputedStyle(veil()).visibility).toBe("hidden"));
   },
 };

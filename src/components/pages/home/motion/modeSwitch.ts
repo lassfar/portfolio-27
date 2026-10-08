@@ -55,16 +55,14 @@ const placeIn = (mode: MotionChoice): ChapterId =>
 /** The motion switch's button: it keeps the focus through a switch. */
 const switchButton = () => document.querySelector<HTMLElement>("[data-motion-switch] button");
 
-/** Whether the focus is in the page (not on the switch, nor nowhere). */
-const focusInPage = () => {
-  const active = document.activeElement;
-  return !!active && active !== document.body && !switchButton()?.contains(active);
-};
+/** Whether the focus is off the switch: in the page, or nowhere (on <body>). */
+const focusOffSwitch = () => !switchButton()?.contains(document.activeElement);
 
 /**
- * Gives the focus a place in the new mode, if it was in the page (P27-94, WCAG 2.4.3): the
- * landing chapter's heading (or passage) in the book; in the journey, the timeline's current
- * star, else the switch.
+ * Gives the focus a place in the new mode unless it's on the switch (P27-94, WCAG 2.4.3): the
+ * page it was in is gone, and from <body> (the device setting changed) a screen reader would
+ * start again from the top (P27-95). The landing chapter's heading (or passage) in the book; in
+ * the journey, the timeline's current star, else the switch.
  */
 function refocus(mode: MotionChoice, place: ChapterId) {
   if (mode === "calm") return landInBook(place, true);
@@ -141,7 +139,7 @@ async function switchOnce(from: MotionChoice, signal: AbortSignal) {
   // Capture, in the click's own task. (No glide without the journey's code.)
   loadJourneyMotion.loaded?.stopGlide();
   const place = placeIn(from);
-  const refocusAfter = focusInPage();
+  const refocusAfter = focusOffSwitch();
   keepDraft();
   usePanelStore.getState().close();
   holdMotionAttribute(from);

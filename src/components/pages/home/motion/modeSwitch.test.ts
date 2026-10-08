@@ -67,7 +67,8 @@ describe("the live mode switch", () => {
     vi.clearAllMocks();
     journeyLoaded = null;
     attributes = new Set();
-    active = null;
+    // The visitor pressed the switch: the focus is on it.
+    active = button;
     useMotion.setState({ device: false, choice: null });
     useModeSwitch.setState({ shown: null, veil: null, status: "" });
     // A frame every 16 ms; while the journey shows, its 3D draws one each frame.
@@ -202,11 +203,20 @@ describe("the live mode switch", () => {
     expect(report).toHaveBeenCalledWith(expect.objectContaining({ message: "broken landing" }));
   });
 
-  it("gives the focus the landing chapter if it was in the page, not if it was on the switch", async () => {
+  it("gives the focus the landing chapter if it was in the page, or nowhere, not if it was on the switch", async () => {
     active = {};
     choose("calm");
     await vi.advanceTimersByTimeAsync(3000);
     expect(landInBook).toHaveBeenCalledWith("earth", true);
+
+    // Nowhere (<body>: the device setting changed): a place too, not the page's top.
+    vi.mocked(landInBook).mockClear();
+    active = null;
+    choose("full");
+    await vi.advanceTimersByTimeAsync(4000);
+    choose("calm");
+    await vi.advanceTimersByTimeAsync(3000);
+    expect(landInBook).toHaveBeenCalledWith(expect.anything(), true);
 
     vi.mocked(landInBook).mockClear();
     active = button;

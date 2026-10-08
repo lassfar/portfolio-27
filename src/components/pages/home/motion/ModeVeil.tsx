@@ -40,12 +40,14 @@ const ModeVeil = ({ shown, to, place, slow = false }: Props) => {
 
   return createPortal(
     <div
+      aria-hidden={!shown || undefined}
       data-mode-veil
       data-mode-keep
       className={clsx(
         "fixed inset-0 z-65 grid place-items-center bg-rich-black px-6",
         "transition-[opacity,visibility] ease-out starting:opacity-0",
-        shown ? "visible opacity-100" : "invisible opacity-0",
+        // Fading out, it lets clicks and the focus through at once (WCAG 2.4.11).
+        shown ? "visible opacity-100" : "pointer-events-none invisible opacity-0",
         shown && to === "full" ? "duration-400" : "duration-500",
       )}
     >
