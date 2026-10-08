@@ -26,6 +26,26 @@ export const placeOnScreen = (ids: readonly ChapterId[] = CHAPTER_IDS): ChapterI
   ids[placeAt(ids.map(topOf), window.innerHeight / 2)];
 
 /**
+ * Resolves once every dotted figure on screen is drawn, or after `timeout` ms (P27-95: they're
+ * drawn only near the screen, one per task): the mode switch's landing waits for them before
+ * the screen fades.
+ */
+export function whenFiguresDrawn(timeout: number): Promise<void> {
+  return new Promise((resolve) => {
+    const until = performance.now() + timeout;
+    const check = () => {
+      const waiting = [...document.querySelectorAll<HTMLElement>("[data-dots]")].some((figure) => {
+        const { top, bottom } = figure.getBoundingClientRect();
+        return bottom > 0 && top < window.innerHeight && !figure.querySelector("[data-drawn]");
+      });
+      if (!waiting || performance.now() >= until) resolve();
+      else requestAnimationFrame(check);
+    };
+    check();
+  });
+}
+
+/**
  * Takes the book to chapter `id` at once (nothing scrolls on its own in the calm mode): its
  * section at the top, or a passage's bridge (The Voyage, The Way Out) in the middle. With
  * `focus`, the chapter's heading, or the bridge, takes the focus.

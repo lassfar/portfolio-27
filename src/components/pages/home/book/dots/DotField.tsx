@@ -29,7 +29,7 @@ type Props = {
 const DotField = ({ shape, label, className, children }: Props) => {
   const live = useGateLive();
   return (
-    <figure role="img" aria-label={label} className={clsx("m-0", className)}>
+    <figure data-dots role="img" aria-label={label} className={clsx("m-0", className)}>
       {live && <DotCanvas shape={shape} />}
       {children}
     </figure>

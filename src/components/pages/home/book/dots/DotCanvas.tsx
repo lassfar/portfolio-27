@@ -11,6 +11,7 @@ import {
   type Field,
   type Pointer,
 } from "#/components/pages/home/book/dots/engine";
+import { queueDotBuild } from "#/components/pages/home/book/dots/buildQueue";
 import { loadLand } from "#/components/pages/home/book/dots/landMask";
 import { MARK } from "#/components/pages/home/book/dots/marks";
 import { hash, seeded } from "#/components/pages/home/book/dots/patterns";
@@ -42,10 +43,18 @@ const Mark = ({ mark }: { mark: DotMark }) => {
   }
 };
 
+/** How near the screen a figure is drawn, and how far away it's let go (P27-95). */
+const NEAR = "100% 0px";
+const FAR = "300% 0px";
+
 /**
  * A dotted shape of the calm book (P27-93), drawn on a canvas at its figure's size, with its
  * labels over it (SVG). Drawn once, then again only where the pointer lights it (engine.ts),
  * and redrawn when the figure changes size. Loaded only in the browser, by `DotField`.
+ *
+ * Only near the screen (P27-95): it's drawn within a screen of it (one figure per task), and
+ * let go beyond three (its canvas emptied), so the book never holds all five at once. Marked
+ * `data-drawn` while drawn (the mode switch waits for the figures on screen).
  */
 const DotCanvas = ({ shape }: { shape: ShapeName }) => {
   const hostRef = useRef<HTMLDivElement | null>(null);
@@ -65,6 +74,9 @@ const DotCanvas = ({ shape }: { shape: ShapeName }) => {
     let last = 0;
     let isLand: ((lat: number, lon: number) => boolean) | null =
       shape === "earth" ? null : () => false;
+    let near = false;
+    let cancelBuild = () => {};
+    let resizeFrame = 0;
 
     const build = () => {
       const w = Math.round(host.clientWidth);
@@ -91,7 +103,22 @@ const DotCanvas = ({ shape }: { shape: ShapeName }) => {
       canvas.height = h * dpr;
       ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
       paintAll(ctx, field, w, h);
+      host.dataset.drawn = "";
       setDrawn({ w, h, marks });
+    };
+    const queueBuild = () => {
+      cancelBuild();
+      cancelBuild = queueDotBuild(build);
+    };
+    // Far away: its canvas let go. (Its marks and fade stay: a rebuild shows at once.)
+    const free = () => {
+      cancelBuild();
+      cancelAnimationFrame(raf);
+      raf = 0;
+      field = null;
+      size = { w: 0, h: 0 };
+      canvas.width = canvas.height = 0;
+      delete host.dataset.drawn;
     };
 
     const frame = (now: number) => {
@@ -127,7 +154,30 @@ const DotCanvas = ({ shape }: { shape: ShapeName }) => {
     host.addEventListener("pointercancel", release);
     host.addEventListener("pointerup", lift);
 
-    const resized = new ResizeObserver(build);
+    const nearby = new IntersectionObserver(
+      ([entry]) => {
+        if (!entry?.isIntersecting) return;
+        near = true;
+        queueBuild();
+      },
+      { rootMargin: NEAR },
+    );
+    const away = new IntersectionObserver(
+      ([entry]) => {
+        if (!entry || entry.isIntersecting) return;
+        near = false;
+        free();
+      },
+      { rootMargin: FAR },
+    );
+    nearby.observe(host);
+    away.observe(host);
+
+    // A new size: drawn again on the next frame if near, else when it comes near.
+    const resized = new ResizeObserver(() => {
+      cancelAnimationFrame(resizeFrame);
+      resizeFrame = requestAnimationFrame(() => (near ? queueBuild() : (size = { w: 0, h: 0 })));
+    });
     resized.observe(host);
 
     let gone = false;
@@ -135,13 +185,17 @@ const DotCanvas = ({ shape }: { shape: ShapeName }) => {
       void loadLand().then((land) => {
         if (gone) return;
         isLand = land;
-        build();
+        if (near) queueBuild();
       });
     }
 
     return () => {
       gone = true;
+      cancelBuild();
       cancelAnimationFrame(raf);
+      cancelAnimationFrame(resizeFrame);
+      nearby.disconnect();
+      away.disconnect();
       resized.disconnect();
       host.removeEventListener("pointermove", follow);
       host.removeEventListener("pointerdown", follow);

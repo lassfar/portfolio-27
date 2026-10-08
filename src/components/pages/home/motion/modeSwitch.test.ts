@@ -21,6 +21,7 @@ vi.mock("#/components/pages/home/motion/holdInput", () => ({
 vi.mock("#/components/pages/home/book/place", () => ({
   landInBook: vi.fn(),
   placeOnScreen: vi.fn(() => "lab"),
+  whenFiguresDrawn: vi.fn(async () => {}),
 }));
 vi.mock("#/components/pages/home/book/preload", () => ({ preloadBook: vi.fn(async () => {}) }));
 vi.mock("#/components/pages/home/contact/draft", () => ({ keepDraft: vi.fn() }));

@@ -1,6 +1,7 @@
 import type { Meta, StoryObj } from "@storybook/nextjs-vite";
 import { expect, waitFor } from "storybook/test";
 
+import { GateLive } from "#/components/pages/home/motion/gateLive";
 import Gallery from "#/stories/Gallery";
 import { SHAPE_NAMES } from "#/components/pages/home/book/dots/dots.types";
 import DotField from "./DotField";
@@ -107,5 +108,44 @@ export const Lit: Story = {
         },
       );
     });
+  },
+};
+
+/** While the page loads (the book not yet the mode on screen): no dots are fetched or drawn; the figure is still one named image. */
+export const Waiting: Story = {
+  decorators: [
+    (Story) => (
+      <GateLive value={false}>
+        <Story />
+      </GateLive>
+    ),
+  ],
+  play: async ({ canvas }) => {
+    const figure = canvas.getByRole("img", { name: /Saturn drawn in dots/ });
+    await new Promise((resolve) => setTimeout(resolve, 300));
+    await expect(figure.querySelector("canvas")).toBeNull();
+  },
+};
+
+/** Far down the book (here four screens away): not drawn yet, so the book never holds every figure at once. It draws as it comes within a screen. */
+export const FarAway: Story = {
+  parameters: { layout: "fullscreen" },
+  decorators: [
+    (Story) => (
+      <div>
+        <div className="h-[400vh]" />
+        <Story />
+      </div>
+    ),
+  ],
+  beforeEach: () => () => window.scrollTo(0, 0),
+  play: async ({ canvas }) => {
+    const figure = canvas.getByRole("img", { name: /Saturn drawn in dots/ });
+    await waitFor(() => expect(figure.querySelector("canvas")).not.toBeNull(), { timeout: 4000 });
+    await new Promise((resolve) => setTimeout(resolve, 300));
+    await expect(figure.querySelector("canvas")!.width).toBe(0);
+    figure.scrollIntoView({ behavior: "instant", block: "center" });
+    await drawn(figure);
+    await expect(figure.querySelector("[data-drawn]")).not.toBeNull();
   },
 };

@@ -1,5 +1,5 @@
 import { inertExcept } from "#/components/hooks/a11y/inertExcept";
-import { landInBook, placeOnScreen } from "#/components/pages/home/book/place";
+import { landInBook, placeOnScreen, whenFiguresDrawn } from "#/components/pages/home/book/place";
 import { preloadBook } from "#/components/pages/home/book/preload";
 import { keepDraft } from "#/components/pages/home/contact/draft";
 import { loadJourneyMotion } from "#/components/pages/home/loadJourney";
@@ -26,7 +26,7 @@ const TIMING = {
   pin: 3000,
   code: 20000,
   scene: 8000,
-  /** Waiting for the book's figures' code. */
+  /** Waiting for the book's figures: their code, then the ones on screen drawn. */
   figures: 3000,
   /** Once the scene has drawn, a moment more for it to settle. */
   settle: 150,
@@ -91,6 +91,7 @@ async function swap(to: MotionChoice, place: ChapterId, signal: AbortSignal) {
     const resized = new ResizeObserver(() => landInBook(place, false));
     resized.observe(document.body);
     await within(preloadBook(), TIMING.figures);
+    await whenFiguresDrawn(TIMING.figures);
     await nextFrame();
     await nextFrame();
     return () => resized.disconnect();
