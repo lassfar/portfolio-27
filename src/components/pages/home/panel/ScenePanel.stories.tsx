@@ -1,10 +1,13 @@
 import type { Meta, StoryObj } from "@storybook/nextjs-vite";
 import { expect, waitFor, within } from "storybook/test";
 
+import { useEffect, useState } from "react";
+import { inertExcept } from "#/components/hooks/a11y/inertExcept";
 import { usePanelStore, type PanelContent, type PanelView } from "#/stores/usePanelStore";
 import { contrastOnFill } from "#/stories/contrast";
 import { entered } from "#/stories/entered";
 import { inCalm } from "#/stories/motion";
+import { PANEL_ID } from "./config";
 import PanelHost from "./PanelHost";
 import SceneOverlays from "./SceneOverlays";
 
@@ -162,5 +165,35 @@ export const Lab: Story = {
     await expect(within(panel).getByText("3 experiments")).toBeInTheDocument();
     await expect(within(panel).getAllByText("Drifting in soon")).toHaveLength(3);
     await entered(panel);
+  },
+};
+
+/** Mounts its panel host when the story asks (the event below), like a tree the mode switch mounts. */
+const MountsLater = () => {
+  const [shown, setShown] = useState(false);
+  useEffect(() => {
+    const show = () => setShown(true);
+    window.addEventListener("mount-panel", show);
+    return () => window.removeEventListener("mount-panel", show);
+  }, []);
+  return shown ? <PanelHost /> : null;
+};
+
+/** Closed: hidden and inert, so nothing in it can be reached. It stays so when it arrives under the mode switch's screen (the page made inert, then given back): the panel's own inert is never touched (P27-95). */
+export const Closed: Story = {
+  render: () => <MountsLater />,
+  play: async () => {
+    const release = inertExcept((el) => el.hasAttribute("data-mode-keep"));
+    window.dispatchEvent(new Event("mount-panel"));
+    const panel = await waitFor(() => {
+      const found = document.getElementById(PANEL_ID);
+      if (!found) throw new Error("Not mounted yet");
+      return found;
+    });
+    await waitFor(() => expect(panel.inert).toBe(true));
+    release();
+    await expect(panel.inert).toBe(true);
+    await expect(panel.closest("[data-panel-layer]")).not.toBeNull();
+    await expect(getComputedStyle(panel).visibility).toBe("hidden");
   },
 };

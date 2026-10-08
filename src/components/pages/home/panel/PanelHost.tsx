@@ -33,7 +33,9 @@ type Props = {
  *
  * Rendered through a PORTAL to `document.body`: the journey lives inside ScrollSmoother's
  * `#smooth-content`, which is `transform`ed, and a transformed ancestor re-bases
- * `position: fixed`.
+ * `position: fixed`. All in one layer (P27-95: a plain wrapper, no stacking context), so the
+ * page-wide inert of the mode switch (inertExcept) touches the layer, never the panel's and
+ * viewer's own inert while they're closed.
  */
 const PanelHost = ({ children, modal = false }: Props) => {
   const [mounted, setMounted] = useState(false);
@@ -45,7 +47,7 @@ const PanelHost = ({ children, modal = false }: Props) => {
   if (!mounted) return null;
 
   return createPortal(
-    <>
+    <div data-panel-layer>
       {children}
       <div
         aria-hidden="true"
@@ -56,7 +58,7 @@ const PanelHost = ({ children, modal = false }: Props) => {
       />
       <ScenePanel ref={panel} modal={modal} />
       <Lightbox ref={viewer} />
-    </>,
+    </div>,
     document.body,
   );
 };
