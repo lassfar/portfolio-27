@@ -122,6 +122,23 @@ export const BOOK = {
   },
 } as const;
 
+/**
+ * The transition screen between the modes (P27-94): a line in Aymane's voice, by the mode it
+ * goes to, and where the visitor lands: "Chapter 4 of 7 · Reduce motion on".
+ */
+export const SWITCH = {
+  line: { calm: "Same story, *quieter*.", full: "Back to the *whole journey*." },
+  /** The switch's state after it, as its tooltip says it. */
+  state: { calm: "Reduce motion on", full: "Reduce motion off" },
+  chapter: "Chapter",
+  of: "of",
+  /** A passage, in the book: "Between chapters 3 and 4". */
+  between: "Between chapters",
+  and: "and",
+  /** While the 3D takes its time. */
+  slow: "Bringing the 3D in…",
+} as const;
+
 /** A bridge: one or two lines after a chapter; a passage sits between the two, in its voice. */
 type Bridge = {
   after: ChapterId;

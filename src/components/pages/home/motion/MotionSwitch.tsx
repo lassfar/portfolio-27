@@ -14,13 +14,14 @@ import { useCalm, useMotion } from "#/stores/useMotion";
  * corner. Portalled to the body, like the page's other fixed parts; only on the client,
  * where its state lives. Shown to every visitor (P27-93): with motion on, it's how the
  * journey's motion stops (WCAG 2.2.2). The page then reloads into the other mode (ModeGate).
+ * While the modes switch it stays above the transition screen (`switching:`), with the focus.
  */
 const MotionSwitch = () => {
   const client = useIsClient();
   const calm = useCalm();
   if (!client) return null;
   return createPortal(
-    <div className="fixed top-4.5 right-4.5 z-46 transition-[opacity,visibility] duration-300 sm:top-6 sm:right-6 panel-open:invisible panel-open:opacity-0">
+    <div className="fixed top-4.5 right-4.5 z-46 transition-[opacity,visibility] duration-300 sm:top-6 sm:right-6 panel-open:invisible panel-open:opacity-0 switching:z-70">
       <IconButton
         icon={calm ? Calm : Lively}
         label="Reduce motion"

@@ -212,6 +212,21 @@
 /* `panel-open:` — while a panel is open, in either view (the motion switch steps away). */
 @custom-variant panel-open (&:where([data-panel] *));
 
+/* `switching:` — while the modes switch behind the transition screen (P27-94,
+   `<html data-mode-switching>`): the motion switch stays above it, with the focus. */
+@custom-variant switching (&:where([data-mode-switching] *));
+
+/* The transition screen's constellation, back to motion (motion/ModeVeil): a link drawing in
+   (pathLength 1). Under `moving:`, so it starts as the page turns to motion, behind it. */
+@keyframes veil-draw {
+  from {
+    stroke-dashoffset: 1;
+  }
+  to {
+    stroke-dashoffset: 0;
+  }
+}
+
 /* The calm book scrolls natively (P27-93): while a panel is open the page under it stays put
    (the journey pauses its ScrollSmoother instead). The scrollbar's room is kept, so nothing
    shifts when it goes. */
