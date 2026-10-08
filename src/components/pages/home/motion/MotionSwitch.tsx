@@ -6,6 +6,7 @@ import IconButton from "#/components/UI/buttons/IconButton";
 import { Calm, Lively } from "#/components/UI/icons/motion";
 import { useIsClient } from "#/components/hooks/useIsClient";
 import { loadJourneyMotion } from "#/components/pages/home/loadJourney";
+import { PAGE_CONTROLS_ID } from "#/components/pages/home/motion/pageControls";
 import { preloadScene } from "#/components/three.js/scene/preload";
 import { useCalm, useMotion } from "#/stores/useMotion";
 
@@ -14,8 +15,8 @@ import { useCalm, useMotion } from "#/stores/useMotion";
  * same in both modes. Pressed, the site is calm (short fades only, nothing moving); not
  * pressed, full motion. It starts from the device setting and remembers the visitor's
  * choice (stores/useMotion). It steps away while a panel is open, whose controls take the
- * corner. Portalled to the body, like the page's other fixed parts; only on the client,
- * where its state lives. Shown to every visitor (P27-93): with motion on, it's how the
+ * corner. Portalled first in the page (the layout's page controls, P27-95), so it's the first
+ * Tab stop; only on the client, where its state lives. Shown to every visitor (P27-93): with motion on, it's how the
  * journey's motion stops (WCAG 2.2.2). The page then switches to the other mode live (ModeGate,
  * P27-94); it stays above the transition screen meanwhile (`switching:`), with the focus. In
  * the calm mode, the pointer or the focus lingering on it fetches the journey, in case.
@@ -40,7 +41,7 @@ const MotionSwitch = () => {
         onClick={() => useMotion.getState().setChoice(calm ? "full" : "calm")}
       />
     </div>,
-    document.body,
+    document.getElementById(PAGE_CONTROLS_ID) ?? document.body,
   );
 };
 

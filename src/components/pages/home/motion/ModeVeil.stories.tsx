@@ -6,7 +6,6 @@ import { CHAPTER_IDS } from "#/components/pages/home/story/story.types";
 import { contrastOnPage } from "#/stories/contrast";
 import { inCalm } from "#/stories/motion";
 import ModeVeil from "./ModeVeil";
-import MotionSwitch from "./MotionSwitch";
 
 const veil = () => document.querySelector<HTMLElement>("[data-mode-veil]")!;
 const shown = () => waitFor(() => expect(getComputedStyle(veil()).opacity).toBe("1"));
@@ -112,28 +111,5 @@ export const Hidden: Story = {
   args: { shown: false },
   play: async () => {
     await waitFor(() => expect(getComputedStyle(veil()).visibility).toBe("hidden"));
-  },
-};
-
-/** During a switch the motion switch stays above it, so the focus is never hidden (WCAG 2.4.11), and it can be pressed again. */
-export const WithTheSwitch: Story = {
-  render: (args) => (
-    <>
-      <ModeVeil {...args} />
-      <MotionSwitch />
-    </>
-  ),
-  beforeEach: () => {
-    document.documentElement.setAttribute("data-mode-switching", "");
-    return () => document.documentElement.removeAttribute("data-mode-switching");
-  },
-  play: async ({ userEvent }) => {
-    const button = await within(document.body).findByRole("button", { name: "Reduce motion" });
-    await shown();
-    await userEvent.tab();
-    await expect(button).toHaveFocus();
-    const r = button.getBoundingClientRect();
-    const hit = document.elementFromPoint(r.left + r.width / 2, r.top + r.height / 2);
-    await expect(button.contains(hit)).toBe(true);
   },
 };

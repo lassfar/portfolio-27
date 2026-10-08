@@ -1,10 +1,13 @@
 import type { Meta, StoryObj } from "@storybook/nextjs-vite";
 import { expect, waitFor, within } from "storybook/test";
 
+import { contrastOnPage } from "#/stories/contrast";
 import { inCalm } from "#/stories/motion";
 import { MOTION_STORAGE_KEY, storedChoice } from "#/stores/motionPreference";
 import { useMotion } from "#/stores/useMotion";
+import ModeVeil from "./ModeVeil";
 import MotionSwitch from "./MotionSwitch";
+import { PAGE_CONTROLS_ID } from "./pageControls";
 
 const page = () => within(document.body);
 const theSwitch = () => page().findByRole("button", { name: "Reduce motion" });
@@ -75,5 +78,66 @@ export const Hidden: Story = {
       return found;
     });
     await waitFor(() => expect(button).not.toBeVisible());
+  },
+};
+
+/** As the page places it: first in the page (the layout's page controls), so it's the first Tab stop, before anything of the story (WCAG 2.4.3: the way to stop the motion comes first). */
+export const FirstTabStop: Story = {
+  decorators: [
+    (Story) => (
+      <>
+        <button type="button" className="m-6 text-white/80">
+          Something of the page
+        </button>
+        <Story />
+      </>
+    ),
+  ],
+  beforeEach: () => {
+    const controls = document.createElement("div");
+    controls.id = PAGE_CONTROLS_ID;
+    controls.dataset.modeKeep = "";
+    document.body.prepend(controls);
+    return () => controls.remove();
+  },
+  play: async ({ userEvent }) => {
+    const button = await theSwitch();
+    await expect(button.closest(`#${PAGE_CONTROLS_ID}`)).not.toBeNull();
+    await userEvent.tab();
+    await expect(button).toHaveFocus();
+  },
+};
+
+/** Focused from the keyboard: the site's focus ring, 3:1 or more against the page (WCAG 1.4.11, 2.4.7). */
+export const Focused: Story = {
+  play: async ({ userEvent }) => {
+    const button = await theSwitch();
+    await userEvent.tab();
+    await expect(button).toHaveFocus();
+    const ring = getComputedStyle(button);
+    await expect(ring.outlineStyle).toBe("solid");
+    await expect(contrastOnPage(ring.outlineColor)).toBeGreaterThanOrEqual(3);
+  },
+};
+
+/** While the modes switch: above the transition screen, so the focus is never hidden behind it (WCAG 2.4.11), and it can be pressed again. */
+export const Switching: Story = {
+  render: () => (
+    <>
+      <ModeVeil shown to="calm" place="earth" />
+      <MotionSwitch />
+    </>
+  ),
+  beforeEach: () => {
+    document.documentElement.setAttribute("data-mode-switching", "");
+    return () => document.documentElement.removeAttribute("data-mode-switching");
+  },
+  play: async ({ userEvent }) => {
+    const button = await theSwitch();
+    await userEvent.tab();
+    await expect(button).toHaveFocus();
+    const r = button.getBoundingClientRect();
+    const hit = document.elementFromPoint(r.left + r.width / 2, r.top + r.height / 2);
+    await expect(button.contains(hit)).toBe(true);
   },
 };
