@@ -80,3 +80,8 @@ export const CONTACT = {
     again: "Write another",
   },
 } as const;
+
+/** The calm book's own words (P27-93): the marks on its dotted shapes. */
+export const BOOK = {
+  youAreHere: "You are here",
+} as const;
