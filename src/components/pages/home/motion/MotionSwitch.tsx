@@ -25,7 +25,7 @@ const MotionSwitch = () => {
         icon={calm ? Calm : Lively}
         label="Reduce motion"
         pressed={calm}
-        tooltip={calm ? "Calm motion · on" : "Calm motion · off"}
+        tooltip={calm ? "Reduce motion · on" : "Reduce motion · off"}
         onClick={() => useMotion.getState().setChoice(calm ? "full" : "calm")}
       />
     </div>,

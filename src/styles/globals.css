@@ -333,6 +333,12 @@
   visibility: visible;
   transition: opacity 0.45s ease;
 }
+/* While one of its stars holds the focus it stays shown, even where it would hide (the first
+   screen): going back up with the keyboard mustn't drop the focus (WCAG 2.4.7, P27-93). */
+.story-timeline:focus-within {
+  opacity: 1;
+  visibility: visible;
+}
 .story-timeline.is-vertical {
   width: 24px;
   height: var(--tl-length);
@@ -551,6 +557,13 @@
   .story-timeline__star:hover
   .story-timeline__glyph::before {
   transform: rotate(var(--tl-rot)) scale(var(--tl-scale));
+}
+/* …and its focus ring is the site's own, 3:1 or more against the page (WCAG 1.4.11): the
+   rail's colour at 60% falls under it. */
+:root[data-motion="calm"] .story-timeline .story-timeline__star:focus-visible {
+  box-shadow: none;
+  outline: 2px solid color-mix(in srgb, var(--color-peach) 70%, transparent);
+  outline-offset: 3px;
 }
 /* Orbit: small dots; the current one wears a thin orbit ring (a planet on its path)
    instead of the glow. */

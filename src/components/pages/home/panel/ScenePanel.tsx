@@ -46,7 +46,13 @@ const SHELL_CLOSED: Record<PanelView, string> = {
  * swaps with a short fade (usePanelFrame). Portalled to the body; SceneOverlays makes it
  * a dialog (focus, keys).
  */
-const ScenePanel = ({ ref }: { ref?: Ref<HTMLElement> }) => {
+type ScenePanelProps = {
+  ref?: Ref<HTMLElement>;
+  /** Modal in both views, not just the full one (the calm book: nothing beside it to use, P27-93). */
+  modal?: boolean;
+};
+
+const ScenePanel = ({ ref, modal = false }: ScenePanelProps) => {
   const open = usePanelStore(selectIsOpen);
   const view = usePanelStore((s) => s.view);
   const titleId = useId();
@@ -77,7 +83,7 @@ const ScenePanel = ({ ref }: { ref?: Ref<HTMLElement> }) => {
       ref={ref}
       id={PANEL_ID}
       role="dialog"
-      aria-modal={view === "full"}
+      aria-modal={modal || view === "full"}
       aria-labelledby={titleId}
       className={clsx(SHELL, SHELL_VIEW[view], open ? SHELL_OPEN : SHELL_CLOSED[view])}
     >

@@ -65,7 +65,7 @@ export const Pressed: Story = {
   args: {
     icon: SITE_ICONS.Calm,
     label: "Reduce motion",
-    tooltip: "Calm motion · on",
+    tooltip: "Reduce motion · on",
     pressed: true,
   },
   play: async ({ canvas }) => {

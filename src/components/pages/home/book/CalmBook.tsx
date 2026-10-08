@@ -112,7 +112,7 @@ const CalmBook = () => (
     </section>
 
     <BookReveal />
-    <PanelHost />
+    <PanelHost modal />
   </div>
 );
 

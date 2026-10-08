@@ -1,6 +1,8 @@
 import type { Meta, StoryContext, StoryObj } from "@storybook/nextjs-vite";
 import { expect } from "storybook/test";
 
+import { contrastOnPage } from "#/stories/contrast";
+
 import Field from "./Field";
 import type { FieldProps } from "./field.types";
 
@@ -26,10 +28,16 @@ export default meta;
 type Story = StoryObj<FieldProps>;
 type Context = StoryContext<FieldProps>;
 
-/** A line to write on: its name above it, the line turns peach while focused. */
+/** A line to write on: its name above it, the line turns peach while focused. The line stands out at 3:1 (WCAG 1.4.11), its hint reads at 4.5:1 (1.4.3). */
 export const Default: Story = {
   play: async ({ canvas, userEvent }: Context) => {
     const input = canvas.getByRole("textbox", { name: "Name" });
+    await expect(contrastOnPage(getComputedStyle(input).borderBottomColor)).toBeGreaterThanOrEqual(
+      3,
+    );
+    await expect(
+      contrastOnPage(getComputedStyle(input, "::placeholder").color),
+    ).toBeGreaterThanOrEqual(4.5);
     await userEvent.type(input, "Aymane");
     await expect(input).toHaveFocus();
     await expect(input).toHaveValue("Aymane");

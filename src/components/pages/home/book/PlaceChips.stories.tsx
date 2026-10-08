@@ -22,7 +22,8 @@ const meta = {
     (Story) => (
       <>
         <Story />
-        <PanelHost />
+        {/* As the book mounts it: modal in both views. */}
+        <PanelHost modal />
       </>
     ),
   ],
@@ -37,7 +38,7 @@ export default meta;
 
 type Story = StoryObj<typeof meta>;
 
-/** The Earth's places, each with its count of shots. A click opens its photos; Escape closes them and the focus comes back to the chip. */
+/** The Earth's places, each with its count of shots. A click opens its photos, modal even at the side (the page behind is inert, so focus can't reach what the panel covers: WCAG 2.4.11); Escape closes them and the focus comes back to the chip. */
 export const Places: Story = {
   play: async ({ canvas, userEvent }) => {
     const london = canvas.getByRole("button", { name: /London/ });
@@ -46,6 +47,8 @@ export const Places: Story = {
     await userEvent.click(london);
     const panel = await page().findByRole("dialog", { name: "Back to London" });
     await expect(london).toHaveAttribute("aria-expanded", "true");
+    await expect(panel).toHaveAttribute("aria-modal", "true");
+    await waitFor(() => expect(london.closest("[inert]")).not.toBeNull());
     await entered(panel);
     await userEvent.keyboard("{Escape}");
     await waitFor(() => expect(usePanelStore.getState().content).toBeNull());

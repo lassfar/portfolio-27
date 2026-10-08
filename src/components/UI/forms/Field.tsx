@@ -2,10 +2,14 @@ import clsx from "clsx";
 import { CAPS_LABEL } from "#/components/UI/text/caps";
 import type { FieldOwnProps, FieldProps } from "#/components/UI/forms/field.types";
 
-/** The line it's written on: it turns peach while focused. */
+/**
+ * The line it's written on: it turns peach while focused. It shows where the field is, so
+ * it stands out at 3:1 (white/40: 3.8:1, WCAG 1.4.11), and its hint reads at 4.5:1
+ * (white/50: 5.2:1, WCAG 1.4.3) (P27-93).
+ */
 const LINE = clsx(
-  "w-full rounded-none border-0 border-b border-white/20 bg-transparent px-0 py-2 transition-colors duration-300 outline-none focus:border-peach",
-  "text-base font-light text-white placeholder:text-white/25 sm:text-lg",
+  "w-full rounded-none border-0 border-b border-white/40 bg-transparent px-0 py-2 transition-colors duration-300 outline-none focus:border-peach",
+  "text-base font-light text-white placeholder:text-white/50 sm:text-lg",
 );
 
 /** Its input's or textarea's own props: all but the field's. */

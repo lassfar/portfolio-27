@@ -3,6 +3,7 @@ import { expect, waitFor, within } from "storybook/test";
 
 import { BOOK_CHAPTERS, titleId } from "#/components/pages/home/book/chapters";
 import { CHAPTER_NAMES } from "#/components/pages/home/story/copy";
+import { contrastOnPage } from "#/stories/contrast";
 import { inCalm } from "#/stories/motion";
 import BookTimeline from "./BookTimeline";
 
@@ -68,6 +69,24 @@ export const Jump: Story = {
     await expect(document.getElementById(titleId("lab"))).toHaveFocus();
     const glyph = starOf("The Lab").querySelector(".story-timeline__glyph")!;
     await expect(getComputedStyle(glyph).animationName).toBe("none");
+  },
+};
+
+/** Focused from the keyboard: the site's focus ring, 3:1 or more (WCAG 1.4.11). Back up on the cover it stays shown while it holds the focus, so the focus isn't lost (2.4.7). */
+export const Focused: Story = {
+  play: async ({ userEvent }) => {
+    document.getElementById("maker")!.scrollIntoView({ behavior: "instant" });
+    await shown();
+    await userEvent.tab();
+    const star = starOf("Origin");
+    await expect(star).toHaveFocus();
+    const ring = getComputedStyle(star);
+    await expect(ring.outlineStyle).toBe("solid");
+    await expect(contrastOnPage(ring.outlineColor)).toBeGreaterThanOrEqual(3);
+    window.scrollTo(0, 0);
+    await new Promise((resolve) => setTimeout(resolve, 700));
+    await expect(star).toHaveFocus();
+    await expect(getComputedStyle(timeline()).visibility).toBe("visible");
   },
 };
 

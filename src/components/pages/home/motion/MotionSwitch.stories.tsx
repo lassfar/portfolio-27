@@ -30,12 +30,12 @@ export default meta;
 
 type Story = StoryObj<typeof meta>;
 
-/** Full motion (as the device asks): not pressed. A click turns calm on, for the whole page, and it's remembered. */
+/** Full motion (as the device asks): not pressed. Its tooltip starts with its name, so it can be called by what it shows (WCAG 2.5.3). A click turns calm on, for the whole page, and it's remembered. */
 export const Default: Story = {
   play: async ({ userEvent }) => {
     const button = await theSwitch();
     await expect(button).toHaveAttribute("aria-pressed", "false");
-    await expect(page().getByText("Calm motion · off")).toBeInTheDocument();
+    await expect(page().getByText("Reduce motion · off")).toBeInTheDocument();
     await userEvent.click(button);
     await expect(button).toHaveAttribute("aria-pressed", "true");
     await expect(document.documentElement.dataset.motion).toBe("calm");
@@ -51,7 +51,7 @@ export const Calm: Story = {
   play: async ({ userEvent }) => {
     const button = await theSwitch();
     await expect(button).toHaveAttribute("aria-pressed", "true");
-    await expect(page().getByText("Calm motion · on")).toBeInTheDocument();
+    await expect(page().getByText("Reduce motion · on")).toBeInTheDocument();
     await userEvent.tab();
     await expect(button).toHaveFocus();
     await userEvent.keyboard(" ");

@@ -1,11 +1,23 @@
 "use client";
 
 import { useEffect, useRef, useState, type ReactNode } from "react";
+import clsx from "clsx";
 import { createPortal } from "react-dom";
 import Lightbox from "#/components/pages/home/gallery/Lightbox";
 import ScenePanel from "./ScenePanel";
 import { usePanelKeys } from "./usePanelKeys";
 import { usePanelModal } from "./usePanelModal";
+
+type Props = {
+  /** What opens them, if it lives here (the journey's scene labels). */
+  children?: ReactNode;
+  /**
+   * The panel is modal in both views (the calm book, P27-93): the page behind is inert and
+   * dims at its edges, as in the full view. Else focus could reach what the side panel
+   * covers (WCAG 2.4.11 Focus Not Obscured).
+   */
+  modal?: boolean;
+};
 
 /**
  * The panel and the photo viewer (P27-80), for the journey (SceneOverlays) and the calm
@@ -23,12 +35,12 @@ import { usePanelModal } from "./usePanelModal";
  * `#smooth-content`, which is `transform`ed, and a transformed ancestor re-bases
  * `position: fixed`.
  */
-const PanelHost = ({ children }: { children?: ReactNode }) => {
+const PanelHost = ({ children, modal = false }: Props) => {
   const [mounted, setMounted] = useState(false);
   const panel = useRef<HTMLElement>(null);
   const viewer = useRef<HTMLDivElement>(null);
   useEffect(() => setMounted(true), []);
-  usePanelModal(panel, viewer, mounted);
+  usePanelModal(panel, viewer, mounted, modal);
   usePanelKeys();
   if (!mounted) return null;
 
@@ -37,9 +49,12 @@ const PanelHost = ({ children }: { children?: ReactNode }) => {
       {children}
       <div
         aria-hidden="true"
-        className="pointer-events-none fixed inset-0 z-48 bg-radial-[120%_90%_at_50%_40%] from-transparent from-25% to-black/80 opacity-0 transition-opacity duration-700 ease-out-quint panel-full:opacity-100"
+        className={clsx(
+          "pointer-events-none fixed inset-0 z-48 bg-radial-[120%_90%_at_50%_40%] from-transparent from-25% to-black/80 opacity-0 transition-opacity duration-700 ease-out-quint",
+          modal ? "panel-open:opacity-100" : "panel-full:opacity-100",
+        )}
       />
-      <ScenePanel ref={panel} />
+      <ScenePanel ref={panel} modal={modal} />
       <Lightbox ref={viewer} />
     </>,
     document.body,

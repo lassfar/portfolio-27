@@ -8,8 +8,10 @@ const focus = (el: Element | null | undefined) => {
 
 /**
  * The panel and the photo viewer as dialogs (P27-80). What's on top is modal — the photo
- * viewer, or the panel in its full view (the side panel leaves the scene usable): the
- * rest of the page is inert, so focus and clicks stay inside. Whatever is closed is inert.
+ * viewer, or the panel in its full view (the side panel leaves the scene usable), or in both
+ * views when `alwaysModal` (the calm book: else focus could reach what the side panel
+ * covers, WCAG 2.4.11): the rest of the page is inert, so focus and clicks stay inside.
+ * Whatever is closed is inert.
  *
  * Focus moves into what opens (its `data-autofocus` control) and comes back where it was
  * opened from: a photo → its card (`data-photo`), the panel → its scene label
@@ -21,6 +23,8 @@ export function usePanelModal(
   viewerRef: RefObject<HTMLElement | null>,
   /** Whether they're in the page yet (portalled after mounting). */
   mounted: boolean,
+  /** The panel is modal in its side view too (the calm book, P27-93). */
+  alwaysModal = false,
 ) {
   const open = usePanelStore(selectIsOpen);
   const view = usePanelStore((s) => s.view);
@@ -38,7 +42,7 @@ export function usePanelModal(
     if (!panel || !viewer) return;
     panel.inert = !open;
     viewer.inert = photo === null;
-    const modal = photo !== null ? viewer : open && view === "full" ? panel : null;
+    const modal = photo !== null ? viewer : open && (alwaysModal || view === "full") ? panel : null;
     const undo = modal ? inertOutside(modal) : undefined;
 
     const was = before.current;
@@ -52,5 +56,5 @@ export function usePanelModal(
       if (label && label.tabIndex >= 0) focus(label);
     }
     return undo;
-  }, [open, view, photo, key, panelRef, viewerRef, mounted]);
+  }, [open, view, photo, key, panelRef, viewerRef, mounted, alwaysModal]);
 }
