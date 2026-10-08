@@ -29,6 +29,15 @@ function canvasRect(canvas: HTMLCanvasElement): DOMRect {
 }
 
 /**
+ * Forgets the canvas (P27-95): on unmount, so a canvas the mode switch removed (and the whole
+ * journey it hung in) isn't kept in memory.
+ */
+export function releaseCanvasRect(): void {
+  rect = null;
+  rectCanvas = null;
+}
+
+/**
  * Project a world-space point to viewport CSS px — where a `position: fixed` label
  * should go — measured on the canvas itself (so it holds wherever the canvas sits and
  * whatever the mobile address bar does). `out` receives x, y and the projected depth z

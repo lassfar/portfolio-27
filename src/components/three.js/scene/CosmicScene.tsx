@@ -71,6 +71,7 @@ import { monotoneCurve } from "./monotoneCurve";
 import { onPerformanceChange, PERFORMANCE, PERFORMANCE_DEFAULTS } from "./performance";
 import { precompile, releaseWarmUp, setWarmUpTarget, whenIdle } from "./warmUp";
 import { sceneFrames } from "./sceneFrames";
+import { releaseCanvasRect } from "./labelProjection";
 import { gpuClass, gpuRenderer, LOWEST_STEP, QUALITY_STEPS, startStep } from "./quality";
 import { createQualityController, type QualityController } from "./qualityController";
 import { recordQualityChange, recordQualityStart } from "./perfReport";
@@ -980,6 +981,7 @@ const ShaderWarmUp = ({
       cancelled = true;
       cancelIdle();
       releaseWarmUp();
+      releaseCanvasRect();
     };
   }, [gl, scene, camera, composerRef, veil]);
   return null;
