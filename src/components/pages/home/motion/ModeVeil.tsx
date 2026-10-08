@@ -37,6 +37,9 @@ const ModeVeil = ({ shown, to, place, slow = false }: Props) => {
   const sky = skyOf(to, place);
   const drawIn = to === "full";
   const here = sky.points[sky.here];
+  // The name sits under its star, kept on screen at the sky's ends.
+  const x = (here.x / SKY.width) * 100;
+  const anchor = x < 20 ? "0" : x > 80 ? "-100%" : "-50%";
 
   return createPortal(
     <div
@@ -52,51 +55,61 @@ const ModeVeil = ({ shown, to, place, slow = false }: Props) => {
       )}
     >
       <div className="flex flex-col items-center gap-4.5 text-center">
-        <svg
-          viewBox={`0 0 ${SKY.width} ${SKY.height}`}
-          aria-hidden="true"
-          className="h-auto w-[min(640px,86vw)] overflow-visible"
-        >
-          {sky.points.slice(1, sky.here + 1).map((p, i) => (
-            <path
-              key={i}
-              d={`M${sky.points[i].x} ${sky.points[i].y} L${p.x} ${p.y}`}
-              pathLength={1}
-              strokeWidth={1.2}
-              className={clsx(
-                "fill-none stroke-peach/55 [stroke-linecap:round]",
-                drawIn &&
-                  "[stroke-dasharray:1] [stroke-dashoffset:1] moving:animate-[veil-draw_260ms_ease-out_both]",
-              )}
-              style={drawIn ? { animationDelay: `${i * 120}ms` } : undefined}
-            />
-          ))}
-          {sky.points.map((p, i) => (
-            <path
-              key={i}
-              d={starPath(p.x, p.y, i === sky.here ? 11 : 6)}
-              className={clsx(
-                i < sky.here && "fill-peach/80",
-                i === sky.here && "fill-peach drop-shadow-[0_0_8px_rgba(255,161,74,0.8)]",
-                i > sky.here && "fill-gray-slate/45",
-              )}
-            />
-          ))}
-          <text
-            x={here.x}
-            y={here.y + 34}
-            textAnchor="middle"
-            className="fill-light-peach/85 font-krone-one text-[9px] tracking-[1.6px] uppercase"
+        {/* As wide as the screen allows, and short enough to leave room for the words on a
+            phone held sideways (P27-95). */}
+        <div className="relative w-[min(640px,86vw,calc((100svh-180px)*3.2))]">
+          <svg
+            viewBox={`0 0 ${SKY.width} ${SKY.height}`}
+            aria-hidden="true"
+            className="h-auto w-full overflow-visible"
+          >
+            {sky.points.slice(1, sky.here + 1).map((p, i) => (
+              <path
+                key={i}
+                d={`M${sky.points[i].x} ${sky.points[i].y} L${p.x} ${p.y}`}
+                pathLength={1}
+                strokeWidth={1.2}
+                className={clsx(
+                  "fill-none stroke-peach/55 [stroke-linecap:round]",
+                  drawIn &&
+                    "[stroke-dasharray:1] [stroke-dashoffset:1] moving:animate-[veil-draw_260ms_ease-out_both]",
+                )}
+                style={drawIn ? { animationDelay: `${i * 120}ms` } : undefined}
+              />
+            ))}
+            {sky.points.map((p, i) => (
+              <path
+                key={i}
+                d={starPath(p.x, p.y, i === sky.here ? 11 : 6)}
+                className={clsx(
+                  i < sky.here && "fill-peach/80",
+                  i === sky.here && "fill-peach drop-shadow-[0_0_8px_rgba(255,161,74,0.8)]",
+                  i > sky.here && "fill-gray-slate/45",
+                )}
+              />
+            ))}
+          </svg>
+          {/* The landing chapter's name: HTML, not the drawing's, so it stays readable however
+            small the sky (11 px; it was 4 px on a phone, P27-95). Said in the eyebrow too. */}
+          <span
+            aria-hidden="true"
+            data-sky-name
+            className="absolute font-krone-one text-[11px] tracking-[1.6px] whitespace-nowrap text-light-peach/85 uppercase"
+            style={{
+              left: `${x}%`,
+              top: `${((here.y + 24) / SKY.height) * 100}%`,
+              translate: `${anchor} 0`,
+            }}
           >
             {sky.name}
-          </text>
-        </svg>
+          </span>
+        </div>
         <p className="font-great-vibes text-[clamp(36px,5vw,58px)] leading-[1.1] text-white">
           <AccentText text={SWITCH.line[to]} />
         </p>
-        <p className={EYEBROW}>
+        <p className={clsx(EYEBROW, "text-balance")}>
           <span className="sr-only">{sky.name}, </span>
-          {sky.where} · {SWITCH.state[to]}
+          {sky.where} · {SWITCH.state[to]}
         </p>
         {slow && <p className="text-sm text-white/70">{SWITCH.slow}</p>}
       </div>

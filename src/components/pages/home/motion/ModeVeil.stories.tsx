@@ -5,6 +5,7 @@ import { BOOK_CHAPTERS } from "#/components/pages/home/book/chapters";
 import { CHAPTER_IDS } from "#/components/pages/home/story/story.types";
 import { contrastOnPage } from "#/stories/contrast";
 import { inCalm } from "#/stories/motion";
+import { sideways } from "#/stories/viewports";
 import ModeVeil from "./ModeVeil";
 
 const veil = () => document.querySelector<HTMLElement>("[data-mode-veil]")!;
@@ -55,7 +56,7 @@ export const IntoCalm: Story = {
     await expect(page.getByText("quieter")).toBeInTheDocument();
     await expect(page.getByText(/Chapter 4 of 7 · Reduce motion on/)).toBeInTheDocument();
     await expect(stars()).toHaveLength(BOOK_CHAPTERS.length);
-    await expect(veil().querySelector("svg text")).toHaveTextContent("The Earth");
+    await expect(veil().querySelector("[data-sky-name]")).toHaveTextContent("The Earth");
     for (const name of animations())
       await expect(name).toMatch(/^transition:(opacity|visibility)$/);
     await shown();
@@ -90,7 +91,7 @@ export const Passage: Story = {
   beforeEach: inCalm,
   play: async () => {
     const page = within(veil());
-    await expect(veil().querySelector("svg text")).toHaveTextContent("The Voyage");
+    await expect(veil().querySelector("[data-sky-name]")).toHaveTextContent("The Voyage");
     await expect(page.getByText(/Between chapters 3 and 4/)).toBeInTheDocument();
     await expect(links()).toHaveLength(2);
   },
@@ -103,6 +104,23 @@ export const Slow: Story = {
     const line = within(veil()).getByText("Bringing the 3D in…");
     await shown();
     await expect(contrastOnPage(getComputedStyle(line).color)).toBeGreaterThanOrEqual(4.5);
+  },
+};
+
+/** On a phone held sideways (here 568 × 320): the stars shrink to leave room for the words, and the chapter's name stays readable (11 px). */
+export const Phone: Story = {
+  ...sideways,
+  play: async () => {
+    await expect(window.innerHeight).toBe(320);
+    await shown();
+    const name = veil().querySelector<HTMLElement>("[data-sky-name]")!;
+    await expect(parseFloat(getComputedStyle(name).fontSize)).toBeGreaterThanOrEqual(11);
+    const card = veil().firstElementChild!.getBoundingClientRect();
+    await expect(card.top).toBeGreaterThanOrEqual(0);
+    await expect(card.bottom).toBeLessThanOrEqual(window.innerHeight);
+    const box = name.getBoundingClientRect();
+    await expect(box.left).toBeGreaterThanOrEqual(0);
+    await expect(box.right).toBeLessThanOrEqual(window.innerWidth);
   },
 };
 
