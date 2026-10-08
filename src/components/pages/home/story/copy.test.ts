@@ -2,7 +2,7 @@ import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import { describe, expect, it } from "vitest";
 import { accentParts } from "#/components/UI/text/accent";
-import { ABOUT, CHAPTER_NAMES, CONTACT, CRAFT, HERO, PASSAGES, VOICE } from "./copy";
+import { ABOUT, BOOK, BRIDGES, CHAPTER_NAMES, CONTACT, CRAFT, HERO, PASSAGES, VOICE } from "./copy";
 import { CHAPTER_IDS } from "./story.types";
 
 /** A text with `*accents*`: it reads the same without the marks, and has a word in peach. */
@@ -41,6 +41,27 @@ describe("the story's words", () => {
     [HERO.headline, ABOUT.title, CRAFT.title, CONTACT.title, CONTACT.thanks.title].forEach(
       expectAccented,
     );
+  });
+
+  it("give the calm book its bridges: one after each chapter but the last two, eight lines with the ending", () => {
+    const chapters = CHAPTER_IDS.filter((id) => !PASSAGES.includes(id));
+    expect(BRIDGES.map((b) => b.after)).toEqual(chapters.slice(0, -2));
+    expect(BRIDGES.flatMap((b) => b.lines).length + 1).toBe(8);
+    // Each passage is told inside the bridge right before its chapter would have come.
+    BRIDGES.forEach((bridge) => {
+      if (!("passage" in bridge)) return;
+      const at = CHAPTER_IDS.indexOf(bridge.passage);
+      expect(CHAPTER_IDS[at - 1], bridge.passage).toBe(bridge.after);
+      expect(bridge.lines, bridge.passage).toHaveLength(2);
+    });
+    expect(BRIDGES.filter((b) => "passage" in b).map((b) => b.passage)).toEqual(PASSAGES);
+    [...BRIDGES.flatMap((b) => b.lines), BOOK.ending].forEach((line) =>
+      expect(line.trim().length, line).toBeGreaterThan(10),
+    );
+  });
+
+  it("give the calm book's own titles a word in peach", () => {
+    Object.values(BOOK.titles).forEach(expectAccented);
   });
 
   it("load none of the 3D: no imports but types, here and in the places and the Lab's card", () => {

@@ -1,7 +1,16 @@
 import type { ComponentPropsWithRef } from "react";
 
-export const DISPLAY_TITLE_SIZES = ["hero", "xl", "lg", "md", "sm", "panel", "panel-side"] as const;
-/** Its size ladder across breakpoints: the hero's headline, the sections' titles (xl → sm), a panel's title. */
+export const DISPLAY_TITLE_SIZES = [
+  "hero",
+  "xl",
+  "lg",
+  "md",
+  "sm",
+  "chapter",
+  "panel",
+  "panel-side",
+] as const;
+/** Its size ladder across breakpoints: the hero's headline, the sections' titles (xl → sm), a calm book chapter's, a panel's title. */
 export type DisplayTitleSize = (typeof DISPLAY_TITLE_SIZES)[number];
 
 export interface DisplayTitleProps extends Omit<ComponentPropsWithRef<"h2">, "children"> {

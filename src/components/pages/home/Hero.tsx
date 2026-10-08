@@ -256,7 +256,7 @@ const Hero = () => {
 
       {/* Contact — the last beat: fades in over the blurred, dimmed galaxy once it
           has fully resolved (and a short pause on it). */}
-      <Contact overlayRef={contactRef} reduced={reduced} />
+      <Contact overlayRef={contactRef} layout={reduced ? "page" : "overlay"} />
     </div>
   );
 };

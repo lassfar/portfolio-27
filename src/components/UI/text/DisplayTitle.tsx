@@ -8,6 +8,7 @@ const SIZE: Record<DisplayTitleSize, string> = {
   lg: "text-6xl leading-none sm:text-7xl md:text-8xl", // Contact
   md: "text-5xl leading-none sm:text-6xl md:text-7xl lg:text-8xl", // The Craft
   sm: "text-5xl leading-none sm:text-6xl", // the thank-you
+  chapter: "text-[clamp(40px,5vw,66px)] leading-[1.02]", // a calm book chapter's, beside its figure (P27-93)
   panel: "text-display-sm sm:text-display", // a panel's full view
   "panel-side": "text-4xl leading-display sm:text-5xl", // the side panel
 };

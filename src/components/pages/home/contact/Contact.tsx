@@ -34,7 +34,8 @@ const sendMessage = (message: ContactMessage) =>
  * thing reverses on scroll-up. This component owns only the markup + the form state
  * (idle → sending → sent → "write another").
  */
-const Contact = ({ overlayRef, reduced }: ContactProps) => {
+const Contact = ({ layout = "overlay", overlayRef, titleId }: ContactProps) => {
+  const page = layout === "page";
   const formRef = useRef<HTMLFormElement | null>(null);
   const [status, setStatus] = useState<Status>("idle");
 
@@ -57,10 +58,9 @@ const Contact = ({ overlayRef, reduced }: ContactProps) => {
   return (
     <div
       ref={overlayRef}
-      id="contact"
       className={clsx(
         "home-contact",
-        reduced
+        page
           ? "relative z-20 min-h-screen"
           : "pointer-events-none invisible absolute inset-0 z-20 opacity-0",
         "flex flex-col items-center justify-center text-center",
@@ -77,14 +77,20 @@ const Contact = ({ overlayRef, reduced }: ContactProps) => {
         className={clsx(
           "home-contact__inner",
           "relative flex w-full max-w-2xl flex-col items-center",
-          reduced ? "pointer-events-auto" : "pointer-events-none",
+          page ? "pointer-events-auto" : "pointer-events-none",
         )}
       >
-        <DisplayTitle size="lg" text={CONTACT.title} className="home-contact__title mb-1" />
+        <DisplayTitle
+          id={titleId}
+          tabIndex={titleId ? -1 : undefined}
+          size="lg"
+          text={CONTACT.title}
+          className="home-contact__title mb-1 outline-none"
+        />
         {/* Its swash draws in once the title has written in (useCosmicJourney). */}
         <Swash
           {...TITLE_SWASH.contact}
-          draw={reduced ? "mount" : "cue"}
+          draw={page ? "mount" : "cue"}
           className="mb-4 w-48 sm:mb-5 sm:w-64"
         />
 

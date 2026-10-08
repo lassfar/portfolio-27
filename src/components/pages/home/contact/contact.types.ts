@@ -1,11 +1,16 @@
 import type { LucideIcon } from "lucide-react";
 import { RefObject } from "react";
 
+/** Where Contact sits: over the journey's galaxy, or on its own page (the calm book). */
+export type ContactLayout = "overlay" | "page";
+
 export type ContactProps = {
-  /** The overlay root — revealed (faded + slid in) by the master journey. */
-  overlayRef: RefObject<HTMLDivElement | null>;
-  /** Reduced motion: laid out in normal flow, shown statically. */
-  reduced: boolean;
+  /** "overlay": over the journey, revealed by it; "page": in the page's flow, shown as it is. */
+  layout?: ContactLayout;
+  /** The overlay's root — revealed (faded + slid in) by the master journey. */
+  overlayRef?: RefObject<HTMLDivElement | null>;
+  /** Its title's id, for the section it heads (`aria-labelledby`): the calm book's rail focuses it. */
+  titleId?: string;
 };
 
 /** What a visitor sends through the form. */

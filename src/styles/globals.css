@@ -209,6 +209,16 @@
 /* `panel-open:` — while a panel is open, in either view (the motion switch steps away). */
 @custom-variant panel-open (&:where([data-panel] *));
 
+/* The calm book scrolls natively (P27-93): while a panel is open the page under it stays put
+   (the journey pauses its ScrollSmoother instead). The scrollbar's room is kept, so nothing
+   shifts when it goes. */
+:root[data-motion="calm"] {
+  scrollbar-gutter: stable;
+}
+:root[data-motion="calm"][data-panel] {
+  overflow: hidden;
+}
+
 @keyframes twinkle {
   0%,
   100% {

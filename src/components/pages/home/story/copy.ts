@@ -81,9 +81,79 @@ export const CONTACT = {
   },
 } as const;
 
-/** The calm book's own words (P27-93): the marks on its figures. */
+/**
+ * The calm book's own words (P27-93): what the journey shows in motion, told in a line, and
+ * the words around its figures. Its chapters' own words are the journey's (above).
+ */
 export const BOOK = {
+  /** Over a chapter: "Chapter 2 · The Maker". */
+  chapter: "Chapter",
+  /** The chapter rail's name. */
+  chapters: "Chapters",
+  /** Under the cover's words. */
+  hint: "Scroll to read · seven short chapters",
+  /** The chapters titled by their figure alone in the journey. */
+  titles: {
+    earth: "The *Earth*",
+    lab: "The *Lab*",
+    "milky-way": "The Milky *Way*",
+  },
+  /** The Craft's second paragraph: how to read its constellation. */
+  craftKey:
+    "Up top, what pulls my eye: photography, drawing, motion. Below, the tools I build with: React, TypeScript, Next.js, GSAP. In the middle, where they meet: Three.js.",
+  /** A place's chip: how many shots it holds. */
+  shots: "shots",
+  /** The Lab's chip. */
+  lab: { name: "Memory card", meta: "open the Lab" },
+  /** The book's last line, alone on its page before Contact. */
+  ending: "And somewhere in all of it, you’re reading this.",
   youAreHere: "You are here",
   closest: "Closest: 6.1 million km",
   probe: "Parker Solar Probe",
+  /** What each figure shows, for screen readers. */
+  figures: {
+    star: "A star drawn in dots: a white-hot core warming to peach, golden dust around it, and four long points of light.",
+    saturn: "Saturn drawn in dots: peach bands on the planet, its rings tilted around it.",
+    craft:
+      "A constellation of what I am drawn to: Photography, Drawing and Motion above; React, TypeScript, Next.js and GSAP below; Three.js / R3F in the middle, where they meet.",
+    earth:
+      "The Earth drawn in dots: peach continents, blue oceans, and pins on London, the New Forest and Morocco.",
+    lab: "The Parker Solar Probe beside a big Sun, on its loops around it, each one closer: the closest passes 6.1 million km from the Sun.",
+    galaxy:
+      "The Milky Way drawn in dots: a warm core, spiral arms of peach and blue, and one dot marked “You are here”.",
+  },
 } as const;
+
+/** A bridge: one or two lines after a chapter; a passage sits between the two, in its voice. */
+type Bridge = {
+  after: ChapterId;
+  lines: readonly [string] | readonly [string, string];
+  passage?: ChapterId;
+};
+
+/**
+ * The calm book's bridges (P27-93): between its chapters, a line in Aymane's voice says what
+ * the motion used to show. The Voyage and The Way Out aren't chapters in the book: their
+ * voice lines sit between their bridge's two lines.
+ */
+export const BRIDGES = [
+  { after: "origin", lines: ["A star burst. From its dust, a planet took shape."] },
+  { after: "maker", lines: ["Every world is made of smaller things. These are mine."] },
+  {
+    after: "craft",
+    passage: "voyage",
+    lines: [
+      "Then I stepped back, far enough to see the whole system.",
+      "Down to the third planet: the places I carry with me.",
+    ],
+  },
+  { after: "earth", lines: ["Out past the Earth, a small probe keeps looping toward the Sun."] },
+  {
+    after: "lab",
+    passage: "way-out",
+    lines: [
+      "From the probe, back out to the whole system.",
+      "Further still, until the Sun is one star among billions.",
+    ],
+  },
+] as const satisfies readonly Bridge[];
