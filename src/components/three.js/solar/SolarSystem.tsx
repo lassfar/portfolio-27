@@ -15,10 +15,6 @@ import { flyingSunPos } from "#/components/three.js/galaxy/spin";
 import { PERFORMANCE } from "#/components/three.js/scene/performance";
 import { setHexIfChanged } from "#/components/three.js/scene/colorCache";
 
-type Props = {
-  animate?: boolean;
-};
-
 /**
  * The solar system the Saturn belongs to — the sun blazing at the centre and the
  * planets on their real orbits around it (see orbits.ts), with the asteroid belt
@@ -31,7 +27,7 @@ type Props = {
  * The camera flies back to reveal it; the bodies fade in over the reveal window
  * (`useVoyageScroll`) and move on the system's clock (`systemTime`).
  */
-const SolarSystem = ({ animate = true }: Props) => {
+const SolarSystem = () => {
   const sysRef = useRef<Group>(null);
   const rotRef = useRef<Group>(null);
   useFrame(() => {
@@ -50,7 +46,7 @@ const SolarSystem = ({ animate = true }: Props) => {
   return (
     <group ref={sysRef} position={SUNPOS}>
       <group ref={rotRef}>
-        <Sun animate={animate} />
+        <Sun />
 
         {/* The orbit lines — the real ovals (shown while SOLAR.ring.visible). */}
         {PLANETS.map((def) => (
@@ -66,7 +62,7 @@ const SolarSystem = ({ animate = true }: Props) => {
         <AsteroidBelt />
 
         {PLANETS.map((def) => (
-          <OrbitingPlanet key={def.id} def={def} animate={animate} />
+          <OrbitingPlanet key={def.id} def={def} />
         ))}
       </group>
     </group>

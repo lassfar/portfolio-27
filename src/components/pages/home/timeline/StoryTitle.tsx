@@ -20,19 +20,17 @@ gsap.registerPlugin(useGSAP, SplitText);
  * chapter's title writes in letter by letter. The names are the one naming of the site
  * (STORY_CHAPTERS), shared with the timeline and the navigation assistant.
  *
- * Portalled to the body (ScrollSmoother's transformed content re-bases `fixed`); with
- * reduced motion the journey isn't pinned, so there's no story to follow.
+ * Portalled to the body (ScrollSmoother's transformed content re-bases `fixed`). Only
+ * with motion: the calm mode reads the book instead (P27-93).
  */
 const StoryTitle = () => {
   const [mounted, setMounted] = useState(false);
-  const [reduced, setReduced] = useState(false);
   const [index, setIndex] = useState(-1);
   const root = useRef<HTMLDivElement>(null);
   const label = useRef<HTMLSpanElement>(null);
 
   useEffect(() => {
     setMounted(true);
-    setReduced(window.matchMedia("(prefers-reduced-motion: reduce)").matches);
     const update = (mp: number) => setIndex(chapterAt(STORY_CHAPTERS, mp));
     update(useJourneyScroll.getState().progress);
     return useJourneyScroll.subscribe((s) => update(s.progress));
@@ -56,7 +54,7 @@ const StoryTitle = () => {
     { dependencies: [index, mounted], scope: root, revertOnUpdate: true },
   );
 
-  if (!mounted || reduced) return null;
+  if (!mounted) return null;
 
   return createPortal(
     <div ref={root} className={clsx("story-title", STEP_BACK_IN_FULL_VIEW)} aria-hidden="true">

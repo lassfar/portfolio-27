@@ -28,9 +28,9 @@ type Options = {
  * Adds a scroll-scrubbed "write-in" onto an existing GSAP timeline: each piece
  * (word or char) rises + fades in — the SAME motion as the big-title write-in
  * (`useTextsWritingMotion`) — but driven by the timeline's scrub across
- * `[at, at + duration]` instead of playing once. Mirrors `addTextsScrollFill`'s
- * shape (mutates the passed timeline, returns the SplitText instances for
- * cleanup) and honours reduced motion by leaving the text in place.
+ * `[at, at + duration]` instead of playing once. Mutates the passed timeline and
+ * returns the SplitText instances for cleanup. The journey's only (with motion: the
+ * calm mode reads the book, P27-93).
  */
 export function addTextsScrollWriteIn(
   timeline: gsap.core.Timeline,
@@ -46,10 +46,6 @@ export function addTextsScrollWriteIn(
         : null,
     )
     .filter((s): s is SplitText => s !== null);
-
-  const reduce =
-    typeof window !== "undefined" && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-  if (reduce) return splits; // stay in place, no write-in
 
   const totalWeight = elements.reduce((sum, el) => sum + (el.weight ?? 1), 0);
 

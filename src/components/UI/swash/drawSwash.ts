@@ -18,7 +18,7 @@ const SWASH_DRAW = { duration: 1.2, ease: "power4.out", autoRound: false } as co
 
 const strokeOf = (swash: Element | null) => swash?.querySelector("path") ?? null;
 
-/** Hides a swash's line until something draws it. With reduced motion it stays drawn. */
+/** Hides a swash's line until something draws it. In calm motion it stays drawn. */
 export function hideSwash(swash: Element | null): void {
   const stroke = strokeOf(swash);
   if (stroke && !isCalm()) gsap.set(stroke, { strokeDashoffset: HIDDEN });
@@ -26,7 +26,7 @@ export function hideSwash(swash: Element | null): void {
 
 /**
  * Draws a swash's line in on its own, after `delay` seconds — a swash that isn't part of
- * a timeline (`Swash draw="mount"`, e.g. "Thank you"). With reduced motion it's shown.
+ * a timeline (`Swash draw="mount"`, e.g. "Thank you"). In calm motion it's shown.
  */
 export function drawSwash(swash: Element | null, delay = 0): void {
   const stroke = strokeOf(swash);
@@ -43,7 +43,7 @@ export function drawSwash(swash: Element | null, delay = 0): void {
 /**
  * Adds a swash's draw to a GSAP timeline at `position` — as a step of its content's own
  * animation (a section title's write-in, a panel's entrance), so it plays and reverses
- * with it. With reduced motion it's left drawn.
+ * with it. In calm motion it's left drawn.
  */
 export function addSwashDraw(
   timeline: gsap.core.Timeline,

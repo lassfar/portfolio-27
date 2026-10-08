@@ -36,7 +36,6 @@ import { pointPixelRatio } from "#/components/three.js/scene/quality";
 import { createTouchAxisLock } from "#/components/three.js/scene/touchAxisLock";
 
 type Props = {
-  animate?: boolean;
   /** Master enable for pointer-drag (drag is additionally gated to the Earth phase). */
   interactive?: boolean;
 };
@@ -173,7 +172,7 @@ function toGeometry(dots: DotBuffers): BufferGeometry {
  * and it resumes a gentle idle self-spin. It fades in with the system. City
  * photo-pins hang off it in M3.
  */
-const DottedEarth = ({ animate = true, interactive = true }: Props) => {
+const DottedEarth = ({ interactive = true }: Props) => {
   const sceneMirrorRef = useRef<Group>(null);
   const tiltRef = useRef<Group>(null);
   const spinRef = useRef<Group>(null);
@@ -341,7 +340,7 @@ const DottedEarth = ({ animate = true, interactive = true }: Props) => {
       // Dots keep their on-screen size at any canvas resolution (the quality tiers).
       dotMatRef.current.uniforms.uPixelRatio.value = pointPixelRatio(state.viewport.dpr);
       dotMatRef.current.uniforms.uReveal.value = r;
-      if (animate) dotMatRef.current.uniforms.uTime.value += delta; // twinkle
+      dotMatRef.current.uniforms.uTime.value += delta; // twinkle
       // Light from the ACTUAL sun: direction Earth → sun, in view space.
       const a = useEarthAnchor.getState();
       sunDir.current
@@ -385,7 +384,7 @@ const DottedEarth = ({ animate = true, interactive = true }: Props) => {
     // Idle self-spin (a planet's day) whenever the Earth is visible; it pauses
     // ONLY while the globe itself is being dragged (a scene drag leaves the auto-
     // rotation playing), and resumes a beat after a globe drag is released.
-    if (animate && r > 0.001) {
+    if (r > 0.001) {
       const globeDragging = dragging.current && dragMode.current === "globe";
       if (!globeDragging) {
         sinceRelease.current += delta;

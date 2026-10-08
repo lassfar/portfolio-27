@@ -35,7 +35,7 @@ const AROUND_PER_VIEW = 11;
  * (`GALAXY_FX.sparkles.fadeIn`). Rendered inside the galaxy's display-space layer
  * (see `Galaxy.tsx`), like the prototype.
  */
-const GalaxySparkles = ({ animate = true }: { animate?: boolean }) => {
+const GalaxySparkles = () => {
   const ref = useRef<Points>(null);
   const camera = useThree((s) => s.camera) as PerspectiveCamera;
   const width = useThree((s) => s.size.width);
@@ -126,7 +126,7 @@ const GalaxySparkles = ({ animate = true }: { animate?: boolean }) => {
     material.uniforms.uSparkSize.value = SP.size; // live-tunable (GalaxyGui)
     material.uniforms.uSpikes.value = SP.spikes;
     material.uniforms.uPixelRatio.value = dpr;
-    if (animate) material.uniforms.uTime.value += delta;
+    material.uniforms.uTime.value += delta;
   });
 
   return (

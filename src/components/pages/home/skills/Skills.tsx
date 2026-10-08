@@ -85,11 +85,9 @@ export function addConstellationAssembly(
 type Props = {
   /** The overlay root — driven (slide up + fade out) by the master journey. */
   overlayRef: RefObject<HTMLDivElement | null>;
-  /** Reduced motion: lay out in normal flow instead of an absolute overlay. */
-  reduced?: boolean;
 };
 
-const Skills = ({ overlayRef, reduced = false }: Props) => {
+const Skills = ({ overlayRef }: Props) => {
   // Generate the faint starfield on the client only (avoids SSR hydration
   // mismatch from Math.random).
   const [stars, setStars] = useState<Star[]>([]);
@@ -124,13 +122,11 @@ const Skills = ({ overlayRef, reduced = false }: Props) => {
         // An opaque overlay that slides up OVER the built Saturn, then fades out
         // to reveal it again — both driven by the master journey (renderCraft).
         // Starts parked below the fold; the journey sets transform/opacity.
-        reduced
-          ? "relative z-30 min-h-screen"
-          : "pointer-events-none absolute inset-0 z-30 will-change-[transform,opacity]",
+        "pointer-events-none absolute inset-0 z-30 will-change-[transform,opacity]",
         "overflow-hidden bg-rich-black",
         "flex flex-col items-center justify-center px-4 py-20",
       )}
-      style={reduced ? undefined : { transform: "translateY(100%)" }}
+      style={{ transform: "translateY(100%)" }}
     >
       {/* Faint starfield background */}
       <div className="pointer-events-none absolute inset-0">
@@ -168,7 +164,7 @@ const Skills = ({ overlayRef, reduced = false }: Props) => {
       {/* Its swash draws in once the title has written in (useCosmicJourney). */}
       <Swash
         {...TITLE_SWASH.craft}
-        draw={reduced ? "mount" : "cue"}
+        draw="cue"
         className="relative z-10 mt-1 w-48 sm:w-64 md:w-96 lg:w-120"
       />
       <p

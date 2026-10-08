@@ -13,7 +13,6 @@ import { pointPixelRatio } from "#/components/three.js/scene/quality";
 type Props = {
   /** Particle count (set adaptively by the parent for perf). */
   count?: number;
-  animate?: boolean;
 };
 
 // Cumulative probabilities that place a particle in each layer of the sphere.
@@ -54,9 +53,9 @@ const FaceCamera = ({ children }: { children: ReactNode }) => {
  * adds the central blue light.
  *
  * On scroll it bursts outward and fades; on drag it spins. All colours and
- * timing live in `config.ts`. Freezes when `animate` is false (reduced motion).
+ * timing live in `config.ts`.
  */
-const Nebula = ({ count = PARTICLES.count, animate = true }: Props) => {
+const Nebula = ({ count = PARTICLES.count }: Props) => {
   const pointsRef = useRef<Points>(null);
   const materialRef = useRef<ShaderMaterial>(null);
   const glowMatRef = useRef<ShaderMaterial>(null);
@@ -152,7 +151,7 @@ const Nebula = ({ count = PARTICLES.count, animate = true }: Props) => {
     const nearFade = PERFORMANCE.burstFade;
     u.uNearA.value = nearFade ? PARTICLES.nearFade[0] : -2;
     u.uNearB.value = nearFade ? PARTICLES.nearFade[1] : -1;
-    if (animate) u.uTime.value += delta;
+    u.uTime.value += delta;
 
     const progress = useHeroScroll.getState().progress;
 

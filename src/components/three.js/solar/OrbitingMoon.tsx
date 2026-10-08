@@ -11,7 +11,6 @@ import { ORBIT_PRIORITY } from "./planetTuning";
 
 type Props = {
   moon: MoonDef;
-  animate: boolean;
   /** Its visibility (0..1) — its planet's. */
   reveal: () => number;
 };
@@ -21,7 +20,7 @@ type Props = {
  * where it really is today, at its real period on its system's pace. Tidally locked —
  * its spin follows its orbit, so the same face always points at its planet.
  */
-const OrbitingMoon = ({ moon, animate, reveal }: Props) => {
+const OrbitingMoon = ({ moon, reveal }: Props) => {
   const orbitRef = useRef<Group>(null);
   const time = useRef(0);
 
@@ -34,7 +33,6 @@ const OrbitingMoon = ({ moon, animate, reveal }: Props) => {
     <group ref={orbitRef}>
       <DottedBody
         body={moon}
-        animate={animate}
         reveal={reveal}
         spinAngle={() => moonLongitudeAt(moon, time.current)}
       />

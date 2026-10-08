@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState, type RefObject } from "react";
+import { useRef, type RefObject } from "react";
 import dynamic from "next/dynamic";
 import useTextsWritingMotion from "#/components/hooks/motions/texts/useTextsWritingMotion";
 import SunriseLogo from "#/components/assets/pictures/logos/sunrise-logo";
@@ -103,23 +103,16 @@ const HeroMotion = ({
 
     // Intro scene spin — runs over the SAME duration as this text intro, so the
     // cosmos finishes turning exactly when the text has landed. Full speed
-    // immediately (ease-out). Skipped for reduced motion.
-    const reduceMotion =
-      typeof window !== "undefined" &&
-      window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    // immediately (ease-out).
     const setIntro = useSceneIntro.getState().setProgress;
-    if (reduceMotion) {
-      setIntro(1);
-    } else {
-      const spin = { v: 0 };
-      setIntro(0);
-      gsap.to(spin, {
-        v: 1,
-        duration: tl.totalDuration(),
-        ease: "power2.out",
-        onUpdate: () => setIntro(spin.v),
-      });
-    }
+    const spin = { v: 0 };
+    setIntro(0);
+    gsap.to(spin, {
+      v: 1,
+      duration: tl.totalDuration(),
+      ease: "power2.out",
+      onUpdate: () => setIntro(spin.v),
+    });
   });
 
   // The whole cosmic journey — one pinned ScrollTrigger drives the star, the
@@ -156,25 +149,9 @@ const Hero = () => {
   const craftRef = useRef<HTMLDivElement | null>(null);
   const contactRef = useRef<HTMLDivElement | null>(null);
 
-  // Detect reduced motion on the client (initial false → matches SSR, no
-  // hydration mismatch). In reduced motion the overlays lay out in normal flow.
-  const [reduced, setReduced] = useState(false);
-  useEffect(() => {
-    setReduced(window.matchMedia("(prefers-reduced-motion: reduce)").matches);
-  }, []);
-
   // "To wander": glide to The Maker (P27-91), the star bursting and Saturn forming on the
-  // way, onto the About text. Without the pinned journey (reduced motion), just scroll on down.
-  const handleWander = () => {
-    if (goTo("maker", { by: "hero" })) return;
-    const y = window.innerHeight * 1.2;
-    const smoother = ScrollSmoother.get();
-    if (smoother) {
-      smoother.scrollTo(y, true);
-    } else {
-      window.scrollTo({ top: y, behavior: "smooth" });
-    }
-  };
+  // way, onto the About text.
+  const handleWander = () => goTo("maker", { by: "hero" });
 
   return (
     <>
@@ -249,9 +226,7 @@ const Hero = () => {
           ref={aboutRevealRef}
           className={clsx(
             "home-about__reveal",
-            reduced
-              ? "relative z-20 min-h-screen"
-              : "pointer-events-none absolute inset-0 z-20 opacity-0",
+            "pointer-events-none absolute inset-0 z-20 opacity-0",
             "flex flex-col items-center justify-center text-center",
             // Phones: clear of the story title (left) and the timeline (right).
             "px-12 sm:px-6",
@@ -266,7 +241,7 @@ const Hero = () => {
           {/* Its swash draws in once the title has written in (useCosmicJourney). */}
           <Swash
             {...TITLE_SWASH.maker}
-            draw={reduced ? "mount" : "cue"}
+            draw="cue"
             className="mb-7 w-56 sm:mb-9 sm:w-72 md:w-110 lg:w-150"
           />
 
@@ -296,13 +271,12 @@ const Hero = () => {
 
         {/* The Craft — folded into the journey as an overlay: slides up over the
           built Saturn, its constellation assembles, then it fades out to reveal
-          the Saturn for the fly-away. (Relative, in normal flow, for reduced
-          motion.) */}
-        <Skills overlayRef={craftRef} reduced={reduced} />
+          the Saturn for the fly-away. */}
+        <Skills overlayRef={craftRef} />
 
         {/* Contact — the last beat: fades in over the blurred, dimmed galaxy once it
           has fully resolved (and a short pause on it). */}
-        <Contact overlayRef={contactRef} layout={reduced ? "page" : "overlay"} />
+        <Contact overlayRef={contactRef} />
       </div>
       {/* After the root, not in it: by then its ref (the pin's trigger) is set too. */}
       {live && (

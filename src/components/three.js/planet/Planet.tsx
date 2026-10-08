@@ -11,7 +11,6 @@ import Rings from "./Rings";
 import { ASSEMBLY, PLANET, RING, ROTATION, TILT } from "./config";
 
 type Props = {
-  animate?: boolean;
   planetCount?: number;
   ringCount?: number;
   /** Attach the pointer-drag handler. Off in the shared scene (the star owns drag). */
@@ -33,7 +32,6 @@ type Props = {
  * timing / feel constants live in `config.ts`.
  */
 const Planet = ({
-  animate = true,
   planetCount = PLANET.count,
   ringCount = RING.count,
   interactive = true,
@@ -91,7 +89,7 @@ const Planet = ({
     // Gentle self-rotation on the planet's own (tilted) axis — but only once
     // built. While assembling it's parked at a fixed phase so the body can land
     // on a deterministic pose.
-    if (animate && spinGroupRef.current) {
+    if (spinGroupRef.current) {
       if (built >= 1) {
         spinGroupRef.current.rotation.y += delta * ROTATION.idleSpin;
       } else {
@@ -134,8 +132,8 @@ const Planet = ({
     <group ref={dragGroupRef}>
       <group rotation={[TILT.x, 0, TILT.z]}>
         <group ref={spinGroupRef}>
-          <PlanetBody count={planetCount} animate={animate} />
-          <Rings count={ringCount} animate={animate} />
+          <PlanetBody count={planetCount} />
+          <Rings count={ringCount} />
         </group>
       </group>
     </group>

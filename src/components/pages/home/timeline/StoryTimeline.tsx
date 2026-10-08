@@ -26,12 +26,10 @@ import type { StoryTimelineRest, StoryTimelineToast } from "./StoryTimeline.type
  *
  * Portalled to the body, like the Earth gallery and the Lab: the page content lives in
  * ScrollSmoother's transformed `#smooth-content`, which would re-base
- * `position: fixed`. With reduced motion the journey isn't pinned (no story to track),
- * so there's no timeline.
+ * `position: fixed`. Only with motion: the calm mode reads the book instead (P27-93).
  */
 const StoryTimeline = () => {
   const [mounted, setMounted] = useState(false);
-  const [reduced, setReduced] = useState(false);
   const [phone, setPhone] = useState(false);
   const [viewport, setViewport] = useState({ width: 0, height: 0 });
   const [current, setCurrent] = useState(0);
@@ -51,23 +49,19 @@ const StoryTimeline = () => {
     [minGap, railPx],
   );
 
-  // The viewport: reduced motion, the phone layout, and its height (the rail's, for the gaps).
+  // The viewport: the phone layout, and its height (the rail's, for the gaps).
   useEffect(() => {
     setMounted(true);
-    const motion = window.matchMedia("(prefers-reduced-motion: reduce)");
     const small = window.matchMedia(`(max-width: ${TIMELINE.phoneMaxWidth}px)`);
     const measure = () => {
-      setReduced(motion.matches);
       setPhone(small.matches);
       setViewport({ width: window.innerWidth, height: window.innerHeight });
     };
     measure();
     window.addEventListener("resize", measure);
-    motion.addEventListener("change", measure);
     small.addEventListener("change", measure);
     return () => {
       window.removeEventListener("resize", measure);
-      motion.removeEventListener("change", measure);
       small.removeEventListener("change", measure);
     };
   }, []);
@@ -126,7 +120,7 @@ const StoryTimeline = () => {
     goTo(STORY_CHAPTERS[index].id, { seconds: TIMELINE.glideSeconds, by: "timeline" });
   }, []);
 
-  if (!mounted || reduced) return null;
+  if (!mounted) return null;
 
   // (A wrapper steps it back in the full view: the rail's own CSS sets its opacity.)
   return createPortal(

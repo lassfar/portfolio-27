@@ -15,16 +15,15 @@ import { pointPixelRatio } from "#/components/three.js/scene/quality";
 type Props = {
   /** Particle count (set adaptively by the parent for perf). */
   count?: number;
-  animate?: boolean;
 };
 
 /**
  * The rings: a razor-thin particle disk in the equatorial plane, with the
  * Cassini division (an empty gap band) and fine radial brightness banding.
  * Icy — pale baby-blue fading to white. Unlit (full colour), with a faint
- * shimmer. Freezes when `animate` is false.
+ * shimmer.
  */
-const Rings = ({ count = RING.count, animate = true }: Props) => {
+const Rings = ({ count = RING.count }: Props) => {
   const pointsRef = useRef<Points>(null);
   const materialRef = useRef<ShaderMaterial>(null);
 
@@ -105,7 +104,7 @@ const Rings = ({ count = RING.count, animate = true }: Props) => {
     if (!m) return;
     // Dots keep their on-screen size at any canvas resolution (the quality tiers).
     m.uniforms.uPixelRatio.value = pointPixelRatio(state.viewport.dpr);
-    if (animate) m.uniforms.uTime.value += delta;
+    m.uniforms.uTime.value += delta;
     // Assembly + fade-in driven by the shared progress (hidden during the star
     // phase, fades in as the star bursts, then assembles into the ring).
     const progress = useAboutScroll.getState().progress;

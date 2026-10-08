@@ -88,7 +88,6 @@ type Props = {
   count: number;
   /** Bumped by the dev panel when a shape value changes — rebuilds the dots. */
   version: number;
-  animate: boolean;
   /** The Sun's clock + reveal (shared with the dotted shell, so they stay in step). */
   time: { value: number };
   reveal: { value: number };
@@ -109,7 +108,7 @@ type Props = {
  * Additive, so the grains fuse into light. Same recipe + values as the original Sun.
  * Every value is live-tunable from the dev panel (SunGui); shape values rebuild the dots.
  */
-const SunCore = ({ count, version, animate, time, reveal, renderOrder }: Props) => {
+const SunCore = ({ count, version, time, reveal, renderOrder }: Props) => {
   const pointsRef = useRef<Points>(null);
   const haloRef = useRef<Sprite>(null);
   const haloMatRef = useRef<SpriteMaterial>(null);
@@ -199,8 +198,7 @@ const SunCore = ({ count, version, animate, time, reveal, renderOrder }: Props) 
     setHexIfChanged(u.uEdge.value, SUN_CORE.edge);
     setHexIfChanged(u.uCorona.value, SUN_CORE.corona);
     u.uSplit.value = SUN_CORE.gradientSplit;
-    if (animate && !SUN.paused && pointsRef.current)
-      pointsRef.current.rotation.y += delta * SUN_CORE.spin;
+    if (!SUN.paused && pointsRef.current) pointsRef.current.rotation.y += delta * SUN_CORE.spin;
     if (haloRef.current) {
       const size = SUN.radius * SUN_CORE.glowSize;
       haloRef.current.scale.set(size, size, 1);

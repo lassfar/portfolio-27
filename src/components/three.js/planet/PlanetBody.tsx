@@ -137,7 +137,6 @@ function toGeometry(dots: SaturnDots): BufferGeometry {
 type Props = {
   /** Particle count (set adaptively by the parent for perf). */
   count?: number;
-  animate?: boolean;
 };
 
 /**
@@ -146,9 +145,9 @@ type Props = {
  * it keeps a lit and a shadowed side as it spins. Churns on simplex noise for
  * the grainy, "dotty" surface.
  *
- * All palette / sizing live in `config.ts`. Freezes when `animate` is false.
+ * All palette / sizing live in `config.ts`.
  */
-const PlanetBody = ({ count = PLANET.count, animate = true }: Props) => {
+const PlanetBody = ({ count = PLANET.count }: Props) => {
   const pointsRef = useRef<Points>(null);
   const materialRef = useRef<ShaderMaterial>(null);
   // Before it assembles and once it has faded out (from the Earth dive on), its shader
@@ -214,7 +213,7 @@ const PlanetBody = ({ count = PLANET.count, animate = true }: Props) => {
     if (!m) return;
     // Dots keep their on-screen size at any canvas resolution (the quality tiers).
     m.uniforms.uPixelRatio.value = pointPixelRatio(state.viewport.dpr);
-    if (animate) m.uniforms.uTime.value += delta;
+    m.uniforms.uTime.value += delta;
     // Assembly + fade-in are both driven by the shared progress, so the planet
     // is invisible during the star phase (progress 0), fades in as the star
     // bursts, then assembles. (Reduced motion leaves progress at 0 → hidden.)

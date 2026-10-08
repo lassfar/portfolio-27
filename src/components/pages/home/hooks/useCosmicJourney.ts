@@ -73,18 +73,6 @@ export default function useCosmicJourney(refs: CosmicJourneyRefs): void {
 
   useGSAP(
     () => {
-      const reduce =
-        typeof window !== "undefined" &&
-        window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-      if (reduce) {
-        // No journey: show the About copy, the Craft and the Contact statically
-        // (the host flips the overlays to normal flow); the planet stays hidden.
-        gsap.set(aboutRevealRef.current, { autoAlpha: 1, y: 0 });
-        gsap.set(craftRef.current, { autoAlpha: 1, y: 0, clearProps: "transform" });
-        gsap.set(contactRef.current, { autoAlpha: 1, y: 0 });
-        return;
-      }
-
       const setStar = useHeroScroll.getState().setProgress;
       const setAbout = useAboutScroll.getState().setProgress;
       const setVoyage = useVoyageScroll.getState().setProgress;

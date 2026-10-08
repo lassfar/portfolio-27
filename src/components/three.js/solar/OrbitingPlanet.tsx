@@ -13,7 +13,6 @@ import { siblingReveal } from "./reveal";
 
 type Props = {
   def: PlanetDef;
-  animate?: boolean;
 };
 
 /**
@@ -23,7 +22,7 @@ type Props = {
  * DottedBody. Fades with the system (in with it, out for the Earth dive, back for the
  * finale).
  */
-const OrbitingPlanet = ({ def, animate = true }: Props) => {
+const OrbitingPlanet = ({ def }: Props) => {
   const orbitRef = useRef<Group>(null);
 
   useFrame((state) => {
@@ -34,14 +33,9 @@ const OrbitingPlanet = ({ def, animate = true }: Props) => {
 
   return (
     <group ref={orbitRef}>
-      <DottedBody
-        body={def}
-        animate={animate}
-        reveal={siblingReveal}
-        spinRate={() => SOLAR_MOTION.dayPace / def.day}
-      >
+      <DottedBody body={def} reveal={siblingReveal} spinRate={() => SOLAR_MOTION.dayPace / def.day}>
         {MOONS.filter((m) => m.parent === def.id).map((moon) => (
-          <OrbitingMoon key={moon.id} moon={moon} animate={animate} reveal={siblingReveal} />
+          <OrbitingMoon key={moon.id} moon={moon} reveal={siblingReveal} />
         ))}
       </DottedBody>
     </group>

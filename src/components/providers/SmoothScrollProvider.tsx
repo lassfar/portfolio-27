@@ -18,13 +18,6 @@ type SmootherProps = {
 /** Creates the smoother (and kills it when it unmounts). Renders nothing. */
 const Smoother = ({ wrapperRef, contentRef, onReady }: SmootherProps) => {
   useGSAP(() => {
-    // Respect users who prefer reduced motion — skip smoothing entirely.
-    const prefersReducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-    if (prefersReducedMotion) {
-      onReady();
-      return;
-    }
-
     const smoother = ScrollSmoother.create({
       wrapper: wrapperRef.current,
       content: contentRef.current,

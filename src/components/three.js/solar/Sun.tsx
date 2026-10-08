@@ -22,10 +22,6 @@ import SunCore from "./SunCore";
 import { useSunTuning } from "./tuning";
 import { setHexIfChanged } from "#/components/three.js/scene/colorCache";
 
-type Props = {
-  animate?: boolean;
-};
-
 /** Dots built per step of the build queue (~a fraction of a ms each). */
 const BUILD_STEP = 2000;
 
@@ -95,7 +91,7 @@ function toShellGeometry(dots: ShellDots): BufferGeometry {
  * Fades in with the system, out for the Earth dive, back in for the galaxy finale.
  * Every value is live-tunable from the dev panel (SunGui); shape values rebuild the dots.
  */
-const Sun = ({ animate = true }: Props) => {
+const Sun = () => {
   const dpr = useThree((s) => s.viewport.dpr);
   const isSmall = typeof window !== "undefined" && window.innerWidth < 768;
   const version = useSunTuning((s) => s.version); // bumped by the panel's shape values
@@ -167,7 +163,7 @@ const Sun = ({ animate = true }: Props) => {
   useDrawGate(nearRef, () => shared.uReveal.value > 0);
 
   useFrame((_, delta) => {
-    if (animate && !SUN.paused) shared.uTime.value += delta;
+    if (!SUN.paused) shared.uTime.value += delta;
     shared.uRadius.value = SUN.radius;
     // Live values (the dev panel tunes SUN in place).
     for (const m of dotMaterials) {
@@ -213,7 +209,6 @@ const Sun = ({ animate = true }: Props) => {
       <SunCore
         count={isSmall ? SUN_CORE.countMobile : SUN_CORE.count}
         version={version}
-        animate={animate}
         time={shared.uTime}
         reveal={shared.uReveal}
         renderOrder={-2}

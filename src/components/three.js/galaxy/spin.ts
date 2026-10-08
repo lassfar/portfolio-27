@@ -30,14 +30,14 @@ import {
 export const galaxySpin = { solar: 0 };
 
 /** Advance (or reset) the solar fly angle. Called once per frame by the Galaxy. */
-export function advanceSolarFly(delta: number, animate: boolean): void {
+export function advanceSolarFly(delta: number): void {
   const g = clamp01(useGalaxyScroll.getState().progress);
   if (g < GALAXY.flyResetBelow) {
     galaxySpin.solar = 0; // back at the Voyager: reset (the view moves with it — see flyOffset)
     return;
   }
   if (g < GALAXY.flyFrom) return; // the system is still hidden: hold it where it is
-  if (animate && !GALAXY.paused) galaxySpin.solar += GALAXY.spinSpeed * delta;
+  if (!GALAXY.paused) galaxySpin.solar += GALAXY.spinSpeed * delta;
 }
 
 const _tiltEuler = new Euler();

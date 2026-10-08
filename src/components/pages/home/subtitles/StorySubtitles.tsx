@@ -41,21 +41,17 @@ const PLACEMENT: Record<SubtitlePlacement, string> = {
  * hear each line as it shows (a polite live region; the visible copies are hidden from
  * them). Only a change of line re-renders.
  *
- * Portalled to the body (ScrollSmoother's transformed content re-bases `fixed`); with
- * reduced motion the journey isn't pinned, so there's no story to subtitle.
+ * Portalled to the body (ScrollSmoother's transformed content re-bases `fixed`). Only
+ * with motion: the calm mode reads the book instead (P27-93).
  */
 const StorySubtitles = () => {
   const [mounted, setMounted] = useState(false);
-  const [reduced, setReduced] = useState(false);
   const [active, setActive] = useState(-1);
 
-  useEffect(() => {
-    setMounted(true);
-    setReduced(window.matchMedia("(prefers-reduced-motion: reduce)").matches);
-  }, []);
+  useEffect(() => setMounted(true), []);
 
   useEffect(() => {
-    if (!mounted || reduced) return;
+    if (!mounted) return;
     let lastMp = useJourneyScroll.getState().progress;
     let lastTime = performance.now();
     let speed = 0; // scroll % per second, smoothed
@@ -101,9 +97,9 @@ const StorySubtitles = () => {
       unsubscribeGlide();
       window.clearTimeout(settle);
     };
-  }, [mounted, reduced]);
+  }, [mounted]);
 
-  if (!mounted || reduced) return null;
+  if (!mounted) return null;
 
   return createPortal(
     <div className={clsx("story-subtitles", STEP_BACK_IN_FULL_VIEW)}>

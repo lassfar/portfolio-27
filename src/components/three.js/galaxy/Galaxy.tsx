@@ -95,7 +95,7 @@ import {
  * edges); and a drag turns the galaxy and its sky together with the rest of the
  * cosmos, about the Sun (`galaxyDrag`, see galaxy/spin.ts).
  */
-const Galaxy = ({ animate = true }: { animate?: boolean }) => {
+const Galaxy = () => {
   const rootRef = useRef<Group>(null);
   const spinRef = useRef<Group>(null);
   const coreRef = useRef<Mesh>(null);
@@ -291,7 +291,7 @@ const Galaxy = ({ animate = true }: { animate?: boolean }) => {
   // frame callback (SCENE_MOTION_PRIORITY, ahead of the orbits' −1), so everything
   // flying with it (the Sun and planets, the Earth, the Voyager, the camera) reads
   // the same position this frame.
-  useFrame((_, delta) => advanceSolarFly(delta, animate), SCENE_MOTION_PRIORITY);
+  useFrame((_, delta) => advanceSolarFly(delta), SCENE_MOTION_PRIORITY);
 
   // Scroll-driven state + live-tunable values (normal priority).
   useFrame((_, delta) => {
@@ -361,14 +361,14 @@ const Galaxy = ({ animate = true }: { animate?: boolean }) => {
     // Bake in the page background quickly as the galaxy starts to appear (see
     // COMPOSITE_FRAG), so it's in place long before the galaxy is noticeable.
     composite.uniforms.uFill.value = remap01(p, GALAXY.revealStart, GALAXY.revealStart + 0.06);
-    if (animate) shared.uTime.value += delta;
+    shared.uTime.value += delta;
     // The core glows in LATER (while we look at the Sun it stays quiet) — plus a warm
     // lift of its bright centre during the flight, so from inside the galaxy the bulge
     // reads as luminous.
     materials.core.uniforms.uOpacity.value =
       GALAXY.coreOpacity * remap01(p, GALAXY.coreGlowIn[0], GALAXY.coreGlowIn[1]);
     materials.core.uniforms.uCoreLift.value = GALAXY.coreFlightBoost * flight;
-    if (animate && !GALAXY.paused && spinRef.current) {
+    if (!GALAXY.paused && spinRef.current) {
       spinRef.current.rotation.y += GALAXY.spinSpeed * delta;
     }
     // The deep stars come in earlier than the galaxy itself (they take over from the
@@ -519,7 +519,7 @@ const Galaxy = ({ animate = true }: { animate?: boolean }) => {
           <group ref={skyRef}>
             <SpaceStars />
             <DistantGalaxies />
-            <GalaxySparkles animate={animate} />
+            <GalaxySparkles />
           </group>
         </>,
         galaxyScene,

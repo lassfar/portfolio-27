@@ -16,7 +16,8 @@ export type GoToOptions =
  *
  * It glides there, the story playing on the way, at the assistant's pace (the distance
  * sets the time, unless `seconds` is given); or it jumps (`instant`). Returns whether it
- * moved: never without the pinned journey (reduced motion), nor while a panel holds the scroll.
+ * moved: never without the pinned journey (before it starts, or in the calm book), nor while a
+ * panel holds the scroll.
  */
 export function goTo(id: ChapterId, options: GoToOptions = {}): boolean {
   const rest = restOf(id);

@@ -6,10 +6,6 @@ import { AdditiveBlending, BackSide, Color, ShaderMaterial } from "three";
 import { SIMPLEX_NOISE } from "#/components/three.js/planet/shaders";
 import { HAZE } from "./config";
 
-type Props = {
-  animate?: boolean;
-};
-
 /**
  * A very faint nebula / dust haze on a large shell enclosing the whole scene,
  * behind the stars. Procedural cloud patches in two dim, desaturated hues (cool
@@ -17,7 +13,7 @@ type Props = {
  * a loud sci-fi nebula. Additive + kept well under the Bloom threshold so it
  * glows softly rather than washing out.
  */
-const DeepSpaceHaze = ({ animate = true }: Props) => {
+const DeepSpaceHaze = () => {
   const materialRef = useRef<ShaderMaterial>(null);
 
   const uniforms = useMemo(
@@ -32,7 +28,7 @@ const DeepSpaceHaze = ({ animate = true }: Props) => {
   );
 
   useFrame((_, delta) => {
-    if (animate && materialRef.current) {
+    if (materialRef.current) {
       materialRef.current.uniforms.uTime.value += delta * HAZE.drift;
     }
   });

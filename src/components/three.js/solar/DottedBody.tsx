@@ -38,7 +38,6 @@ export type BodyShape = {
 
 type Props = {
   body: BodyShape;
-  animate: boolean;
   /** Its visibility (0..1), read each frame. */
   reveal: () => number;
   /** Self-spin speed (rad/s), read each frame — or… */
@@ -66,7 +65,7 @@ const _center = new Vector3();
  * each from its number, so the geometry is one byte per dot and drawing fewer is free.
  * Every value is live-tunable from the dev panel (PlanetGui).
  */
-const DottedBody = ({ body, animate, reveal, spinRate, spinAngle, children }: Props) => {
+const DottedBody = ({ body, reveal, spinRate, spinAngle, children }: Props) => {
   const bodyRef = useRef<Group>(null);
   const tiltRef = useRef<Group>(null); // the axial tilt
   const spinRef = useRef<Group>(null); // self-rotation
@@ -169,10 +168,10 @@ const DottedBody = ({ body, animate, reveal, spinRate, spinAngle, children }: Pr
 
   useFrame((state, delta) => {
     const u = material.uniforms;
-    if (animate) u.uTime.value += delta;
+    u.uTime.value += delta;
     if (spinRef.current) {
       if (spinAngle) spinRef.current.rotation.y = spinAngle();
-      else if (animate && spinRate) spinRef.current.rotation.y += delta * spinRate();
+      else if (spinRate) spinRef.current.rotation.y += delta * spinRate();
     }
     if (tiltRef.current) tiltRef.current.rotation.z = (body.tilt ?? 0) * DEG;
 

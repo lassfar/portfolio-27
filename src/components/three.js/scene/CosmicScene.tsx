@@ -83,10 +83,6 @@ import { setScrollLock } from "#/stores/scrollLock";
  * stays crisp. Lazy-load with `next/dynamic({ ssr: false })`.
  */
 const CosmicScene = () => {
-  const prefersReduced =
-    typeof window !== "undefined" && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-  const animate = !prefersReduced;
-
   const isSmall = typeof window !== "undefined" && window.innerWidth < 768;
   const starCount = isSmall ? PARTICLES.countMobile : PARTICLES.count;
   const planetCount = isSmall ? PLANET.countMobile : PLANET.count;
@@ -153,31 +149,26 @@ const CosmicScene = () => {
         gl={{ antialias: false, alpha: true }}
       >
         {/* Starfield + star: drag-rotates, scroll zooms + bursts the star. */}
-        <Universe animate={animate} count={starCount} starfieldRef={starfieldRef} />
+        <Universe count={starCount} starfieldRef={starfieldRef} />
 
         {/* Saturn — this system's hero planet. It's a FIXED anchor at the origin
           while the camera zooms out from it; once the solar system is visible it
           FLIES (orbits the sun) like the others, starting from that spot. */}
         <SaturnMember>
-          <Planet
-            animate={animate}
-            interactive={false}
-            planetCount={planetCount}
-            ringCount={ringCount}
-          />
+          <Planet interactive={false} planetCount={planetCount} ringCount={ringCount} />
         </SaturnMember>
 
         {/* The solar system the Saturn belongs to — the sun at centre + the
           sibling planets on a near edge-on plane, revealed as the camera flies
           back, then faded out as we dive to Earth. */}
-        <SolarSystem animate={animate} />
+        <SolarSystem />
 
         {/* Earth — the voyage's destination, but a NORMAL orbiting member on its
           own place. It never grows/transitions; the camera flies to it (tracking
           its orbit) so it fills the view by perspective. */}
         <EarthMember>
-          <DottedEarth animate={animate} />
-          <EarthMoon animate={animate} />
+          <DottedEarth />
+          <EarthMoon />
         </EarthMember>
 
         {/* The Lab — the Parker Solar Probe (it replaced Voyager 1 in P27-72), at its
@@ -198,7 +189,7 @@ const CosmicScene = () => {
           out through the galaxy's own (fixed-size) stars until the whole brand-tinted
           spiral resolves around it. The galaxy is huge + world-fixed and centred so
           the real Sun sits in one of its arms — our "You are here". */}
-        <Galaxy animate={animate} />
+        <Galaxy />
 
         {/* multisampling stays a constant: changing this prop would rebuild the
           composer (leaking its buffers); live changes go through Multisampling. */}

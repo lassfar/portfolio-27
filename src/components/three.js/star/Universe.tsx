@@ -27,7 +27,6 @@ const FLOW_END =
   (JOURNEY.introTurns + JOURNEY.scrollTurnsStar + JOURNEY.scrollTurnsPlanet) * Math.PI * 2;
 
 type Props = {
-  animate?: boolean;
   count?: number;
   /**
    * The starfield group. Owned by the parent so the CameraRig can pin it to the
@@ -48,7 +47,7 @@ type Props = {
  * so it flies into the lens and vanishes. Only the nebula transforms, so the
  * starfield stays fixed. All timing/feel constants live in `config.ts`.
  */
-const Universe = ({ animate = true, count, starfieldRef }: Props) => {
+const Universe = ({ count, starfieldRef }: Props) => {
   const internalStarfieldRef = useRef<Group>(null);
   const starfieldRotRef = starfieldRef ?? internalStarfieldRef;
   const nebulaZoomRef = useRef<Group>(null);
@@ -131,7 +130,7 @@ const Universe = ({ animate = true, count, starfieldRef }: Props) => {
     // counter-rotate against the solar system); the only motion is the planets
     // orbiting the sun on their own clocks. Drag still works in every phase.
     const built = useAboutScroll.getState().progress >= 1;
-    if (animate && !built) {
+    if (!built) {
       targetRot.current.y += delta * ROTATION.idleDrift;
     }
     currentRot.current.x = damp(currentRot.current.x, targetRot.current.x, ROTATION.damping, delta);
@@ -211,14 +210,14 @@ const Universe = ({ animate = true, count, starfieldRef }: Props) => {
           is copied each frame), rotate around it, never zoom. The haze sits far
           behind the stars. */}
       <group ref={starfieldRotRef}>
-        <DeepSpaceHaze animate={animate} />
-        <Starfield animate={animate} />
+        <DeepSpaceHaze />
+        <Starfield />
       </group>
 
       {/* Nebula — zoomed by scroll, spun by drag, bursts in its own shader */}
       <group ref={nebulaZoomRef} position={[0, LAYOUT.starY, 0]}>
         <group ref={nebulaSpinRef}>
-          <Nebula count={count} animate={animate} />
+          <Nebula count={count} />
         </group>
       </group>
     </>

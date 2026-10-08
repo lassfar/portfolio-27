@@ -9,7 +9,6 @@ import { createPortal } from "react-dom";
 import Button from "#/components/UI/buttons/Button";
 import Tooltip from "#/components/UI/tooltip/Tooltip";
 import { useIsClient } from "#/components/hooks/useIsClient";
-import { useReducedMotion } from "#/components/hooks/useReducedMotion";
 import { useTimeout } from "#/components/hooks/useTimeout";
 import { stopGlideOnInput } from "#/components/pages/home/scroll/glide";
 import { goTo } from "#/components/pages/home/scroll/goTo";
@@ -173,14 +172,13 @@ const NavAssistantView = () => {
  * - It stays away on the hero's first screen, while a panel is open (the story is frozen), and
  *   once Contact begins.
  *
- * Portalled to the body (ScrollSmoother's transformed content re-bases `fixed`); with reduced
- * motion the journey isn't pinned, so there's no assistant.
+ * Portalled to the body (ScrollSmoother's transformed content re-bases `fixed`). Only with
+ * motion: the calm mode reads the book instead (P27-93).
  */
 const NavAssistant = () => {
   const client = useIsClient();
-  const reduced = useReducedMotion();
   useEffect(stopGlideOnInput, []);
-  if (!client || reduced) return null;
+  if (!client) return null;
   return createPortal(<NavAssistantView />, document.body);
 };
 

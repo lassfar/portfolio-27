@@ -17,7 +17,6 @@ const GALAXY_FADE: [number, number] = [0.2, 0.55];
 
 type Props = {
   count?: number;
-  animate?: boolean;
 };
 
 /** Weighted pick of a tint index (biased toward the near-white tints). */
@@ -41,7 +40,7 @@ const pickTint = (): number => {
  * Only the BRIGHTNESS twinkles (never the point size), so nothing sub-pixel flickers
  * under motion.
  */
-const Starfield = ({ count = STARFIELD.count, animate = true }: Props) => {
+const Starfield = ({ count = STARFIELD.count }: Props) => {
   const materialRef = useRef<ShaderMaterial>(null);
   const pointsRef = useRef<Points>(null);
   // Once it has faded into the galaxy finale its stars output nothing — skip the draw.
@@ -110,7 +109,7 @@ const Starfield = ({ count = STARFIELD.count, animate = true }: Props) => {
     const u = materialRef.current.uniforms;
     // Dots keep their on-screen size at any canvas resolution (the quality tiers).
     u.uPixelRatio.value = pointPixelRatio(state.viewport.dpr);
-    if (animate) u.uTime.value += delta;
+    u.uTime.value += delta;
     // Live values (the dev panel tunes STARFIELD in place).
     const S = STARFIELD.sparkle;
     u.uTwinkleSpeed.value = STARFIELD.twinkleSpeed;

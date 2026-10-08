@@ -51,7 +51,7 @@ const SceneLabel = ({
       aria-hidden="true"
       className={clsx(
         "pointer-events-none absolute -inset-1.25 rounded-[inherit] opacity-0 shadow-halo ring-1 ring-peach/55",
-        fresh && "motion-safe:animate-breathe motion-reduce:opacity-100",
+        fresh && "animate-breathe",
       )}
     />
     <Icon icon={icon} size={15} className="text-peach" />
