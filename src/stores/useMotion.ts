@@ -2,6 +2,7 @@ import { create } from "zustand";
 import {
   MOTION_QUERY,
   MOTION_STORAGE_KEY,
+  choiceAddress,
   choiceInUrl,
   motionMode,
   parseStored,
@@ -14,8 +15,9 @@ import {
  * The visitor's motion preference for the whole site (P27-91): calm or full. The device's
  * reduced-motion setting, followed live, unless the visitor chose on the site (kept in
  * this browser, with the device setting it was made against: once that setting changes,
- * the choice goes, P27-93). Mirrored as `data-motion` on <html> for CSS: MOTION_SCRIPT sets it before
- * the first paint, and the store keeps it in sync.
+ * the choice goes, P27-93, even during a visit, P27-94). Mirrored as `data-motion` on
+ * <html> for CSS: MOTION_SCRIPT sets it before the first paint, and the store keeps it in
+ * sync (unless the mode switch holds it, holdMotionAttribute).
  *
  * The state starts as the server renders it (no reduced motion, no choice) and its
  * initial value never changes: zustand renders the hydration pass from it, so it always
@@ -29,18 +31,39 @@ type MotionState = {
   setChoice: (choice: MotionChoice | null) => void;
 };
 
+/** Keeps a choice in this browser (or forgets it, null). Returns whether it could. */
+function keep(choice: MotionChoice | null, device: boolean): boolean {
+  try {
+    if (choice) localStorage.setItem(MOTION_STORAGE_KEY, storedChoice(choice, device));
+    else localStorage.removeItem(MOTION_STORAGE_KEY);
+    return true;
+  } catch {
+    // Storage blocked (private mode…): the address carries it instead.
+    return false;
+  }
+}
+
+/**
+ * The address carries a choice the browser couldn't keep, so a reload keeps it; else an old
+ * one goes (choiceAddress). Same page, same place: no navigation.
+ */
+function carry(choice: MotionChoice | null, kept: boolean): void {
+  try {
+    const address = choiceAddress(window.location.href, choice, kept);
+    if (address !== null) window.history.replaceState(null, "", address);
+  } catch {
+    // No address to rewrite (not a page).
+  }
+}
+
 export const useMotion = create<MotionState>((set, get) => ({
   device: false,
   choice: null,
   setChoice: (choice) => {
-    try {
-      if (choice) localStorage.setItem(MOTION_STORAGE_KEY, storedChoice(choice, get().device));
-      else localStorage.removeItem(MOTION_STORAGE_KEY);
-    } catch {
-      // Storage blocked (private mode…): the choice still applies until reload.
-    }
+    const kept = keep(choice, get().device);
     // The same choice again notifies no one.
     set((s) => (s.choice === choice ? s : { choice }));
+    carry(choice, kept);
   },
 }));
 
@@ -51,6 +74,22 @@ export const isCalm = () => selectCalm(useMotion.getState());
 
 /** Calm or not, live: the component re-renders when it changes. */
 export const useCalm = () => useMotion(selectCalm);
+
+/** The mode `data-motion` is held on, if any (holdMotionAttribute). */
+let held: MotionChoice | null = null;
+
+/** Marks <html> with the mode: the one held, else the preference's. */
+const mirror = () =>
+  document.documentElement.setAttribute("data-motion", held ?? motionMode(isCalm()));
+
+/**
+ * Holds `data-motion` on `mode` (P27-94): the mode switch keeps the page's CSS on the mode
+ * still on screen until it swaps behind its veil. `null` lets it follow the preference again.
+ */
+export function holdMotionAttribute(mode: MotionChoice | null): void {
+  held = mode;
+  mirror();
+}
 
 /**
  * In the browser, as soon as this module loads (so before any component reads it): the
@@ -76,9 +115,16 @@ function start(): void {
     // Storage blocked: no choice.
   }
   useMotion.setState({ device, choice: choiceInUrl(window.location.search) ?? kept });
-  query?.addEventListener("change", (event) => useMotion.setState({ device: event.matches }));
+  // The setting changes during the visit: a choice made against the old one goes now, as it
+  // would at the next load (P27-94), and the site follows the device. One update, so the
+  // mode changes once.
+  query?.addEventListener("change", (event) => {
+    const dropped = useMotion.getState().choice !== null;
+    const kept = dropped && keep(null, event.matches);
+    useMotion.setState({ device: event.matches, choice: null });
+    if (dropped) carry(null, kept);
+  });
 
-  const mirror = () => document.documentElement.setAttribute("data-motion", motionMode(isCalm()));
   mirror();
   useMotion.subscribe(mirror);
 }

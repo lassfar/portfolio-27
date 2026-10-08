@@ -5,7 +5,8 @@ type Change = { matches: boolean };
 
 /**
  * A browser for the store (the unit tests run in Node): the reduced-motion setting, which
- * can change, a storage, which can be blocked, the address, and <html>'s attributes.
+ * can change, a storage, which can be blocked, the address (which can be rewritten), and
+ * <html>'s attributes.
  */
 function fakeBrowser({
   device,
@@ -19,6 +20,7 @@ function fakeBrowser({
   /** The address's query (`?motion=calm`). */
   search?: string;
 }) {
+  const origin = "https://lassfar.dev";
   const listeners = new Set<(event: Change) => void>();
   const query = {
     matches: device,
@@ -38,8 +40,14 @@ function fakeBrowser({
       };
   const attributes = new Map<string, string>();
   const matchMedia = () => query;
-  const location = { search };
-  vi.stubGlobal("window", { matchMedia, location });
+  const location = { search, href: `${origin}/${search}#lab` };
+  const history = {
+    replaceState: vi.fn((_state: unknown, _unused: string, address: string) => {
+      location.href = origin + address;
+      location.search = new URL(location.href).search;
+    }),
+  };
+  vi.stubGlobal("window", { matchMedia, location, history });
   vi.stubGlobal("location", location);
   vi.stubGlobal("matchMedia", matchMedia);
   vi.stubGlobal("localStorage", storage);
@@ -50,6 +58,9 @@ function fakeBrowser({
   });
   return {
     items,
+    history,
+    /** The address, past the origin. */
+    address: () => location.href.slice(origin.length),
     /** <html>'s `data-motion`. */
     mode: () => attributes.get("data-motion"),
     /** The visitor changes the device setting. */
@@ -145,6 +156,48 @@ describe("the motion preference", () => {
     expect(browser.items.has(MOTION_STORAGE_KEY)).toBe(false);
     expect(isCalm()).toBe(false);
     expect(browser.mode()).toBe("full");
+  });
+
+  it("drops a choice when the device setting changes during the visit, in one update", async () => {
+    // Full motion, chosen while the device asked for nothing; the visitor turns Reduce motion on.
+    const browser = fakeBrowser({ device: false, stored: "full:none" });
+    const { isCalm, useMotion } = await loadStore();
+    const listener = vi.fn();
+    useMotion.subscribe(listener);
+    browser.change(true);
+    expect(listener).toHaveBeenCalledTimes(1);
+    expect(useMotion.getState()).toMatchObject({ device: true, choice: null });
+    expect(browser.items.has(MOTION_STORAGE_KEY)).toBe(false);
+    expect(isCalm()).toBe(true);
+    expect(browser.mode()).toBe("calm");
+  });
+
+  it("carries a choice in the address only when the browser couldn't keep it, the place kept", async () => {
+    const blocked = fakeBrowser({ device: false, blocked: true });
+    const store = await loadStore();
+    store.useMotion.getState().setChoice("calm");
+    expect(blocked.address()).toBe("/?motion=calm#lab");
+    // The device setting changes: the choice goes, from the address too.
+    blocked.change(true);
+    expect(blocked.address()).toBe("/#lab");
+    vi.resetModules();
+    // Kept this time: an old one in the address goes, and an address already right is left alone.
+    const kept = fakeBrowser({ device: false, search: "?motion=calm" });
+    const again = await loadStore();
+    again.useMotion.getState().setChoice("full");
+    expect(kept.address()).toBe("/#lab");
+    again.useMotion.getState().setChoice("calm");
+    expect(kept.history.replaceState).toHaveBeenCalledTimes(1);
+  });
+
+  it("holds <html>'s mode for the mode switch, then follows the preference again", async () => {
+    const browser = fakeBrowser({ device: false });
+    const { holdMotionAttribute, useMotion } = await loadStore();
+    holdMotionAttribute("full");
+    useMotion.getState().setChoice("calm");
+    expect(browser.mode()).toBe("full");
+    holdMotionAttribute(null);
+    expect(browser.mode()).toBe("calm");
   });
 
   it("keeps the server's state as its initial state (hydration renders from it)", async () => {

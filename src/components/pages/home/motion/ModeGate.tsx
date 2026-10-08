@@ -50,8 +50,8 @@ type Props = {
  * and 3D; the book's dots). Each slot keeps the same element throughout, so React keeps
  * what it hydrated.
  *
- * Switching modes reloads the page (the live swap is Phase 3, P27-94). Only the visitor's
- * choice does: a device setting changed during a visit applies on the next one.
+ * Switching modes reloads the page (the live swap is Phase 3, P27-94): the visitor's choice,
+ * or the device setting changed during the visit.
  */
 const ModeGate = ({ full, calm, reloadOnChange = false }: Props) => {
   const client = useIsClient();
@@ -61,8 +61,7 @@ const ModeGate = ({ full, calm, reloadOnChange = false }: Props) => {
 
   useEffect(() => {
     if (!reloadOnChange) return;
-    return useMotion.subscribe((now, before) => {
-      if (now.choice === before.choice) return;
+    return useMotion.subscribe((now) => {
       const next = motionMode(selectCalm(now));
       if (next !== mode) reloadInto(next, now.device);
     });

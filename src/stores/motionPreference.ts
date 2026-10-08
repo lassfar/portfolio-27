@@ -14,8 +14,8 @@ export const MOTION_QUERY = "(prefers-reduced-motion: reduce)";
 export const MOTION_STORAGE_KEY = "p27.motion";
 
 /**
- * The address's word for a choice the browser couldn't keep (storage blocked): the page
- * reloads into the other mode with `?motion=calm` (P27-93), and it wins over storage.
+ * The address's word for a choice the browser couldn't keep (storage blocked): `?motion=calm`
+ * (P27-93), which wins over storage, so a reload keeps it.
  */
 export const MOTION_PARAM = "motion";
 
@@ -49,6 +49,26 @@ export function parseStored(raw: unknown, device: boolean): MotionChoice | null 
 /** The choice an address carries (`?motion=calm`), if any. */
 export function choiceInUrl(search: string): MotionChoice | null {
   return parseChoice(new URLSearchParams(search).get(MOTION_PARAM));
+}
+
+/**
+ * The address carrying a choice (P27-94): the same page and place (its `#hash` kept), with
+ * the choice in it (`?motion=calm`) only when the browser couldn't keep it (`kept` false:
+ * storage blocked); otherwise an old one goes, so the kept one counts. Null when the address
+ * is already right: it's touched only when needed (rewriting the query would turn `?perf`
+ * into `?perf=`).
+ */
+export function choiceAddress(
+  href: string,
+  choice: MotionChoice | null,
+  kept: boolean,
+): string | null {
+  const url = new URL(href);
+  const carried = kept ? null : choice;
+  if (url.searchParams.get(MOTION_PARAM) === carried) return null;
+  if (carried) url.searchParams.set(MOTION_PARAM, carried);
+  else url.searchParams.delete(MOTION_PARAM);
+  return url.pathname + url.search + url.hash;
 }
 
 /** Calm or not: the visitor's choice wins; without one, the device setting decides. */
