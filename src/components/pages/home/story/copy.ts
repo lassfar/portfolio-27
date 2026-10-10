@@ -80,6 +80,14 @@ export const CONTACT = {
     email: "email it to me",
     subject: "Hello from your portfolio",
   },
+  /** When the address isn't one Aymane can reply to (P27-66): under the Email field. */
+  emailErrors: {
+    format: "That doesn’t look like an email address.",
+    throwaway: "That inbox won’t last. Could you use one I can reply to?",
+    domain: "Mail can’t reach “{domain}”. Could you check it, or use another address?",
+    typo: "Did you mean {address}?",
+    useIt: "Use it",
+  },
   thanks: {
     title: "*Thank you*",
     line: "Your message is on its way. I’ll write back soon.",

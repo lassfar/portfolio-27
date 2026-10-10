@@ -1,5 +1,5 @@
 import type { Meta, StoryObj } from "@storybook/nextjs-vite";
-import { expect, fn, waitFor, within } from "storybook/test";
+import { expect, fn, spyOn, waitFor, within } from "storybook/test";
 
 import {
   CONTACT_EMAIL,
@@ -11,10 +11,26 @@ import { inCalm } from "#/stories/motion";
 import Contact from "./Contact";
 import { contactDraft, keepDraft } from "./draft";
 
+/** A made-up domain: the only one the faked DNS says takes no mail. */
+const MADE_UP = "nowhere-at-all.xyz";
+
+/** Cloudflare's DNS, faked (the email check asks it whether a domain takes mail). */
+const fakeDns = () => {
+  const dns = spyOn(globalThis, "fetch").mockImplementation(async (input) => {
+    const name = new URL(String(input)).searchParams.get("name");
+    const answer =
+      name === MADE_UP
+        ? { Status: 3 }
+        : { Status: 0, Answer: [{ type: 15, data: `10 mx.${name}.` }] };
+    return new Response(JSON.stringify(answer), { status: 200 });
+  });
+  return () => dns.mockRestore();
+};
+
 /**
  * Contact, the site's last beat. Shown here as a page (the calm book's): over the journey
  * (`layout: "overlay"`) it waits hidden until the journey reveals it. Here a stand-in sends
- * (`send`); the site posts to Netlify Forms.
+ * (`send`; the site posts to Netlify Forms), and the DNS the email check asks is faked.
  */
 const meta = {
   title: "Home/Contact",
@@ -27,6 +43,7 @@ const meta = {
     send: { control: false },
   },
   args: { layout: "page", titleId: "contact-title", send: fn(async () => {}) },
+  beforeEach: fakeDns,
 } satisfies Meta<typeof Contact>;
 
 export default meta;
@@ -60,11 +77,14 @@ export const Sent: Story = {
     );
     await likeAPerson();
     await userEvent.click(canvas.getByRole("button", { name: CONTACT.send }));
-    await expect(args.send).toHaveBeenCalledWith({
-      name: "Ada",
-      email: "ada@example.com",
-      message: "Hello!",
-    });
+    // Sent once the address is checked (a DNS lookup).
+    await waitFor(() =>
+      expect(args.send).toHaveBeenCalledWith({
+        name: "Ada",
+        email: "ada@example.com",
+        message: "Hello!",
+      }),
+    );
     const thanks = await canvas.findByRole("status", {}, { timeout: 3000 });
     await expect(thanks).toHaveTextContent(CONTACT.thanks.line);
     await waitFor(() => expect(thanks).toHaveStyle({ opacity: "1" }));
@@ -102,6 +122,65 @@ export const Failed: Story = {
     await waitFor(() => expect(args.send).toHaveBeenCalledTimes(2));
     const again = await canvas.findByRole("alert");
     await waitFor(() => expect(again).toHaveStyle({ opacity: "1" }));
+  },
+};
+
+/** An address Aymane can't reply to: the reason under Email, the focus there, and nothing sent. A typo gets a one-tap fix. */
+export const CheckedEmail: Story = {
+  play: async ({ canvas, userEvent, args, step }) => {
+    const email = canvas.getByRole("textbox", { name: CONTACT.fields.email.label });
+    const send = () => userEvent.click(canvas.getByRole("button", { name: CONTACT.send }));
+    const turnedDown = async (address: string, reason: string) => {
+      await userEvent.clear(email);
+      await userEvent.type(email, address);
+      await send();
+      const said = await canvas.findByText(reason);
+      await waitFor(() => expect(said).toBeVisible()); // (it fades in)
+      await expect(email).toBeInvalid();
+      await expect(email).toHaveFocus();
+      await expect(args.send).not.toHaveBeenCalled();
+    };
+    await userEvent.type(canvas.getByRole("textbox", { name: CONTACT.fields.name.label }), "Ada");
+    await userEvent.type(
+      canvas.getByRole("textbox", { name: CONTACT.fields.message.label }),
+      "Hello!",
+    );
+    await likeAPerson();
+
+    await step("a typo: one tap fixes it", async () => {
+      await userEvent.type(email, "ada@gmial.com");
+      await send();
+      const hint = await canvas.findByText(
+        CONTACT.emailErrors.typo.replace("{address}", "ada@gmail.com"),
+      );
+      await waitFor(() => expect(hint).toBeVisible()); // (it fades in)
+      await expect(email).toHaveFocus();
+      await userEvent.click(canvas.getByRole("button", { name: CONTACT.emailErrors.useIt }));
+      await expect(email).toHaveValue("ada@gmail.com");
+      await expect(email).toBeValid();
+      await expect(email).toHaveFocus();
+    });
+
+    await step("a throwaway inbox", () =>
+      turnedDown("ada@mailinator.com", CONTACT.emailErrors.throwaway),
+    );
+
+    await step("a domain that takes no mail", () =>
+      turnedDown(`ada@${MADE_UP}`, CONTACT.emailErrors.domain.replace("{domain}", MADE_UP)),
+    );
+
+    await step("an address Aymane can reply to goes", async () => {
+      await userEvent.clear(email);
+      await userEvent.type(email, "ada@lovelace.dev");
+      await send();
+      await waitFor(() =>
+        expect(args.send).toHaveBeenCalledWith(
+          expect.objectContaining({ email: "ada@lovelace.dev" }),
+        ),
+      );
+      const thanks = await canvas.findByRole("status", {}, { timeout: 3000 });
+      await waitFor(() => expect(thanks).toHaveStyle({ opacity: "1" }));
+    });
   },
 };
 

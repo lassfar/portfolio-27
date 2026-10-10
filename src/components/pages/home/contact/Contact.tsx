@@ -18,10 +18,14 @@ import {
   mailtoWith,
 } from "#/components/pages/home/contact/config";
 import { contactDraft } from "#/components/pages/home/contact/draft";
+import { checkEmail, type EmailCheck } from "#/components/pages/home/contact/email";
 import { sendMessage } from "#/components/pages/home/contact/send";
 import { ContactMessage, ContactProps } from "#/components/pages/home/contact/contact.types";
 
 type Status = "idle" | "sending" | "sent" | "failed";
+
+/** What's wrong with an address, said under the Email field. */
+type EmailProblem = Exclude<EmailCheck, { ok: true }>;
 
 /** The message as a mail: what they wrote, signed with their name. */
 const mailBody = ({ name, message }: ContactMessage) => `${message}\n\n— ${name}`;
@@ -36,7 +40,8 @@ const mailBody = ({ name, message }: ContactMessage) => `${message}\n\n— ${nam
  * thing reverses on scroll-up. This component owns only the markup + the form state
  * (idle → sending → sent → "write another"). Messages go to Netlify Forms (P27-66, send.ts);
  * when one doesn't go through, it stays in the form, with a line saying so and a link that opens
- * the visitor's mail app with it. A bot (it fills the hidden field, or sends faster than anyone
+ * the visitor's mail app with it. An address Aymane can't reply to is caught first (email.ts),
+ * with the reason under Email (a typo gets a one-tap fix), and nothing is sent. A bot (it fills the hidden field, or sends faster than anyone
  * writes) gets the thank-you, and nothing is sent. A message being written when the modes switch
  * is carried over (P27-94, contactDraft): the form opens with it.
  */
@@ -45,6 +50,38 @@ const Contact = ({ layout = "overlay", overlayRef, titleId, send = sendMessage }
   const formRef = useRef<HTMLFormElement | null>(null);
   const [status, setStatus] = useState<Status>("idle");
   const [failed, setFailed] = useState<ContactMessage | null>(null);
+  const [emailProblem, setEmailProblem] = useState<EmailProblem | null>(null);
+  /** The address a typo hint was shown for: sent again unchanged, it's kept. */
+  const typoShownFor = useRef<string | null>(null);
+  const emailInput = () => formRef.current?.elements.namedItem("email") as HTMLInputElement | null;
+
+  /** "Use it": the suggested address replaces theirs. */
+  const takeSuggestion = (address: string) => {
+    const input = emailInput();
+    if (input) input.value = address;
+    setEmailProblem(null);
+    input?.focus();
+  };
+
+  const emailError = (problem: EmailProblem) => {
+    const { emailErrors } = CONTACT;
+    if (problem.reason !== "typo")
+      return problem.reason === "domain"
+        ? emailErrors.domain.replace("{domain}", problem.domain)
+        : emailErrors[problem.reason];
+    return (
+      <>
+        {emailErrors.typo.replace("{address}", problem.suggestion)}{" "}
+        <button
+          type="button"
+          onClick={() => takeSuggestion(problem.suggestion)}
+          className="text-peach underline underline-offset-4 focus-ring hover:text-light-peach"
+        >
+          {emailErrors.useIt}
+        </button>
+      </>
+    );
+  };
   const [draft] = useState(() => contactDraft.current);
   /** When this message's first keystroke came (performance.now()), to tell a person from a bot. */
   const firstInput = useRef<number | null>(null);
@@ -77,6 +114,16 @@ const Contact = ({ layout = "overlay", overlayRef, titleId, send = sendMessage }
       window.setTimeout(done, CONTACT_SEND_DELAY_MS);
       return;
     }
+    const address = message.email.trim();
+    const check = await checkEmail(address, { typoKept: typoShownFor.current === address });
+    if (!check.ok) {
+      if (check.reason === "typo") typoShownFor.current = address;
+      setEmailProblem(check);
+      setStatus("idle");
+      emailInput()?.focus();
+      return;
+    }
+    setEmailProblem(null);
     try {
       await send(message);
     } catch {
@@ -174,6 +221,8 @@ const Contact = ({ layout = "overlay", overlayRef, titleId, send = sendMessage }
               maxLength={120}
               autoComplete="email"
               defaultValue={draft?.email}
+              error={emailProblem && emailError(emailProblem)}
+              onInput={() => setEmailProblem(null)}
               placeholder={CONTACT.fields.email.placeholder}
               className="home-contact__piece"
             />
