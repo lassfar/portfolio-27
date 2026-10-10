@@ -1,7 +1,7 @@
 "use client";
 
 import clsx from "clsx";
-import { FormEvent, useRef, useState } from "react";
+import { FormEvent, useRef, useState, useSyncExternalStore } from "react";
 import { PenLine, Send } from "lucide-react";
 import Button from "#/components/UI/buttons/Button";
 import Field from "#/components/UI/forms/Field";
@@ -11,6 +11,8 @@ import DisplayTitle from "#/components/UI/text/DisplayTitle";
 import { TITLE_SWASH } from "#/components/pages/home/swashes";
 import { CONTACT } from "#/components/pages/home/story/copy";
 import {
+  CONTACT_DAILY_LIMIT,
+  CONTACT_EMAIL,
   CONTACT_LINKS,
   CONTACT_MIN_FILL_MS,
   CONTACT_SEND_DELAY_MS,
@@ -19,6 +21,7 @@ import {
 } from "#/components/pages/home/contact/config";
 import { contactDraft } from "#/components/pages/home/contact/draft";
 import { checkEmail, type EmailCheck } from "#/components/pages/home/contact/email";
+import { recordSent, sentToday } from "#/components/pages/home/contact/limit";
 import { sendMessage } from "#/components/pages/home/contact/send";
 import { ContactMessage, ContactProps } from "#/components/pages/home/contact/contact.types";
 
@@ -30,6 +33,24 @@ type EmailProblem = Exclude<EmailCheck, { ok: true }>;
 /** The message as a mail: what they wrote, signed with their name. */
 const mailBody = ({ name, message }: ContactMessage) => `${message}\n\n— ${name}`;
 
+/** A link inside a line of text: underlined, so it doesn't rely on colour (WCAG 1.4.1). */
+const INLINE_LINK = "text-peach underline underline-offset-4 focus-ring hover:text-light-peach";
+
+/** A line under Send (it didn't go through, the day's limit): it rises in, or only fades in calm. */
+const NOTE = clsx(
+  "text-center text-sm font-light text-balance text-light-peach sm:col-span-2 sm:text-base",
+  "moving:animate-[fadeIn_0.6s_ease-out] calm:animate-[fade_0.3s_ease-out]",
+);
+
+/** A send from another tab counts here too. */
+const onStorage = (change: () => void) => {
+  window.addEventListener("storage", change);
+  return () => window.removeEventListener("storage", change);
+};
+
+/** This browser has sent its messages for the day (never on the server: no limit there). */
+const atLimit = () => sentToday().length >= CONTACT_DAILY_LIMIT;
+
 /**
  * Contact — the site's last beat. After the galaxy has fully resolved (and a short
  * pause on it), this fades in over the blurred, dimmed galaxy, like The Maker: a
@@ -38,12 +59,18 @@ const mailBody = ({ name, message }: ContactMessage) => `${message}\n\n— ${nam
  * Driven entirely by the master pinned journey (`useCosmicJourney` → renderContact):
  * the overlay's `.home-contact__piece`s are revealed one after another, so the whole
  * thing reverses on scroll-up. This component owns only the markup + the form state
- * (idle → sending → sent → "write another"). Messages go to Netlify Forms (P27-66, send.ts);
- * when one doesn't go through, it stays in the form, with a line saying so and a link that opens
- * the visitor's mail app with it. An address Aymane can't reply to is caught first (email.ts),
- * with the reason under Email (a typo gets a one-tap fix), and nothing is sent. A bot (it fills the hidden field, or sends faster than anyone
- * writes) gets the thank-you, and nothing is sent. A message being written when the modes switch
- * is carried over (P27-94, contactDraft): the form opens with it.
+ * (idle → sending → sent → "write another"). A message being written when the modes switch is
+ * carried over (P27-94, contactDraft): the form opens with it.
+ *
+ * Sending (P27-66):
+ * - messages go to Netlify Forms (send.ts); one that doesn't go through stays in the form, with a
+ *   line saying so and a link that opens the visitor's mail app with it;
+ * - an address Aymane can't reply to is caught first (email.ts): the reason under Email (a typo
+ *   gets a one-tap fix), and nothing is sent;
+ * - a bot (it fills the hidden field, or sends faster than anyone writes) gets the thank-you, and
+ *   nothing is sent;
+ * - two messages a day from one browser (limit.ts): then a kind line and the email link, Send
+ *   paused.
  */
 const Contact = ({ layout = "overlay", overlayRef, titleId, send = sendMessage }: ContactProps) => {
   const page = layout === "page";
@@ -51,8 +78,12 @@ const Contact = ({ layout = "overlay", overlayRef, titleId, send = sendMessage }
   const [status, setStatus] = useState<Status>("idle");
   const [failed, setFailed] = useState<ContactMessage | null>(null);
   const [emailProblem, setEmailProblem] = useState<EmailProblem | null>(null);
+  const [draft] = useState(() => contactDraft.current);
+  const limited = useSyncExternalStore(onStorage, atLimit, () => false);
   /** The address a typo hint was shown for: sent again unchanged, it's kept. */
   const typoShownFor = useRef<string | null>(null);
+  /** When this message's first keystroke came (performance.now()), to tell a person from a bot. */
+  const firstInput = useRef<number | null>(null);
   const emailInput = () => formRef.current?.elements.namedItem("email") as HTMLInputElement | null;
 
   /** "Use it": the suggested address replaces theirs. */
@@ -75,17 +106,13 @@ const Contact = ({ layout = "overlay", overlayRef, titleId, send = sendMessage }
         <button
           type="button"
           onClick={() => takeSuggestion(problem.suggestion)}
-          className="text-peach underline underline-offset-4 focus-ring hover:text-light-peach"
+          className={INLINE_LINK}
         >
           {emailErrors.useIt}
         </button>
       </>
     );
   };
-  const [draft] = useState(() => contactDraft.current);
-  /** When this message's first keystroke came (performance.now()), to tell a person from a bot. */
-  const firstInput = useRef<number | null>(null);
-
   /** A bot: the hidden field filled, or sent faster than a person writes (unless it was written before a switch). */
   const isBot = (data: FormData) =>
     Boolean(data.get(CONTACT_TRAP_FIELD)) ||
@@ -102,7 +129,7 @@ const Contact = ({ layout = "overlay", overlayRef, titleId, send = sendMessage }
 
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
-    if (status === "sending") return;
+    if (status === "sending" || limited) return;
     const data = new FormData(event.currentTarget);
     const message: ContactMessage = {
       name: String(data.get("name") ?? ""),
@@ -131,6 +158,7 @@ const Contact = ({ layout = "overlay", overlayRef, titleId, send = sendMessage }
       setStatus("failed");
       return;
     }
+    recordSent();
     done();
   };
 
@@ -245,23 +273,28 @@ const Contact = ({ layout = "overlay", overlayRef, titleId, send = sendMessage }
                 icon={Send}
                 variant="outline"
                 size="large"
-                disabled={status === "sending"}
+                disabled={status === "sending" || limited}
               />
             </div>
 
+            {/* The day's messages are sent: more can wait, or go by mail. */}
+            {limited && status !== "sent" && (
+              <p role="status" className={NOTE}>
+                {CONTACT.limit.line}{" "}
+                <a href={`mailto:${CONTACT_EMAIL}`} className={INLINE_LINK}>
+                  {CONTACT.limit.email}
+                </a>
+                .
+              </p>
+            )}
+
             {/* It didn't go through: the message stays, and their mail app can take it. */}
             {status === "failed" && failed && (
-              <p
-                role="alert"
-                className={clsx(
-                  "text-center text-sm font-light text-balance text-light-peach sm:col-span-2 sm:text-base",
-                  "moving:animate-[fadeIn_0.6s_ease-out] calm:animate-[fade_0.3s_ease-out]",
-                )}
-              >
+              <p role="alert" className={NOTE}>
                 {CONTACT.failed.line}{" "}
                 <a
                   href={mailtoWith(CONTACT.failed.subject, mailBody(failed))}
-                  className="text-peach underline underline-offset-4 focus-ring hover:text-light-peach"
+                  className={INLINE_LINK}
                 >
                   {CONTACT.failed.email}
                 </a>

@@ -32,6 +32,9 @@ export const CONTACT_FORM = "contact";
 export const CONTACT_TRAP_FIELD = "bot-field";
 export const CONTACT_MIN_FILL_MS = 1500;
 
+/** How many messages one browser can send in a day (P27-66, limit.ts; CONTACT.limit says "two"). */
+export const CONTACT_DAILY_LIMIT = 2;
+
 /**
  * How long a pretend send takes: on the dev server, which has no Netlify (send.ts), and for a bot
  * (Contact): "sending", then the thank-you.

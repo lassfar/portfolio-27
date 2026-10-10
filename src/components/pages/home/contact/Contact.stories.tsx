@@ -10,6 +10,7 @@ import { CONTACT } from "#/components/pages/home/story/copy";
 import { inCalm } from "#/stories/motion";
 import Contact from "./Contact";
 import { contactDraft, keepDraft } from "./draft";
+import { SENT_KEY } from "./limit";
 
 /** A made-up domain: the only one the faked DNS says takes no mail. */
 const MADE_UP = "nowhere-at-all.xyz";
@@ -25,6 +26,16 @@ const fakeDns = () => {
     return new Response(JSON.stringify(answer), { status: 200 });
   });
   return () => dns.mockRestore();
+};
+
+/** Each story starts with no message sent today, and the DNS faked. */
+const fresh = () => {
+  localStorage.removeItem(SENT_KEY);
+  const undoDns = fakeDns();
+  return () => {
+    undoDns();
+    localStorage.removeItem(SENT_KEY);
+  };
 };
 
 /**
@@ -43,7 +54,7 @@ const meta = {
     send: { control: false },
   },
   args: { layout: "page", titleId: "contact-title", send: fn(async () => {}) },
-  beforeEach: fakeDns,
+  beforeEach: fresh,
 } satisfies Meta<typeof Contact>;
 
 export default meta;
@@ -181,6 +192,38 @@ export const CheckedEmail: Story = {
       const thanks = await canvas.findByRole("status", {}, { timeout: 3000 });
       await waitFor(() => expect(thanks).toHaveStyle({ opacity: "1" }));
     });
+  },
+};
+
+/** Two messages a day from one browser: the second goes, then a kind line and the email link, and Send waits for tomorrow. */
+export const LimitReached: Story = {
+  beforeEach: () => {
+    localStorage.setItem(SENT_KEY, JSON.stringify([Date.now() - 60_000]));
+  },
+  play: async ({ canvas, userEvent, args }) => {
+    await expect(canvas.queryByText(CONTACT.limit.line, { exact: false })).toBeNull();
+    await userEvent.type(canvas.getByRole("textbox", { name: CONTACT.fields.name.label }), "Ada");
+    await userEvent.type(
+      canvas.getByRole("textbox", { name: CONTACT.fields.email.label }),
+      "ada@lovelace.dev",
+    );
+    await userEvent.type(
+      canvas.getByRole("textbox", { name: CONTACT.fields.message.label }),
+      "One more thing",
+    );
+    await likeAPerson();
+    await userEvent.click(canvas.getByRole("button", { name: CONTACT.send }));
+    await waitFor(() => expect(args.send).toHaveBeenCalledTimes(1));
+    await userEvent.click(await canvas.findByRole("button", { name: CONTACT.thanks.again }));
+
+    const line = await canvas.findByRole("status");
+    await expect(line).toHaveTextContent(CONTACT.limit.line);
+    await expect(within(line).getByRole("link", { name: CONTACT.limit.email })).toHaveAttribute(
+      "href",
+      `mailto:${CONTACT_EMAIL}`,
+    );
+    await expect(canvas.getByRole("button", { name: CONTACT.send })).toBeDisabled();
+    await waitFor(() => expect(line).toHaveStyle({ opacity: "1" }));
   },
 };
 

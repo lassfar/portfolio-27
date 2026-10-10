@@ -88,6 +88,11 @@ export const CONTACT = {
     typo: "Did you mean {address}?",
     useIt: "Use it",
   },
+  /** At the day's limit (P27-66, CONTACT_DAILY_LIMIT: two), before the email link. */
+  limit: {
+    line: "You’ve sent me two messages today, and I’ll read both. More can wait for tomorrow, or",
+    email: "email me",
+  },
   thanks: {
     title: "*Thank you*",
     line: "Your message is on its way. I’ll write back soon.",
