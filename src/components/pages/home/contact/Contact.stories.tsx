@@ -1,5 +1,5 @@
 import type { Meta, StoryObj } from "@storybook/nextjs-vite";
-import { expect, waitFor } from "storybook/test";
+import { expect, fn, waitFor } from "storybook/test";
 
 import { CONTACT } from "#/components/pages/home/story/copy";
 import { inCalm } from "#/stories/motion";
@@ -8,15 +8,20 @@ import { contactDraft, keepDraft } from "./draft";
 
 /**
  * Contact, the site's last beat. Shown here as a page (the calm book's): over the journey
- * (`layout: "overlay"`) it waits hidden until the journey reveals it.
+ * (`layout: "overlay"`) it waits hidden until the journey reveals it. Here a stand-in sends
+ * (`send`); the site posts to Netlify Forms.
  */
 const meta = {
   title: "Home/Contact",
   component: Contact,
   tags: ["autodocs"],
   parameters: { layout: "fullscreen" },
-  argTypes: { layout: { control: false }, overlayRef: { control: false } },
-  args: { layout: "page", titleId: "contact-title" },
+  argTypes: {
+    layout: { control: false },
+    overlayRef: { control: false },
+    send: { control: false },
+  },
+  args: { layout: "page", titleId: "contact-title", send: fn(async () => {}) },
 } satisfies Meta<typeof Contact>;
 
 export default meta;
@@ -32,10 +37,10 @@ export const Page: Story = {
   },
 };
 
-/** Sent (in calm motion, as in the book): the thank-you fades in where the form was, and is announced. */
+/** Sent (in calm motion, as in the book): the message goes out, and the thank-you fades in where the form was, announced. */
 export const Sent: Story = {
   beforeEach: inCalm,
-  play: async ({ canvas, userEvent }) => {
+  play: async ({ canvas, userEvent, args }) => {
     await userEvent.type(canvas.getByRole("textbox", { name: CONTACT.fields.name.label }), "Ada");
     await userEvent.type(
       canvas.getByRole("textbox", { name: CONTACT.fields.email.label }),
@@ -46,6 +51,11 @@ export const Sent: Story = {
       "Hello!",
     );
     await userEvent.click(canvas.getByRole("button", { name: CONTACT.send }));
+    await expect(args.send).toHaveBeenCalledWith({
+      name: "Ada",
+      email: "ada@example.com",
+      message: "Hello!",
+    });
     const thanks = await canvas.findByRole("status", {}, { timeout: 3000 });
     await expect(thanks).toHaveTextContent(CONTACT.thanks.line);
     await waitFor(() => expect(thanks).toHaveStyle({ opacity: "1" }));

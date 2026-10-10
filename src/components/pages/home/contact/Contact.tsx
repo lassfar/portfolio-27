@@ -10,20 +10,12 @@ import Swash from "#/components/UI/swash/Swash";
 import DisplayTitle from "#/components/UI/text/DisplayTitle";
 import { TITLE_SWASH } from "#/components/pages/home/swashes";
 import { CONTACT } from "#/components/pages/home/story/copy";
-import { CONTACT_LINKS, CONTACT_SEND_DELAY_MS } from "#/components/pages/home/contact/config";
+import { CONTACT_LINKS } from "#/components/pages/home/contact/config";
 import { contactDraft } from "#/components/pages/home/contact/draft";
-import { ContactMessage, ContactProps } from "#/components/pages/home/contact/contact.types";
+import { sendMessage } from "#/components/pages/home/contact/send";
+import { ContactProps } from "#/components/pages/home/contact/contact.types";
 
 type Status = "idle" | "sending" | "sent";
-
-/**
- * Sends a message. VISUAL ONLY for now (P27-66 Phase 4): it just waits a short beat
- * so the form can show "sending" → the thank-you. Wire a real service here.
- */
-const sendMessage = (message: ContactMessage) =>
-  new Promise<ContactMessage>((resolve) =>
-    window.setTimeout(() => resolve(message), CONTACT_SEND_DELAY_MS),
-  );
 
 /**
  * Contact — the site's last beat. After the galaxy has fully resolved (and a short
@@ -33,10 +25,11 @@ const sendMessage = (message: ContactMessage) =>
  * Driven entirely by the master pinned journey (`useCosmicJourney` → renderContact):
  * the overlay's `.home-contact__piece`s are revealed one after another, so the whole
  * thing reverses on scroll-up. This component owns only the markup + the form state
- * (idle → sending → sent → "write another"). A message being written when the modes switch
- * is carried over (P27-94, contactDraft): the form opens with it.
+ * (idle → sending → sent → "write another"). Messages go to Netlify Forms (P27-66, send.ts). A
+ * message being written when the modes switch is carried over (P27-94, contactDraft): the form
+ * opens with it.
  */
-const Contact = ({ layout = "overlay", overlayRef, titleId }: ContactProps) => {
+const Contact = ({ layout = "overlay", overlayRef, titleId, send = sendMessage }: ContactProps) => {
   const page = layout === "page";
   const formRef = useRef<HTMLFormElement | null>(null);
   const [status, setStatus] = useState<Status>("idle");
@@ -47,11 +40,16 @@ const Contact = ({ layout = "overlay", overlayRef, titleId }: ContactProps) => {
     if (status === "sending") return;
     const data = new FormData(event.currentTarget);
     setStatus("sending");
-    await sendMessage({
-      name: String(data.get("name") ?? ""),
-      email: String(data.get("email") ?? ""),
-      message: String(data.get("message") ?? ""),
-    });
+    try {
+      await send({
+        name: String(data.get("name") ?? ""),
+        email: String(data.get("email") ?? ""),
+        message: String(data.get("message") ?? ""),
+      });
+    } catch {
+      setStatus("idle");
+      return;
+    }
     formRef.current?.reset();
     contactDraft.current = null;
     setStatus("sent");

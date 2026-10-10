@@ -17,8 +17,8 @@ export const CONTACT_LINKS: ContactLink[] = [
   },
 ];
 
-/**
- * Sending is VISUAL ONLY for now (P27-66 Phase 4): the form shows "sending", then the
- * thank-you, after this short beat. Wire a real service in `sendMessage` (Contact.tsx).
- */
+/** The form's name in Netlify Forms (P27-66): the same as in public/__forms.html. */
+export const CONTACT_FORM = "contact";
+
+/** How long a send takes on the dev server, which has no Netlify (send.ts): "sending", then the thank-you. */
 export const CONTACT_SEND_DELAY_MS = 900;

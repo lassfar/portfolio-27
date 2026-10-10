@@ -1,0 +1,21 @@
+<!doctype html>
+<!--
+  Netlify Forms (P27-66): a hidden copy of the contact form, so Netlify finds it when it deploys
+  (it can't see the React form). The page posts to this file (contact/send.ts), and its fields
+  must match the React form's. Never shown to visitors.
+-->
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="robots" content="noindex" />
+    <title>Contact form</title>
+  </head>
+  <body>
+    <form name="contact" method="POST" data-netlify="true" hidden>
+      <input type="hidden" name="form-name" value="contact" />
+      <input name="name" type="text" />
+      <input name="email" type="email" />
+      <textarea name="message"></textarea>
+    </form>
+  </body>
+</html>

@@ -11,6 +11,8 @@ export type ContactProps = {
   overlayRef?: RefObject<HTMLDivElement | null>;
   /** Its title's id, for the section it heads (`aria-labelledby`): the calm book's rail focuses it. */
   titleId?: string;
+  /** How a message is sent (stories pass a stand-in); by default Netlify Forms (`send.ts`). */
+  send?: SendMessage;
 };
 
 /** What a visitor sends through the form. */
@@ -19,6 +21,9 @@ export type ContactMessage = {
   email: string;
   message: string;
 };
+
+/** Sends a message, or throws when it couldn't (offline, a failed post): the form says so. */
+export type SendMessage = (message: ContactMessage) => Promise<void>;
 
 export type ContactLink = {
   label: string;
