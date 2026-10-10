@@ -1,5 +1,5 @@
 import type { Meta, StoryContext, StoryObj } from "@storybook/nextjs-vite";
-import { expect } from "storybook/test";
+import { expect, waitFor } from "storybook/test";
 
 import { contrastOnPage } from "#/stories/contrast";
 
@@ -55,5 +55,29 @@ export const Multiline: Story = {
   },
   play: async ({ canvas }: Context) => {
     await expect(canvas.getByRole("textbox", { name: "Message" }).tagName).toBe("TEXTAREA");
+  },
+};
+
+/** `error`: what's wrong with its value, under a thicker dark-peach line, and read with the field (WCAG 3.3.1). The text reads at 4.5:1, the line stands out at 3:1. */
+export const Invalid: Story = {
+  args: {
+    label: "Email",
+    name: "email",
+    type: "email",
+    defaultValue: "ada@",
+    error: "That doesn’t look like an email address.",
+  },
+  argTypes: { error: { control: "text" } },
+  play: async ({ canvas }: Context) => {
+    const input = canvas.getByRole("textbox", { name: "Email" });
+    await expect(input).toBeInvalid();
+    await expect(input).toHaveAccessibleDescription("That doesn’t look like an email address.");
+    const error = canvas.getByText("That doesn’t look like an email address.");
+    await expect(contrastOnPage(getComputedStyle(error).color)).toBeGreaterThanOrEqual(4.5);
+    await expect(contrastOnPage(getComputedStyle(input).borderBottomColor)).toBeGreaterThanOrEqual(
+      3,
+    );
+    // Faded in, so the a11y check that follows measures its colour.
+    await waitFor(() => expect(error.parentElement).toHaveStyle({ opacity: "1" }));
   },
 };

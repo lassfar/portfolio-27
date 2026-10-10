@@ -271,7 +271,7 @@
   );
 }
 
-/* A plain fade (the thank-you in calm motion: P27-92). */
+/* A plain fade, in calm motion (P27-92): Contact's thank-you and notes, a field's error. */
 @keyframes fade {
   from {
     opacity: 0;
@@ -281,7 +281,7 @@
   }
 }
 
-/* A soft rise-in (the contact form's thank-you). */
+/* A soft rise-in: Contact's thank-you and notes, a field's error. */
 @keyframes fadeIn {
   from {
     opacity: 0;

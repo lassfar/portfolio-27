@@ -1,4 +1,4 @@
-import type { ComponentProps } from "react";
+import type { ComponentProps, ReactNode } from "react";
 
 /** The field's own props; the rest go to its input or textarea. */
 export interface FieldOwnProps {
@@ -8,6 +8,8 @@ export interface FieldOwnProps {
   className?: string;
   /** A textarea for a longer text (it doesn't resize). */
   multiline?: boolean;
+  /** What's wrong with its value, shown under the line and read with it (it may hold a fix to tap). */
+  error?: ReactNode;
 }
 
 export type FieldProps = FieldOwnProps &
