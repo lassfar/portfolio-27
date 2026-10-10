@@ -10,7 +10,13 @@ import Swash from "#/components/UI/swash/Swash";
 import DisplayTitle from "#/components/UI/text/DisplayTitle";
 import { TITLE_SWASH } from "#/components/pages/home/swashes";
 import { CONTACT } from "#/components/pages/home/story/copy";
-import { CONTACT_LINKS, mailtoWith } from "#/components/pages/home/contact/config";
+import {
+  CONTACT_LINKS,
+  CONTACT_MIN_FILL_MS,
+  CONTACT_SEND_DELAY_MS,
+  CONTACT_TRAP_FIELD,
+  mailtoWith,
+} from "#/components/pages/home/contact/config";
 import { contactDraft } from "#/components/pages/home/contact/draft";
 import { sendMessage } from "#/components/pages/home/contact/send";
 import { ContactMessage, ContactProps } from "#/components/pages/home/contact/contact.types";
@@ -30,8 +36,9 @@ const mailBody = ({ name, message }: ContactMessage) => `${message}\n\n— ${nam
  * thing reverses on scroll-up. This component owns only the markup + the form state
  * (idle → sending → sent → "write another"). Messages go to Netlify Forms (P27-66, send.ts);
  * when one doesn't go through, it stays in the form, with a line saying so and a link that opens
- * the visitor's mail app with it. A message being written when the modes switch is carried over
- * (P27-94, contactDraft): the form opens with it.
+ * the visitor's mail app with it. A bot (it fills the hidden field, or sends faster than anyone
+ * writes) gets the thank-you, and nothing is sent. A message being written when the modes switch
+ * is carried over (P27-94, contactDraft): the form opens with it.
  */
 const Contact = ({ layout = "overlay", overlayRef, titleId, send = sendMessage }: ContactProps) => {
   const page = layout === "page";
@@ -39,6 +46,22 @@ const Contact = ({ layout = "overlay", overlayRef, titleId, send = sendMessage }
   const [status, setStatus] = useState<Status>("idle");
   const [failed, setFailed] = useState<ContactMessage | null>(null);
   const [draft] = useState(() => contactDraft.current);
+  /** When this message's first keystroke came (performance.now()), to tell a person from a bot. */
+  const firstInput = useRef<number | null>(null);
+
+  /** A bot: the hidden field filled, or sent faster than a person writes (unless it was written before a switch). */
+  const isBot = (data: FormData) =>
+    Boolean(data.get(CONTACT_TRAP_FIELD)) ||
+    (!draft &&
+      (firstInput.current === null ||
+        performance.now() - firstInput.current < CONTACT_MIN_FILL_MS));
+
+  const done = () => {
+    formRef.current?.reset();
+    firstInput.current = null;
+    contactDraft.current = null;
+    setStatus("sent");
+  };
 
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -50,6 +73,10 @@ const Contact = ({ layout = "overlay", overlayRef, titleId, send = sendMessage }
       message: String(data.get("message") ?? ""),
     };
     setStatus("sending");
+    if (isBot(data)) {
+      window.setTimeout(done, CONTACT_SEND_DELAY_MS);
+      return;
+    }
     try {
       await send(message);
     } catch {
@@ -57,9 +84,7 @@ const Contact = ({ layout = "overlay", overlayRef, titleId, send = sendMessage }
       setStatus("failed");
       return;
     }
-    formRef.current?.reset();
-    contactDraft.current = null;
-    setStatus("sent");
+    done();
   };
 
   const sent = status === "sent";
@@ -118,6 +143,7 @@ const Contact = ({ layout = "overlay", overlayRef, titleId, send = sendMessage }
           <form
             ref={formRef}
             onSubmit={handleSubmit}
+            onInput={() => (firstInput.current ??= performance.now())}
             inert={sent}
             aria-hidden={sent}
             className={clsx(
@@ -127,6 +153,8 @@ const Contact = ({ layout = "overlay", overlayRef, titleId, send = sendMessage }
               sent && "opacity-0",
             )}
           >
+            {/* Only a bot fills this (P27-66): never shown, focused or read. */}
+            <input hidden name={CONTACT_TRAP_FIELD} tabIndex={-1} autoComplete="off" />
             <Field
               label={CONTACT.fields.name.label}
               name="name"

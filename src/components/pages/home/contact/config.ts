@@ -24,5 +24,16 @@ export const CONTACT_LINKS: ContactLink[] = [
 /** The form's name in Netlify Forms (P27-66): the same as in public/__forms.html. */
 export const CONTACT_FORM = "contact";
 
-/** How long a send takes on the dev server, which has no Netlify (send.ts): "sending", then the thank-you. */
+/**
+ * Spam (P27-66): the hidden field only a bot fills (Netlify drops a post that fills it too),
+ * and how soon after its first keystroke a form can be sent by a person (ms). A bot gets the
+ * thank-you, and nothing is sent.
+ */
+export const CONTACT_TRAP_FIELD = "bot-field";
+export const CONTACT_MIN_FILL_MS = 1500;
+
+/**
+ * How long a pretend send takes: on the dev server, which has no Netlify (send.ts), and for a bot
+ * (Contact): "sending", then the thank-you.
+ */
 export const CONTACT_SEND_DELAY_MS = 900;
