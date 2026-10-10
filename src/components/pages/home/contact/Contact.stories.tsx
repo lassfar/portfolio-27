@@ -64,6 +64,13 @@ type Story = StoryObj<typeof meta>;
 /** A person takes a moment to write: a form sent faster counts as a bot's. */
 const likeAPerson = () => new Promise((resolve) => setTimeout(resolve, CONTACT_MIN_FILL_MS));
 
+/** The contact content has finished fading (out while the thank-you shows, else back in), so the a11y check that follows measures settled colours. */
+const settled = (root: HTMLElement) =>
+  waitFor(() => {
+    const content = root.querySelector(".home-contact__content")!;
+    expect(content).toHaveStyle({ opacity: content.hasAttribute("inert") ? "0" : "1" });
+  });
+
 /** As a page: the title and its swash, a warm line, the form and the links. */
 export const Page: Story = {
   play: async ({ canvas }) => {
@@ -73,10 +80,10 @@ export const Page: Story = {
   },
 };
 
-/** Sent (in calm motion, as in the book): the message goes out, and the thank-you fades in where the form was, announced. */
+/** Sent (in calm motion, as in the book): the message goes out, and the thank-you takes the contact content's place, announced, the links still under it; "Write another" brings the content back. */
 export const Sent: Story = {
   beforeEach: inCalm,
-  play: async ({ canvas, userEvent, args }) => {
+  play: async ({ canvas, canvasElement, userEvent, args }) => {
     await userEvent.type(canvas.getByRole("textbox", { name: CONTACT.fields.name.label }), "Ada");
     await userEvent.type(
       canvas.getByRole("textbox", { name: CONTACT.fields.email.label }),
@@ -99,6 +106,25 @@ export const Sent: Story = {
     const thanks = await canvas.findByRole("status", {}, { timeout: 3000 });
     await expect(thanks).toHaveTextContent(CONTACT.thanks.line);
     await waitFor(() => expect(thanks).toHaveStyle({ opacity: "1" }));
+
+    // The thank-you in the content's place: its heading the block's, the form gone, the links kept.
+    await expect(canvas.getByRole("heading", { level: 2 })).toHaveAccessibleName("Thank you");
+    await expect(
+      canvas.queryByRole("textbox", { name: CONTACT.fields.name.label }),
+    ).not.toBeInTheDocument();
+    await expect(canvas.getByRole("link", { name: /GitHub/ })).toBeVisible();
+    const again = canvas.getByRole("button", { name: CONTACT.thanks.again });
+    await waitFor(() => expect(again).toHaveFocus());
+    await settled(canvasElement);
+
+    // "Write another": the content back, the cursor in Name.
+    await userEvent.click(again);
+    const name = await canvas.findByRole("textbox", { name: CONTACT.fields.name.label });
+    await waitFor(() => expect(name).toHaveFocus());
+    await expect(name).toHaveValue("");
+    await expect(canvas.queryByRole("status")).not.toBeInTheDocument();
+    await expect(canvas.getByRole("heading", { level: 2 })).toHaveAttribute("id", "contact-title");
+    await settled(canvasElement);
   },
 };
 
@@ -138,7 +164,7 @@ export const Failed: Story = {
 
 /** An address Aymane can't reply to: the reason under Email, the focus there, and nothing sent. A typo gets a one-tap fix. */
 export const CheckedEmail: Story = {
-  play: async ({ canvas, userEvent, args, step }) => {
+  play: async ({ canvas, canvasElement, userEvent, args, step }) => {
     const email = canvas.getByRole("textbox", { name: CONTACT.fields.email.label });
     const send = () => userEvent.click(canvas.getByRole("button", { name: CONTACT.send }));
     const turnedDown = async (address: string, reason: string) => {
@@ -191,6 +217,7 @@ export const CheckedEmail: Story = {
       );
       const thanks = await canvas.findByRole("status", {}, { timeout: 3000 });
       await waitFor(() => expect(thanks).toHaveStyle({ opacity: "1" }));
+      await settled(canvasElement);
     });
   },
 };
@@ -200,7 +227,7 @@ export const LimitReached: Story = {
   beforeEach: () => {
     localStorage.setItem(SENT_KEY, JSON.stringify([Date.now() - 60_000]));
   },
-  play: async ({ canvas, userEvent, args }) => {
+  play: async ({ canvas, canvasElement, userEvent, args }) => {
     await expect(canvas.queryByText(CONTACT.limit.line, { exact: false })).toBeNull();
     await userEvent.type(canvas.getByRole("textbox", { name: CONTACT.fields.name.label }), "Ada");
     await userEvent.type(
@@ -224,6 +251,7 @@ export const LimitReached: Story = {
     );
     await expect(canvas.getByRole("button", { name: CONTACT.send })).toBeDisabled();
     await waitFor(() => expect(line).toHaveStyle({ opacity: "1" }));
+    await settled(canvasElement);
   },
 };
 
@@ -248,6 +276,7 @@ export const Bot: Story = {
       await expect(status).toHaveTextContent(CONTACT.thanks.line);
       await expect(args.send).not.toHaveBeenCalled();
       await waitFor(() => expect(status).toHaveStyle({ opacity: "1" }));
+      await settled(canvasElement);
     };
 
     await step("sent faster than anyone writes", async () => {
@@ -277,7 +306,7 @@ export const CarriedOver: Story = {
       contactDraft.current = null;
     };
   },
-  play: async ({ canvas, userEvent }) => {
+  play: async ({ canvas, canvasElement, userEvent }) => {
     const email = canvas.getByRole("textbox", { name: CONTACT.fields.email.label });
     await expect(canvas.getByRole("textbox", { name: CONTACT.fields.name.label })).toHaveValue(
       "Ada",
@@ -297,5 +326,6 @@ export const CarriedOver: Story = {
     await userEvent.click(canvas.getByRole("button", { name: CONTACT.send }));
     await canvas.findByRole("status", {}, { timeout: 3000 });
     await expect(contactDraft.current).toBeNull();
+    await settled(canvasElement);
   },
 };

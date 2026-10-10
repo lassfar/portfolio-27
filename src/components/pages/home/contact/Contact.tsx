@@ -1,7 +1,7 @@
 "use client";
 
 import clsx from "clsx";
-import { FormEvent, useRef, useState, useSyncExternalStore } from "react";
+import { FormEvent, useEffect, useRef, useState, useSyncExternalStore } from "react";
 import { PenLine, Send } from "lucide-react";
 import Button from "#/components/UI/buttons/Button";
 import Field from "#/components/UI/forms/Field";
@@ -163,6 +163,26 @@ const Contact = ({ layout = "overlay", overlayRef, titleId, send = sendMessage }
   };
 
   const sent = status === "sent";
+  /** "Write another", which takes the focus once sent. */
+  const againRef = useRef<HTMLButtonElement>(null);
+  /** Back from the thank-you: the focus returns to Name. */
+  const returning = useRef(false);
+
+  // The focus follows the swap (WCAG 2.4.3): to "Write another" once sent (the content goes
+  // inert), then back to Name after it. preventScroll: the journey's page is pinned.
+  useEffect(() => {
+    if (status === "sent") againRef.current?.focus({ preventScroll: true });
+    else if (status === "idle" && returning.current) {
+      returning.current = false;
+      const name = formRef.current?.elements.namedItem("name") as HTMLInputElement | null;
+      name?.focus({ preventScroll: true });
+    }
+  }, [status]);
+
+  const writeAnother = () => {
+    returning.current = true;
+    setStatus("idle");
+  };
 
   return (
     <div
@@ -189,143 +209,154 @@ const Contact = ({ layout = "overlay", overlayRef, titleId, send = sendMessage }
           page ? "pointer-events-auto" : "pointer-events-none",
         )}
       >
-        <DisplayTitle
-          id={titleId}
-          tabIndex={titleId ? -1 : undefined}
-          size="lg"
-          text={CONTACT.title}
-          className="home-contact__title mb-1 outline-none"
-        />
-        {/* Its swash draws in once the title has written in (useCosmicJourney). */}
-        <Swash
-          {...TITLE_SWASH.contact}
-          draw={page ? "mount" : "cue"}
-          className="mb-4 w-48 sm:mb-5 sm:w-64"
-        />
-
-        <p
-          className={clsx(
-            "home-contact__intro",
-            "font-light text-white/80",
-            "text-base leading-relaxed text-balance sm:text-lg md:text-xl",
-            "mb-8 max-w-xl sm:mb-10",
-          )}
-        >
-          {CONTACT.intro}
-        </p>
-
-        <div className="relative w-full">
-          <form
-            ref={formRef}
-            onSubmit={handleSubmit}
-            onInput={() => (firstInput.current ??= performance.now())}
+        {/* The contact content, and the thank-you in its place once sent: one grid cell, so the
+            block keeps its height. The content stays mounted (the journey animates its title,
+            line and pieces) and hides by opacity + inert: the journey sets its pieces'
+            visibility inline. The links below stay. */}
+        <div className="grid w-full">
+          <div
             inert={sent}
             aria-hidden={sent}
             className={clsx(
-              "home-contact__form",
-              "grid grid-cols-1 gap-x-8 gap-y-6 text-left sm:grid-cols-2",
+              "home-contact__content",
+              "col-start-1 row-start-1 flex w-full flex-col items-center",
               "transition-opacity duration-500",
               sent && "opacity-0",
             )}
           >
-            {/* Only a bot fills this (P27-66): never shown, focused or read. */}
-            <input hidden name={CONTACT_TRAP_FIELD} tabIndex={-1} autoComplete="off" />
-            <Field
-              label={CONTACT.fields.name.label}
-              name="name"
-              type="text"
-              required
-              maxLength={80}
-              autoComplete="name"
-              defaultValue={draft?.name}
-              placeholder={CONTACT.fields.name.placeholder}
-              className="home-contact__piece"
+            <DisplayTitle
+              id={titleId}
+              tabIndex={titleId ? -1 : undefined}
+              size="lg"
+              text={CONTACT.title}
+              className="home-contact__title mb-1 outline-none"
             />
-            <Field
-              label={CONTACT.fields.email.label}
-              name="email"
-              type="email"
-              required
-              maxLength={120}
-              autoComplete="email"
-              defaultValue={draft?.email}
-              error={emailProblem && emailError(emailProblem)}
-              onInput={() => setEmailProblem(null)}
-              placeholder={CONTACT.fields.email.placeholder}
-              className="home-contact__piece"
-            />
-            <Field
-              label={CONTACT.fields.message.label}
-              multiline
-              name="message"
-              required
-              rows={3}
-              maxLength={2000}
-              defaultValue={draft?.message}
-              placeholder={CONTACT.fields.message.placeholder}
-              className="home-contact__piece sm:col-span-2"
+            {/* Its swash draws in once the title has written in (useCosmicJourney). */}
+            <Swash
+              {...TITLE_SWASH.contact}
+              draw={page ? "mount" : "cue"}
+              className="mb-4 w-48 sm:mb-5 sm:w-64"
             />
 
-            <div className="home-contact__piece flex justify-center pt-2 sm:col-span-2">
-              <Button
-                type="submit"
-                label={status === "sending" ? CONTACT.sending : CONTACT.send}
-                icon={Send}
-                variant="outline"
-                size="large"
-                disabled={status === "sending" || limited}
+            <p
+              className={clsx(
+                "home-contact__intro",
+                "font-light text-white/80",
+                "text-base leading-relaxed text-balance sm:text-lg md:text-xl",
+                "mb-8 max-w-xl sm:mb-10",
+              )}
+            >
+              {CONTACT.intro}
+            </p>
+
+            <form
+              ref={formRef}
+              onSubmit={handleSubmit}
+              onInput={() => (firstInput.current ??= performance.now())}
+              className={clsx(
+                "home-contact__form",
+                "grid w-full grid-cols-1 gap-x-8 gap-y-6 text-left sm:grid-cols-2",
+              )}
+            >
+              {/* Only a bot fills this (P27-66): never shown, focused or read. */}
+              <input hidden name={CONTACT_TRAP_FIELD} tabIndex={-1} autoComplete="off" />
+              <Field
+                label={CONTACT.fields.name.label}
+                name="name"
+                type="text"
+                required
+                maxLength={80}
+                autoComplete="name"
+                defaultValue={draft?.name}
+                placeholder={CONTACT.fields.name.placeholder}
+                className="home-contact__piece"
               />
-            </div>
+              <Field
+                label={CONTACT.fields.email.label}
+                name="email"
+                type="email"
+                required
+                maxLength={120}
+                autoComplete="email"
+                defaultValue={draft?.email}
+                error={emailProblem && emailError(emailProblem)}
+                onInput={() => setEmailProblem(null)}
+                placeholder={CONTACT.fields.email.placeholder}
+                className="home-contact__piece"
+              />
+              <Field
+                label={CONTACT.fields.message.label}
+                multiline
+                name="message"
+                required
+                rows={3}
+                maxLength={2000}
+                defaultValue={draft?.message}
+                placeholder={CONTACT.fields.message.placeholder}
+                className="home-contact__piece sm:col-span-2"
+              />
 
-            {/* The day's messages are sent: more can wait, or go by mail. */}
-            {limited && status !== "sent" && (
-              <p role="status" className={NOTE}>
-                {CONTACT.limit.line}{" "}
-                <a href={`mailto:${CONTACT_EMAIL}`} className={INLINE_LINK}>
-                  {CONTACT.limit.email}
-                </a>
-                .
-              </p>
-            )}
+              <div className="home-contact__piece flex justify-center pt-2 sm:col-span-2">
+                <Button
+                  type="submit"
+                  label={status === "sending" ? CONTACT.sending : CONTACT.send}
+                  icon={Send}
+                  variant="outline"
+                  size="large"
+                  disabled={status === "sending" || limited}
+                />
+              </div>
 
-            {/* It didn't go through: the message stays, and their mail app can take it. */}
-            {status === "failed" && failed && (
-              <p role="alert" className={NOTE}>
-                {CONTACT.failed.line}{" "}
-                <a
-                  href={mailtoWith(CONTACT.failed.subject, mailBody(failed))}
-                  className={INLINE_LINK}
-                >
-                  {CONTACT.failed.email}
-                </a>
-                .
-              </p>
-            )}
-          </form>
+              {/* The day's messages are sent: more can wait, or go by mail. */}
+              {limited && status !== "sent" && (
+                <p role="status" className={NOTE}>
+                  {CONTACT.limit.line}{" "}
+                  <a href={`mailto:${CONTACT_EMAIL}`} className={INLINE_LINK}>
+                    {CONTACT.limit.email}
+                  </a>
+                  .
+                </p>
+              )}
 
-          {/* The thank-you, in the form's place once it's sent. */}
+              {/* It didn't go through: the message stays, and their mail app can take it. */}
+              {status === "failed" && failed && (
+                <p role="alert" className={NOTE}>
+                  {CONTACT.failed.line}{" "}
+                  <a
+                    href={mailtoWith(CONTACT.failed.subject, mailBody(failed))}
+                    className={INLINE_LINK}
+                  >
+                    {CONTACT.failed.email}
+                  </a>
+                  .
+                </p>
+              )}
+            </form>
+          </div>
+
+          {/* The thank-you, in the content's place: the block's title while it shows. */}
           {sent && (
             <div
               role="status"
               className={clsx(
                 "home-contact__sent",
-                "absolute inset-0 flex flex-col items-center justify-center gap-3",
+                "col-start-1 row-start-1 flex flex-col items-center justify-center",
                 // With motion it rises in; in calm it only fades (P27-92).
                 "moving:animate-[fadeIn_0.6s_ease-out] calm:animate-[fade_0.3s_ease-out]",
               )}
             >
-              <DisplayTitle as="h3" size="sm" text={CONTACT.thanks.title} />
-              <Swash {...TITLE_SWASH.contact} delay={0.3} className="-mt-2 w-40 sm:w-48" />
-              <p className="max-w-md text-base font-light text-white/75 sm:text-lg">
+              <DisplayTitle size="lg" text={CONTACT.thanks.title} className="mb-1" />
+              <Swash {...TITLE_SWASH.contact} delay={0.3} className="mb-4 w-48 sm:mb-5 sm:w-64" />
+              <p className="mb-6 max-w-md text-base font-light text-white/75 sm:mb-8 sm:text-lg">
                 {CONTACT.thanks.line}
               </p>
               <Button
+                ref={againRef}
                 label={CONTACT.thanks.again}
                 icon={PenLine}
                 variant="secondary"
                 size="medium"
-                onClick={() => setStatus("idle")}
-                className="mt-2"
+                onClick={writeAnother}
               />
             </div>
           )}
