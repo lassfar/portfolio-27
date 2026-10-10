@@ -5,6 +5,10 @@ import { ContactLink } from "#/components/pages/home/contact/contact.types";
 /** Where messages go (and the "Email" link). */
 export const CONTACT_EMAIL = "aymanelassfar@outlook.com";
 
+/** A mail link to Aymane, filled in with a message (when sending failed, P27-66). */
+export const mailtoWith = (subject: string, body: string) =>
+  `mailto:${CONTACT_EMAIL}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+
 /** The quiet row of links under the form. */
 export const CONTACT_LINKS: ContactLink[] = [
   { label: "Email", href: `mailto:${CONTACT_EMAIL}`, icon: Mail },

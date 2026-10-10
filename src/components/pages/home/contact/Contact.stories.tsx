@@ -1,6 +1,7 @@
 import type { Meta, StoryObj } from "@storybook/nextjs-vite";
-import { expect, fn, waitFor } from "storybook/test";
+import { expect, fn, waitFor, within } from "storybook/test";
 
+import { CONTACT_EMAIL } from "#/components/pages/home/contact/config";
 import { CONTACT } from "#/components/pages/home/story/copy";
 import { inCalm } from "#/stories/motion";
 import Contact from "./Contact";
@@ -59,6 +60,39 @@ export const Sent: Story = {
     const thanks = await canvas.findByRole("status", {}, { timeout: 3000 });
     await expect(thanks).toHaveTextContent(CONTACT.thanks.line);
     await waitFor(() => expect(thanks).toHaveStyle({ opacity: "1" }));
+  },
+};
+
+/** Sending failed (offline, a failed post): a line says so, the message stays in the form, Send works again, and a link opens the visitor's mail app with the message. */
+export const Failed: Story = {
+  args: {
+    send: fn(async () => {
+      throw new Error("Offline");
+    }),
+  },
+  play: async ({ canvas, userEvent, args }) => {
+    const message = canvas.getByRole("textbox", { name: CONTACT.fields.message.label });
+    await userEvent.type(canvas.getByRole("textbox", { name: CONTACT.fields.name.label }), "Ada");
+    await userEvent.type(
+      canvas.getByRole("textbox", { name: CONTACT.fields.email.label }),
+      "ada@example.com",
+    );
+    await userEvent.type(message, "Hello & goodbye");
+    await userEvent.click(canvas.getByRole("button", { name: CONTACT.send }));
+
+    const alert = await canvas.findByRole("alert");
+    await expect(alert).toHaveTextContent(CONTACT.failed.line);
+    await expect(message).toHaveValue("Hello & goodbye");
+    const mail = within(alert).getByRole("link", { name: CONTACT.failed.email });
+    const href = mail.getAttribute("href") ?? "";
+    await expect(href.startsWith(`mailto:${CONTACT_EMAIL}?`)).toBe(true);
+    await expect(href).toContain(encodeURIComponent("Hello & goodbye"));
+
+    // Send works again.
+    await userEvent.click(canvas.getByRole("button", { name: CONTACT.send }));
+    await waitFor(() => expect(args.send).toHaveBeenCalledTimes(2));
+    const again = await canvas.findByRole("alert");
+    await waitFor(() => expect(again).toHaveStyle({ opacity: "1" }));
   },
 };
 

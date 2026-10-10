@@ -10,12 +10,15 @@ import Swash from "#/components/UI/swash/Swash";
 import DisplayTitle from "#/components/UI/text/DisplayTitle";
 import { TITLE_SWASH } from "#/components/pages/home/swashes";
 import { CONTACT } from "#/components/pages/home/story/copy";
-import { CONTACT_LINKS } from "#/components/pages/home/contact/config";
+import { CONTACT_LINKS, mailtoWith } from "#/components/pages/home/contact/config";
 import { contactDraft } from "#/components/pages/home/contact/draft";
 import { sendMessage } from "#/components/pages/home/contact/send";
-import { ContactProps } from "#/components/pages/home/contact/contact.types";
+import { ContactMessage, ContactProps } from "#/components/pages/home/contact/contact.types";
 
-type Status = "idle" | "sending" | "sent";
+type Status = "idle" | "sending" | "sent" | "failed";
+
+/** The message as a mail: what they wrote, signed with their name. */
+const mailBody = ({ name, message }: ContactMessage) => `${message}\n\n— ${name}`;
 
 /**
  * Contact — the site's last beat. After the galaxy has fully resolved (and a short
@@ -25,29 +28,33 @@ type Status = "idle" | "sending" | "sent";
  * Driven entirely by the master pinned journey (`useCosmicJourney` → renderContact):
  * the overlay's `.home-contact__piece`s are revealed one after another, so the whole
  * thing reverses on scroll-up. This component owns only the markup + the form state
- * (idle → sending → sent → "write another"). Messages go to Netlify Forms (P27-66, send.ts). A
- * message being written when the modes switch is carried over (P27-94, contactDraft): the form
- * opens with it.
+ * (idle → sending → sent → "write another"). Messages go to Netlify Forms (P27-66, send.ts);
+ * when one doesn't go through, it stays in the form, with a line saying so and a link that opens
+ * the visitor's mail app with it. A message being written when the modes switch is carried over
+ * (P27-94, contactDraft): the form opens with it.
  */
 const Contact = ({ layout = "overlay", overlayRef, titleId, send = sendMessage }: ContactProps) => {
   const page = layout === "page";
   const formRef = useRef<HTMLFormElement | null>(null);
   const [status, setStatus] = useState<Status>("idle");
+  const [failed, setFailed] = useState<ContactMessage | null>(null);
   const [draft] = useState(() => contactDraft.current);
 
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     if (status === "sending") return;
     const data = new FormData(event.currentTarget);
+    const message: ContactMessage = {
+      name: String(data.get("name") ?? ""),
+      email: String(data.get("email") ?? ""),
+      message: String(data.get("message") ?? ""),
+    };
     setStatus("sending");
     try {
-      await send({
-        name: String(data.get("name") ?? ""),
-        email: String(data.get("email") ?? ""),
-        message: String(data.get("message") ?? ""),
-      });
+      await send(message);
     } catch {
-      setStatus("idle");
+      setFailed(message);
+      setStatus("failed");
       return;
     }
     formRef.current?.reset();
@@ -164,6 +171,26 @@ const Contact = ({ layout = "overlay", overlayRef, titleId, send = sendMessage }
                 disabled={status === "sending"}
               />
             </div>
+
+            {/* It didn't go through: the message stays, and their mail app can take it. */}
+            {status === "failed" && failed && (
+              <p
+                role="alert"
+                className={clsx(
+                  "text-center text-sm font-light text-balance text-light-peach sm:col-span-2 sm:text-base",
+                  "moving:animate-[fadeIn_0.6s_ease-out] calm:animate-[fade_0.3s_ease-out]",
+                )}
+              >
+                {CONTACT.failed.line}{" "}
+                <a
+                  href={mailtoWith(CONTACT.failed.subject, mailBody(failed))}
+                  className="text-peach underline underline-offset-4 focus-ring hover:text-light-peach"
+                >
+                  {CONTACT.failed.email}
+                </a>
+                .
+              </p>
+            )}
           </form>
 
           {/* The thank-you, in the form's place once it's sent. */}

@@ -74,6 +74,12 @@ export const CONTACT = {
   },
   send: "Send it",
   sending: "Sending…",
+  /** When a message didn't go through (P27-66): it stays in the form; the link opens their mail app with it. */
+  failed: {
+    line: "It didn’t go through, the connection maybe. Try again, or",
+    email: "email it to me",
+    subject: "Hello from your portfolio",
+  },
   thanks: {
     title: "*Thank you*",
     line: "Your message is on its way. I’ll write back soon.",
