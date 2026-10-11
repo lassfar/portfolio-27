@@ -8,8 +8,10 @@ import Field from "#/components/UI/forms/Field";
 import TextLink from "#/components/UI/links/TextLink";
 import Swash from "#/components/UI/swash/Swash";
 import DisplayTitle from "#/components/UI/text/DisplayTitle";
+import { plainText } from "#/components/UI/text/accent";
 import { TITLE_SWASH } from "#/components/pages/home/swashes";
 import { CONTACT } from "#/components/pages/home/story/copy";
+import { useTimeout } from "#/components/hooks/useTimeout";
 import {
   CONTACT_DAILY_LIMIT,
   CONTACT_EMAIL,
@@ -41,6 +43,14 @@ const NOTE = clsx(
   "text-center text-sm font-light text-balance text-light-peach sm:col-span-2 sm:text-base",
   "moving:animate-[fadeIn_0.6s_ease-out] calm:animate-[fade_0.3s_ease-out]",
 );
+
+/** What screen readers hear as the thank-you shows, and as the form comes back at the day's limit. */
+const SAID = {
+  thanks: `${plainText(CONTACT.thanks.title)}. ${CONTACT.thanks.line}`,
+  limit: `${CONTACT.limit.line} ${CONTACT.limit.email}.`,
+};
+/** How long it stays said (s): then cleared, so reading on doesn't meet it again. */
+const SAID_SECONDS = 4;
 
 /** A send from another tab counts here too. */
 const onStorage = (change: () => void) => {
@@ -79,6 +89,13 @@ const Contact = ({ layout = "overlay", overlayRef, titleId, send = sendMessage }
   const [failed, setFailed] = useState<ContactMessage | null>(null);
   const [emailProblem, setEmailProblem] = useState<EmailProblem | null>(null);
   const [draft] = useState(() => contactDraft.current);
+  /** The live line's words (SAID): filled as the status changes, so it's heard (P27-100). */
+  const [said, setSaid] = useState("");
+  const hush = useTimeout();
+  const say = (words: string) => {
+    setSaid(words);
+    hush.set(() => setSaid(""), SAID_SECONDS);
+  };
   const limited = useSyncExternalStore(onStorage, atLimit, () => false);
   /** The address a typo hint was shown for: sent again unchanged, it's kept. */
   const typoShownFor = useRef<string | null>(null);
@@ -125,6 +142,7 @@ const Contact = ({ layout = "overlay", overlayRef, titleId, send = sendMessage }
     firstInput.current = null;
     contactDraft.current = null;
     setStatus("sent");
+    say(SAID.thanks);
   };
 
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
@@ -182,6 +200,7 @@ const Contact = ({ layout = "overlay", overlayRef, titleId, send = sendMessage }
   const writeAnother = () => {
     returning.current = true;
     setStatus("idle");
+    say(limited ? SAID.limit : "");
   };
 
   return (
@@ -209,6 +228,14 @@ const Contact = ({ layout = "overlay", overlayRef, titleId, send = sendMessage }
           page ? "pointer-events-auto" : "pointer-events-none",
         )}
       >
+        {/* What changes, said: always in the page (a line added with its words isn't always
+            heard), outside the content that goes inert (WCAG 4.1.3, P27-100). The lines shown
+            have no role of their own, so nothing is announced twice; and it clears after a
+            while, so reading on doesn't meet it again. */}
+        <p className="sr-only" role="status">
+          {said}
+        </p>
+
         {/* The contact content, and the thank-you in its place once sent: one grid cell, so the
             block keeps its height. The content stays mounted (the journey animates its title,
             line and pieces) and hides by opacity + inert: the journey sets its pieces'
@@ -313,7 +340,7 @@ const Contact = ({ layout = "overlay", overlayRef, titleId, send = sendMessage }
 
               {/* The day's messages are sent: more can wait, or go by mail. */}
               {limited && status !== "sent" && (
-                <p role="status" className={NOTE}>
+                <p className={NOTE}>
                   {CONTACT.limit.line}{" "}
                   <a href={`mailto:${CONTACT_EMAIL}`} className={INLINE_LINK}>
                     {CONTACT.limit.email}
@@ -341,7 +368,6 @@ const Contact = ({ layout = "overlay", overlayRef, titleId, send = sendMessage }
           {/* The thank-you, in the content's place: the block's title while it shows. */}
           {sent && (
             <div
-              role="status"
               className={clsx(
                 "home-contact__sent",
                 "col-start-1 row-start-1 flex flex-col items-center justify-center",

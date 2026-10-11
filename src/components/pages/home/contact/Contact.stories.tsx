@@ -64,6 +64,13 @@ type Story = StoryObj<typeof meta>;
 /** A person takes a moment to write: a form sent faster counts as a bot's. */
 const likeAPerson = () => new Promise((resolve) => setTimeout(resolve, CONTACT_MIN_FILL_MS));
 
+/** The live line has said `words` (P27-100): it stays in the page, filled as the status changes. */
+const heard = (canvas: ReturnType<typeof within>, words: string) =>
+  waitFor(() => expect(canvas.getByRole("status")).toHaveTextContent(words), { timeout: 3000 });
+
+/** The thank-you, as shown (its line has no role: the live line says it). */
+const thankYou = (root: HTMLElement) => root.querySelector<HTMLElement>(".home-contact__sent")!;
+
 /** The contact content has finished fading (out while the thank-you shows, else back in), so the a11y check that follows measures settled colours. */
 const settled = (root: HTMLElement) =>
   waitFor(() => {
@@ -103,7 +110,8 @@ export const Sent: Story = {
         message: "Hello!",
       }),
     );
-    const thanks = await canvas.findByRole("status", {}, { timeout: 3000 });
+    await heard(canvas, CONTACT.thanks.line);
+    const thanks = thankYou(canvasElement);
     await expect(thanks).toHaveTextContent(CONTACT.thanks.line);
     await waitFor(() => expect(thanks).toHaveStyle({ opacity: "1" }));
 
@@ -122,7 +130,7 @@ export const Sent: Story = {
     const name = await canvas.findByRole("textbox", { name: CONTACT.fields.name.label });
     await waitFor(() => expect(name).toHaveFocus());
     await expect(name).toHaveValue("");
-    await expect(canvas.queryByRole("status")).not.toBeInTheDocument();
+    await expect(canvas.getByRole("status")).toBeEmptyDOMElement();
     await expect(canvas.getByRole("heading", { level: 2 })).toHaveAttribute("id", "contact-title");
     await settled(canvasElement);
   },
@@ -215,14 +223,14 @@ export const CheckedEmail: Story = {
           expect.objectContaining({ email: "ada@lovelace.dev" }),
         ),
       );
-      const thanks = await canvas.findByRole("status", {}, { timeout: 3000 });
-      await waitFor(() => expect(thanks).toHaveStyle({ opacity: "1" }));
+      await heard(canvas, CONTACT.thanks.line);
+      await waitFor(() => expect(thankYou(canvasElement)).toHaveStyle({ opacity: "1" }));
       await settled(canvasElement);
     });
   },
 };
 
-/** Two messages a day from one browser: the second goes, then a kind line and the email link, and Send waits for tomorrow. */
+/** Two messages a day from one browser: the second goes, then a kind line (said too) and the email link, and Send waits for tomorrow. */
 export const LimitReached: Story = {
   beforeEach: () => {
     localStorage.setItem(SENT_KEY, JSON.stringify([Date.now() - 60_000]));
@@ -243,12 +251,11 @@ export const LimitReached: Story = {
     await waitFor(() => expect(args.send).toHaveBeenCalledTimes(1));
     await userEvent.click(await canvas.findByRole("button", { name: CONTACT.thanks.again }));
 
-    const line = await canvas.findByRole("status");
+    await heard(canvas, CONTACT.limit.line);
+    const link = canvas.getByRole("link", { name: CONTACT.limit.email });
+    await expect(link).toHaveAttribute("href", `mailto:${CONTACT_EMAIL}`);
+    const line = link.closest("p")!;
     await expect(line).toHaveTextContent(CONTACT.limit.line);
-    await expect(within(line).getByRole("link", { name: CONTACT.limit.email })).toHaveAttribute(
-      "href",
-      `mailto:${CONTACT_EMAIL}`,
-    );
     await expect(canvas.getByRole("button", { name: CONTACT.send })).toBeDisabled();
     await waitFor(() => expect(line).toHaveStyle({ opacity: "1" }));
     await settled(canvasElement);
@@ -272,10 +279,9 @@ export const Bot: Story = {
       }
     };
     const thanks = async () => {
-      const status = await canvas.findByRole("status", {}, { timeout: 3000 });
-      await expect(status).toHaveTextContent(CONTACT.thanks.line);
+      await heard(canvas, CONTACT.thanks.line);
       await expect(args.send).not.toHaveBeenCalled();
-      await waitFor(() => expect(status).toHaveStyle({ opacity: "1" }));
+      await waitFor(() => expect(thankYou(canvasElement)).toHaveStyle({ opacity: "1" }));
       await settled(canvasElement);
     };
 
@@ -324,7 +330,7 @@ export const CarriedOver: Story = {
       message: "Half a thought",
     });
     await userEvent.click(canvas.getByRole("button", { name: CONTACT.send }));
-    await canvas.findByRole("status", {}, { timeout: 3000 });
+    await heard(canvas, CONTACT.thanks.line);
     await expect(contactDraft.current).toBeNull();
     await settled(canvasElement);
   },
