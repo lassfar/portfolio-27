@@ -29,7 +29,7 @@ export default meta;
 
 type Story = StoryObj<typeof meta>;
 
-/** Open on a photo (London's second): step through them, then go back to the panel. */
+/** Open on a photo (London's second): step through them (each said: "Photo 3 of 5", its caption), then go back to the panel. */
 export const Default: Story = {
   play: async ({ userEvent }) => {
     const viewer = within(
@@ -38,6 +38,10 @@ export const Default: Story = {
     await expect(viewer.getByText("2 / 5")).toBeInTheDocument();
     await userEvent.click(viewer.getByRole("button", { name: "Next photo" }));
     await expect(viewer.getByText("3 / 5")).toBeInTheDocument();
+    await expect(viewer.getByText("Photo 3 of 5:").parentElement).toHaveAttribute(
+      "aria-live",
+      "polite",
+    );
     await userEvent.click(viewer.getByRole("button", { name: "Previous photo" }));
     await userEvent.click(viewer.getByRole("button", { name: "Previous photo" }));
     await expect(viewer.getByText("1 / 5")).toBeInTheDocument();

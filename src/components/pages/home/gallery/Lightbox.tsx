@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, type Ref } from "react";
+import { useCallback, useId, type Ref } from "react";
 import clsx from "clsx";
 import { ChevronLeft, ChevronRight, X } from "lucide-react";
 import IconButton from "#/components/UI/buttons/IconButton";
@@ -25,6 +25,7 @@ const ARROW = {
 const Lightbox = ({ ref }: { ref?: Ref<HTMLDivElement> }) => {
   const placeId = usePanelStore((s) => (s.content?.kind === "place" ? s.content.id : null));
   const photo = usePanelStore((s) => s.photo);
+  const captionId = useId();
   const media = findPlace(placeId)?.media ?? [];
   const open = photo !== null && photo < media.length;
   const shownPlace = findPlace(useLingering(open ? placeId : null));
@@ -48,6 +49,7 @@ const Lightbox = ({ ref }: { ref?: Ref<HTMLDivElement> }) => {
       role="dialog"
       aria-modal="true"
       aria-label="Photo viewer"
+      aria-describedby={captionId} // its number and caption, heard as it opens
       className={clsx(
         "fixed inset-0 z-60 flex flex-col items-center gap-6 bg-black/80 px-4 pt-20 pb-24 backdrop-blur-lg duration-350 ease-out sm:px-30 sm:pt-22 sm:pb-10 calm:duration-200",
         // Shown at once (focus can move in), hidden only once faded out.
@@ -79,9 +81,19 @@ const Lightbox = ({ ref }: { ref?: Ref<HTMLDivElement> }) => {
               playing={open}
             />
           </div>
-          <p className="flex max-w-full items-center gap-4 text-xs text-gray-slate/60 tabular-nums">
-            <span className="shrink-0 tracking-eyebrow-sm text-peach">
+          {/* Its number and caption, said as the photo changes (P27-100, WCAG 4.1.3), in words
+              ("Photo 2 of 5"). The caption describes the photo: its alt stays empty. */}
+          <p
+            id={captionId}
+            aria-live="polite"
+            aria-atomic="true"
+            className="flex max-w-full items-center gap-4 text-xs text-gray-slate/60 tabular-nums"
+          >
+            <span aria-hidden="true" className="shrink-0 tracking-eyebrow-sm text-peach">
               {index + 1} / {count}
+            </span>
+            <span className="sr-only">
+              {`Photo ${index + 1} of ${count}${item.caption ? ": " : ""}`}
             </span>
             {item.caption && <span className="truncate">{item.caption}</span>}
           </p>

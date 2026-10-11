@@ -110,7 +110,7 @@ export function MediaFull({
     // eslint-disable-next-line @next/next/no-img-element -- placeholders for now; next/image once the real photos exist
     <img
       src={item.src}
-      alt={item.caption ?? ""}
+      alt="" // its caption, under it in the viewer, describes it (and is said with its number)
       onError={() => setFailed(true)}
       className="max-h-full max-w-full rounded-2xl object-contain shadow-photo"
     />
