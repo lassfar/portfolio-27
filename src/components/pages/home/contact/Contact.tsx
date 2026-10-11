@@ -238,7 +238,11 @@ const Contact = ({ layout = "overlay", overlayRef, titleId, send = sendMessage }
               className="mb-4 w-48 sm:mb-5 sm:w-64"
             />
 
+            {/* In the journey, read from this copy: the line below writes in word by word there
+                (split, so hidden from screen readers). The book shows it as it is (P27-100). */}
+            {!page && <p className="sr-only">{CONTACT.intro}</p>}
             <p
+              aria-hidden={page ? undefined : true}
               className={clsx(
                 "home-contact__intro",
                 "font-light text-white/80",

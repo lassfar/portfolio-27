@@ -269,8 +269,9 @@ export default function useCosmicJourney(refs: CosmicJourneyRefs): void {
       const descSplits = addTextsScrollWriteIn(
         tl,
         [
-          { ref: aboutPara1Ref, type: "words", weight: 1 },
-          { ref: aboutPara2Ref, type: "words", weight: 1 },
+          // Read from their copies (Hero.tsx): a label on a <p> is ignored (P27-100).
+          { ref: aboutPara1Ref, type: "words", weight: 1, aria: "none" },
+          { ref: aboutPara2Ref, type: "words", weight: 1, aria: "none" },
         ],
         {
           at: JOURNEY.fillStart * JE,
@@ -295,6 +296,7 @@ export default function useCosmicJourney(refs: CosmicJourneyRefs): void {
                 contactRef.current?.querySelector<HTMLElement>(".home-contact__intro") ?? null,
             },
             type: "words",
+            aria: "none", // read from its copy (Contact.tsx)
           },
         ],
         { at: JOURNEY.contactStart + 0.2 * contactSpan, duration: 0.3 * contactSpan },

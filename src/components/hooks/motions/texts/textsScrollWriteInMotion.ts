@@ -15,6 +15,13 @@ export type ScrollWriteInElement<T extends HTMLElement = HTMLElement> = {
   ease?: string;
   /** Relative share of the write-in span this element occupies. */
   weight?: number;
+  /**
+   * What SplitText does for screen readers (its `aria`): "auto" labels the element with its
+   * text and hides the pieces, which suits a heading but not a `<p>` (a label there is ignored:
+   * the text goes silent). "none" for an element hidden from them already, whose words are read
+   * from a copy (P27-100).
+   */
+  aria?: "auto" | "none";
 };
 
 type Options = {
@@ -37,18 +44,19 @@ export function addTextsScrollWriteIn(
   elements: ScrollWriteInElement[],
   { at, duration }: Options,
 ): SplitText[] {
-  const splits = elements
-    .map((el) =>
-      el.ref.current
-        ? new SplitText(el.ref.current, {
-            type: el.type === "chars" ? "chars" : "words",
-          })
-        : null,
-    )
-    .filter((s): s is SplitText => s !== null);
+  // One per element (null where its ref isn't set), so each keeps its own split.
+  const splits = elements.map((el) =>
+    el.ref.current
+      ? new SplitText(el.ref.current, {
+          type: el.type === "chars" ? "chars" : "words",
+          aria: el.aria ?? "auto",
+        })
+      : null,
+  );
 
   const totalWeight = elements.reduce((sum, el) => sum + (el.weight ?? 1), 0);
 
+  let placed = false; // the first element that splits starts at `at`
   elements.forEach((el, i) => {
     const split = splits[i];
     if (!split) return;
@@ -63,10 +71,11 @@ export function addTextsScrollWriteIn(
         duration: segment * 0.45,
         stagger: { amount: segment * 0.55 },
       },
-      // First element starts at `at`; the rest cascade right after the previous.
-      i === 0 ? at : ">",
+      // The first one starts at `at`; the rest cascade right after the previous.
+      placed ? ">" : at,
     );
+    placed = true;
   });
 
-  return splits;
+  return splits.filter((s): s is SplitText => s !== null);
 }

@@ -143,7 +143,14 @@ const Hero = () => {
             className="mb-7 w-56 sm:mb-9 sm:w-72 md:w-110 lg:w-150"
           />
 
-          <div className="max-w-2xl space-y-5 sm:space-y-6">
+          {/* Its words for screen readers: the paragraphs below write in word by word (split,
+              so hidden from them), and are read from here instead, once (P27-100). */}
+          <div className="sr-only">
+            {ABOUT.paragraphs.map((paragraph) => (
+              <p key={paragraph}>{paragraph}</p>
+            ))}
+          </div>
+          <div className="max-w-2xl space-y-5 sm:space-y-6" aria-hidden="true">
             <p
               ref={aboutPara1Ref}
               className={clsx(

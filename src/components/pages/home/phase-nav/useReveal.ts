@@ -139,7 +139,8 @@ export function useReveal(
       if (!r || !sh || !glow || !label || out.current) return;
       out.current = true;
       setOpen(true);
-      const split = new SplitText(label, { type: "chars" });
+      // Its letters hidden from screen readers: the button is named by its aria-label.
+      const split = new SplitText(label, { type: "chars", aria: "hidden" });
       const icon = r.querySelector("[data-button-icon]");
       const letters = icon ? [...split.chars, icon] : split.chars;
       const css = getComputedStyle(document.documentElement);

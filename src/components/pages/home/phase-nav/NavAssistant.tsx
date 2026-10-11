@@ -147,6 +147,7 @@ const NavAssistantView = () => {
         <div ref={reveal} className="nav-assistant__reveal" inert={!open}>
           <Button
             label={stop?.name ?? ""}
+            aria-label={stop?.name}
             icon={ArrowDown}
             iconSlide="down"
             variant={PHASE_NAV.variant}
