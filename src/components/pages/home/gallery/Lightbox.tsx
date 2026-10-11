@@ -9,10 +9,13 @@ import { usePanelStore } from "#/stores/usePanelStore";
 import { findPlace, wrapIndex } from "#/components/pages/home/panel/content";
 import { MediaFull } from "./GalleryMedia";
 
-/** Where the arrows sit: at the sides, centred — at the bottom corners on a phone. */
+/**
+ * Where the arrows sit: at the sides, centred — at the bottom corners on a phone; at the sides
+ * again on a short screen (a phone held sideways, a big zoom), where the photo needs the height.
+ */
 const ARROW = {
-  prev: "bottom-6 left-5 sm:top-1/2 sm:bottom-auto sm:left-10 sm:-translate-y-1/2",
-  next: "right-5 bottom-6 sm:top-1/2 sm:right-10 sm:bottom-auto sm:-translate-y-1/2",
+  prev: "bottom-6 left-5 sm:top-1/2 sm:bottom-auto sm:left-10 sm:-translate-y-1/2 short:top-1/2 short:bottom-auto short:left-3 short:-translate-y-1/2",
+  next: "right-5 bottom-6 sm:top-1/2 sm:right-10 sm:bottom-auto sm:-translate-y-1/2 short:top-1/2 short:right-3 short:bottom-auto short:-translate-y-1/2",
 } as const;
 
 /**
@@ -52,6 +55,9 @@ const Lightbox = ({ ref }: { ref?: Ref<HTMLDivElement> }) => {
       aria-describedby={captionId} // its number and caption, heard as it opens
       className={clsx(
         "fixed inset-0 z-60 flex flex-col items-center gap-6 bg-black/80 px-4 pt-20 pb-24 backdrop-blur-lg duration-350 ease-out sm:px-30 sm:pt-22 sm:pb-10 calm:duration-200",
+        // A short screen (P27-101, WCAG 1.4.10): the controls in the side margins, the photo
+        // gets the height.
+        "short:gap-2 short:px-16 short:pt-3 short:pb-3",
         // Shown at once (focus can move in), hidden only once faded out.
         open
           ? "visible opacity-100 transition-opacity"
@@ -60,7 +66,7 @@ const Lightbox = ({ ref }: { ref?: Ref<HTMLDivElement> }) => {
     >
       {item && index !== null && (
         <>
-          <div className="absolute top-4.5 right-4.5 z-1 sm:top-8 sm:right-10">
+          <div className="absolute top-4.5 right-4.5 z-1 sm:top-8 sm:right-10 short:top-3 short:right-3">
             <IconButton data-autofocus icon={X} label="Close the photo" onClick={back} />
           </div>
           {count > 1 && (
@@ -95,7 +101,8 @@ const Lightbox = ({ ref }: { ref?: Ref<HTMLDivElement> }) => {
             <span className="sr-only">
               {`Photo ${index + 1} of ${count}${item.caption ? ": " : ""}`}
             </span>
-            {item.caption && <span className="truncate">{item.caption}</span>}
+            {/* Up to two lines, not cut to one (P27-101). */}
+            {item.caption && <span className="line-clamp-2 min-w-0">{item.caption}</span>}
           </p>
         </>
       )}
