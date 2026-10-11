@@ -74,7 +74,6 @@ const StoryTimelineRail = ({
   toast,
   onSelect,
   tuning = TIMELINE,
-  announce = true,
 }: StoryTimelineRailProps) => {
   const { horizontal, tip, place } = railLayout(tuning);
   const along = horizontal ? "left" : "top"; // places things along the rail
@@ -124,12 +123,13 @@ const StoryTimelineRail = ({
           </li>
         ))}
       </ol>
-      {/* The chapter's name as it changes, by its star. */}
+      {/* The chapter's name as it changes, by its star (not read out: StoryTimeline announces
+          the chapter on every device, P27-100). */}
       <div
         className={clsx("absolute size-0", PILL_SPOT[tip])}
         style={{ [along]: `${(positions[toast?.index ?? current] ?? 0) * 100}%` }}
       >
-        <Tooltip side={tip} open={toast?.on ?? false} live={announce}>
+        <Tooltip side={tip} open={toast?.on ?? false}>
           {toast ? chapters[toast.index]?.name : ""}
         </Tooltip>
       </div>

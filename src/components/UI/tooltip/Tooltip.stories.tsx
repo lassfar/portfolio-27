@@ -139,7 +139,7 @@ export const Delayed: Story = {
   },
 };
 
-/** Shown from outside and read out as it changes: the timeline's name pill. */
+/** Shown from outside (`open`) and read out as it changes (`live`): a pill that says itself. */
 export const OpenLive: Story = {
   args: { side: "right", open: true, live: true, children: "Back to London" },
   play: async ({ canvas }) => {

@@ -119,7 +119,6 @@ const BookTimeline = () => {
       toast={toast}
       onSelect={jumpTo}
       tuning={BOOK_TIMELINE}
-      announce={false}
     />
   );
 };

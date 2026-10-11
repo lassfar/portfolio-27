@@ -117,13 +117,13 @@ export const FirstScreen: Story = {
   },
 };
 
-/** Phones: no hover tooltips; a new chapter's name pops up by its star, read out. */
+/** Phones: no hover tooltips; a new chapter's name pops up by its star (screen readers hear it from the live timeline's own announcement, on every device). */
 export const Phone: Story = {
   args: { phone: true, toast: { index: 5, on: true } },
   globals: { viewport: { value: "mobile1", isRotated: false } },
   play: async ({ canvas }) => {
     const pill = canvas.getByText(STORY_CHAPTERS[5].name); // the only one: phones have no tooltips
-    await expect(pill).toHaveAttribute("aria-live", "polite");
+    await expect(pill).toHaveAttribute("aria-hidden", "true"); // not read twice (P27-100)
     await waitFor(() => expect(pill).toBeVisible());
   },
 };

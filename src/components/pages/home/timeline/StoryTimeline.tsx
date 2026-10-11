@@ -5,6 +5,7 @@ import { createPortal } from "react-dom";
 import { mpAt } from "#/components/three.js/star/config";
 import { goTo } from "#/components/pages/home/scroll/goTo";
 import { stopGlideOnInput } from "#/components/pages/home/scroll/glide";
+import { useTimeout } from "#/components/hooks/useTimeout";
 import { useJourneyScroll } from "#/stores/useJourneyScroll";
 import { selectIsOpen, usePanelStore } from "#/stores/usePanelStore";
 import { useTimelineTuning } from "#/stores/useTimelineTuning";
@@ -20,6 +21,7 @@ import {
   railPxFor,
 } from "./layout";
 import StoryTimelineRail from "./StoryTimelineRail";
+import { ANNOUNCE_CLEAR_SECONDS, chapterAnnouncer } from "./announce";
 import type { StoryTimelineRest, StoryTimelineToast } from "./StoryTimeline.types";
 
 /**
@@ -45,6 +47,7 @@ const StoryTimeline = () => {
   const [shown, setShown] = useState(false);
   const [rest, setRest] = useState<StoryTimelineRest>("awake");
   const [toast, setToast] = useState<StoryTimelineToast>();
+  const [spoken, setSpoken] = useState("");
   const fillRef = useRef<HTMLDivElement>(null);
   const lastChapter = useRef<number | null>(null);
   const toastTimer = useRef(0);
@@ -124,6 +127,24 @@ const StoryTimeline = () => {
   }, [current, shown, phone]);
   useEffect(() => () => window.clearTimeout(toastTimer.current), []);
 
+  // Screen readers hear a new chapter's name once it holds (P27-100, WCAG 4.1.3), on every
+  // device, then the line clears; one the mode switch lands on is only noted (its status line
+  // says where it landed).
+  const hush = useTimeout();
+  const announcer = useMemo(
+    () =>
+      chapterAnnouncer((index) => {
+        setSpoken(STORY_CHAPTERS[index].name);
+        hush.set(() => setSpoken(""), ANNOUNCE_CLEAR_SECONDS);
+      }),
+    [hush],
+  );
+  useEffect(
+    () => announcer.next(current, document.documentElement.hasAttribute("data-mode-switching")),
+    [announcer, current],
+  );
+  useEffect(() => announcer.stop, [announcer]);
+
   // A wheel, a touch or a scroll key takes the scroll back from a glide.
   useEffect(stopGlideOnInput, []);
 
@@ -140,19 +161,25 @@ const StoryTimeline = () => {
   // it out of the Tab order while a panel is open (P27-99, WCAG 2.4.3): the panel holds the
   // scroll, so its stars would do nothing, and the side panel isn't modal (the scene stays).
   return createPortal(
-    <div className={STEP_BACK_IN_FULL_VIEW} inert={panelOpen}>
-      <StoryTimelineRail
-        chapters={STORY_CHAPTERS}
-        positions={positions}
-        current={current}
-        fillRef={fillRef}
-        shown={shown}
-        rest={rest}
-        phone={phone}
-        toast={toast}
-        onSelect={glideTo}
-      />
-    </div>,
+    <>
+      {/* Outside the wrapper: never inert, so it's always heard. */}
+      <p className="sr-only" aria-live="polite">
+        {spoken}
+      </p>
+      <div className={STEP_BACK_IN_FULL_VIEW} inert={panelOpen}>
+        <StoryTimelineRail
+          chapters={STORY_CHAPTERS}
+          positions={positions}
+          current={current}
+          fillRef={fillRef}
+          shown={shown}
+          rest={rest}
+          phone={phone}
+          toast={toast}
+          onSelect={glideTo}
+        />
+      </div>
+    </>,
     document.body,
   );
 };
