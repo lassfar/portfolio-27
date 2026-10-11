@@ -106,6 +106,12 @@ const Pin = ({ loc, phase, glow }: { loc: PhotoLocation; phase: number; glow: Ca
     if (approach <= 0.55 || labFade >= 0.999) {
       groupRef.current.visible = false;
       if (pinScreen[loc.id]?.shown !== false) pinScreen[loc.id] = { x: 0, y: 0, shown: false };
+      // A pin hovered as the story scrolled away stays lit (no pointer move, no pointer-out),
+      // and would hold the Earth's spin (P27-99): let it go.
+      if (pinHover.id === loc.id) {
+        pinHover.id = null;
+        document.body.style.cursor = "";
+      }
       return;
     }
     // Front/back cull: the pin's outward normal vs. the direction to the camera.

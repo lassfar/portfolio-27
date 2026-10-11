@@ -29,6 +29,8 @@ import { earthApproach, earthOwnsDrag, probeOwnsDrag, dragMode } from "./interac
 import { useLabScroll } from "#/stores/useLabScroll";
 import { LAB } from "#/components/three.js/voyager/config";
 import EarthPins from "./EarthPins";
+import { pinHover } from "./pinScreen";
+import { selectIsOpen, usePanelStore } from "#/stores/usePanelStore";
 import { preupload, whenIdle } from "#/components/three.js/scene/warmUp";
 import { sceneBuilds } from "#/components/three.js/scene/sceneBuilds";
 import { useJourneyScroll } from "#/stores/useJourneyScroll";
@@ -381,12 +383,15 @@ const DottedEarth = ({ interactive = true }: Props) => {
     }
     if (tiltRef.current) tiltRef.current.visible = r > 0.001;
 
-    // Idle self-spin (a planet's day) whenever the Earth is visible; it pauses
-    // ONLY while the globe itself is being dragged (a scene drag leaves the auto-
-    // rotation playing), and resumes a beat after a globe drag is released.
+    // Idle self-spin (a planet's day) whenever the Earth is visible. It holds while the globe
+    // itself is dragged (a scene drag leaves it playing), and while a place's label has the
+    // pointer or the focus or its panel is open (P27-99, WCAG 2.2.1: the spin mustn't turn a
+    // place away from someone reaching it); it resumes a beat after.
     if (r > 0.001) {
       const globeDragging = dragging.current && dragMode.current === "globe";
-      if (!globeDragging) {
+      const held = globeDragging || pinHover.id !== null || selectIsOpen(usePanelStore.getState());
+      if (held) sinceRelease.current = 0;
+      else {
         sinceRelease.current += delta;
         if (sinceRelease.current > EARTH.spinResumeDelay) {
           targetYaw.current += delta * EARTH.spin;
