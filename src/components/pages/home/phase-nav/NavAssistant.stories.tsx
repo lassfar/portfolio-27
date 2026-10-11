@@ -4,7 +4,7 @@ import { expect, waitFor, within } from "storybook/test";
 import { useGlide } from "#/stores/useGlide";
 import { useJourneyScroll } from "#/stores/useJourneyScroll";
 import NavAssistant from "./NavAssistant";
-import { PHASE_STOPS } from "./config";
+import { PHASE_NAV, PHASE_STOPS } from "./config";
 
 // Parked at the Earth's rest: the assistant offers the next chapter, the Lab.
 const earth = PHASE_STOPS.find((s) => s.id === "earth")?.target ?? 0.47;
@@ -58,6 +58,29 @@ export const Opened: Story = {
   play: async ({ userEvent }) => {
     await userEvent.click(await orb());
     await waitFor(async () => expect(await nextChapter()).toBeVisible(), { timeout: 3000 });
+  },
+};
+
+/** Opened from the keyboard, it stays open while it holds the focus (no auto-fold: WCAG 2.2.1); when the story moves on and it folds, the focus goes back to the orb, never to the page. */
+export const KeepsTheFocus: Story = {
+  beforeEach: () => {
+    const autoClose = PHASE_NAV.autoCloseSeconds;
+    PHASE_NAV.autoCloseSeconds = 0.5; // (6 s on the site)
+    return () => {
+      PHASE_NAV.autoCloseSeconds = autoClose;
+    };
+  },
+  play: async ({ userEvent }) => {
+    const dot = await orb();
+    dot.focus();
+    await userEvent.keyboard("{Enter}");
+    const button = await nextChapter();
+    await waitFor(() => expect(button).toHaveFocus(), { timeout: 3000 });
+    await new Promise((resolve) => setTimeout(resolve, 1200)); // past the auto-close
+    await expect(button).toBeVisible();
+    await expect(button).toHaveFocus();
+    useJourneyScroll.setState({ progress: earth + 0.05 }); // the story moves on: it folds
+    await waitFor(() => expect(dot).toHaveFocus(), { timeout: 2000 });
   },
 };
 

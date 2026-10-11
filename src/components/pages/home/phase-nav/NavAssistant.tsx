@@ -166,8 +166,8 @@ const NavAssistantView = () => {
  * writes in. Clicking the button glides there: it folds back into its dot, which shrinks and
  * drops out of sight; once the glide is over (or the visitor took the scroll back) and the story
  * has settled, the dot rises again.
- * The button also folds back after PHASE_NAV.autoCloseSeconds unused, on Esc, on a click
- * elsewhere, as the story moves on, or as a panel opens.
+ * The button also folds back after PHASE_NAV.autoCloseSeconds unused (not while it holds the
+ * keyboard's focus), on Esc, on a click elsewhere, as the story moves on, or as a panel opens.
  * - It offers the next chapter from wherever you are (nextStopAt).
  * - It stays away on the hero's first screen, while a panel is open (the story is frozen), and
  *   once Contact begins.

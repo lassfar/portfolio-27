@@ -17,14 +17,15 @@ export interface RevealRefs {
 
 /**
  * How it was opened: a mouse resting on the orb (it stays while the pointer does), or a tap /
- * Enter (the button takes the focus, and folds back if it's left unused).
+ * Enter (the button takes the focus, and folds back if it's left unused, not while it holds the
+ * keyboard's focus).
  */
 export type GrowBy = "hover" | "tap";
 
 export interface RevealActions {
   /** Grow the orb into the next chapter's button. */
   grow(by: GrowBy): void;
-  /** Fold the button back into the orb (the growth, reversed); `refocus` moves focus to the orb. */
+  /** Fold the button back into the orb (the growth, reversed); `refocus` moves focus to the orb, as does a fold with the focus on the button. */
   fold(refocus?: boolean): void;
   /** Back to the orb at once (while out of sight). */
   reset(): void;
@@ -101,14 +102,34 @@ export function useReveal(
       folded.current();
     };
 
+    /** The focus is on the button (it goes inert as it folds, which would drop the focus). */
+    const focusInside = () => reveal.current?.contains(document.activeElement) ?? false;
+
+    /**
+     * Someone at the keyboard is on it: the keyboard's focus (`:focus-visible`) on the button,
+     * or on the orb while it grows (the focus moves to the button as it lands). A tap or a click
+     * leaves no such focus.
+     */
+    const keyboardOnIt = () => {
+      const a = document.activeElement;
+      return !!a && (a === orb.current || focusInside()) && a.matches(":focus-visible");
+    };
+
     const fold = (refocus = false) => {
       const a = anim.current;
       if (!a || a.tl.reversed()) return;
+      // The focus on the button goes back to the orb, never to <body> (P27-99, WCAG 2.4.3).
+      const returnFocus = refocus || focusInside();
       autoFold.clear();
       setOpen(false);
       a.tl.reverse();
-      if (refocus) orb.current?.focus({ preventScroll: true });
+      if (returnFocus) orb.current?.focus({ preventScroll: true });
     };
+
+    // Left unused, it folds by itself after a while, but not while someone at the keyboard is on
+    // it (P27-99, WCAG 2.2.1): then it waits another while.
+    const foldLater = () =>
+      autoFold.set(() => (keyboardOnIt() ? foldLater() : fold()), PHASE_NAV.autoCloseSeconds);
 
     const grow = contextSafe((by: GrowBy) => {
       const r = reveal.current;
@@ -162,7 +183,7 @@ export function useReveal(
         .to(sh, { autoAlpha: 0, duration: T * 0.3 }, T * 0.95)
         .to(letters, { autoAlpha: 1, y: 0, ...LETTERS, ease: "sine.out" }, T * 0.9);
       anim.current = { tl, split };
-      if (by === "tap") autoFold.set(() => fold(), PHASE_NAV.autoCloseSeconds);
+      if (by === "tap") foldLater();
     });
 
     return {
