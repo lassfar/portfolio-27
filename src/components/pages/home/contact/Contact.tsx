@@ -274,10 +274,15 @@ const Contact = ({ layout = "overlay", overlayRef, titleId, send = sendMessage }
                 "home-contact__intro",
                 "font-light text-white/80",
                 "text-base leading-relaxed text-balance sm:text-lg md:text-xl",
-                "mb-8 max-w-xl sm:mb-10",
+                "mb-3 max-w-xl",
               )}
             >
               {CONTACT.intro}
+            </p>
+            {/* Every field is needed: said before them (WCAG 3.3.2), not only by `required`. It
+                rises in first, with the fields (a piece). */}
+            <p className="home-contact__piece mb-8 text-center text-sm font-light text-white/60 sm:mb-10">
+              {CONTACT.required}
             </p>
 
             <form

@@ -73,6 +73,8 @@ export const CONTACT = {
     email: { label: "Email", placeholder: "you@somewhere.com" },
     message: { label: "Message", placeholder: "A project, a question, or just hello." },
   },
+  /** Above Send: every field is needed (P27-101, WCAG 3.3.2). */
+  required: "Your name, an address I can reply to, and a few words.",
   send: "Send it",
   sending: "Sending…",
   /** When a message didn't go through (P27-66): it stays in the form; the link opens their mail app with it. */
