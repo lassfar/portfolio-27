@@ -6,6 +6,7 @@ import SunriseLogo from "#/components/assets/pictures/logos/sunrise-logo";
 import Button from "#/components/UI/buttons/Button";
 import Skills from "#/components/pages/home/skills/Skills";
 import Contact from "#/components/pages/home/contact/Contact";
+import { JOURNEY_CONTACT_TITLE_ID } from "#/components/pages/home/contact/config";
 import clsx from "clsx";
 import Swash from "#/components/UI/swash/Swash";
 import DisplayTitle from "#/components/UI/text/DisplayTitle";
@@ -173,7 +174,7 @@ const Hero = () => {
 
         {/* Contact — the last beat: fades in over the blurred, dimmed galaxy once it
           has fully resolved (and a short pause on it). */}
-        <Contact overlayRef={contactRef} />
+        <Contact overlayRef={contactRef} titleId={JOURNEY_CONTACT_TITLE_ID} />
       </div>
       {/* After the root, not in it: by then its ref (the pin's trigger) is set too. */}
       {live && journey && (

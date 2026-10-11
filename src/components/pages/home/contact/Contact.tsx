@@ -229,7 +229,7 @@ const Contact = ({ layout = "overlay", overlayRef, titleId, send = sendMessage }
               tabIndex={titleId ? -1 : undefined}
               size="lg"
               text={CONTACT.title}
-              className="home-contact__title mb-1 outline-none"
+              className="home-contact__title mb-1 focus-ring"
             />
             {/* Its swash draws in once the title has written in (useCosmicJourney). */}
             <Swash

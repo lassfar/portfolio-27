@@ -64,6 +64,8 @@ export const CRAFT = {
 
 /** Contact: the form's words. */
 export const CONTACT = {
+  /** The skip link, the second Tab stop (P27-99). */
+  skip: "Skip to Contact",
   title: "Say *Hello*",
   intro:
     "Parker carries over a million names toward the Sun. Leave yours here, and I’ll write back.",

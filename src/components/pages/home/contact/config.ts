@@ -2,6 +2,9 @@ import { Mail } from "lucide-react";
 import { GitHub, LinkedIn } from "#/components/UI/icons/brands";
 import { ContactLink } from "#/components/pages/home/contact/contact.types";
 
+/** The journey's Contact heading (the book's is `titleId("contact")`): the skip link lands its focus there (P27-99). */
+export const JOURNEY_CONTACT_TITLE_ID = "journey-contact-title";
+
 /** Where messages go (and the "Email" link). */
 export const CONTACT_EMAIL = "aymanelassfar@outlook.com";
 
