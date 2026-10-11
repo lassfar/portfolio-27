@@ -108,6 +108,12 @@ export const PHASE_NAV = {
 };
 
 /**
+ * The story counts as settled once its scroll progress has held still this long (ms): a glide's
+ * tween ends before the smooth scroll has eased in (ScrollSmoother keeps moving ~1s after).
+ */
+export const SETTLE_MS = 200;
+
+/**
  * The stop the assistant offers at master progress `mp`: at a rest, the next one;
  * elsewhere, the first rest ahead (mid-voyage → the Earth). None once Contact begins.
  */

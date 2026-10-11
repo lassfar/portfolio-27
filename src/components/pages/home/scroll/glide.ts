@@ -3,6 +3,7 @@ import { ScrollSmoother, ScrollTrigger } from "gsap/all";
 import { journeyTrigger } from "#/stores/journeyTrigger";
 import { isScrollLocked } from "#/stores/scrollLock";
 import { useGlide, type GlideSource } from "#/stores/useGlide";
+import { cancelRefocusAfterGlide, refocusAfterGlide } from "./glideFocus";
 
 let current: gsap.core.Tween | null = null; // the glide running, if any
 
@@ -23,7 +24,8 @@ function end(tween: gsap.core.Tween): void {
  * Glide the smooth scroll to a point of the pinned journey (master progress 0..1): a
  * tween of ScrollSmoother's `scrollTop`, so the whole story plays on the way. Does
  * nothing while a panel holds the scroll. Who started it (`by`) is published in
- * useGlide while it runs. Returns whether it started.
+ * useGlide while it runs. When it started with the keyboard's focus in the page, the focus is
+ * given a visible place once it's over (glideFocus.ts). Returns whether it started.
  */
 export function glideToJourney(
   mp: number,
@@ -41,13 +43,21 @@ export function glideToJourney(
   // It replaces any glide before it (`overwrite`): that one's `end` then changes nothing, so
   // `by` goes straight from one glide to the next, never through "none".
   current = null;
+  cancelRefocusAfterGlide();
+  // A keyboard's focus (or a screen reader's): a click or a tap leaves its target focused too.
+  const hadFocus = document.activeElement?.matches(":focus-visible") ?? false;
+  const finish = () => {
+    const last = current === tween;
+    end(tween);
+    if (last && hadFocus) refocusAfterGlide();
+  };
   const tween: gsap.core.Tween = gsap.to(smoother, {
     scrollTop: y,
     duration: seconds,
     ease,
     overwrite: true,
-    onComplete: () => end(tween),
-    onInterrupt: () => end(tween),
+    onComplete: finish,
+    onInterrupt: finish,
   });
   current = tween;
   useGlide.getState().setBy(by ?? null);

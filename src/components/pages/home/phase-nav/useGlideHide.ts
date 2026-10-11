@@ -1,15 +1,9 @@
 import gsap from "gsap";
 import { useEffect, useLayoutEffect, useMemo, useRef, useState, type RefObject } from "react";
 import { useJourneyScroll } from "#/stores/useJourneyScroll";
-import { PHASE_NAV } from "./config";
+import { PHASE_NAV, SETTLE_MS } from "./config";
 import { liftStep, type LiftEvent, type LiftPhase } from "./lift";
 import type { ContextSafe, RevealActions } from "./useReveal";
-
-/**
- * The story counts as settled once its scroll progress has held still this long (ms): a glide's
- * tween ends before the smooth scroll has eased in (ScrollSmoother keeps moving ~1s after).
- */
-const SETTLE_MS = 200;
 
 export interface GlideHideOptions {
   /** The assistant's root (to know whether it had the focus). */
