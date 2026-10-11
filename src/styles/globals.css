@@ -54,6 +54,9 @@
   --shadow-panel: -30px 0 80px -30px rgb(0 0 0 / 0.9);
   --shadow-sheet: 0 -20px 60px -20px rgb(0 0 0 / 0.9);
   --shadow-photo: 0 30px 80px -30px rgb(0 0 0 / 0.9);
+  /* A soft dark halo under small text over the 3D (the Sun, the galaxy's core): it keeps its
+     contrast whatever drifts behind it (P27-101, WCAG 1.4.3). `text-shadow-halo`. */
+  --text-shadow-halo: 0 0 12px rgb(0 0 0 / 0.75), 0 1px 2px rgb(0 0 0 / 0.6);
   --inset-shadow-glass:
     inset 0 1px 0 rgb(255 255 255 / 0.22), inset 0 -8px 16px -12px --alpha(var(--color-peach) / 18%);
   --inset-shadow-glass-lit:
@@ -676,7 +679,9 @@
   letter-spacing: 0.42em;
   text-transform: uppercase;
   white-space: nowrap;
-  color: color-mix(in srgb, var(--color-gray-slate) 50%, transparent);
+  /* 65%: ~5.9:1 on the page (was 50%, ~4:1: P27-101, WCAG 1.4.3), with the halo over the 3D. */
+  color: color-mix(in srgb, var(--color-gray-slate) 65%, transparent);
+  text-shadow: var(--text-shadow-halo);
 }
 .story-title__dot {
   width: 6px;

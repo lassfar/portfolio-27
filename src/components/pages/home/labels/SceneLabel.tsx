@@ -56,7 +56,8 @@ const SceneLabel = ({
     />
     <Icon icon={icon} size={15} className="text-peach" />
     {name}
-    <span className="text-light-peach/60">· {meta}</span>
+    {/* Its halo keeps it readable where the glass sits over the Sun (P27-101). */}
+    <span className="text-light-peach/60 text-shadow-halo">· {meta}</span>
     <Icon
       icon={ArrowUpRight}
       size={15}

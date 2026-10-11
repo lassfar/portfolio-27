@@ -2,6 +2,7 @@ import type { Meta, StoryObj } from "@storybook/nextjs-vite";
 import { useLayoutEffect, type ReactNode } from "react";
 import { expect, waitFor } from "storybook/test";
 
+import { contrastOnPage } from "#/stories/contrast";
 import { useJourneyScroll } from "#/stores/useJourneyScroll";
 import StoryTitle from "./StoryTitle";
 import { STORY_CHAPTERS } from "./config";
@@ -49,12 +50,12 @@ export default meta;
 
 type Story = StoryObj<typeof meta>;
 
-/** The chapter you're in (pick it in Controls), on the left edge — even deep in the 3D scenes. */
+/** The chapter you're in (pick it in Controls), on the left edge — even deep in the 3D scenes; 4.5:1 or more on the page (P27-101, WCAG 1.4.3). */
 export const Default: Story = {
   play: async ({ args }) => {
     const name = chapterOf(args.chapter).name;
-    await waitFor(() =>
-      expect(document.querySelector(".story-title__label")?.textContent).toBe(name),
-    );
+    const label = () => document.querySelector<HTMLElement>(".story-title__label");
+    await waitFor(() => expect(label()?.textContent).toBe(name));
+    await expect(contrastOnPage(getComputedStyle(label()!).color)).toBeGreaterThanOrEqual(4.5);
   },
 };
