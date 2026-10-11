@@ -40,3 +40,16 @@ export function directionToUV(x: number, y: number, z: number): [number, number]
   const v = 0.5 - phi / Math.PI;
   return [u, v];
 }
+
+/**
+ * The globe's yaw (its turn about +y) that brings `pin`, a direction in the globe before its
+ * yaw, closest to `toward`, in the same frame. Turns a place to face the camera (P27-99).
+ */
+export const yawToFace = (pin: Vector3, toward: Vector3): number =>
+  Math.atan2(toward.x * pin.z - toward.z * pin.x, toward.x * pin.x + toward.z * pin.z);
+
+/** `to` (radians), moved by whole turns to within half a turn of `from`: the short way round. */
+export function nearestAngle(from: number, to: number): number {
+  const d = to - from;
+  return from + d - 2 * Math.PI * Math.round(d / (2 * Math.PI));
+}

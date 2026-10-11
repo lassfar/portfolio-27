@@ -11,17 +11,29 @@ export const ANCHORED =
 const FADE_MS = 300;
 const hiding = new WeakMap<HTMLElement, number>();
 
+/** Its glass blur, on or off (both properties: Safari before 18 reads the prefixed one). */
+const blur = (el: HTMLElement, on: boolean) => {
+  el.style.setProperty("backdrop-filter", on ? "" : "none");
+  el.style.setProperty("-webkit-backdrop-filter", on ? "" : "none");
+};
+
 /**
  * Fades an anchored label in or out, and once it has faded out, takes it out of the page
  * (`visibility`, P27-86): a hidden glass label's blur was still drawn at opacity 0, every frame.
+ * A `reachable` one stays in the page instead, unseen, for the keyboard to reach (P27-99): only
+ * its blur goes.
  */
-export function showAnchored(el: HTMLElement, shown: boolean) {
+export function showAnchored(el: HTMLElement, shown: boolean, reachable = false) {
   window.clearTimeout(hiding.get(el));
   el.style.opacity = shown ? "1" : "0";
-  if (shown) el.style.visibility = "visible";
+  if (shown || reachable) el.style.visibility = "visible";
+  if (shown) blur(el, true);
   else
     hiding.set(
       el,
-      window.setTimeout(() => (el.style.visibility = "hidden"), FADE_MS),
+      window.setTimeout(
+        () => (reachable ? blur(el, false) : (el.style.visibility = "hidden")),
+        FADE_MS,
+      ),
     );
 }

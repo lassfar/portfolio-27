@@ -13,7 +13,7 @@ import { LAB } from "#/components/three.js/voyager/config";
 import { EARTH } from "./config";
 import { PHOTO_LOCATIONS, type PhotoLocation } from "./data";
 import { latLngToVector3 } from "./utils";
-import { pinHover, pinLabels, pinScreen } from "./pinScreen";
+import { pinHover, pinLabels, pinScreen, pinTurn } from "./pinScreen";
 import { LABEL_PRIORITY, projectToViewport } from "#/components/three.js/scene/labelProjection";
 
 const UP = new Vector3(0, 1, 0);
@@ -55,8 +55,9 @@ const EarthPins = () => {
   useEffect(
     () => () => {
       pinHover.id = null;
+      pinTurn.id = null;
       document.body.style.cursor = "";
-      for (const s of Object.values(pinScreen)) s.shown = false;
+      for (const s of Object.values(pinScreen)) s.shown = s.near = false;
     },
     [],
   );
@@ -105,7 +106,8 @@ const Pin = ({ loc, phase, glow }: { loc: PhotoLocation; phase: number; glow: Ca
     // label projection with its layout read (P27-78).
     if (approach <= 0.55 || labFade >= 0.999) {
       groupRef.current.visible = false;
-      if (pinScreen[loc.id]?.shown !== false) pinScreen[loc.id] = { x: 0, y: 0, shown: false };
+      const s = pinScreen[loc.id];
+      if (!s || s.shown || s.near) pinScreen[loc.id] = { x: 0, y: 0, shown: false, near: false };
       // A pin hovered as the story scrolled away stays lit (no pointer move, no pointer-out),
       // and would hold the Earth's spin (P27-99): let it go.
       if (pinHover.id === loc.id) {
@@ -127,13 +129,15 @@ const Pin = ({ loc, phase, glow }: { loc: PhotoLocation; phase: number; glow: Ca
 
     // Publish the head's screen position for the DOM label overlay. The label
     // shows only once the Earth is in full view (EARTH.pinLabelsAt) and the pin
-    // is on the near hemisphere and in front of the camera.
+    // is on the near hemisphere and in front of the camera; on the far side, it can
+    // still take the keyboard's focus (`near`).
     if (headRef.current) {
       const ahead = projectToViewport(headRef.current, camera, gl.domElement, screen.current);
-      const s = (pinScreen[loc.id] ??= { x: 0, y: 0, shown: false }); // (updated in place)
+      const s = (pinScreen[loc.id] ??= { x: 0, y: 0, shown: false, near: false }); // (in place)
       s.x = screen.current.x;
       s.y = screen.current.y;
-      s.shown = front && ahead && approach >= EARTH.pinLabelsAt && labFade < 0.5;
+      s.near = ahead && approach >= EARTH.pinLabelsAt && labFade < 0.5;
+      s.shown = front && s.near;
     }
 
     const hovered = pinHover.id === loc.id;

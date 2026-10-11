@@ -7,6 +7,7 @@ import {
   BufferGeometry,
   Color,
   Group,
+  Matrix4,
   Mesh,
   MeshBasicMaterial,
   NormalBlending,
@@ -24,18 +25,25 @@ import { useSceneRotation } from "#/stores/useSceneRotation";
 import { SUNPOS, SYSTEM_SHOWS_AT } from "#/components/three.js/solar/config";
 import { earthReveal } from "#/components/three.js/solar/reveal";
 import { EARTH } from "./config";
-import { directionToUV } from "./utils";
+import { PHOTO_LOCATIONS } from "./data";
+import { directionToUV, latLngToVector3, nearestAngle, yawToFace } from "./utils";
 import { earthApproach, earthOwnsDrag, probeOwnsDrag, dragMode } from "./interaction";
 import { useLabScroll } from "#/stores/useLabScroll";
 import { LAB } from "#/components/three.js/voyager/config";
 import EarthPins from "./EarthPins";
-import { pinHover } from "./pinScreen";
+import { pinHover, pinTurn } from "./pinScreen";
 import { selectIsOpen, usePanelStore } from "#/stores/usePanelStore";
 import { preupload, whenIdle } from "#/components/three.js/scene/warmUp";
 import { sceneBuilds } from "#/components/three.js/scene/sceneBuilds";
 import { useJourneyScroll } from "#/stores/useJourneyScroll";
 import { pointPixelRatio } from "#/components/three.js/scene/quality";
 import { createTouchAxisLock } from "#/components/three.js/scene/touchAxisLock";
+
+// Scratch for turning a place to face the camera (only when asked).
+const _toward = new Vector3();
+const _pin = new Vector3();
+const _parentInverse = new Matrix4();
+const X_AXIS = new Vector3(1, 0, 0);
 
 type Props = {
   /** Master enable for pointer-drag (drag is additionally gated to the Earth phase). */
@@ -396,6 +404,24 @@ const DottedEarth = ({ interactive = true }: Props) => {
         if (sinceRelease.current > EARTH.spinResumeDelay) {
           targetYaw.current += delta * EARTH.spin;
         }
+      }
+    }
+    // A place whose label took the keyboard's focus on the far side turns round to face you, the
+    // short way, eased like a drag (P27-99, WCAG 2.1.1); its focus then holds the spin (above).
+    if (pinTurn.id) {
+      const loc = PHOTO_LOCATIONS.find((l) => l.id === pinTurn.id);
+      const parent = spinRef.current?.parent;
+      pinTurn.id = null;
+      if (loc && parent) {
+        // The camera's direction from the Earth, in the frame the globe turns in (its yaw and
+        // pitch: rotation XYZ, so its pitch is taken off first).
+        const a = useEarthAnchor.getState();
+        _toward
+          .set(camera.position.x - a.x, camera.position.y - a.y, camera.position.z - a.z)
+          .transformDirection(_parentInverse.copy(parent.matrixWorld).invert())
+          .applyAxisAngle(X_AXIS, -pitch.current);
+        latLngToVector3(loc.lat, loc.lng, 1, _pin);
+        targetYaw.current = nearestAngle(yaw.current, yawToFace(_pin, _toward));
       }
     }
     yaw.current = damp(yaw.current, targetYaw.current, EARTH.dragDamping, delta);

@@ -3,7 +3,7 @@
 import { useEffect, useRef } from "react";
 import { Camera } from "lucide-react";
 import { PHOTO_LOCATIONS } from "#/components/three.js/earth/data";
-import { pinHover, pinLabels, pinScreen } from "#/components/three.js/earth/pinScreen";
+import { pinHover, pinLabels, pinScreen, pinTurn } from "#/components/three.js/earth/pinScreen";
 import { selectKey, usePanelStore } from "#/stores/usePanelStore";
 import { PHONE_QUERY, keepOnScreen } from "#/components/pages/home/labels/screenEdge";
 import { type LabelBox, stackLabels } from "#/components/pages/home/labels/stack";
@@ -30,6 +30,10 @@ const OFFSET_Y = 8;
  * clustered places apart (London top-right, Brockenhurst top-left, ~130 km
  * apart, would otherwise sit on the same spot). A de-overlap pass then stacks
  * any that still collide. A label opens its place's panel, exactly like its 3D pin.
+ *
+ * The keyboard reaches every place while the Earth is in full view (P27-99, WCAG 2.1.1): on the
+ * globe's far side a label stays in the Tab order, unseen; focused there, it shows and the globe
+ * turns its place round to face you (`pinTurn`), then holds while it has the focus.
  */
 const PinLabels = () => {
   const refs = useRef<Record<string, HTMLButtonElement | null>>({});
@@ -37,9 +41,9 @@ const PinLabels = () => {
   const opened = usePanelStore((s) => s.opened);
 
   useEffect(() => {
-    // Each label's last shown state — its opacity / pointer-events / tabIndex are only
-    // written when it changes (the positions are still written every frame while shown).
-    const shownBefore: Record<string, boolean> = {};
+    // Each label's last state — its opacity / pointer-events / tabIndex are only written when
+    // it changes (the positions are still written every frame while shown).
+    const stateBefore: Record<string, "shown" | "near" | "away"> = {};
     // Each label's size, measured once (P27-78): the text never changes, and reading
     // it every frame forced a layout. Measured again after a resize or the fonts load.
     const sizes: Record<string, { w: number; h: number }> = {};
@@ -51,13 +55,15 @@ const PinLabels = () => {
     window.addEventListener("resize", remeasure);
     void document.fonts?.ready.then(remeasure);
     const phone = window.matchMedia(PHONE_QUERY); // phones keep each label on screen (P27-31)
-    const setShown = (id: string, el: HTMLButtonElement, shown: boolean) => {
-      if (shownBefore[id] === shown) return;
-      shownBefore[id] = shown;
-      showAnchored(el, shown);
-      el.style.pointerEvents = shown ? "auto" : "none";
-      el.tabIndex = shown ? 0 : -1;
-      if (!shown && document.activeElement === el) el.blur();
+    // Shown; or `near`: on the globe's far side while it's in full view, unseen but still in the
+    // Tab order (P27-99: the spin turns the places away half the time); or away.
+    const setState = (id: string, el: HTMLButtonElement, state: "shown" | "near" | "away") => {
+      if (stateBefore[id] === state) return;
+      stateBefore[id] = state;
+      showAnchored(el, state === "shown", state === "near");
+      el.style.pointerEvents = state === "shown" ? "auto" : "none";
+      el.tabIndex = state === "away" ? -1 : 0;
+      if (state === "away" && document.activeElement === el) el.blur();
     };
     const boxes: (LabelBox & { el: HTMLButtonElement })[] = [];
     const update = () => {
@@ -69,7 +75,8 @@ const PinLabels = () => {
         const el = refs.current[loc.id];
         if (!el) continue;
         const s = pinScreen[loc.id];
-        if (s && s.shown) {
+        // Its focus shows it on the far side too, as the globe turns it round (`pinTurn`).
+        if (s && (s.shown || (s.near && document.activeElement === el))) {
           const { w, h } = sizeOf(loc.id, el);
           // Anchor to the requested side of the pin head so clustered labels
           // fan out rather than stack on the same point.
@@ -78,9 +85,9 @@ const PinLabels = () => {
           const left = phone.matches ? keepOnScreen(anchored, w, s.x, window.innerWidth) : anchored;
           const top = s.y - h - OFFSET_Y;
           boxes.push({ el, cx: left + w / 2, left, top, w, h });
-          setShown(loc.id, el, true);
+          setState(loc.id, el, "shown");
         } else {
-          setShown(loc.id, el, false);
+          setState(loc.id, el, s?.near ? "near" : "away");
         }
       }
 
@@ -104,6 +111,11 @@ const PinLabels = () => {
     const light = () => {
       pinHover.id = loc.id;
     };
+    // Reached from the keyboard on the globe's far side: the globe turns it round (P27-99).
+    const focus = () => {
+      light();
+      if (!pinScreen[loc.id]?.shown) pinTurn.id = loc.id;
+    };
     const unlight = () => {
       if (pinHover.id === loc.id) pinHover.id = null;
     };
@@ -125,7 +137,7 @@ const PinLabels = () => {
         className={ANCHORED}
         onClick={() => usePanelStore.getState().open({ kind: "place", id: loc.id })}
         onPointerEnter={light}
-        onFocus={light}
+        onFocus={focus}
         onPointerLeave={unlight}
         onBlur={unlight}
       />
