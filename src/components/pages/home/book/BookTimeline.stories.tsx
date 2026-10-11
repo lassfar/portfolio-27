@@ -13,7 +13,12 @@ const timeline = () => document.querySelector<HTMLElement>("nav.story-timeline")
 /** The timeline's star for a chapter. */
 const starOf = (name: string) =>
   document.querySelector<HTMLButtonElement>(`nav.story-timeline button[aria-label="${name}"]`)!;
-const shown = () => waitFor(() => expect(getComputedStyle(timeline()).visibility).toBe("visible"));
+/** Shown past the cover, its fade done. */
+const shown = () =>
+  waitFor(() => {
+    expect(timeline()).toHaveClass("is-shown");
+    expect(getComputedStyle(timeline()).opacity).toBe("1");
+  });
 
 /** The calm book's timeline: the journey's, driven by the book's scroll. Here over the book's chapters, a screen each. */
 const meta = {
@@ -46,10 +51,11 @@ export default meta;
 
 type Story = StoryObj<typeof meta>;
 
-/** Hidden on the cover; past it, one star per chapter on the right, the chapters ahead shown too. The current one is marked; each names itself on hover or focus. */
+/** Unseen on the cover (its stars still reachable by Tab); past it, one star per chapter on the right, the chapters ahead shown too. The current one is marked; each names itself on hover or focus. */
 export const Default: Story = {
   play: async () => {
-    await expect(getComputedStyle(timeline()).visibility).toBe("hidden");
+    await expect(timeline()).not.toHaveClass("is-shown");
+    await expect(getComputedStyle(timeline()).opacity).toBe("0");
     document.getElementById("maker")!.scrollIntoView({ behavior: "instant" });
     await shown();
     await expect(timeline().querySelectorAll("button")).toHaveLength(BOOK_CHAPTERS.length);
@@ -88,7 +94,7 @@ export const Focused: Story = {
     window.scrollTo(0, 0);
     await new Promise((resolve) => setTimeout(resolve, 700));
     await expect(star).toHaveFocus();
-    await expect(getComputedStyle(timeline()).visibility).toBe("visible");
+    await expect(getComputedStyle(timeline()).opacity).toBe("1");
   },
 };
 

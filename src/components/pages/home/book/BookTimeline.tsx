@@ -44,7 +44,8 @@ const jumpTo = (index: number) => landInBook(BOOK_CHAPTERS[index], true);
  * - a click jumps to the chapter at once and focuses its heading;
  * - on a phone, a new chapter's name shows by its star for a moment (not read out: the
  *   chapters are headings).
- * Hidden on the cover's first screen, like the journey's on the hero.
+ * Unseen on the cover's first screen, like the journey's on the hero, but its stars stay in
+ * the Tab order, and the focus shows it (P27-99).
  */
 const BookTimeline = () => {
   const [chapters, setChapters] = useState<StoryChapter[]>(UNMEASURED);

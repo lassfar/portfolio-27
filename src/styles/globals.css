@@ -371,25 +371,24 @@
    corner, inline) and passes the tuned sizes as custom properties from
    timeline/config.ts; `is-vertical` / `is-horizontal` lay out the rail, and `tip-*` opens
    tooltips toward the inside of the screen. */
+/* Not shown (the first screen): transparent and out of the pointer's way, but its stars stay
+   focusable, so Tab reaches them from the first screen (P27-99, WCAG 2.4.1 / 2.4.3). */
 .story-timeline {
   position: fixed;
   z-index: 40; /* under the labels (z-45) and the panel (z-50) */
   opacity: 0;
-  visibility: hidden;
-  transition:
-    opacity 0.45s ease,
-    visibility 0s linear 0.45s;
+  pointer-events: none;
+  transition: opacity 0.45s ease;
 }
 .story-timeline.is-shown {
   opacity: 1;
-  visibility: visible;
-  transition: opacity 0.45s ease;
+  pointer-events: auto;
 }
-/* While one of its stars holds the focus it stays shown, even where it would hide (the first
-   screen): going back up with the keyboard mustn't drop the focus (WCAG 2.4.7, P27-93). */
+/* While one of its stars holds the focus it shows, even where it would hide (the first screen):
+   the focus is never on something unseen (WCAG 2.4.7, P27-93). */
 .story-timeline:focus-within {
   opacity: 1;
-  visibility: visible;
+  pointer-events: auto;
 }
 .story-timeline.is-vertical {
   width: 24px;

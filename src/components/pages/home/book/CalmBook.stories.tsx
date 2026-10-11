@@ -47,7 +47,7 @@ export const Default: Story = {
         // First, and only there: "The Maker: Small, Patient Details", "The Earth".
         await expect(heading.lastIndexOf(CHAPTER_NAMES[id]), heading).toBe(0);
       }
-      // (Hidden on the cover, so counted by its label.)
+      // (Counted by its label: on the cover it's unseen.)
       await expect(canvasElement.querySelectorAll("nav[aria-label='Story timeline']")).toHaveLength(
         1,
       );

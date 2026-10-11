@@ -62,15 +62,15 @@ const focusOffSwitch = () => !switchButton()?.contains(document.activeElement);
  * Gives the focus a place in the new mode unless it's on the switch (P27-94, WCAG 2.4.3): the
  * page it was in is gone, and from <body> (the device setting changed) a screen reader would
  * start again from the top (P27-95). The landing chapter's heading (or passage) in the book; in
- * the journey, the timeline's current star, else the switch.
+ * the journey, the timeline's current star (focusable even on the first screen, where the focus
+ * shows it: P27-99), else the switch.
  */
 function refocus(mode: MotionChoice, place: ChapterId) {
   if (mode === "calm") return landInBook(place, true);
   const star = document.querySelector<HTMLElement>(
     'nav.story-timeline button[aria-current="step"]',
   );
-  const shown = star && getComputedStyle(star).visibility === "visible";
-  (shown ? star : switchButton())?.focus({ preventScroll: true });
+  (star ?? switchButton())?.focus({ preventScroll: true });
 }
 
 /**

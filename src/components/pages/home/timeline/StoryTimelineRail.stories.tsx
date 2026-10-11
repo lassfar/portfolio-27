@@ -105,6 +105,18 @@ export const Focused: Story = {
   },
 };
 
+/** Not shown yet (the first screen): unseen and out of the pointer's way, but Tab still reaches its stars, and the focus shows it (P27-99, WCAG 2.4.1). */
+export const FirstScreen: Story = {
+  args: { shown: false },
+  play: async ({ canvasElement, userEvent }) => {
+    const rail = canvasElement.querySelector<HTMLElement>(".story-timeline")!;
+    await expect(getComputedStyle(rail).opacity).toBe("0");
+    await userEvent.tab();
+    await expect(canvasElement.ownerDocument.activeElement).toHaveClass("story-timeline__star");
+    await waitFor(() => expect(getComputedStyle(rail).opacity).toBe("1"));
+  },
+};
+
 /** Phones: no hover tooltips; a new chapter's name pops up by its star, read out. */
 export const Phone: Story = {
   args: { phone: true, toast: { index: 5, on: true } },

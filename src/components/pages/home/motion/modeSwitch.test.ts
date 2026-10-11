@@ -85,7 +85,6 @@ describe("the live mode switch", () => {
         disconnect() {}
       },
     );
-    vi.stubGlobal("getComputedStyle", () => ({ visibility: "visible" }));
     vi.stubGlobal("window", {
       scrollTo: vi.fn(),
       setTimeout: (fn: () => void, ms: number) => setTimeout(fn, ms),
