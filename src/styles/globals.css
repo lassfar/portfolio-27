@@ -648,6 +648,48 @@
   transform: translate(-50%, -50%) scale(1);
 }
 
+/* ── Forced colours (Windows High Contrast, P27-101) ────────────────────────────────────
+   The system's colours replace the site's, and backgrounds and shadows go: what they alone
+   drew gets a system colour or a line (WCAG 1.4.11, 2.4.7). The focus rings are outlines and
+   stay; the orb's was a coloured ring: it gets one. A field's focus: its transparent outline
+   shows (Field, `focus:outline-hidden`). */
+@media (forced-colors: active) {
+  /* Glass pills (buttons, labels, the switch): their edge was a shadow; a transparent border
+     becomes the system's line. */
+  .glass {
+    border: 1px solid transparent;
+  }
+  /* The timeline (the journey's and the book's): its marks were backgrounds. */
+  .story-timeline__rail,
+  .story-timeline__fill,
+  .story-timeline__glyph::before {
+    forced-color-adjust: none;
+  }
+  .story-timeline__rail {
+    background: GrayText;
+  }
+  .story-timeline__fill {
+    background: CanvasText;
+  }
+  /* Ahead GrayText, passed CanvasText, the current one and the one under the pointer or the
+     focus Highlight (`!important`: over the stars' own states, hollow ones included). */
+  .story-timeline__glyph::before {
+    background: GrayText !important;
+    box-shadow: none !important;
+  }
+  .story-timeline__star.is-passed .story-timeline__glyph::before {
+    background: CanvasText !important;
+  }
+  .story-timeline__star:is(.is-current, :hover, :focus-visible) .story-timeline__glyph::before {
+    background: Highlight !important;
+  }
+  /* The orb's focus is its ring's colour (no outline): an outline here. */
+  .nav-assistant__orb:focus-visible {
+    outline: 2px solid Highlight !important;
+    outline-offset: 2px;
+  }
+}
+
 /* ── The story title (P27-76) ─────────────────────────────────────────────────────────
    The current chapter's title on the left edge, always visible: a thin rule, the title
    in wide-tracked capitals reading bottom → top (-90°), a peach dot. */

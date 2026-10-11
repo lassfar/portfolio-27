@@ -11,7 +11,7 @@ import type { FieldOwnProps, FieldProps } from "#/components/UI/forms/field.type
  * (white/50: 5.2:1, WCAG 1.4.3) (P27-93).
  */
 const LINE = clsx(
-  "w-full rounded-none border-0 border-b border-white/40 bg-transparent px-0 py-2 transition-colors duration-300 outline-none focus:border-peach",
+  "w-full rounded-none border-0 border-b border-white/40 bg-transparent px-0 py-2 transition-colors duration-300 focus:border-peach focus:outline-hidden",
   "aria-invalid:border-b-2 aria-invalid:border-dark-peach",
   "text-base font-light text-white placeholder:text-white/50 sm:text-lg",
 );
