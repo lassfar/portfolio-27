@@ -94,7 +94,7 @@ export const FirstTabStop: Story = {
     ),
   ],
   beforeEach: () => {
-    const controls = document.createElement("div");
+    const controls = document.createElement("header");
     controls.id = PAGE_CONTROLS_ID;
     controls.dataset.modeKeep = "";
     document.body.prepend(controls);

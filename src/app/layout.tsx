@@ -34,8 +34,12 @@ export default function RootLayout({
       {/* The page's black on the body: the journey's smooth scroll fixes its content, so the
           page itself has no height to paint (P27-93). */}
       <body suppressHydrationWarning className="dark bg-rich-black antialiased">
-        {/* The page's own controls, first in the Tab order: the Reduce motion switch (P27-95). */}
-        <div id={PAGE_CONTROLS_ID} data-mode-keep />
+        {/* The page's own controls, first in the Tab order: the Reduce motion switch (P27-95),
+            then "Skip to Contact" (P27-99). A header: the page's banner landmark (P27-101). */}
+        <header id={PAGE_CONTROLS_ID} data-mode-keep>
+          {/* Its name for screen readers: without JS (the book), it holds nothing else. */}
+          <span className="sr-only">Aymane Lassfar</span>
+        </header>
         {children}
       </body>
     </html>
