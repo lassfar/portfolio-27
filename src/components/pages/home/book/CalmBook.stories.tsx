@@ -1,7 +1,7 @@
 import type { Meta, StoryObj } from "@storybook/nextjs-vite";
 import { expect, waitFor } from "storybook/test";
 
-import { BOOK_CHAPTERS, titleId } from "#/components/pages/home/book/chapters";
+import { BOOK_CHAPTERS, chapterNumber, titleId } from "#/components/pages/home/book/chapters";
 import { landInBook } from "#/components/pages/home/book/place";
 import { BOOK, CHAPTER_NAMES } from "#/components/pages/home/story/copy";
 import { inCalm } from "#/stories/motion";
@@ -41,17 +41,26 @@ export const Default: Story = {
       await expect(canvas.getByText(BOOK.ending)).toBeInTheDocument();
     });
 
-    await step("each chapter's heading says its name first, once; one timeline", async () => {
+    await step("each chapter is said once, by its heading; one timeline", async () => {
       for (const id of BOOK_CHAPTERS.filter((c) => c !== "origin" && c !== "contact")) {
         const heading = document.getElementById(titleId(id))!.textContent!;
-        // First, and only there: "The Maker: Small, Patient Details", "The Earth".
-        await expect(heading.lastIndexOf(CHAPTER_NAMES[id]), heading).toBe(0);
+        // "Chapter 2 · The Maker: Small, Patient Details", "Chapter 4 · The Earth" (P27-100).
+        await expect(heading.startsWith(`${BOOK.chapter} ${chapterNumber(id)} · `), heading).toBe(
+          true,
+        );
+        await expect(heading.indexOf(CHAPTER_NAMES[id]), heading).toBe(
+          heading.lastIndexOf(CHAPTER_NAMES[id]),
+        );
       }
       // (Counted by its label: on the cover it's unseen.)
       await expect(canvasElement.querySelectorAll("nav[aria-label='Story timeline']")).toHaveLength(
         1,
       );
-      await expect(canvas.getByRole("region", { name: BOOK.youAreHere })).toBeInTheDocument();
+      // No named regions: the headings carry the chapters (P27-100).
+      await expect(canvas.queryAllByRole("region")).toHaveLength(0);
+      await expect(
+        canvas.getByRole("heading", { level: 2, name: BOOK.youAreHere }),
+      ).toBeInTheDocument();
     });
 
     await step("a passage takes the focus where the mode switch lands on it", async () => {

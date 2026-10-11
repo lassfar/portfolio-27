@@ -15,14 +15,8 @@ import { BOOK, HERO, VOICE } from "#/components/pages/home/story/copy";
 const Cover = () => (
   <section
     id="origin"
-    aria-labelledby={titleId("origin")}
     className="relative grid min-h-svh place-items-center overflow-hidden text-center"
   >
-    <DotField shape="star" label={BOOK.figures.star} className="absolute inset-0" />
-    <div
-      aria-hidden="true"
-      className="pointer-events-none absolute inset-0 bg-radial-[ellipse_60%_40%_at_center_72%] from-rich-black/75 to-transparent"
-    />
     <div className="relative z-1 mt-[28vh] max-w-205 animate-[fade_0.5s_ease-out] px-12 pt-30 pb-20 md:mt-[40vh] md:px-6 short:mt-[34vh] short:pt-6">
       {/* A soft shade behind its small capitals: the star's lower point fades under them,
           so they read at 4.5:1 even where its dots run behind (WCAG 1.4.3). */}
@@ -52,6 +46,13 @@ const Cover = () => (
         {BOOK.hint}
       </p>
     </div>
+    {/* The star after the words in the page (screen readers hear the title first: P27-100);
+        on screen it's behind them (positioned, the words on z-1). */}
+    <DotField shape="star" label={BOOK.figures.star} className="absolute inset-0" />
+    <div
+      aria-hidden="true"
+      className="pointer-events-none absolute inset-0 bg-radial-[ellipse_60%_40%_at_center_72%] from-rich-black/75 to-transparent"
+    />
   </section>
 );
 

@@ -22,10 +22,12 @@ type Story = StoryObj<typeof meta>;
 
 const title = () => document.getElementById(titleId("origin"))!;
 
-/** The book's cover, Origin: the star filling the screen, the words below it. The section is named by its title (the page's one h1), which takes the focus when the timeline jumps here; its small capitals read at 4.5:1 or more over their soft shade (WCAG 1.4.3). */
+/** The book's cover, Origin: the star filling the screen, the words below it. Its title is the page's one h1, which takes the focus when the timeline jumps here; its small capitals read at 4.5:1 or more over their soft shade (WCAG 1.4.3). */
 export const Default: Story = {
   play: async ({ canvas }) => {
-    await expect(canvas.getByRole("region", { name: /A quiet maker of/ })).toBeInTheDocument();
+    await expect(
+      canvas.getByRole("heading", { level: 1, name: /A quiet maker of/ }),
+    ).toBeInTheDocument();
     await expect(title().tagName).toBe("H1");
     await expect(title()).toHaveAttribute("tabindex", "-1");
     const eyebrow = canvas.getByText(HERO.eyebrow);

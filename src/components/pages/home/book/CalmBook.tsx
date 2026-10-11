@@ -107,7 +107,7 @@ const CalmBook = () => (
 
     <Ending />
 
-    <section id="contact" aria-labelledby={titleId("contact")}>
+    <section id="contact">
       <Contact layout="page" titleId={titleId("contact")} />
     </section>
 
