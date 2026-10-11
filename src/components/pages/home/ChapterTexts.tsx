@@ -1,5 +1,5 @@
 import { plainText } from "#/components/UI/text/accent";
-import { BOOK, BRIDGES, CHAPTER_NAMES, VOICE } from "#/components/pages/home/story/copy";
+import { BOOK, BRIDGES, CHAPTER_NAMES, CRAFT, VOICE } from "#/components/pages/home/story/copy";
 import type { ChapterId } from "#/components/pages/home/story/story.types";
 import type { SceneChapter } from "./ChapterTexts.types";
 
@@ -22,6 +22,12 @@ const TEXTS: Record<SceneChapter, ChapterText> = {
   origin: { lines: [BOOK.figures.star, VOICE.origin, ...after("origin"), BOOK.figures.saturn] },
   // After the About's paragraphs, under its heading.
   maker: { lines: [VOICE.maker, ...after("maker")] },
+  // The Craft's overlay shows only in its stretch of the scroll (hidden from screen readers):
+  // its words are here, its constellation tool by tool.
+  craft: {
+    heading: `${CHAPTER_NAMES.craft}: ${plainText(CRAFT.title)}`,
+    lines: [CRAFT.intro, BOOK.figures.craft],
+  },
   voyage: { heading: CHAPTER_NAMES.voyage, lines: passage("craft", VOICE.voyage) },
   earth: { heading: CHAPTER_NAMES.earth, lines: [VOICE.earth, BOOK.figures.earth] },
   lab: { heading: CHAPTER_NAMES.lab, lines: [...after("earth"), VOICE.lab, BOOK.figures.lab] },
@@ -34,7 +40,7 @@ const TEXTS: Record<SceneChapter, ChapterText> = {
 
 /**
  * The journey's words for screen readers (P27-100, WCAG 1.1.1): the chapters the 3D tells
- * alone, a heading each, and the lines around
+ * alone (and the Craft, whose overlay shows only in its stretch), a heading each, and the lines around
  * the overlays' own words, unseen, in story order among the overlays (Hero.tsx). The canvas
  * itself is hidden from them. Rendered with the page, so crawlers read the whole story too.
  */

@@ -3,4 +3,4 @@
  * and the lines around the overlays' own words (P27-100).
  */
 export type SceneChapter =
-  "origin" | "maker" | "voyage" | "earth" | "lab" | "way-out" | "milky-way";
+  "origin" | "maker" | "craft" | "voyage" | "earth" | "lab" | "way-out" | "milky-way";

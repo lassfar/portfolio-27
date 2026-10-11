@@ -193,8 +193,9 @@ const Hero = () => {
           the Saturn for the fly-away. */}
         <Skills overlayRef={craftRef} />
 
-        {/* The chapters the 3D tells alone, in words for screen readers (P27-100). */}
-        <ChapterTexts chapters={["voyage", "earth", "lab", "way-out", "milky-way"]} />
+        {/* The Craft (its overlay only shows in its stretch) and the chapters the 3D tells alone,
+            in words for screen readers (P27-100). */}
+        <ChapterTexts chapters={["craft", "voyage", "earth", "lab", "way-out", "milky-way"]} />
 
         {/* Contact — the last beat: fades in over the blurred, dimmed galaxy once it
           has fully resolved (and a short pause on it). */}

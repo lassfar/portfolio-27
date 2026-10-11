@@ -5,7 +5,7 @@ import clsx from "clsx";
 import Swash from "#/components/UI/swash/Swash";
 import DisplayTitle from "#/components/UI/text/DisplayTitle";
 import { TITLE_SWASH } from "#/components/pages/home/swashes";
-import { CRAFT } from "#/components/pages/home/story/copy";
+import { BOOK, CRAFT } from "#/components/pages/home/story/copy";
 import { LINES, NODES, type ConstellationNode } from "./constellation";
 
 /**
@@ -114,9 +114,12 @@ const Skills = ({ overlayRef }: Props) => {
     [],
   );
 
+  // Hidden from screen readers: it shows only in its stretch of the scroll, so they read its
+  // words from ChapterTexts, wherever they are (P27-100).
   return (
     <div
       ref={overlayRef}
+      aria-hidden="true"
       className={clsx(
         "home-skills home-craft",
         // An opaque overlay that slides up OVER the built Saturn, then fades out
@@ -177,12 +180,12 @@ const Skills = ({ overlayRef }: Props) => {
         {CRAFT.intro}
       </p>
 
-      {/* The constellation */}
+      {/* The constellation, named tool by tool, as the book's (P27-100). */}
       <svg
         viewBox="0 0 600 420"
         className="relative z-10 mt-6 w-full max-w-3xl"
         role="img"
-        aria-label={CRAFT.constellationLabel}
+        aria-label={BOOK.figures.craft}
       >
         {/* Connector lines (drawn on scroll via stroke-dashoffset) */}
         <g>

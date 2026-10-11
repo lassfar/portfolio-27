@@ -54,12 +54,11 @@ export const ABOUT = {
   ],
 } as const;
 
-/** The Craft: its title and intro (the constellation itself: skills/constellation.ts). */
+/** The Craft: its title and intro (the constellation itself: skills/constellation.ts; its words for screen readers: BOOK.figures.craft). */
 export const CRAFT = {
   title: "What I’m *drawn to*",
   intro:
     "The tools I reach for and the things that pull my eye — connected, because the way I see is the way I build.",
-  constellationLabel: "An organic constellation of my tools and creative pulls",
 } as const;
 
 /** Contact: the form's words. */
