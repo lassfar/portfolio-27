@@ -52,8 +52,9 @@ const Opener = ({ content, icon, name, short, meta }: OpenerProps) => {
   );
 };
 
+/** A row of chips, centred on a phone like the words above it. */
 const Chips = ({ children }: { children: ReactNode }) => (
-  <div className="mt-6 flex flex-wrap gap-2.5">{children}</div>
+  <div className="mt-6 flex flex-wrap gap-2.5 max-md:justify-center">{children}</div>
 );
 
 /** The Earth's places, each opening its photos (P27-93). */

@@ -21,7 +21,8 @@ type Props = {
 
 /**
  * A chapter of the calm book (P27-93), a spread: its shape on one side, its words on the
- * other, alternating; on a phone, the shape above the words. Both fade in as they show. Its
+ * other, alternating; on a phone, the shape above the words, centred like the cover. Both fade
+ * in as they show. Its
  * heading takes the focus when the timeline jumps here (its ring shown from the keyboard).
  *
  * Screen readers hear the chapter once, from its heading: "Chapter 2 · The Maker: Small,
@@ -39,7 +40,7 @@ const Spread = ({ id, title, figure, flip = false, children }: Props) => (
       "md:grid-cols-[minmax(0,1.15fr)_minmax(0,1fr)] md:py-18 md:pr-[clamp(64px,8vw,120px)] md:pl-[clamp(24px,6vw,96px)]",
     )}
   >
-    <div data-reveal className={REVEAL}>
+    <div data-reveal className={clsx(REVEAL, "max-md:text-center")}>
       <p className={EYEBROW} aria-hidden="true">
         {BOOK.chapter} {chapterNumber(id)} · <span className="text-peach">{CHAPTER_NAMES[id]}</span>
       </p>

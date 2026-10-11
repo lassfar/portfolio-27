@@ -15,9 +15,12 @@ import Contact from "#/components/pages/home/contact/Contact";
 import PanelHost from "#/components/pages/home/panel/PanelHost";
 import { ABOUT, BOOK, CRAFT, VOICE } from "#/components/pages/home/story/copy";
 
-/** A chapter's line in Aymane's voice: `spaced` after its words. */
+/**
+ * A chapter's line in Aymane's voice: `spaced` after its words. On a phone, centred as the
+ * cover's, its rule and words to the left.
+ */
 const Voice = ({ text, spaced = false }: { text: string; spaced?: boolean }) => (
-  <p className={clsx(VOICE_LINE, spaced && "mt-5.5")}>
+  <p className={clsx(VOICE_LINE, "max-md:inline-block max-md:text-left", spaced && "mt-5.5")}>
     <AccentText text={text} />
   </p>
 );

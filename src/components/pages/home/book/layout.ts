@@ -13,9 +13,9 @@ export const EYEBROW = "font-krone-one text-[10px] tracking-[2.2px] text-white/5
 export const VOICE_LINE =
   "border-l-2 border-peach/55 pl-3.5 text-[clamp(15px,1.4vw,17px)] leading-[1.7] text-white/92";
 
-/** A chapter's words. */
+/** A chapter's words (centred on a phone, like the cover). */
 export const BODY =
-  "mb-3.5 max-w-140 text-[clamp(15.5px,1.35vw,17.5px)] leading-[1.85] text-white/80";
+  "mb-3.5 max-w-140 text-[clamp(15.5px,1.35vw,17.5px)] leading-[1.85] text-white/80 max-md:mx-auto";
 
 /** A bridge's line, in the display face. */
 export const BRIDGE_LINE =
