@@ -6,6 +6,7 @@ import { mpAt } from "#/components/three.js/star/config";
 import { goTo } from "#/components/pages/home/scroll/goTo";
 import { stopGlideOnInput } from "#/components/pages/home/scroll/glide";
 import { useJourneyScroll } from "#/stores/useJourneyScroll";
+import { selectIsOpen, usePanelStore } from "#/stores/usePanelStore";
 import { useTimelineTuning } from "#/stores/useTimelineTuning";
 import { STEP_BACK_IN_FULL_VIEW } from "#/components/pages/home/panel/layout";
 import { STORY_CHAPTERS, TIMELINE } from "./config";
@@ -47,6 +48,7 @@ const StoryTimeline = () => {
   const fillRef = useRef<HTMLDivElement>(null);
   const lastChapter = useRef<number | null>(null);
   const toastTimer = useRef(0);
+  const panelOpen = usePanelStore(selectIsOpen);
 
   useTimelineTuning((s) => s.rev); // re-render when the dev panel edits TIMELINE in place
   const { minGap } = TIMELINE;
@@ -134,9 +136,11 @@ const StoryTimeline = () => {
 
   if (!mounted) return null;
 
-  // (A wrapper steps it back in the full view: the rail's own CSS sets its opacity.)
+  // A wrapper steps it back in the full view (the rail's own CSS sets its opacity), and takes
+  // it out of the Tab order while a panel is open (P27-99, WCAG 2.4.3): the panel holds the
+  // scroll, so its stars would do nothing, and the side panel isn't modal (the scene stays).
   return createPortal(
-    <div className={STEP_BACK_IN_FULL_VIEW}>
+    <div className={STEP_BACK_IN_FULL_VIEW} inert={panelOpen}>
       <StoryTimelineRail
         chapters={STORY_CHAPTERS}
         positions={positions}
