@@ -1,6 +1,6 @@
 import type { Meta, StoryObj } from "@storybook/nextjs-vite";
 import type { CSSProperties, ReactNode } from "react";
-import { expect, waitFor } from "storybook/test";
+import { expect, fn, waitFor } from "storybook/test";
 
 import Gallery from "#/stories/Gallery";
 import { inCalm } from "#/stories/motion";
@@ -8,15 +8,19 @@ import Tooltip from "./Tooltip";
 import { TOOLTIP_ALIGNS, TOOLTIP_SIDES } from "./tooltip.types";
 
 /** Its trigger: any positioned element marked `group/tip` (a timeline star, a panel button…). */
-const Trigger = ({ children }: { children: ReactNode }) => (
+const Trigger = ({ children, onClick }: { children: ReactNode; onClick?: () => void }) => (
   <button
     type="button"
+    onClick={onClick}
     aria-label="Saturn"
     className="group/tip relative size-6 rounded-full bg-peach/80 focus-ring"
   >
     {children}
   </button>
 );
+
+/** The trigger's press (the Hoverable story): a click on the tooltip mustn't reach it. */
+const pressed = fn();
 
 const meta = {
   title: "UI/Tooltip",
@@ -55,6 +59,27 @@ export const Default: Story = {
     await userEvent.tab();
     await expect(canvas.getByRole("button", { name: "Saturn" })).toHaveFocus();
     await waitFor(() => expect(tip).toBeVisible());
+  },
+};
+
+/** The pointer can move onto it (WCAG 1.4.13): a see-through bridge spans the gap to its trigger, so its hover holds (the hover itself is CSS: checked in a browser). A click on it doesn't press its trigger. */
+export const Hoverable: Story = {
+  render: (args) => (
+    <Trigger onClick={pressed}>
+      <Tooltip {...args} />
+    </Trigger>
+  ),
+  play: async ({ canvas }) => {
+    const tip = canvas.getByText("Saturn");
+    const bridge = getComputedStyle(tip, "::before");
+    await expect(bridge.position).toBe("absolute");
+    await expect(bridge.height).toBe("6px"); // the gap: `mt-1.5`
+    await expect(getComputedStyle(tip).marginTop).toBe("6px");
+    pressed.mockClear();
+    tip.click();
+    await expect(pressed).not.toHaveBeenCalled();
+    canvas.getByRole("button", { name: "Saturn" }).click();
+    await expect(pressed).toHaveBeenCalledOnce();
   },
 };
 

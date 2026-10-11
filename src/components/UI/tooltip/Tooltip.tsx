@@ -1,4 +1,5 @@
 import clsx from "clsx";
+import type { MouseEvent } from "react";
 import type {
   TooltipAlign,
   TooltipProps,
@@ -39,6 +40,18 @@ const ON_TRIGGER: Record<Axis, string> = {
   y: "group-hover/tip:visible group-hover/tip:translate-y-0 group-hover/tip:opacity-100 group-focus-visible/tip:visible group-focus-visible/tip:translate-y-0 group-focus-visible/tip:opacity-100",
 };
 
+/**
+ * Shown by its trigger's hover, it takes the pointer too, over a see-through bridge across the
+ * 6px gap, so the pointer can move onto it without it closing: it's part of the trigger, whose
+ * hover holds (WCAG 1.4.13, P27-101). Not the `open` ones: they aren't shown by a hover.
+ */
+const HOVERABLE: Record<TooltipSide, string> = {
+  above: "before:absolute before:inset-x-0 before:top-full before:h-1.5",
+  below: "before:absolute before:inset-x-0 before:bottom-full before:h-1.5",
+  left: "before:absolute before:inset-y-0 before:left-full before:w-1.5",
+  right: "before:absolute before:inset-y-0 before:right-full before:w-1.5",
+};
+
 /** …or while it's `open`. */
 const SHOWN: Record<Axis, string> = {
   x: "visible translate-x-0 opacity-100",
@@ -52,7 +65,8 @@ const SHOWN: Record<Axis, string> = {
  * (only on screens that can hover), or while `open` (the timeline's name pill).
  *
  * Its text is light peach; a part of the page can tune it with `--color-tooltip` (the
- * timeline's dev panel does). Not interactive.
+ * timeline's dev panel does). Shown by a hover, it takes the pointer (it stays as the pointer
+ * moves onto it), but a click on it does nothing: it sits inside its trigger, and isn't it.
  *
  * Once faded out it's `invisible` too (P27-86): its blur was still drawn at opacity 0, every
  * frame. Not a `live` one: it stays in the page, so screen readers hear what it says.
@@ -60,6 +74,12 @@ const SHOWN: Record<Axis, string> = {
  * Escape closes it, without moving the pointer or the focus (WCAG 1.4.13, ./dismiss). In calm
  * motion it only fades in, with no slide (P27-92).
  */
+/** A click on a tooltip doesn't reach its trigger (P27-101): it isn't the button it's in. */
+const ignoreClick = (event: MouseEvent) => {
+  event.stopPropagation();
+  event.preventDefault();
+};
+
 const Tooltip = ({
   children,
   side = "below",
@@ -69,6 +89,7 @@ const Tooltip = ({
   live = false,
 }: TooltipProps) => (
   <span
+    onClick={ignoreClick}
     aria-hidden={live ? undefined : true}
     aria-live={live ? "polite" : undefined}
     className={clsx(
@@ -76,7 +97,11 @@ const Tooltip = ({
       SIDE[side],
       AXIS[side] === "y" && ALIGN[align],
       open ? SHOWN[AXIS[side]] : [HIDDEN[side], !live && "invisible"],
-      open === undefined && ON_TRIGGER[AXIS[side]],
+      open === undefined && [
+        ON_TRIGGER[AXIS[side]],
+        HOVERABLE[side],
+        "group-hover/tip:pointer-events-auto",
+      ],
       open === undefined &&
         delayed &&
         "group-hover/tip:delay-800 group-focus-visible/tip:delay-800",
