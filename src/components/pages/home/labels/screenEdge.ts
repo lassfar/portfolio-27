@@ -8,8 +8,6 @@
 
 /** Phones: narrower than Tailwind's `sm` (40rem). */
 export const PHONE_QUERY = "(width < 40rem)";
-/** Touch screens: no hover (Tailwind's `hover:` doesn't apply there). */
-export const TOUCH_QUERY = "(hover: none)";
 /** The room a label keeps from the screen's edge (px). */
 export const LABEL_EDGE = 10;
 

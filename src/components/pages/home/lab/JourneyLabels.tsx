@@ -1,9 +1,9 @@
 "use client";
 
-import { useEffect, useRef, type MouseEvent } from "react";
+import { useEffect, useId, useRef, type MouseEvent } from "react";
 import clsx from "clsx";
 import { journeyLabels, journeyScreen } from "#/components/three.js/parker/journeyScreen";
-import { PHONE_QUERY, TOUCH_QUERY, keepOnScreen } from "#/components/pages/home/labels/screenEdge";
+import { PHONE_QUERY, keepOnScreen } from "#/components/pages/home/labels/screenEdge";
 import { type LabelBox, stackLabels } from "#/components/pages/home/labels/stack";
 import { ANCHORED, showAnchored } from "#/components/pages/home/labels/anchored";
 import QuietLabel from "#/components/UI/labels/QuietLabel";
@@ -38,6 +38,19 @@ function texts(here: number): { short: string; long: string } {
 }
 
 /**
+ * Opens or closes a label's full text (`data-open`), saying so to screen readers. Closed, the
+ * full text is its description (read after its name); open, it's its name.
+ */
+function setOpen(label: HTMLElement, open: boolean) {
+  if (open) label.dataset.open = "";
+  else delete label.dataset.open;
+  label.setAttribute("aria-expanded", String(open));
+  const long = label.querySelector(".journey-label__long");
+  if (open) label.removeAttribute("aria-describedby");
+  else if (long?.id) label.setAttribute("aria-describedby", long.id);
+}
+
+/**
  * The labels on Parker's journey line (P27-72): "Launch" on the Earth's orbit and
  * "Venus n" at the flybys, each appearing as the line passes it — a spot it passes
  * again names both ("Venus 1 · 2"), how close its loops reach on hover — and how close
@@ -47,12 +60,16 @@ function texts(here: number): { short: string; long: string } {
  * its dot in the very frame it's drawn — positioned imperatively (transform + opacity),
  * so nothing re-renders per frame; labels that would overlap are stacked (as the
  * Earth's pins do). Quiet: they open nothing (no glass, smaller). Under the panel.
+ *
+ * Each is a small disclosure button (P27-99, WCAG 2.1.1): in the Tab order only while
+ * shown, and a press (Enter, a tap, a click) opens its full text, as a hover does.
  */
 const JourneyLabels = () => {
-  const refs = useRef<(HTMLSpanElement | null)[]>([]);
+  const refs = useRef<(HTMLButtonElement | null)[]>([]);
   const shortRefs = useRef<(HTMLSpanElement | null)[]>([]);
   const longRefs = useRef<(HTMLSpanElement | null)[]>([]);
   const tipRef = useRef<HTMLSpanElement>(null);
+  const id = useId();
 
   useEffect(() => {
     // Each label's last shown state and text — only written when they change.
@@ -71,7 +88,7 @@ const JourneyLabels = () => {
     };
     window.addEventListener("resize", remeasure);
     void document.fonts?.ready.then(remeasure);
-    const boxes: (LabelBox & { el: HTMLSpanElement })[] = [];
+    const boxes: (LabelBox & { el: HTMLElement })[] = [];
     // Phones keep each label on screen (P27-31); desktop places them as before.
     const phone = window.matchMedia(PHONE_QUERY);
     const leftOf = (x: number, w: number) =>
@@ -95,9 +112,13 @@ const JourneyLabels = () => {
           shownBefore[i] = s.shown;
           showAnchored(el, s.shown);
           el.style.pointerEvents = s.shown ? "auto" : "none";
-          if (!s.shown) delete el.dataset.open; // a hidden label closes
+          el.tabIndex = s.shown ? 0 : -1;
+          if (!s.shown) {
+            setOpen(el, false); // a hidden label closes
+            if (document.activeElement === el) el.blur();
+          }
         }
-        // Opened or closed by a tap (touch screens): its width changed.
+        // Opened or closed by a press: its width changed.
         const open = el.dataset.open !== undefined;
         if (openBefore[i] !== open) {
           openBefore[i] = open;
@@ -151,14 +172,13 @@ const JourneyLabels = () => {
     };
   }, []);
 
-  // Touch screens have no hover: a tap opens a label's full text (one at a time), and
-  // closes it again. With a mouse, hover does it, as before.
-  const toggle = (e: MouseEvent<HTMLSpanElement>) => {
-    if (!window.matchMedia(TOUCH_QUERY).matches) return;
+  // A press opens a label's full text (one at a time), and closes it again: the keyboard's
+  // way, and touch screens' (no hover). A hover shows it too.
+  const toggle = (e: MouseEvent<HTMLButtonElement>) => {
     const label = e.currentTarget;
     const opening = label.dataset.open === undefined;
-    for (const other of refs.current) if (other) delete other.dataset.open;
-    if (opening) label.dataset.open = "";
+    for (const other of refs.current) if (other) setOpen(other, false);
+    if (opening) setOpen(label, true);
   };
 
   return (
@@ -166,32 +186,41 @@ const JourneyLabels = () => {
       {Array.from({ length: COUNT }, (_, i) => {
         const t = texts(1 << i);
         return (
-          <QuietLabel
+          <button
             key={i}
             ref={(el) => {
               refs.current[i] = el;
             }}
-            aria-hidden="true"
+            type="button"
+            tabIndex={-1} // hidden until shown: `update` owns it from here
+            aria-expanded={false} // `setOpen` owns these from here
+            aria-describedby={`${id}-${i}`}
             onClick={toggle}
-            className={clsx("journey-label group hover:text-peach", ANCHORED)}
+            className={clsx(
+              "journey-label group rounded-full focus-ring transition-opacity duration-300",
+              ANCHORED,
+            )}
           >
-            <span
-              ref={(el) => {
-                shortRefs.current[i] = el;
-              }}
-              className="journey-label__short group-hover:hidden"
-            >
-              {t.short}
-            </span>
-            <span
-              ref={(el) => {
-                longRefs.current[i] = el;
-              }}
-              className="journey-label__long hidden group-hover:inline"
-            >
-              {t.long}
-            </span>
-          </QuietLabel>
+            <QuietLabel className="block group-hover:text-peach">
+              <span
+                ref={(el) => {
+                  shortRefs.current[i] = el;
+                }}
+                className="journey-label__short group-hover:hidden"
+              >
+                {t.short}
+              </span>
+              <span
+                id={`${id}-${i}`}
+                ref={(el) => {
+                  longRefs.current[i] = el;
+                }}
+                className="journey-label__long hidden group-hover:inline"
+              >
+                {t.long}
+              </span>
+            </QuietLabel>
+          </button>
         );
       })}
       <QuietLabel

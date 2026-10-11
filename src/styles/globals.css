@@ -354,15 +354,14 @@
   }
 }
 
-/* ── Parker's journey labels on touch screens (P27-31) ─────────────────────────────────
-   No hover there: a tapped label (JourneyLabels sets `data-open`) shows its full text. */
-@media (hover: none) {
-  .journey-label[data-open] .journey-label__short {
-    display: none;
-  }
-  .journey-label[data-open] .journey-label__long {
-    display: inline;
-  }
+/* ── Parker's journey labels (P27-31, P27-99) ──────────────────────────────────────────
+   A pressed label (Enter, a tap, a click: JourneyLabels sets `data-open`) shows its full
+   text, as a hover does: the keyboard's way to it, and touch screens' (no hover). */
+.journey-label[data-open] .journey-label__short {
+  display: none;
+}
+.journey-label[data-open] .journey-label__long {
+  display: inline;
 }
 
 /* ── Story timeline (P27-73) ─────────────────────────────────────────────────────────
