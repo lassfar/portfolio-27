@@ -6,12 +6,13 @@ import SunriseLogo from "#/components/assets/pictures/logos/sunrise-logo";
 import Button from "#/components/UI/buttons/Button";
 import Skills from "#/components/pages/home/skills/Skills";
 import Contact from "#/components/pages/home/contact/Contact";
+import ChapterTexts from "#/components/pages/home/ChapterTexts";
 import { JOURNEY_CONTACT_TITLE_ID } from "#/components/pages/home/contact/config";
 import clsx from "clsx";
 import Swash from "#/components/UI/swash/Swash";
 import DisplayTitle from "#/components/UI/text/DisplayTitle";
 import { TITLE_SWASH } from "#/components/pages/home/swashes";
-import { ABOUT, HERO } from "#/components/pages/home/story/copy";
+import { ABOUT, CHAPTER_NAMES, HERO } from "#/components/pages/home/story/copy";
 import { useLoaded } from "#/components/hooks/useLoaded";
 import { loadJourneyMotion } from "#/components/pages/home/loadJourney";
 import { loadScene } from "#/components/three.js/scene/preload";
@@ -59,10 +60,16 @@ const Hero = () => {
       >
         {/* Full-bleed unified cosmos (starfield + star + Saturn), behind content.
           Blurred + dimmed at the end of the journey for the About reveal. */}
-        <div className="home-hero__canvas absolute inset-0 z-0">{live && <CosmicScene />}</div>
+        <div className="home-hero__canvas absolute inset-0 z-0" aria-hidden="true">
+          {live && <CosmicScene />}
+        </div>
 
         {/* Logo, top-left */}
-        <div className="pointer-events-auto absolute top-6 left-6 z-10" ref={logoRef}>
+        <div
+          className="pointer-events-auto absolute top-6 left-6 z-10"
+          ref={logoRef}
+          aria-hidden="true"
+        >
           <SunriseLogo width={56} height={48} className="h-auto w-10 sm:w-12" />
         </div>
 
@@ -118,6 +125,9 @@ const Hero = () => {
           </div>
         </section>
 
+        {/* What the 3D shows next, in words for screen readers: the star, its burst, Saturn. */}
+        <ChapterTexts chapters={["origin"]} />
+
         {/* About reveal — slides in from the top over the blurred Saturn once it
           has finished assembling (the end of the journey). */}
         <div
@@ -134,6 +144,7 @@ const Hero = () => {
             ref={aboutTitleRef}
             size="xl"
             text={ABOUT.title}
+            srPrefix={`${CHAPTER_NAMES.maker}: `}
             className="home-about__title mb-1"
           />
           {/* Its swash draws in once the title has written in (useCosmicJourney). */}
@@ -174,10 +185,16 @@ const Hero = () => {
           </div>
         </div>
 
+        {/* The Maker's own line and its bridge to the Craft, for screen readers. */}
+        <ChapterTexts chapters={["maker"]} />
+
         {/* The Craft — folded into the journey as an overlay: slides up over the
           built Saturn, its constellation assembles, then it fades out to reveal
           the Saturn for the fly-away. */}
         <Skills overlayRef={craftRef} />
+
+        {/* The chapters the 3D tells alone, in words for screen readers (P27-100). */}
+        <ChapterTexts chapters={["voyage", "earth", "lab", "way-out", "milky-way"]} />
 
         {/* Contact — the last beat: fades in over the blurred, dimmed galaxy once it
           has fully resolved (and a short pause on it). */}
