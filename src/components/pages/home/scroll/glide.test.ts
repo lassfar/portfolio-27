@@ -1,7 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { ScrollSmoother, ScrollTrigger } from "gsap/all";
 import { journeyTrigger } from "#/stores/journeyTrigger";
-import { jumpToJourney } from "./glide";
+import { isScrollKey, jumpToJourney } from "./glide";
 
 // No GSAP in the unit tests: the smoother and the pin are stood in for.
 vi.mock("gsap", () => ({ default: { to: vi.fn(), killTweensOf: vi.fn() } }));
@@ -41,5 +41,29 @@ describe("jumpToJourney", () => {
   it("can't without the pinned journey", () => {
     journeyTrigger.current = null;
     expect(jumpToJourney(0.5)).toBe(false);
+  });
+});
+
+describe("isScrollKey", () => {
+  const press = (key: string, target: Partial<HTMLElement> | null = null) =>
+    isScrollKey({ key, target: target as EventTarget | null });
+
+  it("takes the scroll back on the keys that scroll the page", () => {
+    for (const key of [" ", "PageUp", "PageDown", "Home", "End", "ArrowUp", "ArrowDown"]) {
+      expect(press(key)).toBe(true);
+    }
+  });
+
+  it("lets the glide run on Tab, Enter, Escape, a modifier or a letter", () => {
+    for (const key of ["Tab", "Enter", "Escape", "Shift", "Meta", "a", "ArrowLeft"]) {
+      expect(press(key)).toBe(false);
+    }
+  });
+
+  it("not on a key typed in a field", () => {
+    expect(press(" ", { tagName: "TEXTAREA", isContentEditable: false })).toBe(false);
+    expect(press("ArrowDown", { tagName: "INPUT", isContentEditable: false })).toBe(false);
+    expect(press(" ", { tagName: "DIV", isContentEditable: true })).toBe(false);
+    expect(press(" ", { tagName: "BUTTON", isContentEditable: false })).toBe(true);
   });
 });

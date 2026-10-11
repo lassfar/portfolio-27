@@ -96,10 +96,31 @@ export function stopGlide(): void {
   if (smoother) gsap.killTweensOf(smoother);
 }
 
+/** The keys that scroll the page (with or without a modifier: Shift+Space, ⌘↓). */
+const SCROLL_KEYS = new Set([" ", "PageUp", "PageDown", "Home", "End", "ArrowUp", "ArrowDown"]);
+
+/** Whether `target` takes typing (a key pressed there doesn't scroll the page). */
+const isTyping = (target: EventTarget | null) => {
+  const el = target as HTMLElement | null;
+  return !!el && (el.isContentEditable || /^(INPUT|TEXTAREA|SELECT)$/.test(el.tagName));
+};
+
+/**
+ * Whether a key press scrolls the page, and so takes it back from a glide (P27-99): Space,
+ * PageUp/Down, Home/End, ↑/↓. Not Tab (a keyboard visitor moves through the timeline while it
+ * glides), Enter, Escape, a lone modifier or a letter, nor anything typed in a field.
+ */
+export const isScrollKey = (event: Pick<KeyboardEvent, "key" | "target">): boolean =>
+  SCROLL_KEYS.has(event.key) && !isTyping(event.target);
+
+const stopOnScrollKey = (event: KeyboardEvent) => {
+  if (isScrollKey(event)) stopGlide();
+};
+
 let inputUsers = 0; // components that asked for stopGlideOnInput (the listeners are shared)
 
 /**
- * A wheel, touch or key press takes the scroll back from a glide. Several components can
+ * A wheel, a touch or a scroll key takes the scroll back from a glide. Several components can
  * ask for it (the timeline, the phase buttons): the listeners go on with the first and
  * off with the last. Returns the cleanup (for a useEffect).
  */
@@ -107,12 +128,12 @@ export function stopGlideOnInput(): () => void {
   if (inputUsers++ === 0) {
     window.addEventListener("wheel", stopGlide, { passive: true });
     window.addEventListener("touchstart", stopGlide, { passive: true });
-    window.addEventListener("keydown", stopGlide);
+    window.addEventListener("keydown", stopOnScrollKey);
   }
   return () => {
     if (--inputUsers > 0) return;
     window.removeEventListener("wheel", stopGlide);
     window.removeEventListener("touchstart", stopGlide);
-    window.removeEventListener("keydown", stopGlide);
+    window.removeEventListener("keydown", stopOnScrollKey);
   };
 }

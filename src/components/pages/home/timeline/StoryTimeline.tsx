@@ -122,7 +122,7 @@ const StoryTimeline = () => {
   }, [current, shown, phone]);
   useEffect(() => () => window.clearTimeout(toastTimer.current), []);
 
-  // A wheel, touch or key press takes the scroll back from a glide.
+  // A wheel, a touch or a scroll key takes the scroll back from a glide.
   useEffect(stopGlideOnInput, []);
 
   // Glide to a chapter (not while a panel holds the scroll): to its resting view (Saturn
