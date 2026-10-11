@@ -3,6 +3,7 @@
 import clsx from "clsx";
 import { useEffect, useState } from "react";
 import { createPortal } from "react-dom";
+import { useTimeout } from "#/components/hooks/useTimeout";
 import { useGlide } from "#/stores/useGlide";
 import { useJourneyScroll } from "#/stores/useJourneyScroll";
 import { mpAt } from "#/components/three.js/star/config";
@@ -13,6 +14,9 @@ import type { SubtitlePlacement } from "./subtitles.types";
 
 /** How quickly the measured scroll speed follows the scroll (s): smooths frame-to-frame jitter. */
 const SPEED_SMOOTHING_S = 0.15;
+
+/** How long a line stays in the live region once said (s): then it clears, so reading on doesn't meet it again (the chapter texts hold every line). */
+const SAID_SECONDS = 4;
 
 /** Centred, and the text too: every placement on a phone (too narrow for a side). */
 const CENTRED = "left-1/2 -translate-x-1/2 text-center";
@@ -38,8 +42,8 @@ const PLACEMENT: Record<SubtitlePlacement, string> = {
  * stays until its window ends, fading out the same way. None shows on the way back
  * up, each shows once per visit; only a very fast jump skips one (SUBTITLE_PACE), and a
  * line can be kept out of the assistant's glides (`onAssistantGlide`). Screen readers
- * hear each line as it shows (a polite live region; the visible copies are hidden from
- * them). Only a change of line re-renders.
+ * hear each line as it shows (a polite live region, cleared after SAID_SECONDS: P27-100; the
+ * visible copies are hidden from them). Only a change of line re-renders.
  *
  * Portalled to the body (ScrollSmoother's transformed content re-bases `fixed`). Only
  * with motion: the calm mode reads the book instead (P27-93).
@@ -47,6 +51,8 @@ const PLACEMENT: Record<SubtitlePlacement, string> = {
 const StorySubtitles = () => {
   const [mounted, setMounted] = useState(false);
   const [active, setActive] = useState(-1);
+  const [said, setSaid] = useState("");
+  const hush = useTimeout();
 
   useEffect(() => setMounted(true), []);
 
@@ -58,6 +64,7 @@ const StorySubtitles = () => {
     let backward = false; // the last move was back up (it stays so when the scroll stops)
     let settle = 0;
     let current = -1;
+    let saidLine = -1; // the line the live region said last
     const seen = new Set<number>(); // the lines shown in this visit
     const decide = () => {
       current = nextSubtitle(
@@ -70,6 +77,13 @@ const StorySubtitles = () => {
       );
       if (current >= 0) seen.add(current);
       setActive(current);
+      // A new line is said, and stays SAID_SECONDS (not cut as it fades: a screen reader would
+      // miss it), then clears.
+      if (current >= 0 && current !== saidLine) {
+        saidLine = current;
+        setSaid(STORY_SUBTITLES[current].line.replaceAll("*", ""));
+        hush.set(() => setSaid(""), SAID_SECONDS);
+      }
     };
     const update = (mp: number) => {
       const now = performance.now();
@@ -97,14 +111,14 @@ const StorySubtitles = () => {
       unsubscribeGlide();
       window.clearTimeout(settle);
     };
-  }, [mounted]);
+  }, [hush, mounted]);
 
   if (!mounted) return null;
 
   return createPortal(
     <div className={clsx("story-subtitles", STEP_BACK_IN_FULL_VIEW)}>
       <p className="sr-only" aria-live="polite">
-        {active >= 0 ? STORY_SUBTITLES[active].line.replaceAll("*", "") : ""}
+        {said}
       </p>
       {STORY_SUBTITLES.map((subtitle, i) => {
         const shown = i === active;
