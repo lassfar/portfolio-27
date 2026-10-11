@@ -7,6 +7,7 @@ import { PHONE_QUERY, keepOnScreen } from "#/components/pages/home/labels/screen
 import { type LabelBox, stackLabels } from "#/components/pages/home/labels/stack";
 import { ANCHORED, showAnchored } from "#/components/pages/home/labels/anchored";
 import QuietLabel from "#/components/UI/labels/QuietLabel";
+import { journeyLabelId } from "#/components/pages/home/labels/labelIds";
 
 /** Gap (px) kept between labels that would otherwise overlap. */
 const LABEL_GAP = 4;
@@ -191,6 +192,7 @@ const JourneyLabels = () => {
             ref={(el) => {
               refs.current[i] = el;
             }}
+            id={journeyLabelId(i)} // read with the Lab's words (ChapterTexts)
             type="button"
             tabIndex={-1} // hidden until shown: `update` owns it from here
             aria-expanded={false} // `setOpen` owns these from here

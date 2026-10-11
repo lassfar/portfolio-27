@@ -13,6 +13,7 @@ import { ANCHORED, showAnchored } from "#/components/pages/home/labels/anchored"
 import QuietLabel from "#/components/UI/labels/QuietLabel";
 import SceneLabel from "#/components/pages/home/labels/SceneLabel";
 import { PANEL_ID } from "#/components/pages/home/panel/config";
+import { LAB_LABEL_ID } from "#/components/pages/home/labels/labelIds";
 
 /**
  * The Lab's labels (the `recordScreen` / `recordLabel` names date from the Voyager's
@@ -82,6 +83,7 @@ const RecordLabel = () => {
     <>
       <SceneLabel
         ref={cardRef}
+        id={LAB_LABEL_ID} // read with the Lab's words (ChapterTexts)
         labelKey="lab"
         icon={MemoryStick}
         name="Memory card"

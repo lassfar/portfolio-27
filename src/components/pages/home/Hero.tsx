@@ -195,7 +195,10 @@ const Hero = () => {
 
         {/* The Craft (its overlay only shows in its stretch) and the chapters the 3D tells alone,
             in words for screen readers (P27-100). */}
-        <ChapterTexts chapters={["craft", "voyage", "earth", "lab", "way-out", "milky-way"]} />
+        <ChapterTexts
+          chapters={["craft", "voyage", "earth", "lab", "way-out", "milky-way"]}
+          labels
+        />
 
         {/* Contact — the last beat: fades in over the blurred, dimmed galaxy once it
           has fully resolved (and a short pause on it). */}

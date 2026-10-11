@@ -9,6 +9,7 @@ import { PHONE_QUERY, keepOnScreen } from "#/components/pages/home/labels/screen
 import { type LabelBox, stackLabels } from "#/components/pages/home/labels/stack";
 import { ANCHORED, showAnchored } from "#/components/pages/home/labels/anchored";
 import SceneLabel from "#/components/pages/home/labels/SceneLabel";
+import { placeLabelId } from "#/components/pages/home/labels/labelIds";
 import { placeLabelAria, placeLabelMeta } from "#/components/pages/home/panel/content";
 import { PANEL_ID } from "#/components/pages/home/panel/config";
 
@@ -125,6 +126,7 @@ const PinLabels = () => {
         ref={(el) => {
           refs.current[loc.id] = el;
         }}
+        id={placeLabelId(loc.id)} // read with the Earth's words (ChapterTexts)
         labelKey={loc.id}
         icon={Camera}
         name={loc.place}
