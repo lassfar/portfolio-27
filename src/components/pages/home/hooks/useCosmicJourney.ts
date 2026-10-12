@@ -159,8 +159,9 @@ export default function useCosmicJourney(refs: CosmicJourneyRefs): void {
           block.style.transform = `translateY(${-40 * (1 - enter)}px)`;
           block.style.visibility = enter > 0.001 ? "visible" : "hidden";
         }
+        // 0.05 apart, so the last of the six (the links) is fully in at c = 1.
         contactPieces.forEach((piece, i) => {
-          const t = easeOut(remap01(c, 0.5 + i * 0.06, 0.75 + i * 0.06));
+          const t = easeOut(remap01(c, 0.5 + i * 0.05, 0.75 + i * 0.05));
           piece.style.opacity = String(t);
           piece.style.transform = `translateY(${16 * (1 - t)}px)`;
           piece.style.visibility = t > 0.001 ? "visible" : "hidden"; // not tabbable while hidden
