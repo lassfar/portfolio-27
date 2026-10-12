@@ -127,7 +127,6 @@ const Skills = ({ overlayRef }: Props) => {
         // Starts parked below the fold; the journey sets transform/opacity.
         "pointer-events-none absolute inset-0 z-30 will-change-[transform,opacity]",
         "overflow-hidden bg-rich-black",
-        "flex flex-col items-center justify-center px-4 py-20",
       )}
       style={{ transform: "translateY(100%)" }}
     >
@@ -154,121 +153,135 @@ const Skills = ({ overlayRef }: Props) => {
         ))}
       </div>
 
-      {/* Title + intro */}
-      <DisplayTitle
-        size="md"
-        text={CRAFT.title}
+      {/* Its words and drawing: centred (the auto margins), the drawing shrinking to the room
+          left. On a short screen (P27-101) the drawing keeps its size (up to the screen's) and
+          the journey scrolls from the title down to it as it builds. */}
+      <div
+        data-overlay-scroll
         className={clsx(
-          "home-skills__title skills__title text-center",
-          // Phones: clear of the story title (left) and the timeline (right).
-          "relative z-10 px-8 sm:px-0",
-        )}
-      />
-      {/* Its swash draws in once the title has written in (useCosmicJourney). */}
-      <Swash
-        {...TITLE_SWASH.craft}
-        draw="cue"
-        className="relative z-10 mt-1 w-48 sm:w-64 md:w-96 lg:w-120"
-      />
-      <p
-        className={clsx(
-          "home-skills__intro skills__intro",
-          "relative z-10 mt-5 mb-2 max-w-xl px-8 text-center sm:px-0",
-          "text-base leading-relaxed font-light text-white/60 sm:text-lg",
+          "home-craft__scroll",
+          "absolute inset-0 flex flex-col items-center overflow-hidden px-4 py-20 short:py-6",
         )}
       >
-        {CRAFT.intro}
-      </p>
+        {/* Title + intro */}
+        <DisplayTitle
+          size="md"
+          text={CRAFT.title}
+          className={clsx(
+            "home-skills__title skills__title mt-auto text-center",
+            // Phones: clear of the story title (left) and the timeline (right).
+            "relative z-10 px-8 sm:px-0",
+          )}
+        />
+        {/* Its swash draws in once the title has written in (useCosmicJourney). */}
+        <Swash
+          {...TITLE_SWASH.craft}
+          draw="cue"
+          className="relative z-10 mt-1 w-48 sm:w-64 md:w-96 lg:w-120"
+        />
+        <p
+          className={clsx(
+            "home-skills__intro skills__intro",
+            "relative z-10 mt-5 mb-2 max-w-xl px-8 text-center sm:px-0 short:mt-3",
+            "text-base leading-relaxed font-light text-white/60 sm:text-lg",
+          )}
+        >
+          {CRAFT.intro}
+        </p>
 
-      {/* The constellation, named tool by tool, as the book's (P27-100). */}
-      <svg
-        viewBox="0 0 600 420"
-        className="relative z-10 mt-6 w-full max-w-3xl"
-        role="img"
-        aria-label={BOOK.figures.craft}
-      >
-        {/* Connector lines (drawn on scroll via stroke-dashoffset) */}
-        <g>
-          {LINES.map(([a, b], i) => {
-            const A = nodeMap[a];
-            const B = nodeMap[b];
-            return (
-              <line
-                key={i}
-                // Colour-changing extensions (Dark Reader, …) rewrite stroke/fill
-                // into inline styles pre-hydration → per-element mismatch. This is
-                // React's escape hatch for that; it does not mask real mismatches.
-                suppressHydrationWarning
-                className="skill-line"
-                x1={A.x}
-                y1={A.y}
-                x2={B.x}
-                y2={B.y}
-                stroke="var(--color-baby-blue)"
-                strokeWidth={1}
-                strokeOpacity={0.4}
-                pathLength={1}
-                strokeDasharray={1}
-              />
-            );
-          })}
-        </g>
+        {/* The constellation, named tool by tool, as the book's (P27-100). */}
+        <svg
+          viewBox="0 0 600 420"
+          className={clsx(
+            "relative z-10 mt-6 mb-auto w-full max-w-3xl",
+            "short:mt-3 short:max-h-[calc(100svh-3rem)] short:shrink-0",
+          )}
+          role="img"
+          aria-label={BOOK.figures.craft}
+        >
+          {/* Connector lines (drawn on scroll via stroke-dashoffset) */}
+          <g>
+            {LINES.map(([a, b], i) => {
+              const A = nodeMap[a];
+              const B = nodeMap[b];
+              return (
+                <line
+                  key={i}
+                  // Colour-changing extensions (Dark Reader, …) rewrite stroke/fill
+                  // into inline styles pre-hydration → per-element mismatch. This is
+                  // React's escape hatch for that; it does not mask real mismatches.
+                  suppressHydrationWarning
+                  className="skill-line"
+                  x1={A.x}
+                  y1={A.y}
+                  x2={B.x}
+                  y2={B.y}
+                  stroke="var(--color-baby-blue)"
+                  strokeWidth={1}
+                  strokeOpacity={0.4}
+                  pathLength={1}
+                  strokeDasharray={1}
+                />
+              );
+            })}
+          </g>
 
-        {/* Nodes */}
-        <g>
-          {NODES.map((n) => (
-            <g key={n.id}>
-              {n.bridge && (
+          {/* Nodes */}
+          <g>
+            {NODES.map((n) => (
+              <g key={n.id}>
+                {n.bridge && (
+                  <circle
+                    suppressHydrationWarning
+                    className="skill-node"
+                    cx={n.x}
+                    cy={n.y}
+                    r={n.r + 9}
+                    fill="var(--color-peach)"
+                    opacity={0.12}
+                    style={{
+                      transformBox: "fill-box",
+                      transformOrigin: "center",
+                    }}
+                  />
+                )}
                 <circle
                   suppressHydrationWarning
                   className="skill-node"
                   cx={n.x}
                   cy={n.y}
-                  r={n.r + 9}
+                  r={n.r}
                   fill="var(--color-peach)"
-                  opacity={0.12}
-                  style={{
-                    transformBox: "fill-box",
-                    transformOrigin: "center",
-                  }}
+                  style={{ transformBox: "fill-box", transformOrigin: "center" }}
                 />
-              )}
-              <circle
-                suppressHydrationWarning
-                className="skill-node"
-                cx={n.x}
-                cy={n.y}
-                r={n.r}
-                fill="var(--color-peach)"
-                style={{ transformBox: "fill-box", transformOrigin: "center" }}
-              />
-            </g>
-          ))}
-        </g>
+              </g>
+            ))}
+          </g>
 
-        {/* Labels */}
-        <g>
-          {NODES.map((n) => (
-            <text
-              key={n.id}
-              suppressHydrationWarning
-              className={clsx(
-                "skill-label",
-                n.labelDy > 0 && "skill-label--below",
-                n.bridge && "skill-label--bridge",
-              )}
-              x={n.x}
-              y={n.y + n.labelDy}
-              fill="var(--color-light-baby-blue)"
-              fontSize={n.bridge ? 13 : 11.5}
-              textAnchor="middle"
-              fontFamily="var(--font-sans)"
-            >
-              {n.label}
-            </text>
-          ))}
-        </g>
-      </svg>
+          {/* Labels */}
+          <g>
+            {NODES.map((n) => (
+              <text
+                key={n.id}
+                suppressHydrationWarning
+                className={clsx(
+                  "skill-label",
+                  n.labelDy > 0 && "skill-label--below",
+                  n.bridge && "skill-label--bridge",
+                )}
+                x={n.x}
+                y={n.y + n.labelDy}
+                fill="var(--color-light-baby-blue)"
+                fontSize={n.bridge ? 13 : 11.5}
+                textAnchor="middle"
+                fontFamily="var(--font-sans)"
+              >
+                {n.label}
+              </text>
+            ))}
+          </g>
+        </svg>
+      </div>
     </div>
   );
 };

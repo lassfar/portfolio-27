@@ -33,9 +33,13 @@ const Smoother = ({ wrapperRef, contentRef, onReady }: SmootherProps) => {
         normalizeScroll: true, // smooth out mobile address-bar jumps
         // On focus it scrolls to the focused element if it's off screen — only for the page's
         // own content: the overlays portalled outside it (the panel, the photo viewer) are
-        // fixed, so a control still sliding in (a panel's Close) mustn't scroll the story.
+        // fixed, so a control still sliding in (a panel's Close) mustn't scroll the story. Nor
+        // inside an overlay that scrolls on its own (Contact where it doesn't fit, P27-101): its
+        // scroll shows it, the journey stays.
         onFocusIn: (_: ScrollSmoother, e: Event) =>
-          e.target instanceof Node && contentRef.current?.contains(e.target) === true,
+          e.target instanceof Element &&
+          contentRef.current?.contains(e.target) === true &&
+          !e.target.closest("[data-overlay-scroll]"),
       });
     });
     onReady();

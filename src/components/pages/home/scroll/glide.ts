@@ -7,6 +7,9 @@ import { cancelRefocusAfterGlide, refocusAfterGlide } from "./glideFocus";
 
 let current: gsap.core.Tween | null = null; // the glide running, if any
 
+/** Whether a glide is running (Contact's own scroll stands aside: overlayScroll.ts). */
+export const isGliding = (): boolean => current !== null;
+
 /** Where master progress `mp` lies on the page (px); null without the pinned journey. */
 function journeyY(mp: number): number | null {
   const trigger = journeyTrigger.current;

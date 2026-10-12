@@ -55,7 +55,7 @@ const Hero = () => {
   return (
     <>
       <div
-        className={clsx("home-hero", "relative min-h-screen overflow-hidden", "bg-rich-black")}
+        className={clsx("home-hero", "relative h-screen overflow-clip", "bg-rich-black")}
         ref={containerRef}
       >
         {/* Full-bleed unified cosmos (starfield + star + Saturn), behind content.
@@ -74,14 +74,15 @@ const Hero = () => {
         </div>
 
         {/* Content overlay — pointer-events-none so drags reach the space;
-          interactive children re-enable pointer events. */}
+          interactive children re-enable pointer events. Taller than the screen (zoom 400%), it
+          tightens (`data-tight`, `tight:`: the journey measures it, P27-101). */}
         <section
           className={clsx(
             "home-hero__section",
             "pointer-events-none relative z-10",
             "mx-auto min-h-screen w-11/12",
             "flex flex-col items-center justify-end text-center",
-            "pb-[10vh]",
+            "pb-[10vh] data-tight:pb-3",
           )}
         >
           <div
@@ -93,7 +94,10 @@ const Hero = () => {
             ref={contentRef}
           >
             <p
-              className={clsx("home-hero__eyebrow", "mb-4 text-sm text-white/55 sm:text-base")}
+              className={clsx(
+                "home-hero__eyebrow",
+                "mb-4 text-sm text-white/55 sm:text-base tight:mb-1.5",
+              )}
               ref={eyebrowRef}
             >
               {HERO.eyebrow}
@@ -104,22 +108,22 @@ const Hero = () => {
               as="h1"
               size="hero"
               text={HERO.headline}
-              className="home-hero__title"
+              className="home-hero__title tight:text-3xl sm:tight:text-5xl"
             />
 
             <p
               className={clsx(
                 "home-hero__intro",
                 "font-light text-white/65",
-                "text-base sm:text-lg md:text-xl",
-                "mt-6 max-w-xl",
+                "text-base sm:text-lg md:text-xl tight:text-sm sm:tight:text-base",
+                "mt-6 max-w-xl tight:mt-3",
               )}
               ref={subRef}
             >
               {HERO.intro}
             </p>
 
-            <div className="pointer-events-auto mt-8" ref={ctaRef}>
+            <div className="pointer-events-auto mt-8 tight:mt-4" ref={ctaRef}>
               <Button label={HERO.cta} variant="outline" size="large" onClick={handleWander} />
             </div>
           </div>
@@ -129,13 +133,16 @@ const Hero = () => {
         <ChapterTexts chapters={["origin"]} />
 
         {/* About reveal — slides in from the top over the blurred Saturn once it
-          has finished assembling (the end of the journey). */}
+          has finished assembling (the end of the journey). On a short screen its text follows
+          the scroll as its words write in (P27-101): centred while it fits (the auto margins),
+          from its top when it doesn't. */}
         <div
           ref={aboutRevealRef}
+          data-overlay-scroll
           className={clsx(
             "home-about__reveal",
             "pointer-events-none absolute inset-0 z-20 opacity-0",
-            "flex flex-col items-center justify-center text-center",
+            "flex flex-col items-center overflow-hidden text-center data-overflows:py-6",
             // Phones: clear of the story title (left) and the timeline (right).
             "px-12 sm:px-6",
           )}
@@ -145,13 +152,13 @@ const Hero = () => {
             size="xl"
             text={ABOUT.title}
             srPrefix={`${CHAPTER_NAMES.maker}: `}
-            className="home-about__title mb-1"
+            className="home-about__title mt-auto mb-1"
           />
           {/* Its swash draws in once the title has written in (useCosmicJourney). */}
           <Swash
             {...TITLE_SWASH.maker}
             draw="cue"
-            className="mb-7 w-56 sm:mb-9 sm:w-72 md:w-110 lg:w-150"
+            className="mb-7 w-56 sm:mb-9 sm:w-72 md:w-110 lg:w-150 short:mb-3"
           />
 
           {/* Its words for screen readers: the paragraphs below write in word by word (split,
@@ -161,7 +168,10 @@ const Hero = () => {
               <p key={paragraph}>{paragraph}</p>
             ))}
           </div>
-          <div className="max-w-2xl space-y-5 sm:space-y-6" aria-hidden="true">
+          <div
+            className="mb-auto max-w-2xl space-y-5 sm:space-y-6 short:space-y-3"
+            aria-hidden="true"
+          >
             <p
               ref={aboutPara1Ref}
               className={clsx(

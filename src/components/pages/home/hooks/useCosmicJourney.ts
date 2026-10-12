@@ -20,6 +20,11 @@ import { addTextsScrollWriteIn } from "#/components/hooks/motions/texts/textsScr
 import { addConstellationAssembly } from "#/components/pages/home/skills/Skills";
 import { galaxyProgressAt } from "#/components/three.js/galaxy/pace";
 import { addSwashDraw } from "#/components/UI/swash/drawSwash";
+import {
+  followScroll,
+  routeScroll,
+  tightenToFit,
+} from "#/components/pages/home/scroll/overlayScroll";
 
 gsap.registerPlugin(useGSAP, ScrollTrigger, SplitText);
 
@@ -92,6 +97,30 @@ export default function useCosmicJourney(refs: CosmicJourneyRefs): void {
         contactRef.current?.querySelectorAll<HTMLElement>(".home-contact__piece") ?? [],
       );
 
+      // A short screen (P27-101): the first screen tightens to fit, About and the Craft follow
+      // the scroll, Contact scrolls on its own (scroll/overlayScroll). Nothing where they fit.
+      const untighten = tightenToFit(
+        containerRef.current?.querySelector<HTMLElement>(".home-hero__section") ?? null,
+        containerRef.current,
+      );
+      const aboutScroll = followScroll(aboutRevealRef.current, [
+        aboutPara1Ref.current,
+        aboutPara2Ref.current,
+      ]);
+      const overlayScroller = (root: HTMLElement | null) =>
+        root?.querySelector<HTMLElement>("[data-overlay-scroll]");
+      const craftScroll = followScroll(overlayScroller(craftRef.current));
+      const contactScroll = routeScroll(overlayScroller(contactRef.current));
+      let contactShown = false;
+      // About's text and the Craft follow their words and drawing as the timeline plays them
+      // (scrubbed: a little behind the scroll), not the scroll itself.
+      const followOverlays = (mp: number) => {
+        aboutScroll.set(
+          remap01(clamp01(mp / JOURNEY.journeyEnd), JOURNEY.fillStart, JOURNEY.exitStart),
+        );
+        craftScroll.set(remap01(mp, JOURNEY.craftCoverEnd, JOURNEY.constellationEnd));
+      };
+
       // ── The cosmos behind the overlays: blurred + dimmed under the About and the
       //    Contact, inside WebGL (the scene's VeilEffect: Chrome sometimes painted the
       //    CSS-filtered canvas black, and a CSS blur of the live canvas costs a full-
@@ -159,6 +188,10 @@ export default function useCosmicJourney(refs: CosmicJourneyRefs): void {
           block.style.transform = `translateY(${-40 * (1 - enter)}px)`;
           block.style.visibility = enter > 0.001 ? "visible" : "hidden";
         }
+        // Its own scroll once it's fully in; back to its top as it goes.
+        contactScroll.settle(c >= 1);
+        if (contactShown && enter <= 0.001) contactScroll.reset();
+        contactShown = enter > 0.001;
         // 0.05 apart, so the last of the six (the links) is fully in at c = 1.
         contactPieces.forEach((piece, i) => {
           const t = easeOut(remap01(c, 0.5 + i * 0.05, 0.75 + i * 0.05));
@@ -212,6 +245,7 @@ export default function useCosmicJourney(refs: CosmicJourneyRefs): void {
       };
 
       const tl = gsap.timeline({
+        onUpdate: () => followOverlays(tl.progress()),
         scrollTrigger: {
           trigger: containerRef.current,
           start: "top top",
@@ -305,6 +339,10 @@ export default function useCosmicJourney(refs: CosmicJourneyRefs): void {
 
       return () => {
         stopRestyle();
+        untighten();
+        aboutScroll.dispose();
+        craftScroll.dispose();
+        contactScroll.dispose();
         journeyTrigger.current = null;
         cosmicVeil.about = 0;
         cosmicVeil.contact = 0;
