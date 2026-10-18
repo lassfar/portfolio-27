@@ -2,6 +2,7 @@
 
 import gsap, { SplitText } from "gsap/all";
 import { RefObject } from "react";
+import { WRITE_IN_PACE } from "#/components/hooks/motions/texts/writeInPace";
 
 gsap.registerPlugin(SplitText);
 
@@ -68,8 +69,8 @@ export function addTextsScrollWriteIn(
         opacity: 0,
         y: el.y ?? 24,
         ease: el.ease ?? "power3.out",
-        duration: segment * 0.45,
-        stagger: { amount: segment * 0.55 },
+        duration: segment * WRITE_IN_PACE.fade,
+        stagger: { amount: segment * WRITE_IN_PACE.stagger },
       },
       // The first one starts at `at`; the rest cascade right after the previous.
       placed ? ">" : at,

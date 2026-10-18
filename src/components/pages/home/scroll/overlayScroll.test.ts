@@ -82,10 +82,15 @@ describe("writingAt", () => {
 
   it("writes the first part over the first half, the second over the second", () => {
     expect(writingAt(0, parts)).toBe(100);
-    expect(writingAt(0.25, parts)).toBe(200);
     expect(writingAt(0.5, parts)).toBe(340);
-    expect(writingAt(0.75, parts)).toBe(420);
     expect(writingAt(1, parts)).toBe(500);
+  });
+
+  it("follows the newest word started: ahead of an even pace (they start over 55% of a share)", () => {
+    expect(writingAt(0.25, parts)).toBeCloseTo(100 + (0.5 / 0.55) * 200);
+    expect(writingAt(0.75, parts)).toBeCloseTo(340 + (0.5 / 0.55) * 160);
+    // Every word of the first part started by 55% of its share: the writing waits at its end.
+    expect(writingAt(0.4, parts)).toBe(300);
   });
 
   it("stays within the write-in", () => {
@@ -121,9 +126,9 @@ describe("followWriting", () => {
   });
 
   it("eases into following the writing, then follows it", () => {
-    const early = followWriting(0.04, parts, 256, 464);
+    const early = followWriting(0.02, parts, 256, 464);
     expect(early).toBeGreaterThan(0);
-    expect(early).toBeLessThan(followTop(writingAt(0.04, parts), 256, 464));
+    expect(early).toBeLessThan(followTop(writingAt(0.02, parts), 256, 464));
     expect(followWriting(0.5, parts, 256, 464)).toBe(followTop(writingAt(0.5, parts), 256, 464));
   });
 

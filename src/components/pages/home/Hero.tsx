@@ -142,9 +142,16 @@ const Hero = () => {
           className={clsx(
             "home-about__reveal",
             "pointer-events-none absolute inset-0 z-20 opacity-0",
-            "flex flex-col items-center overflow-hidden text-center data-overflows:py-6",
-            // Phones: clear of the story title (left) and the timeline (right).
-            "px-12 sm:px-6",
+            "flex flex-col items-center overflow-hidden text-center",
+            // Its box ends above the orb (shown all through About) wherever it doesn't fit with the
+            // orb's room below it (`data-overflows`, measured with that room: useCosmicJourney), so
+            // no line is ever under it (P27-102, `above-orb`). Its padding: the last words rise in
+            // (from 24 px lower) inside it, and the title's flourishes clear its top. Where that
+            // doesn't all fit, it scrolls a little as it writes in (a 1280×640 window: 22 px).
+            "data-overflows:above-orb data-overflows:py-6",
+            // Phones: clear of the story title (left) and the timeline (right). A short screen
+            // under 832 px wide: clear of the motion switch too, as its lines pass the top.
+            "px-12 sm:px-6 short:max-[52rem]:px-18",
           )}
         >
           <DisplayTitle
@@ -152,7 +159,9 @@ const Hero = () => {
             size="xl"
             text={ABOUT.title}
             srPrefix={`${CHAPTER_NAMES.maker}: `}
-            className="home-about__title mt-auto mb-1"
+            // On a short screen from 832 px wide its one line would reach under the switch: kept
+            // in the same clear column (P27-102).
+            className="home-about__title mt-auto mb-1 short:min-[52rem]:max-w-[calc(100%-6rem)]"
           />
           {/* Its swash draws in once the title has written in (useCosmicJourney). */}
           <Swash

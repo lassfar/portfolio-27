@@ -219,6 +219,12 @@
 /* `short:` — a short screen (P27-95): a phone held sideways, under 500px tall. */
 @custom-variant short (@media (max-height: 500px));
 
+/* `above-orb` — a box in the pinned journey ends above the navigation orb (P27-102): its room (72 px,
+   `.nav-assistant`) plus the strip a phone's browser bar can hide at the bottom of a `100vh` screen. */
+@utility above-orb {
+  bottom: calc(4.5rem + 100vh - 100dvh);
+}
+
 /* `tight:` — inside the journey's first screen while it's taller than the screen, laid out
    loose (P27-101: zoom 400%; `data-tight`, scroll/overlayScroll `tightenToFit`). */
 @custom-variant tight (&:where([data-tight] *));
@@ -757,6 +763,8 @@
    A glowing orb at the bottom centre (NavAssistant); a click grows it into the next
    chapter's button (GSAP). The root is a zero-size anchor: orb, tooltip and button are
    centred on it. */
+/* Its orb's top is 64 px up (44 + half its 40 px; 68 with a touch screen's 48 px tap area): the
+   overlays it would cover end 72 px up (`above-orb`: About, the Craft; P27-102). */
 .nav-assistant {
   position: fixed;
   bottom: 44px;

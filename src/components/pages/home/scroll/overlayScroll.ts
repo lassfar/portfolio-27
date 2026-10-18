@@ -1,5 +1,6 @@
 import { ScrollTrigger } from "gsap/all";
 import { isScrollLocked } from "#/stores/scrollLock";
+import { WRITE_IN_PACE } from "#/components/hooks/motions/texts/writeInPace";
 import { isGliding, isScrollKey } from "./glide";
 
 /**
@@ -70,21 +71,26 @@ export type Part = { top: number; height: number };
 
 /**
  * Where the writing is at write-in progress `t` (0..1): each part writes in over an equal share
- * (the About's paragraphs have equal weights), top to bottom.
+ * (the About's paragraphs have equal weights), top to bottom, its words starting over the first
+ * `WRITE_IN_PACE.stagger` of it: the newest word started, ahead of an even pace (P27-102).
  */
 export const writingAt = (t: number, parts: readonly Part[]): number => {
   if (!parts.length) return 0;
   const at = Math.min(Math.max(t, 0), 1) * parts.length;
   const i = Math.min(parts.length - 1, Math.floor(at));
-  return parts[i].top + (at - i) * parts[i].height;
+  const started = Math.min(1, (at - i) / WRITE_IN_PACE.stagger);
+  return parts[i].top + started * parts[i].height;
 };
 
 /** The scroll that keeps `y` (content px) at `at` of a box `height` tall (px, within 0..max). */
 export const followTop = (y: number, height: number, max: number, at = 0.6): number =>
   Math.min(max, Math.max(0, y - at * height));
 
-/** The share of the write-in over which the text starts following: before it, its title shows. */
-const FOLLOW_LEAD = 0.08;
+/**
+ * The share of the write-in over which the text starts following: before it, its title shows. Its
+ * first word is half in by about 4.6% (a share's first fade, `WRITE_IN_PACE`), followed by then.
+ */
+const FOLLOW_LEAD = 0.04;
 
 /**
  * The scroll of a box whose `parts` write in at progress `t`: from its top (its title, as it comes
@@ -119,22 +125,37 @@ const contentBottom = (el: HTMLElement): number => {
 };
 
 /**
- * Marks `el` with `data-overflows` while its content is taller than it, measured without the mark
- * (which may add padding), so it never flips back and forth. Again on every resize of the box or
- * of what's in it (fonts, a line added). Returns the cleanup.
+ * The navigation orb's room at the bottom of the pinned screen (px), as `above-orb` keeps it: 4.5rem
+ * (the browser's font size counts) plus the strip a phone's bar hides below a `100vh` screen.
  */
-function watchOverflow(el: HTMLElement, onMeasure: () => void): () => void {
+export const orbRoom = (box: HTMLElement): number =>
+  4.5 * parseFloat(getComputedStyle(document.documentElement).fontSize) +
+  Math.max(0, (box.parentElement?.clientHeight ?? 0) - window.innerHeight);
+
+/**
+ * Marks `el` with `data-overflows` while its content is taller than it, or comes closer than
+ * `room(el)` to its bottom (About and the orb), measured without the mark (which may add padding,
+ * or end the box above the orb), so it never flips back and forth. Again on every resize of what
+ * sizes the box (its parent: the box is set inside it) or of what's in it (fonts, a line added).
+ * Returns the cleanup.
+ */
+function watchOverflow(
+  el: HTMLElement,
+  onMeasure: () => void,
+  room: (box: HTMLElement) => number = () => 0,
+): () => void {
   const measure = () => {
     // Its padding goes while it's measured: a scroll near the bottom would be cut short by it.
     const top = el.scrollTop;
     el.removeAttribute("data-overflows");
-    if (contentBottom(el) > el.clientHeight + 1) el.setAttribute("data-overflows", "");
+    if (contentBottom(el) > el.clientHeight - room(el) + 1) el.setAttribute("data-overflows", "");
     el.scrollTop = top;
     onMeasure();
   };
   const observer = new ResizeObserver(measure);
-  // Its border box: its padding (`data-overflows:`) changes its content box, as it's measured.
-  observer.observe(el, { box: "border-box" });
+  // Its parent, not the box itself: the mark can change the box (About ends above the orb), and a
+  // change made while measuring would be a ResizeObserver loop.
+  observer.observe(el.parentElement ?? el, { box: "border-box" });
   for (const child of el.children) observer.observe(child);
   return () => {
     observer.disconnect();
@@ -154,11 +175,13 @@ export type Follower = {
 /**
  * A box the journey scrolls (About, the Craft: `overflow-hidden`, so not by hand). Without
  * `parts`, its top at 0 and its bottom at 1; with them, it follows the writing (`writingAt`).
- * Measured once per resize; it writes only what changed (once per scroll update).
+ * `room`: what it keeps clear at its bottom (`watchOverflow`). Measured once per resize; it writes
+ * only what changed (once per scroll update).
  */
 export function followScroll(
   el: HTMLElement | null | undefined,
   parts: readonly (HTMLElement | null)[] = [],
+  room?: (box: HTMLElement) => number,
 ): Follower {
   if (!el) return { set: () => undefined, dispose: () => undefined };
   let max = 0;
@@ -172,17 +195,21 @@ export function followScroll(
     );
     if (top !== written) el.scrollTop = written = top;
   };
-  const stop = watchOverflow(el, () => {
-    max = Math.max(0, contentBottom(el) - el.clientHeight);
-    height = el.clientHeight;
-    const box = el.getBoundingClientRect();
-    measured = parts.flatMap((part) => {
-      if (!part) return [];
-      const r = part.getBoundingClientRect();
-      return [{ top: r.top - box.top + el.scrollTop, height: r.height }];
-    });
-    apply();
-  });
+  const stop = watchOverflow(
+    el,
+    () => {
+      max = Math.max(0, contentBottom(el) - el.clientHeight);
+      height = el.clientHeight;
+      const box = el.getBoundingClientRect();
+      measured = parts.flatMap((part) => {
+        if (!part) return [];
+        const r = part.getBoundingClientRect();
+        return [{ top: r.top - box.top + el.scrollTop, height: r.height }];
+      });
+      apply();
+    },
+    room,
+  );
   return {
     set: (next) => {
       t = next;

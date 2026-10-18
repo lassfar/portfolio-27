@@ -22,6 +22,7 @@ import { galaxyProgressAt } from "#/components/three.js/galaxy/pace";
 import { addSwashDraw } from "#/components/UI/swash/drawSwash";
 import {
   followScroll,
+  orbRoom,
   routeScroll,
   tightenToFit,
 } from "#/components/pages/home/scroll/overlayScroll";
@@ -103,10 +104,12 @@ export default function useCosmicJourney(refs: CosmicJourneyRefs): void {
         containerRef.current?.querySelector<HTMLElement>(".home-hero__section") ?? null,
         containerRef.current,
       );
-      const aboutScroll = followScroll(aboutRevealRef.current, [
-        aboutPara1Ref.current,
-        aboutPara2Ref.current,
-      ]);
+      // About keeps the orb's room clear below it, on any screen (the orb shows all through it).
+      const aboutScroll = followScroll(
+        aboutRevealRef.current,
+        [aboutPara1Ref.current, aboutPara2Ref.current],
+        orbRoom,
+      );
       const overlayScroller = (root: HTMLElement | null) =>
         root?.querySelector<HTMLElement>("[data-overlay-scroll]");
       const craftScroll = followScroll(overlayScroller(craftRef.current));

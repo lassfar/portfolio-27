@@ -248,6 +248,8 @@ const Contact = ({ layout = "overlay", overlayRef, titleId, send = sendMessage }
                 "absolute inset-0 overflow-y-auto overscroll-contain scrollbar-thin",
                 "data-overflows:py-6 data-overflows:data-settled:pointer-events-auto",
                 COLUMN,
+                // A short screen under 832 px wide: its lines clear of the motion switch (P27-102).
+                "short:max-[52rem]:px-18",
               ),
         )}
       >
@@ -269,8 +271,9 @@ const Contact = ({ layout = "overlay", overlayRef, titleId, send = sendMessage }
           {/* The contact content, and the thank-you in its place once sent: one grid cell, so the
             block keeps its height. The content stays mounted (the journey animates its title,
             line and pieces) and hides by opacity + inert: the journey sets its pieces'
-            visibility inline. The links below stay. */}
-          <div className="grid w-full">
+            visibility inline. The links below stay. Its column can be narrower than a field's
+            own minimum width (`grid-cols-1`: 0 to 1fr), as on a short narrow screen (P27-102). */}
+          <div className="grid w-full grid-cols-1">
             <div
               inert={sent}
               aria-hidden={sent}

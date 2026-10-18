@@ -154,13 +154,17 @@ const Skills = ({ overlayRef }: Props) => {
       </div>
 
       {/* Its words and drawing: centred (the auto margins), the drawing shrinking to the room
-          left. On a short screen (P27-101) the drawing keeps its size (up to the screen's) and
-          the journey scrolls from the title down to it as it builds. */}
+          left. On a short screen (P27-101) the drawing keeps its size (up to the room above the
+          orb, P27-102) and the journey scrolls from the title down to it as it builds. */}
       <div
         data-overlay-scroll
         className={clsx(
           "home-craft__scroll",
-          "absolute inset-0 flex flex-col items-center overflow-hidden px-4 py-20 short:py-6",
+          "absolute inset-0 flex flex-col items-center overflow-hidden px-4 py-20",
+          // A short screen: the box ends above the orb (shown all through the Craft), so the
+          // drawing is never under it (P27-102, the orb's room).
+          // (A little at its bottom: its last labels rise in from 6 px lower.)
+          "short:above-orb short:pt-6 short:pb-2",
         )}
       >
         {/* Title + intro */}
@@ -169,8 +173,9 @@ const Skills = ({ overlayRef }: Props) => {
           text={CRAFT.title}
           className={clsx(
             "home-skills__title skills__title mt-auto text-center",
-            // Phones: clear of the story title (left) and the timeline (right).
-            "relative z-10 px-8 sm:px-0",
+            // Phones: clear of the story title (left) and the timeline (right); a short screen
+            // under 832 px wide, of the motion switch too (P27-102).
+            "relative z-10 px-8 sm:px-0 short:max-[52rem]:px-14",
           )}
         />
         {/* Its swash draws in once the title has written in (useCosmicJourney). */}
@@ -183,6 +188,7 @@ const Skills = ({ overlayRef }: Props) => {
           className={clsx(
             "home-skills__intro skills__intro",
             "relative z-10 mt-5 mb-2 max-w-xl px-8 text-center sm:px-0 short:mt-3",
+            "short:max-[52rem]:px-14", // clear of the motion switch (P27-102)
             "text-base leading-relaxed font-light text-white/60 sm:text-lg",
           )}
         >
@@ -194,7 +200,8 @@ const Skills = ({ overlayRef }: Props) => {
           viewBox="0 0 600 420"
           className={clsx(
             "relative z-10 mt-6 mb-auto w-full max-w-3xl",
-            "short:mt-3 short:max-h-[calc(100svh-3rem)] short:shrink-0",
+            // The room left: the box ends 4.5rem up, its paddings 1.5rem and 0.5rem.
+            "short:mt-3 short:max-h-[calc(100svh-6.5rem)] short:shrink-0",
           )}
           role="img"
           aria-label={BOOK.figures.craft}
