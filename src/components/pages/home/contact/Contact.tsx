@@ -9,6 +9,7 @@ import TextLink from "#/components/UI/links/TextLink";
 import Swash from "#/components/UI/swash/Swash";
 import DisplayTitle from "#/components/UI/text/DisplayTitle";
 import { plainText } from "#/components/UI/text/accent";
+import { CAPS_LABEL } from "#/components/UI/text/caps";
 import { TITLE_SWASH } from "#/components/pages/home/swashes";
 import { CONTACT } from "#/components/pages/home/story/copy";
 import { useTimeout } from "#/components/hooks/useTimeout";
@@ -436,22 +437,30 @@ const Contact = ({ layout = "overlay", overlayRef, titleId, send = sendMessage }
             )}
           </div>
 
-          <ul
+          {/* The links, then the page signed: in the book (the journey's Contact must still fit a
+              laptop's screen without scrolling). One piece: they rise in together. */}
+          <div
             className={clsx(
-              "home-contact__piece home-contact__links",
-              "flex flex-wrap justify-center gap-x-8 gap-y-2",
-              "mt-10 text-sm sm:mt-12",
+              "home-contact__piece mt-10 flex flex-col items-center gap-6 sm:mt-12",
               !page && SHORT.links,
             )}
           >
-            {CONTACT_LINKS.map((link) => (
-              <li key={link.label}>
-                <TextLink href={link.href} icon={link.icon} external={link.external}>
-                  {link.label}
-                </TextLink>
-              </li>
-            ))}
-          </ul>
+            <ul
+              className={clsx(
+                "home-contact__links",
+                "flex flex-wrap justify-center gap-x-8 gap-y-2 text-sm",
+              )}
+            >
+              {CONTACT_LINKS.map((link) => (
+                <li key={link.label}>
+                  <TextLink href={link.href} icon={link.icon} external={link.external}>
+                    {link.label}
+                  </TextLink>
+                </li>
+              ))}
+            </ul>
+            {page && <p className={CAPS_LABEL}>{CONTACT.signature}</p>}
+          </div>
         </div>
       </div>
     </div>

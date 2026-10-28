@@ -96,6 +96,8 @@ export const CONTACT = {
     line: "You’ve sent me two messages today, and I’ll read both. More can wait for tomorrow, or",
     email: "email me",
   },
+  /** Under the links: the page signed, the name and role said somewhere (P27-98). */
+  signature: "Aymane Lassfar · Frontend developer",
   thanks: {
     title: "*Thank you*",
     line: "Your message is on its way. I’ll write back soon.",
