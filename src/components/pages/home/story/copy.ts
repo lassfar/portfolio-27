@@ -97,7 +97,7 @@ export const CONTACT = {
     email: "email me",
   },
   /** Under the links: the page signed, the name and role said somewhere (P27-98). */
-  signature: "Aymane Lassfar · Frontend developer",
+  signature: "Aymane Lassfar · Frontend engineer",
   thanks: {
     title: "*Thank you*",
     line: "Your message is on its way. I’ll write back soon.",

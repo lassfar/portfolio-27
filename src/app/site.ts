@@ -5,10 +5,10 @@
 export const SITE = {
   url: process.env.URL ?? "https://www.lassfar.com",
   name: "Aymane Lassfar",
-  role: "Frontend Developer",
-  title: "Aymane Lassfar — Frontend Developer",
+  role: "Frontend Engineer",
+  title: "Aymane Lassfar — Frontend Engineer",
   description:
-    "Aymane Lassfar, frontend developer. A quiet maker of small universes: a story told in dots and light, from the craft I build with to the places I photograph.",
+    "Aymane Lassfar, frontend engineer. A quiet maker of small universes: a story told in dots and light, from the craft I build with to the places I photograph.",
   /** The page's background (--color-rich-black): the browser's bar on phones, the images'. */
   background: "#19191C",
 } as const;
