@@ -25,7 +25,7 @@ Goal: prove production-grade code quality and creative frontend skill to recruit
 
 ```
 src/
-├── app/                        # Next.js App Router (layout, page, fonts, icons)
+├── app/                        # Next.js App Router (layout, page, fonts, icons; SEO: site.ts, metadata, share images in og/, robots, sitemap, JSON-LD)
 ├── components/
 │   ├── UI/                     # Design system: buttons, cards, forms, glass, icons, labels, links, swash, tags, text, tooltip
 │   ├── assets/pictures/        # SVG components (logos, shapes)
