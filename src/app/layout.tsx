@@ -1,14 +1,32 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { PAGE_CONTROLS_ID } from "#/components/pages/home/motion/pageControls";
 import { MOTION_SCRIPT } from "#/stores/motionPreference";
 import "#/styles/globals.css";
 import { greatVibes, kronaOne } from "./fonts";
+import { SITE } from "./site";
 
+/**
+ * What search engines and link previews read (P27-98): one address (the canonical: `?motion=`
+ * serves the same page), the title and description in Aymane's voice, and a share card (its
+ * image: opengraph-image.tsx).
+ */
 export const metadata: Metadata = {
-  title: "Aymane Lassfar — Frontend Developer",
-  description:
-    "Senior Frontend Developer with 7 years of experience crafting high-quality web experiences with React, Next.js, and modern JavaScript.",
+  metadataBase: new URL(SITE.url),
+  title: SITE.title,
+  description: SITE.description,
+  alternates: { canonical: "/" },
+  openGraph: {
+    type: "website",
+    url: "/",
+    siteName: SITE.name,
+    title: SITE.title,
+    description: SITE.description,
+    locale: "en_US",
+  },
+  twitter: { card: "summary_large_image", title: SITE.title, description: SITE.description },
 };
+
+export const viewport: Viewport = { themeColor: SITE.background };
 
 export default function RootLayout({
   children,
