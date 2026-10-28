@@ -16,7 +16,7 @@ import {
 /**
  * Where the star sits in a `w`×`h` figure on a `viewportHeight` screen: its centre and its
  * size (the tips' reach), in px. Sized from the screen, not the cover: the words sit below it.
- * The share image frames it the same way (app/og, P27-98).
+ * The Apple icon frames it the same way (app/og, P27-98).
  */
 export function starLayout(w: number, h: number, viewportHeight: number) {
   const vh = Math.min(h, viewportHeight);

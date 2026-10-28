@@ -1,8 +1,8 @@
 import { describe, expect, it } from "vitest";
 import { dotsIn, starDots } from "./starDots";
 
-describe("the share images' star", () => {
-  it("is the book's star, the same dots every time, its sky over the whole card", () => {
+describe("the Apple icon's star", () => {
+  it("is the book's star, the same dots every time, its sky over the whole picture", () => {
     const a = starDots(1200, 630);
     expect(a).toEqual(starDots(1200, 630));
     expect(a.dots.length).toBeGreaterThan(1000);

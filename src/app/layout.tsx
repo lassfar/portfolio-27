@@ -8,7 +8,7 @@ import { SITE } from "./site";
 /**
  * What search engines and link previews read (P27-98): one address (the canonical: `?motion=`
  * serves the same page), the title and description in Aymane's voice, and a share card (its
- * image: opengraph-image.tsx).
+ * image: opengraph-image.png, the 3D hero captured from the site).
  */
 export const metadata: Metadata = {
   metadataBase: new URL(SITE.url),
