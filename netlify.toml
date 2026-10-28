@@ -1,0 +1,25 @@
+# Netlify (P27-98). The build settings stay in Netlify's UI; only the redirects live here.
+# The netlify.app address isn't redirected: it stays a working backup if lassfar.com ever lapses,
+# and every page's canonical link already names lassfar.com as the real address.
+
+# The old Gatsby site's pages (in Google and its sitemap until the move): the story is one page
+# now. Netlify matches them with or without the trailing slash.
+[[redirects]]
+  from = "/about"
+  to = "/"
+  status = 301
+
+[[redirects]]
+  from = "/works"
+  to = "/"
+  status = 301
+
+[[redirects]]
+  from = "/skills"
+  to = "/"
+  status = 301
+
+[[redirects]]
+  from = "/contact"
+  to = "/"
+  status = 301
