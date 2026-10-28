@@ -14,20 +14,30 @@ import {
 } from "#/components/pages/home/book/dots/patterns";
 
 /**
+ * Where the star sits in a `w`×`h` figure on a `viewportHeight` screen: its centre and its
+ * size (the tips' reach), in px. Sized from the screen, not the cover: the words sit below it.
+ * The share image frames it the same way (app/og, P27-98).
+ */
+export function starLayout(w: number, h: number, viewportHeight: number) {
+  const vh = Math.min(h, viewportHeight);
+  // A short screen (a phone held sideways, P27-95): smaller and higher, the title under it.
+  const short = viewportHeight < 500;
+  const phone = w < 768;
+  return {
+    cx: w / 2,
+    cy: vh * (short ? 0.24 : phone ? 0.28 : 0.34),
+    A: Math.min(w, vh) * (short ? 0.3 : phone ? 0.44 : 0.34),
+  };
+}
+
+/**
  * Origin: the star before it bursts. A white-hot core warming to light peach, golden peach
  * gas fading out, a faint dark peach glow, and four long, thin sparkle points of white and
  * warm grey. No blue. In the same even pattern as Saturn and the Earth.
  */
 export const star: Shape = (pen, { w, h, rnd, viewportHeight }) => {
   sky(pen, w, h, rnd, 1.2);
-  // Sized from the screen, not the cover: the words sit below it.
-  const vh = Math.min(h, viewportHeight);
-  // A short screen (a phone held sideways, P27-95): smaller and higher, the title under it.
-  const short = viewportHeight < 500;
-  const phone = w < 768;
-  const cx = w / 2;
-  const cy = vh * (short ? 0.24 : phone ? 0.28 : 0.34);
-  const A = Math.min(w, vh) * (short ? 0.3 : phone ? 0.44 : 0.34);
+  const { cx, cy, A } = starLayout(w, h, viewportHeight);
   // The sparkle: a four-point star with thin curved sides, |x|^0.4 + |y|^0.4 = A^0.4.
   const sparkle = (dx: number, dy: number) =>
     (Math.abs(dx) ** 0.4 + Math.abs(dy) ** 0.4) ** 2.5 / A;
