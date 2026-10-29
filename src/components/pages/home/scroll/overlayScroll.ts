@@ -1,4 +1,4 @@
-import { ScrollTrigger } from "gsap/all";
+import { ScrollSmoother, ScrollTrigger } from "gsap/all";
 import { isScrollLocked } from "#/stores/scrollLock";
 import { WRITE_IN_PACE } from "#/components/hooks/motions/texts/writeInPace";
 import { isGliding, isScrollKey } from "./glide";
@@ -244,10 +244,25 @@ const releaseNormalizer = () => {
   normalizer.enable();
 };
 
+/**
+ * Home or End for the page, set on the smooth scroll itself (its content and the window
+ * together), as `jumpToJourney` does (P27-109). A glide sets `smoother.scrollTop`, which leaves
+ * ScrollSmoother a flag (`isProxyScrolling`) that makes it keep its content where it is on the
+ * next scroll update: a `window.scrollTo` (or a smooth `scrollTo`) right after a glide moved the
+ * window but not the content, which stayed on Contact. Not when it's already there: that would
+ * swallow the next scroll.
+ */
+const jumpPage = (top: number) => {
+  const smoother = ScrollSmoother.get();
+  if (!smoother) return window.scrollTo({ top });
+  const to = Math.max(0, Math.min(top, ScrollTrigger.maxScroll(window)));
+  if (Math.abs(smoother.scrollTop() - to) >= 0.5) smoother.scrollTo(to, false);
+};
+
 /** A scroll key's move of the page (the journey), as the browser makes it. */
 const scrollPage = (key: string, shift: boolean) => {
-  if (key === "Home") window.scrollTo({ top: 0 });
-  else if (key === "End") window.scrollTo({ top: document.documentElement.scrollHeight });
+  if (key === "Home") jumpPage(0);
+  else if (key === "End") jumpPage(document.documentElement.scrollHeight);
   else window.scrollBy({ top: keyScroll(key, shift, window.innerHeight, 0) ?? 0 });
 };
 
