@@ -1,7 +1,7 @@
 import type { ButtonSize, ButtonVariant } from "#/components/UI/buttons/button.types";
 import { solarRestRange } from "#/components/three.js/galaxy/pace";
 import { VOYAGE } from "#/components/three.js/solar/config";
-import { JOURNEY, mpAt } from "#/components/three.js/star/config";
+import { JOURNEY, mpAt, ZOOM } from "#/components/three.js/star/config";
 import { LAB } from "#/components/three.js/voyager/config";
 import { CHAPTER_NAMES } from "#/components/pages/home/story/copy";
 import type { ChapterId } from "#/components/pages/home/story/story.types";
@@ -24,9 +24,16 @@ const labMp = (l: number) => lerp(JOURNEY.earthDwellEnd, JOURNEY.galaxyStart, l)
 const [solarRestStart, solarRestEnd] = solarRestRange();
 
 /**
+ * Where the hero's "To wander" lands (P27-108, the user): the star, centred and big, its text
+ * gone, just before it bursts (ZOOM.centerEnd of its play). Past where the assistant shows
+ * (TIMELINE.showAfter), so from here it offers the first rest ahead: The Maker.
+ */
+export const STAR_VIEW = jp(ZOOM.centerEnd * JOURNEY.starSpan);
+
+/**
  * The story's resting points, in order, taken from the scroll map. At each one, a
  * button offers the next ("The Craft", "The Earth"…) and glides there. The hero has its
- * own "To wander", so the chain starts at Saturn.
+ * own "To wander" (to the star, STAR_VIEW), so the chain starts at Saturn.
  */
 export const PHASE_STOPS: readonly PhaseStop[] = [
   {

@@ -10,9 +10,17 @@ export type GoToOptions =
   { instant: true } | { instant?: false; seconds?: number; ease?: string; by?: GlideSource };
 
 /**
+ * Glides to a point of the journey that isn't a chapter's rest (master progress): the hero's
+ * "To wander" to the star (STAR_VIEW, P27-108), at the assistant's pace.
+ */
+export function glideTo(mp: number, by?: GlideSource): boolean {
+  return glideToJourney(mp, glideSeconds(mp - useJourneyScroll.getState().progress), undefined, by);
+}
+
+/**
  * Takes the visitor to chapter `id`, on its resting view (P27-91): the one way a chapter
- * navigation moves the journey (a timeline star, the assistant's button, the hero's "To
- * wander", the dev panel's jumps).
+ * navigation moves the journey (a timeline star, the assistant's button, the dev panel's
+ * jumps).
  *
  * It glides there, the story playing on the way, at the assistant's pace (the distance
  * sets the time, unless `seconds` is given); or it jumps (`instant`). Returns whether it

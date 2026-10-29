@@ -17,6 +17,7 @@ import { useLoaded } from "#/components/hooks/useLoaded";
 import { loadJourneyMotion } from "#/components/pages/home/loadJourney";
 import { loadScene } from "#/components/three.js/scene/preload";
 import { useGateLive } from "#/components/pages/home/motion/gateLive";
+import { STAR_VIEW } from "#/components/pages/home/phase-nav/config";
 
 // WebGL-only — load on the client, never during SSR. The unified scene holds
 // the starfield, the star, the Saturn that assembles from its debris, and (as
@@ -25,6 +26,9 @@ import { useGateLive } from "#/components/pages/home/motion/gateLive";
 // page loads with motion on (loadJourney), else once the pointer or focus lingers on the
 // Reduce motion switch (MotionSwitch), or at the switch to motion.
 const CosmicScene = dynamic(loadScene, { ssr: false });
+
+/** How long "To wander" waits for the journey to be in place (ms), as the skip link does. */
+const WANDER_READY_MS = 3000;
 
 const Hero = () => {
   const live = useGateLive();
@@ -45,11 +49,14 @@ const Hero = () => {
   const craftRef = useRef<HTMLDivElement | null>(null);
   const contactRef = useRef<HTMLDivElement | null>(null);
 
-  // "To wander": glide to The Maker (P27-91), the star bursting and Saturn forming on the
-  // way, onto the About text.
+  // "To wander": glide to the star, centred just before it bursts (STAR_VIEW, P27-108: the
+  // user); from there the assistant offers The Maker. A click before the journey's pin exists
+  // (just after load) waits for it, as the skip link does: the glide would otherwise do nothing.
   const handleWander = () =>
     void loadJourneyMotion()
-      .then((journey) => journey.goTo("maker", { by: "hero" }))
+      .then(async (journey) => {
+        if (await journey.waitForJourney(WANDER_READY_MS)) journey.glideTo(STAR_VIEW, "hero");
+      })
       .catch(() => undefined);
 
   return (
