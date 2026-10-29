@@ -198,7 +198,9 @@ const Pin = ({ loc, phase, glow }: { loc: PhotoLocation; phase: number; glow: Ca
         </sprite>
         <mesh renderOrder={4}>
           <sphereGeometry args={[HEAD_RADIUS, 16, 16]} />
-          <meshBasicMaterial color="#ffe3c7" depthTest={false} toneMapped={false} />
+          {/* Transparent (still fully opaque) so it's drawn after the Earth's dots, as its
+              renderOrder says: opaque, it went first and the dots painted over it (P27-108). */}
+          <meshBasicMaterial color="#ffe3c7" transparent depthTest={false} toneMapped={false} />
         </mesh>
         {/* Generous invisible hit target so the small bead stays easy to click. */}
         <mesh onPointerOver={over} onPointerOut={out} onClick={click}>
