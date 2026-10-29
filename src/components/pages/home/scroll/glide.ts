@@ -6,6 +6,20 @@ import { useGlide, type GlideSource } from "#/stores/useGlide";
 import { cancelRefocusAfterGlide, refocusAfterGlide } from "./glideFocus";
 
 let current: gsap.core.Tween | null = null; // the glide running, if any
+let startedAt = -Infinity; // when the last glide started (performance.now())
+
+/**
+ * How long a glide ignores the wheel and touch after it starts (ms, P27-108). A trackpad
+ * keeps sending wheel events for a second or two after the fingers lift (momentum), and a
+ * swipe's fling goes on: scroll, then click "To wander" or a star, and that leftover input
+ * stopped the glide in its first frames, so the click seemed to do nothing. A wheel after
+ * this still takes the scroll back; the scroll keys do at once.
+ */
+export const GLIDE_GRACE_MS = 400;
+
+/** Whether input at `now` is still in the grace of a glide started at `startedAt`. */
+export const inGlideGrace = (now: number, startedAt: number): boolean =>
+  now - startedAt < GLIDE_GRACE_MS;
 
 /** Whether a glide is running (Contact's own scroll stands aside: overlayScroll.ts). */
 export const isGliding = (): boolean => current !== null;
@@ -63,6 +77,7 @@ export function glideToJourney(
     onInterrupt: finish,
   });
   current = tween;
+  startedAt = performance.now();
   useGlide.getState().setBy(by ?? null);
   return true;
 }
@@ -120,23 +135,30 @@ const stopOnScrollKey = (event: KeyboardEvent) => {
   if (isScrollKey(event)) stopGlide();
 };
 
+/** A wheel or a touch takes the scroll back, unless a glide has only just started. */
+const stopOnPointerInput = () => {
+  if (current && inGlideGrace(performance.now(), startedAt)) return;
+  stopGlide();
+};
+
 let inputUsers = 0; // components that asked for stopGlideOnInput (the listeners are shared)
 
 /**
- * A wheel, a touch or a scroll key takes the scroll back from a glide. Several components can
+ * A wheel, a touch or a scroll key takes the scroll back from a glide (the wheel and touch
+ * not in its first GLIDE_GRACE_MS: leftover momentum). Several components can
  * ask for it (the timeline, the phase buttons): the listeners go on with the first and
  * off with the last. Returns the cleanup (for a useEffect).
  */
 export function stopGlideOnInput(): () => void {
   if (inputUsers++ === 0) {
-    window.addEventListener("wheel", stopGlide, { passive: true });
-    window.addEventListener("touchstart", stopGlide, { passive: true });
+    window.addEventListener("wheel", stopOnPointerInput, { passive: true });
+    window.addEventListener("touchstart", stopOnPointerInput, { passive: true });
     window.addEventListener("keydown", stopOnScrollKey);
   }
   return () => {
     if (--inputUsers > 0) return;
-    window.removeEventListener("wheel", stopGlide);
-    window.removeEventListener("touchstart", stopGlide);
+    window.removeEventListener("wheel", stopOnPointerInput);
+    window.removeEventListener("touchstart", stopOnPointerInput);
     window.removeEventListener("keydown", stopOnScrollKey);
   };
 }

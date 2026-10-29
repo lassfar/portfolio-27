@@ -1,7 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { ScrollSmoother, ScrollTrigger } from "gsap/all";
 import { journeyTrigger } from "#/stores/journeyTrigger";
-import { isScrollKey, jumpToJourney } from "./glide";
+import { GLIDE_GRACE_MS, inGlideGrace, isScrollKey, jumpToJourney } from "./glide";
 
 // No GSAP in the unit tests: the smoother and the pin are stood in for.
 vi.mock("gsap", () => ({ default: { to: vi.fn(), killTweensOf: vi.fn() } }));
@@ -65,5 +65,16 @@ describe("isScrollKey", () => {
     expect(press("ArrowDown", { tagName: "INPUT", isContentEditable: false })).toBe(false);
     expect(press(" ", { tagName: "DIV", isContentEditable: true })).toBe(false);
     expect(press(" ", { tagName: "BUTTON", isContentEditable: false })).toBe(true);
+  });
+});
+
+describe("inGlideGrace (P27-108)", () => {
+  it("ignores a wheel or touch in a glide's first moments (a scroll's leftover momentum)", () => {
+    expect(inGlideGrace(1000, 1000)).toBe(true); // the glide's own frame
+    expect(inGlideGrace(1000 + GLIDE_GRACE_MS - 1, 1000)).toBe(true);
+  });
+  it("lets one take the scroll back after that", () => {
+    expect(inGlideGrace(1000 + GLIDE_GRACE_MS, 1000)).toBe(false);
+    expect(inGlideGrace(1000, -Infinity)).toBe(false); // no glide started yet
   });
 });
