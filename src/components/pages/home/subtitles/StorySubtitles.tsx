@@ -39,9 +39,11 @@ const PLACEMENT: Record<SubtitlePlacement, string> = {
  *
  * The scroll only decides WHICH line shows (STORY_SUBTITLES: one per chapter): it fades
  * in over its own time (SUBTITLE_PACE.fadeMs) — not tied to how far you scroll — and
- * stays until its window ends, fading out the same way. None shows on the way back
- * up, each shows once per visit; only a very fast jump skips one (SUBTITLE_PACE), and a
- * line can be kept out of the assistant's glides (`onAssistantGlide`). Screen readers
+ * stays until its window ends, fading out the same way. It shows on the way back up too,
+ * and each time its chapter comes round (P27-107); only a very fast jump skips one
+ * (SUBTITLE_PACE), and a line can be kept out of the assistant's glides
+ * (`onAssistantGlide`). A line said once isn't said again until another one shows, so a
+ * screen reader doesn't repeat it as the scroll goes back and forth. Screen readers
  * hear each line as it shows (a polite live region, cleared after SAID_SECONDS: P27-100; the
  * visible copies are hidden from them). Only a change of line re-renders.
  *

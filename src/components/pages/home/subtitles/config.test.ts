@@ -121,23 +121,22 @@ describe("the story's subtitles", () => {
     expect(nextSubtitle(-1, mid(lab), 0, true)).toBe(lab); // the others still show
   });
 
-  it("show none on the way back up", () => {
+  it("show on the way back up too (P27-107)", () => {
     const lab = STORY_SUBTITLES.findIndex((s) => s.id === "lab");
     const mid = (STORY_SUBTITLES[lab].window[0] + STORY_SUBTITLES[lab].window[1]) / 2;
-    expect(SUBTITLE_PACE.onScrollBack).toBe(false);
-    expect(nextSubtitle(-1, mid, 0, false, true)).toBe(-1); // scrolling back: none starts
-    expect(nextSubtitle(lab, mid, 0, false, true)).toBe(-1); // …and a showing one goes
-    expect(nextSubtitle(-1, mid, 0, false, false)).toBe(lab); // forward again: it shows
+    expect(SUBTITLE_PACE.onScrollBack).toBe(true);
+    expect(nextSubtitle(-1, mid, 0, false, true)).toBe(lab); // scrolling back: it starts
+    expect(nextSubtitle(lab, mid, 0, false, true)).toBe(lab); // …and a showing one stays
+    expect(nextSubtitle(-1, mid, 5000, false, true)).toBe(-1); // a fast jump back still skips it
   });
 
-  it("show each line once per visit", () => {
+  it("show a line each time its chapter comes round (P27-107)", () => {
     const lab = STORY_SUBTITLES.findIndex((s) => s.id === "lab");
     const mid = (STORY_SUBTITLES[lab].window[0] + STORY_SUBTITLES[lab].window[1]) / 2;
     const seen = new Set([lab]);
-    expect(SUBTITLE_PACE.onceEach).toBe(true);
+    expect(SUBTITLE_PACE.onceEach).toBe(false);
     expect(nextSubtitle(lab, mid, 0, false, false, seen)).toBe(lab); // showing: it stays
-    expect(nextSubtitle(-1, mid, 0, false, false, seen)).toBe(-1); // back up, then forward again: not again
-    expect(nextSubtitle(-1, mid, 0, false, false, new Set())).toBe(lab); // not seen yet: it shows
+    expect(nextSubtitle(-1, mid, 0, false, false, seen)).toBe(lab); // seen before: it shows again
   });
 
   it("sit bottom left unless a line has its own placement", () => {

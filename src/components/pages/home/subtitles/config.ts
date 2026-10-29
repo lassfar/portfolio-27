@@ -110,15 +110,16 @@ export function subtitleAt(mp: number, assistantGlide = false): number {
 /**
  * The subtitles' pace (the user, P27-79): a line fades in as its window begins and
  * stays through it, fading out as it ends. Only a very fast
- * jump (a glide, a dragged scroll bar) passes a chapter without starting its line; none
- * shows on the way back up (they tell the story forward), and each shows once per visit.
+ * jump (a glide, a dragged scroll bar) passes a chapter without starting its line. Since
+ * P27-107 (the user) a line also shows on the way back up, and each time its chapter comes
+ * round again: whoever is in a chapter can read its line.
  */
 export const SUBTITLE_PACE = {
   fadeMs: 700, // fading in, and out
   maxSpeed: 800, // scroll % per second: faster than this, a line doesn't start
   settleMs: 200, // no scroll for this long counts as stopped
-  onScrollBack: false, // shown while scrolling back up (off: hidden until you scroll forward again)
-  onceEach: true, // each line shows once per visit (off: again each time you scroll into it)
+  onScrollBack: true, // shown while scrolling back up (off: hidden until you scroll forward again)
+  onceEach: false, // each line shows once per visit (off: again each time you scroll into it)
 };
 
 /**
