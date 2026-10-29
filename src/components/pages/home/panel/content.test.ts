@@ -63,8 +63,8 @@ describe("the panels' words", () => {
 
   it("say on a place's label what it opens", () => {
     const london = PHOTO_LOCATIONS.find((l) => l.id === "london")!;
-    expect(placeLabelMeta(london)).toBe("5 shots");
-    expect(placeLabelAria(london)).toBe("Open London: 4 photos and 1 clip");
+    expect(placeLabelMeta(london)).toBe("7 shots");
+    expect(placeLabelAria(london)).toBe("Open London: 7 photos");
     expect(placeLabelAria(place([photo]))).toBe("Open Somewhere: 1 photo");
   });
 

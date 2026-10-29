@@ -42,7 +42,7 @@ type Story = StoryObj<typeof meta>;
 export const Places: Story = {
   play: async ({ canvas, userEvent }) => {
     const london = canvas.getByRole("button", { name: /London/ });
-    await expect(london).toHaveTextContent("· 5 shots");
+    await expect(london).toHaveTextContent("· 7 shots");
     await expect(london).toHaveAttribute("aria-expanded", "false");
     await userEvent.click(london);
     const panel = await page().findByRole("dialog", { name: "Back to London" });

@@ -3,6 +3,7 @@ import { expect, waitFor, within } from "storybook/test";
 
 import { useEffect, useState } from "react";
 import { inertExcept } from "#/components/hooks/a11y/inertExcept";
+import { PHOTO_LOCATIONS } from "#/components/three.js/earth/data";
 import { usePanelStore, type PanelContent, type PanelView } from "#/stores/usePanelStore";
 import { contrastOnFill } from "#/stories/contrast";
 import { entered } from "#/stories/entered";
@@ -12,6 +13,7 @@ import PanelHost from "./PanelHost";
 import SceneOverlays from "./SceneOverlays";
 
 const london: PanelContent = { kind: "place", id: "london" };
+const LONDON_MEDIA = PHOTO_LOCATIONS.find((l) => l.id === "london")!.media;
 
 /** Opens the panel on `content` in `view` for a story (and closes it after). */
 const opened =
@@ -134,9 +136,12 @@ export const Full: Story = {
       "aria-current",
       "true",
     );
-    await expect(
-      within(panel).getAllByRole("button", { name: /^Open Placeholder — London/ }),
-    ).toHaveLength(5);
+    // Its photos, each card named by its caption.
+    for (const { caption } of LONDON_MEDIA) {
+      await expect(
+        within(panel).getByRole("button", { name: `Open ${caption}` }),
+      ).toBeInTheDocument();
+    }
     await waitFor(() => expect(within(panel).getByRole("button", { name: "Close" })).toHaveFocus());
     await expect(
       page().getByRole("button", { name: "Outside", hidden: true }).closest("[inert]"),
@@ -196,12 +201,12 @@ export const Photo: Story = {
   beforeEach: opened(london, "full", 1),
   play: async ({ userEvent }) => {
     const viewer = await page().findByRole("dialog", { name: "Photo viewer" });
-    await expect(within(viewer).getByText("2 / 5")).toBeInTheDocument();
+    await expect(within(viewer).getByText("2 / 7")).toBeInTheDocument();
     await userEvent.keyboard("{ArrowRight}");
-    await expect(within(viewer).getByText("3 / 5")).toBeInTheDocument();
+    await expect(within(viewer).getByText("3 / 7")).toBeInTheDocument();
     await userEvent.keyboard("{Escape}");
     await waitFor(() =>
-      expect(page().getByRole("button", { name: "Open Placeholder — London 03" })).toHaveFocus(),
+      expect(page().getByRole("button", { name: `Open ${LONDON_MEDIA[2].caption}` })).toHaveFocus(),
     );
     await userEvent.keyboard("{Escape}");
     await expect(usePanelStore.getState().content).toBeNull();

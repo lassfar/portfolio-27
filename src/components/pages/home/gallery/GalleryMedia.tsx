@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import Image from "next/image";
 import clsx from "clsx";
 import type { MediaItem } from "#/components/three.js/earth/data";
 import { useCalm } from "#/stores/useMotion";
@@ -37,13 +38,58 @@ export const MediaPlaceholder = ({ index = 0 }: { index?: number }) => (
 );
 
 /**
- * A media's still in the grid: the photo, a video's poster (it plays in the photo
- * viewer, not here), or its placeholder. A real photo keeps its own shape — reserved
- * before it loads when its `aspect` is known.
+ * A card's width, for the browser to pick a photo's size (P27-106): half the screen on a
+ * phone (two columns); from `sm`, the side panel's two columns (222 px at 1440 px wide) or
+ * the full view's three (317 px at 1440: a third of the screen, ~320 px at most).
  */
-export function MediaThumb({ item, index }: { item: MediaItem; index: number }) {
+export const GRID_SIZES = {
+  side: "(min-width: 640px) 240px, 50vw",
+  full: "(min-width: 640px) min(33vw, 320px), 50vw",
+} as const;
+
+/**
+ * The viewer's photo: the screen's width, or less where its height holds a 3:2 photo back (the
+ * close button, the arrows' row and the caption take ~240 px of it).
+ */
+const VIEWER_SIZES = "min(100vw, calc((100vh - 240px) * 1.5))";
+
+/** A real photo: its master's size is known, so next/image can optimize it (P27-106). */
+const isPhoto = (item: MediaItem): item is MediaItem & { width: number; height: number } =>
+  item.type === "image" && !!item.width && !!item.height;
+
+/**
+ * A media's still in the grid: the photo, a video's poster (it plays in the photo
+ * viewer, not here), or its placeholder. A real photo goes through next/image: the size
+ * this screen needs in AVIF or WebP, its shape held and its blurred copy shown until it
+ * loads. Inside its card's button it's `alt=""`: the button's name ("Open …") says it.
+ */
+export function MediaThumb({
+  item,
+  index,
+  sizes = GRID_SIZES.full,
+}: {
+  item: MediaItem;
+  index: number;
+  /** The card's width on screen (`GRID_SIZES`). */
+  sizes?: string;
+}) {
   const [failed, setFailed] = useState(false);
   const src = item.type === "video" ? item.poster : item.src;
+  if (isPhoto(item) && !failed) {
+    return (
+      <Image
+        src={item.src}
+        width={item.width}
+        height={item.height}
+        sizes={sizes}
+        placeholder={item.blur ? "blur" : "empty"}
+        blurDataURL={item.blur}
+        alt=""
+        onError={() => setFailed(true)}
+        className="block h-auto w-full object-cover"
+      />
+    );
+  }
   if (!src || failed) {
     return (
       <span className={clsx("relative block", PLACEHOLDER_RATIO[index % PLACEHOLDER_RATIO.length])}>
@@ -52,7 +98,7 @@ export function MediaThumb({ item, index }: { item: MediaItem; index: number }) 
     );
   }
   return (
-    // eslint-disable-next-line @next/next/no-img-element -- placeholders for now; next/image once the real photos exist
+    // eslint-disable-next-line @next/next/no-img-element -- a placeholder's or a clip's poster: no known size to optimize
     <img
       src={src}
       alt=""
@@ -69,7 +115,10 @@ export function MediaThumb({ item, index }: { item: MediaItem; index: number }) 
  * The media in the photo viewer: the photo, or the video with sound and controls (it
  * stops when the viewer closes: `playing`). In calm motion a clip doesn't start on its own
  * or loop: it waits on its poster for play (WCAG 2.2.2, P27-92). Its placeholder fits the viewer's size
- * container at 4:3.
+ * container at 4:3. Its photo or clip is capped in container units too: the viewer's grid row
+ * grows to fit its content, so a percentage cap (`max-h-full`) would let a tall photo spill.
+ * A real photo (next/image) loads first (`fetchPriority`), at the size it shows at, named by
+ * its `alt`: what it shows, while its caption under it tells the story.
  */
 export function MediaFull({
   item,
@@ -94,6 +143,23 @@ export function MediaFull({
       </span>
     );
   }
+  if (isPhoto(item)) {
+    return (
+      <Image
+        src={item.src}
+        width={item.width}
+        height={item.height}
+        sizes={VIEWER_SIZES}
+        loading="eager"
+        fetchPriority="high"
+        placeholder={item.blur ? "blur" : "empty"}
+        blurDataURL={item.blur}
+        alt={item.alt ?? ""}
+        onError={() => setFailed(true)}
+        className="h-auto max-h-[100cqh] w-auto max-w-[100cqw] rounded-2xl object-contain shadow-photo"
+      />
+    );
+  }
   return item.type === "video" ? (
     <video
       ref={video}
@@ -104,15 +170,15 @@ export function MediaFull({
       loop={!calm}
       playsInline
       onError={() => setFailed(true)}
-      className="max-h-full max-w-full rounded-2xl shadow-photo"
+      className="max-h-[100cqh] max-w-[100cqw] rounded-2xl shadow-photo"
     />
   ) : (
-    // eslint-disable-next-line @next/next/no-img-element -- placeholders for now; next/image once the real photos exist
+    // eslint-disable-next-line @next/next/no-img-element -- a placeholder (no file yet): no known size to optimize
     <img
       src={item.src}
-      alt="" // its caption, under it in the viewer, describes it (and is said with its number)
+      alt="" // its caption, under it in the viewer, stands in (and is said with its number)
       onError={() => setFailed(true)}
-      className="max-h-full max-w-full rounded-2xl object-contain shadow-photo"
+      className="max-h-[100cqh] max-w-[100cqw] rounded-2xl object-contain shadow-photo"
     />
   );
 }

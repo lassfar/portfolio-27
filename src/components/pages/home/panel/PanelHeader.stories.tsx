@@ -40,7 +40,7 @@ type Story = StoryObj<typeof meta>;
 export const Side: Story = {
   play: async ({ canvas, canvasElement }) => {
     await expect(canvas.getByRole("heading", { level: 2 })).toHaveTextContent("Back to London");
-    await expect(canvas.getByText("4 photos")).toBeInTheDocument();
+    await expect(canvas.getByText("7 photos")).toBeInTheDocument();
     await entered(canvasElement);
   },
 };

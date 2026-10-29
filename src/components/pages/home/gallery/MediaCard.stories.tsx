@@ -7,7 +7,8 @@ import MediaCard from "./MediaCard";
 
 const london = PHOTO_LOCATIONS.find((l) => l.id === "london")!;
 const photo = london.media.find((m) => m.type === "image")!;
-const clip = london.media.find((m) => m.type === "video")!;
+// London has no clip yet (P27-106): the New Forest has one.
+const clip = PHOTO_LOCATIONS.flatMap((l) => l.media).find((m) => m.type === "video")!;
 
 const meta = {
   title: "Home/Gallery/MediaCard",
@@ -30,7 +31,7 @@ export default meta;
 
 type Story = StoryObj<typeof meta>;
 
-/** A photo (a placeholder until its file exists): hover it — the glow follows the pointer, its caption slides in. */
+/** A photo (London's first): hover it — the glow follows the pointer, its caption slides in. */
 export const Default: Story = {
   play: async ({ canvas, userEvent, args }) => {
     const card = canvas.getByRole("button", { name: `Open ${photo.caption}` });
@@ -42,7 +43,7 @@ export const Default: Story = {
 
 /** A clip: its poster and a play button (it plays in the photo viewer, not here). */
 export const Clip: Story = {
-  args: { item: clip, index: 4, name: "London 05" },
+  args: { item: clip, index: 3, name: "New Forest 04" },
   play: async ({ canvasElement }) => {
     await expect(canvasElement.querySelector("video")).toBeNull();
   },

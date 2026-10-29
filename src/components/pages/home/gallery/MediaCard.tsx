@@ -5,7 +5,7 @@ import GlowCard from "#/components/UI/cards/GlowCard";
 import type { GlowCardSize } from "#/components/UI/cards/card.types";
 import Icon from "#/components/UI/icons/Icon";
 import type { MediaItem } from "#/components/three.js/earth/data";
-import { MediaThumb } from "./GalleryMedia";
+import { GRID_SIZES, MediaThumb } from "./GalleryMedia";
 import { RISE } from "#/components/pages/home/panel/layout";
 
 export interface MediaCardProps {
@@ -36,7 +36,11 @@ const MediaCard = ({ item, index, name, size, className, style, onOpen }: MediaC
     onClick={onOpen}
   >
     <span className="block transition-[filter] duration-500 ease-out-quint group-hover/card:brightness-108 group-hover/card:saturate-112 group-focus-visible/card:brightness-108 group-focus-visible/card:saturate-112">
-      <MediaThumb item={item} index={index} />
+      <MediaThumb
+        item={item}
+        index={index}
+        sizes={size === "sm" ? GRID_SIZES.side : GRID_SIZES.full}
+      />
     </span>
     {item.type === "video" && (
       <span className="absolute top-1/2 left-1/2 z-2 grid size-12 -translate-1/2 place-items-center rounded-full glass text-white">
