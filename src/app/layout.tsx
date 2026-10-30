@@ -2,7 +2,7 @@ import type { Metadata, Viewport } from "next";
 import { PAGE_CONTROLS_ID } from "#/components/pages/home/motion/pageControls";
 import { MOTION_SCRIPT } from "#/stores/motionPreference";
 import "#/styles/globals.css";
-import { greatVibes, kronaOne } from "./fonts";
+import { greatVibes, hankenGrotesk, kronaOne } from "./fonts";
 import { SITE } from "./site";
 
 /**
@@ -44,7 +44,7 @@ export default function RootLayout({
     <html
       lang="en"
       suppressHydrationWarning
-      className={`${greatVibes.variable} ${kronaOne.variable}`}
+      className={`${hankenGrotesk.variable} ${greatVibes.variable} ${kronaOne.variable}`}
     >
       <head>
         {/* Marks <html> with the motion mode (`data-motion`) before the first paint (P27-91).

@@ -98,7 +98,7 @@ All tokens are defined in `src/styles/globals.css` under `@theme`. Do not add co
 | -------------------- | ------------------------------------------ |
 | `--font-great-vibes` | Great Vibes (self-hosted, cursive display) |
 | `--font-krone-one`   | Krona One (self-hosted, geometric sans)    |
-| `--font-sans`        | Helvetica Neue, system sans                |
+| `--font-sans`        | Hanken Grotesk (self-hosted, body text)    |
 
 ## Naming Conventions
 

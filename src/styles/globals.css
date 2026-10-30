@@ -1,9 +1,9 @@
 @import "tailwindcss";
 
 @theme {
-  --font-sans: "Helvetica Neue", Helvetica, Arial, sans-serif;
-
-  /* Display fonts: loaded by next/font (src/app/fonts.ts), which sets these variables. */
+  /* Loaded by next/font (src/app/fonts.ts), which sets the *-face variables. The body font is
+     the same everywhere (P27-111); the system stack after it is only the fallback. */
+  --font-sans: var(--font-hanken-grotesk-face), "Helvetica Neue", Helvetica, Arial, sans-serif;
   --font-krone-one: var(--font-krona-one-face), sans-serif;
   --font-great-vibes: var(--font-great-vibes-face), sans-serif;
 

@@ -184,8 +184,11 @@ const Hero = () => {
               <p key={paragraph}>{paragraph}</p>
             ))}
           </div>
+          {/* 44rem, not 2xl (42rem): Hanken Grotesk's letters run a little wider than Helvetica
+              Neue's, and at 2xl the paragraphs wrapped one more line, so About stopped fitting a
+              1366×657 laptop window (P27-111). At 44rem they wrap 4 + 3 lines: it fits again. */}
           <div
-            className="mb-auto max-w-2xl space-y-5 sm:space-y-6 short:space-y-3"
+            className="mb-auto max-w-[44rem] space-y-5 sm:space-y-6 short:space-y-3"
             aria-hidden="true"
           >
             <p
