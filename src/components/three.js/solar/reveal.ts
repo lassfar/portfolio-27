@@ -79,6 +79,19 @@ export function siblingReveal(): number {
 }
 
 /**
+ * Saturn's (and its rings') visibility once formed (P27-112): the siblings' rule without
+ * their fade-in (Saturn forms earlier, from the star). Out for the Earth dive, back as you
+ * leave for the Parker Solar Probe (faded again as the Lab focuses on it) and for the
+ * finale, gone once the system is a speck. It used `1 − earthFade` alone, so it never came
+ * back: the Way Out showed the system without it. Read inside useFrame.
+ */
+export function saturnReturn(): number {
+  const voyage = useVoyageScroll.getState().progress;
+  const earthFade = remap01(voyage, VOYAGE.earthFadeStart, VOYAGE.earthFadeEnd);
+  return (1 - earthFade * (1 - systemReturn())) * finaleFarFade();
+}
+
+/**
  * The Earth's (and the Moon's) visibility: in with the system and staying through the
  * dive (it's the destination) and after (you leave it for the Parker Solar Probe — it
  * stays a planet in the view) until the Lab focuses on the probe (with the rest of the

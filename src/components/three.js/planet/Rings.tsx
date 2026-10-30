@@ -4,10 +4,11 @@ import { useFrame } from "@react-three/fiber";
 import { useMemo, useRef } from "react";
 import { Color, NormalBlending, Points, ShaderMaterial } from "three";
 import { useAboutScroll } from "#/stores/useAboutScroll";
-import { useVoyageScroll } from "#/stores/useVoyageScroll";
 import { remap01 } from "#/components/three.js/star/utils";
 import { FLYOUT, GROWTH, RING, RING_PALETTE, SCATTER, saturnLod } from "./config";
-import { PLANET_LOD, VOYAGE } from "#/components/three.js/solar/config";
+import { PLANET_LOD } from "#/components/three.js/solar/config";
+import { saturnReturn } from "#/components/three.js/solar/reveal";
+import { useVoyageScroll } from "#/stores/useVoyageScroll";
 import { SIMPLEX_NOISE } from "./shaders";
 import { PERFORMANCE } from "#/components/three.js/scene/performance";
 import { pointPixelRatio } from "#/components/three.js/scene/quality";
@@ -110,13 +111,13 @@ const Rings = ({ count = RING.count }: Props) => {
     const progress = useAboutScroll.getState().progress;
     m.uniforms.uForm.value = progress;
     const voyage = useVoyageScroll.getState().progress;
-    // Fade the rings out with the body as we dive to Earth (opacity, not scale).
-    const earthFade = remap01(voyage, VOYAGE.earthFadeStart, VOYAGE.earthFadeEnd);
-    m.uniforms.uOpacity.value = remap01(progress, 0.0, 0.15) * (1.0 - earthFade);
-    // Gone for good once the Earth dive has faded it (P27-78): skip it entirely. (Its
-    // invisible grains before the burst still write depth — part of the explosion's look.)
+    // With the body: out for the Earth dive, back with the system after it (P27-112).
+    const back = saturnReturn();
+    m.uniforms.uOpacity.value = remap01(progress, 0.0, 0.15) * back;
+    // Skipped entirely while away (P27-78), not drawn at opacity 0. (Its invisible grains
+    // before the burst still write depth — part of the explosion's look.)
     if (pointsRef.current) {
-      pointsRef.current.visible = !(PERFORMANCE.hideInvisible && earthFade >= 1);
+      pointsRef.current.visible = !(PERFORMANCE.hideInvisible && back <= 0);
     }
     // Level of detail: the same share of dots as Saturn itself (P27-78).
     const drawn = count * saturnLod.share;

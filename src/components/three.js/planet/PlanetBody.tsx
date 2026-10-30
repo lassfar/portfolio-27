@@ -16,11 +16,12 @@ import {
 } from "three";
 import { useAboutScroll } from "#/stores/useAboutScroll";
 import { useSaturnAnchor } from "#/stores/useSaturnAnchor";
-import { useVoyageScroll } from "#/stores/useVoyageScroll";
 import { easeInOutCubic, remap01 } from "#/components/three.js/star/utils";
 import { flyingSunPos } from "#/components/three.js/galaxy/spin";
 import { FLYOUT, GROWTH, LIGHT, PLANET, PLANET_PALETTE, SCATTER, saturnLod } from "./config";
-import { PLANET_LOD, PLANET_STYLE, SOLAR, VOYAGE } from "#/components/three.js/solar/config";
+import { PLANET_LOD, PLANET_STYLE, SOLAR } from "#/components/three.js/solar/config";
+import { saturnReturn } from "#/components/three.js/solar/reveal";
+import { useVoyageScroll } from "#/stores/useVoyageScroll";
 import { PERFORMANCE } from "#/components/three.js/scene/performance";
 import { SIMPLEX_NOISE } from "./shaders";
 import { useDrawGate } from "#/components/three.js/scene/useDrawGate";
@@ -220,10 +221,9 @@ const PlanetBody = ({ count = PLANET.count }: Props) => {
     const progress = useAboutScroll.getState().progress;
     m.uniforms.uForm.value = progress;
     const voyage = useVoyageScroll.getState().progress;
-    // Fade the Saturn OUT as we dive to Earth, exactly like the rest of the system
-    // (opacity, NOT scale — the planet keeps its size and just fades away).
-    const earthFade = remap01(voyage, VOYAGE.earthFadeStart, VOYAGE.earthFadeEnd);
-    m.uniforms.uOpacity.value = remap01(progress, 0.0, 0.15) * (1.0 - earthFade);
+    // Out for the Earth dive and back with the system after it, like its siblings
+    // (saturnReturn; opacity, NOT scale — the planet keeps its size).
+    m.uniforms.uOpacity.value = remap01(progress, 0.0, 0.15) * saturnReturn();
     // Formed, with its core opaque: the dots behind the core are dropped in the vertex
     // shader (P27-78), tested against the camera in the planet's own space.
     const formed = progress >= 0.999 && m.uniforms.uOpacity.value >= 0.999;
