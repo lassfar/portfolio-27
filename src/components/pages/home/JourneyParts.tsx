@@ -6,6 +6,7 @@ import StoryTitle from "#/components/pages/home/timeline/StoryTitle";
 import StorySubtitles from "#/components/pages/home/subtitles/StorySubtitles";
 import NavAssistant from "#/components/pages/home/phase-nav/NavAssistant";
 import PerfHud from "#/components/three.js/scene/PerfHud";
+import JourneyDeepLink from "#/components/pages/home/scroll/JourneyDeepLink";
 
 /**
  * The journey's parts around its scene (P27-95): part of the journey's motion code, fetched
@@ -29,6 +30,9 @@ const JourneyParts = () => (
 
     {/* The navigation assistant: a glowing orb that opens into the next chapter's button. */}
     <NavAssistant />
+
+    {/* The chapter links (#craft…): arriving on one, the address following (P27-113). */}
+    <JourneyDeepLink />
 
     {/* ?perf only: live FPS and a per-chapter performance report. */}
     <PerfHud />

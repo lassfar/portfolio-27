@@ -86,6 +86,9 @@ export function motionMode(calm: boolean): MotionChoice {
  * rules, so CSS knows the mode before any of the app loads. Plain ES5, every read guarded:
  * the device setting (no matchMedia: full motion), then a choice in the address, else the
  * kept one if it was made against this setting (blocked storage: no choice).
+ * In full motion, opened on a link to a chapter (`#craft`, P27-113), it also marks
+ * `data-arriving`: the journey stays hidden until it has landed there (JourneyDeepLink), so the
+ * hero doesn't flash first; its own 4 s timer shows the page if the journey's code never comes.
  */
 export const MOTION_SCRIPT =
   "(function(){var c=null,d=false,s=null;" +
@@ -94,4 +97,6 @@ export const MOTION_SCRIPT =
   `if(c!=="calm"&&c!=="full"){c=null;try{s=localStorage.getItem(${JSON.stringify(MOTION_STORAGE_KEY)})}catch(e){}` +
   `if(s===(d?${JSON.stringify(storedChoice("calm", true))}:${JSON.stringify(storedChoice("calm", false))}))c="calm";` +
   `else if(s===(d?${JSON.stringify(storedChoice("full", true))}:${JSON.stringify(storedChoice("full", false))}))c="full"}` +
-  'document.documentElement.setAttribute("data-motion",c==="calm"||(c!=="full"&&d)?"calm":"full")})()';
+  'var r=document.documentElement,m=c==="calm"||(c!=="full"&&d)?"calm":"full";r.setAttribute("data-motion",m);' +
+  'try{var h=location.hash;if(m==="full"&&h&&h.length>1&&h!=="#origin"){r.setAttribute("data-arriving","");' +
+  'setTimeout(function(){try{r.removeAttribute("data-arriving")}catch(e){}},4000)}}catch(e){}})()';

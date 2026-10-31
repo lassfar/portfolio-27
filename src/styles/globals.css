@@ -385,6 +385,20 @@
    tooltips toward the inside of the screen. */
 /* Not shown (the first screen): transparent and out of the pointer's way, but its stars stay
    focusable, so Tab reaches them from the first screen (P27-99, WCAG 2.4.1 / 2.4.3). */
+/* A link to a chapter (#craft, P27-113): the journey and its overlays stay hidden while it lands
+   (data-arriving, set before the first paint by the head script), then fade in. The page's
+   controls (the motion switch) stay. Full motion only: the head script never sets it in calm. */
+html[data-arriving] #smooth-wrapper,
+html[data-arriving] .story-timeline,
+html[data-arriving] .story-title,
+html[data-arriving] .story-subtitles,
+html[data-arriving] .nav-assistant {
+  opacity: 0;
+}
+#smooth-wrapper {
+  transition: opacity 0.35s ease-out;
+}
+
 .story-timeline {
   position: fixed;
   z-index: 40; /* under the labels (z-45) and the panel (z-50) */

@@ -2,6 +2,7 @@ import clsx from "clsx";
 import AccentText from "#/components/UI/text/AccentText";
 import BookReveal from "#/components/pages/home/book/BookReveal";
 import Bridge from "#/components/pages/home/book/Bridge";
+import BookDeepLink from "#/components/pages/home/book/BookDeepLink";
 import BookTimeline from "#/components/pages/home/book/BookTimeline";
 import Cover from "#/components/pages/home/book/Cover";
 import Ending from "#/components/pages/home/book/Ending";
@@ -42,6 +43,8 @@ const CalmBook = () => (
       <style>{"[data-reveal]{opacity:1}"}</style>
     </noscript>
     <BookTimeline />
+    {/* The chapter links (#craft…): arriving on one, the address following (P27-113). */}
+    <BookDeepLink />
 
     <Cover />
     <Bridge after="origin" />
