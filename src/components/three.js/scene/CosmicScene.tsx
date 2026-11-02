@@ -72,6 +72,7 @@ import { onPerformanceChange, PERFORMANCE, PERFORMANCE_DEFAULTS } from "./perfor
 import { precompile, releaseWarmUp, setWarmUpTarget, whenIdle } from "./warmUp";
 import { sceneFrames } from "./sceneFrames";
 import { releaseCanvasRect } from "./labelProjection";
+import { releaseSharedGeometries } from "./sharedGeometries";
 import { gpuClass, gpuRenderer, LOWEST_STEP, QUALITY_STEPS, startStep } from "./quality";
 import { createQualityController, type QualityController } from "./qualityController";
 import { recordQualityChange, recordQualityStart } from "./perfReport";
@@ -136,10 +137,12 @@ const CosmicScene = () => {
   // so it's shared between Universe (which rotates it) and CameraRig.
   const starfieldRef = useRef<Group>(null);
   // A new canvas, a new clock (P27-94: the mode switch mounts the journey again): what the
-  // modules kept from the one before goes, before its first frame, as on the first load.
+  // modules kept from the one before goes, before its first frame, as on the first load. And
+  // what three kept for this one goes with it (P27-104).
   useLayoutEffect(() => {
     resetSystemTime();
     resetGalaxyDrag();
+    return releaseSharedGeometries;
   }, []);
 
   return (
