@@ -273,6 +273,62 @@
   animation-play-state: paused;
 }
 
+/* The Reduce motion switch's track (P27-114, MotionTrack): softly sunken, a light inner rim
+   (3:1 on the page, WCAG 1.4.11) and a raised knob. With motion the knob is on the right and
+   the dots ride a wave (`--wave`, each its own height); in calm (the switch on,
+   `aria-checked`) the knob is on the left and the dots lie flat and dim. With motion the knob slides
+   and the wave settles a little (`--swell`) on hover or focus; in calm it jumps (WCAG 2.3.3). */
+.motion-track {
+  --swell: 1;
+  display: block;
+  width: 3.5rem;
+  height: 1.6625rem;
+  overflow: visible;
+}
+.motion-track__well {
+  fill: color-mix(in srgb, var(--color-rich-black) 80%, black);
+  stroke: color-mix(in srgb, black 60%, transparent);
+  stroke-width: 2;
+}
+.motion-track__rail {
+  fill: none;
+  stroke: color-mix(in srgb, var(--color-gray-slate) 45%, transparent);
+}
+.motion-track__cap {
+  fill: var(--color-dark);
+  stroke: color-mix(in srgb, white 10%, transparent);
+}
+.motion-track__dot {
+  fill: var(--color-peach);
+  transform: translateY(calc(var(--wave) * var(--swell)));
+}
+.motion-track__knob {
+  transform: translateX(42px);
+}
+[aria-checked="true"] .motion-track__dot {
+  opacity: 0.35;
+  transform: none;
+}
+[aria-checked="true"] .motion-track__knob {
+  transform: none;
+}
+:root:not([data-motion="calm"]) :is(.motion-track__dot, .motion-track__knob) {
+  transition:
+    transform 0.5s var(--ease-out-quint),
+    opacity 0.3s;
+}
+:root:not([data-motion="calm"]) [aria-checked="false"]:focus-visible .motion-track {
+  --swell: 0.6;
+}
+@media (hover: hover) {
+  :root:not([data-motion="calm"]) [aria-checked="false"]:hover .motion-track {
+    --swell: 0.6;
+  }
+}
+[data-motion="calm"] :is(.motion-track__dot, .motion-track__knob) {
+  transition: opacity 0.2s;
+}
+
 /* Contact: a soft dark vignette behind the form, so the text reads over the blurred
    galaxy while it still glows all around. */
 .home-contact__vignette {

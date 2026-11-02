@@ -17,13 +17,11 @@ import {
   X,
 } from "lucide-react";
 import { GitHub, LinkedIn } from "#/components/UI/icons/brands";
-import { Calm, Lively } from "#/components/UI/icons/motion";
 
-/** The icons the site uses (P27-80, P27-81, P27-92), by name. */
+/** The icons the site uses (P27-80, P27-81), by name. */
 export const SITE_ICONS = {
   ArrowDown,
   ArrowUpRight,
-  Calm,
   Camera,
   ChevronLeft,
   ChevronRight,
@@ -31,7 +29,6 @@ export const SITE_ICONS = {
   FlaskConical,
   GitHub,
   LinkedIn,
-  Lively,
   Mail,
   Maximize2,
   MemoryStick,

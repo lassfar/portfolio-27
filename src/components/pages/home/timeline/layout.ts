@@ -15,7 +15,7 @@ const HIT = 24;
 
 /**
  * The room a vertical rail leaves at the screen's top and bottom (px, P27-95). At the top, the
- * Reduce motion switch's corner (MotionSwitch: 24px down, 40px tall, a 44px tap area) and the
+ * Reduce motion switch's corner (MotionSwitch: 24px down, 27px tall, a 44px tap area) and the
  * top star's own tap area below it; at the bottom, a margin. On a short screen (a phone held
  * sideways) the rail starts below the switch, not under it.
  */

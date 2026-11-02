@@ -70,7 +70,7 @@ export const SwitchLive: Story = {
   },
   play: async ({ canvas, canvasElement, userEvent }) => {
     await expect(canvas.getByText("The journey: live")).toBeVisible();
-    const button = await within(document.body).findByRole("button", { name: "Reduce motion" });
+    const button = await within(document.body).findByRole("switch", { name: "Reduce motion" });
     button.focus();
     await userEvent.keyboard(" ");
     const page = canvasElement.closest<HTMLElement>("body > *")!;

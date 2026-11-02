@@ -60,16 +60,11 @@ export const Calm: Story = {
   },
 };
 
-/** A toggle, pressed (`pressed`: the motion switch): `aria-pressed`, and it stays peach. */
+/** A toggle, pressed (`pressed`): `aria-pressed`, and it stays peach. */
 export const Pressed: Story = {
-  args: {
-    icon: SITE_ICONS.Calm,
-    label: "Reduce motion",
-    tooltip: "Reduce motion · on",
-    pressed: true,
-  },
+  args: { icon: SITE_ICONS.Play, label: "Autoplay", tooltip: "Autoplay · on", pressed: true },
   play: async ({ canvas }) => {
-    await expect(canvas.getByRole("button", { name: "Reduce motion" })).toHaveAttribute(
+    await expect(canvas.getByRole("button", { name: "Autoplay" })).toHaveAttribute(
       "aria-pressed",
       "true",
     );

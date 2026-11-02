@@ -10,7 +10,7 @@ import MotionSwitch from "./MotionSwitch";
 import { PAGE_CONTROLS_ID } from "./pageControls";
 
 const page = () => within(document.body);
-const theSwitch = () => page().findByRole("button", { name: "Reduce motion" });
+const theSwitch = () => page().findByRole("switch", { name: "Reduce motion" });
 
 /** The switch, as the site mounts it: fixed to the top-right corner, portalled to the body. */
 const meta = {
@@ -33,32 +33,36 @@ export default meta;
 
 type Story = StoryObj<typeof meta>;
 
-/** Full motion (as the device asks): not pressed. Its tooltip starts with its name, so it can be called by what it shows (WCAG 2.5.3). A click turns calm on, for the whole page, and it's remembered. */
+/** Full motion (as the device asks): a switch, off: the knob on the right, the dots in a wave; its tooltip names the mode. A click turns calm on, for the whole page, and it's remembered. */
 export const Default: Story = {
   play: async ({ userEvent }) => {
     const button = await theSwitch();
-    await expect(button).toHaveAttribute("aria-pressed", "false");
-    await expect(page().getByText("Reduce motion · off")).toBeInTheDocument();
+    await expect(button).toHaveAttribute("aria-checked", "false");
+    await expect(page().getByText("Motion mode")).toBeInTheDocument();
+    // Its knob says the mode too (MotionTrack): on the right with motion, on the left in calm.
+    const knob = button.querySelector<SVGGElement>(".motion-track__knob")!;
+    await expect(getComputedStyle(knob).transform).not.toBe("none");
     await userEvent.click(button);
-    await expect(button).toHaveAttribute("aria-pressed", "true");
+    await expect(button).toHaveAttribute("aria-checked", "true");
     await expect(document.documentElement.dataset.motion).toBe("calm");
+    await expect(getComputedStyle(knob).transform).toBe("none");
     await expect(localStorage.getItem(MOTION_STORAGE_KEY)).toBe(
       storedChoice("calm", useMotion.getState().device),
     );
   },
 };
 
-/** Calm: pressed, peach. From the keyboard too: Tab to it, Space turns full motion back on. */
+/** Calm: the switch on, the knob on the left, the dots flat. From the keyboard too: Tab to it, Space turns full motion back on. */
 export const Calm: Story = {
   beforeEach: inCalm,
   play: async ({ userEvent }) => {
     const button = await theSwitch();
-    await expect(button).toHaveAttribute("aria-pressed", "true");
-    await expect(page().getByText("Reduce motion · on")).toBeInTheDocument();
+    await expect(button).toHaveAttribute("aria-checked", "true");
+    await expect(page().getByText("Calm mode")).toBeInTheDocument();
     await userEvent.tab();
     await expect(button).toHaveFocus();
     await userEvent.keyboard(" ");
-    await expect(button).toHaveAttribute("aria-pressed", "false");
+    await expect(button).toHaveAttribute("aria-checked", "false");
   },
 };
 
