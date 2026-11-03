@@ -26,7 +26,7 @@ import { SUNPOS, SYSTEM_SHOWS_AT } from "#/components/three.js/solar/config";
 import { earthReveal } from "#/components/three.js/solar/reveal";
 import { EARTH } from "./config";
 import { PHOTO_LOCATIONS } from "./data";
-import { directionToUV, latLngToVector3, nearestAngle, yawToFace } from "./utils";
+import { directionToUV, faceAngles, latLngToVector3, nearestAngle, PITCH_LIMIT } from "./utils";
 import { earthApproach, earthOwnsDrag, probeOwnsDrag, dragMode } from "./interaction";
 import { useLabScroll } from "#/stores/useLabScroll";
 import { LAB } from "#/components/three.js/voyager/config";
@@ -43,7 +43,6 @@ import { createTouchAxisLock } from "#/components/three.js/scene/touchAxisLock";
 const _toward = new Vector3();
 const _pin = new Vector3();
 const _parentInverse = new Matrix4();
-const X_AXIS = new Vector3(1, 0, 0);
 
 type Props = {
   /** Master enable for pointer-drag (drag is additionally gated to the Earth phase). */
@@ -317,7 +316,7 @@ const DottedEarth = ({ interactive = true }: Props) => {
       targetYaw.current += dx * EARTH.dragSensitivity;
       targetPitch.current += dy * EARTH.dragSensitivity;
       // Keep the poles from flipping over.
-      targetPitch.current = Math.max(-1.2, Math.min(1.2, targetPitch.current));
+      targetPitch.current = Math.max(-PITCH_LIMIT, Math.min(PITCH_LIMIT, targetPitch.current));
     };
     const onUp = () => {
       // Only a GLOBE drag pauses the idle spin, so only it re-arms the resume timer.
@@ -406,22 +405,24 @@ const DottedEarth = ({ interactive = true }: Props) => {
         }
       }
     }
-    // A place whose label took the keyboard's focus on the far side turns round to face you, the
-    // short way, eased like a drag (P27-99, WCAG 2.1.1); its focus then holds the spin (above).
+    // A place asked for (its label focused on the far side, P27-99; its pill clicked, or the panel
+    // switching to it, P27-116) turns round to the globe's centre, facing you: yaw the short way,
+    // and pitch, whatever a drag had tilted (eased like a drag); its focus or panel then holds the
+    // spin (above).
     if (pinTurn.id) {
       const loc = PHOTO_LOCATIONS.find((l) => l.id === pinTurn.id);
       const parent = spinRef.current?.parent;
       pinTurn.id = null;
       if (loc && parent) {
-        // The camera's direction from the Earth, in the frame the globe turns in (its yaw and
-        // pitch: rotation XYZ, so its pitch is taken off first).
+        // The camera's direction from the Earth, in the frame the globe turns in.
         const a = useEarthAnchor.getState();
         _toward
           .set(camera.position.x - a.x, camera.position.y - a.y, camera.position.z - a.z)
-          .transformDirection(_parentInverse.copy(parent.matrixWorld).invert())
-          .applyAxisAngle(X_AXIS, -pitch.current);
+          .transformDirection(_parentInverse.copy(parent.matrixWorld).invert());
         latLngToVector3(loc.lat, loc.lng, 1, _pin);
-        targetYaw.current = nearestAngle(yaw.current, yawToFace(_pin, _toward));
+        const face = faceAngles(_pin, _toward);
+        targetYaw.current = nearestAngle(yaw.current, face.yaw);
+        targetPitch.current = face.pitch;
       }
     }
     yaw.current = damp(yaw.current, targetYaw.current, EARTH.dragDamping, delta);

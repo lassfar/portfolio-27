@@ -103,3 +103,14 @@ export const Keys: Story = {
     );
   },
 };
+
+/** The panel switching place (its chips, or previous / next): the globe turns the place being visited round to face you. */
+export const CentersVisitedPlace: Story = {
+  play: async () => {
+    const [first, second] = PHOTO_LOCATIONS;
+    usePanelStore.getState().open({ kind: "place", id: first.id });
+    pinTurn.id = null;
+    usePanelStore.getState().open({ kind: "place", id: second.id });
+    await expect(pinTurn.id).toBe(second.id);
+  },
+};

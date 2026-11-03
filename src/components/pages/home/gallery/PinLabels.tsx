@@ -62,13 +62,17 @@ const PinLabels = () => {
     const phone = window.matchMedia(PHONE_QUERY); // phones keep each label on screen (P27-31)
     const large = window.matchMedia(LARGE_QUERY); // the hidden places list in the corner (P27-116)
     const pillBefore: Record<string, boolean> = {};
+    // A pill stays clickable while it fades out (it leaves the pointer's way once `invisible`): the
+    // spin can bring its place back just as the pointer reaches it.
     const setPill = (id: string, el: HTMLButtonElement, shown: boolean) => {
       if (pillBefore[id] === shown) return;
       pillBefore[id] = shown;
       showAnchored(el, shown);
-      el.style.pointerEvents = shown ? "auto" : "none";
+      if (shown) el.style.pointerEvents = "auto";
       el.tabIndex = shown ? 0 : -1;
     };
+    // A pill under the pointer or with the focus stays (its hover holds the spin, too).
+    const held = (el: HTMLButtonElement) => document.activeElement === el || el.matches(":hover");
     // Shown; or `near`: on the globe's far side while it's in full view, unseen but still in the
     // Tab order (P27-99: the spin turns the places away half the time); or away.
     const setState = (id: string, el: HTMLButtonElement, state: "shown" | "near" | "away") => {
@@ -105,7 +109,10 @@ const PinLabels = () => {
           setState(loc.id, el, s?.near && !large.matches ? "near" : "away");
         }
         const pill = pills.current[loc.id];
-        if (pill) setPill(loc.id, pill, large.matches && !!s?.near && !s.shown);
+        if (pill) {
+          const behind = !!s?.near && !s.shown;
+          setPill(loc.id, pill, large.matches && !!s?.near && (behind || held(pill)));
+        }
       }
 
       // 2. DE-OVERLAP: keep the lowest label anchored and lift any that collide above
@@ -164,6 +171,7 @@ const PinLabels = () => {
   return (
     <>
       {labels}
+      <CenterVisitedPlace />
       <HiddenPlaces
         fresh={!opened}
         pillRef={(id, el) => {
@@ -172,6 +180,25 @@ const PinLabels = () => {
       />
     </>
   );
+};
+
+/**
+ * The place being visited, centred on the globe (P27-116): when the open panel switches to
+ * another place (its place chips, or the previous / next ones at its end), the globe turns that
+ * place round to face you (`pinTurn`, as a far-side label's focus does); the open panel holds the
+ * globe's spin, so it stays there. Renders nothing.
+ */
+const CenterVisitedPlace = () => {
+  useEffect(
+    () =>
+      usePanelStore.subscribe((now, before) => {
+        const place = now.content?.kind === "place" ? now.content.id : null;
+        const was = before.content?.kind === "place" ? before.content.id : null;
+        if (place && was && place !== was) pinTurn.id = place;
+      }),
+    [],
+  );
+  return null;
 };
 
 export default PinLabels;

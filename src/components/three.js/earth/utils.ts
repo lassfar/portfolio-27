@@ -41,12 +41,30 @@ export function directionToUV(x: number, y: number, z: number): [number, number]
   return [u, v];
 }
 
+/** The globe's pitch limit (radians): how far a drag, or a turn to a place, tilts it. */
+export const PITCH_LIMIT = 1.2;
+
 /**
- * The globe's yaw (its turn about +y) that brings `pin`, a direction in the globe before its
- * yaw, closest to `toward`, in the same frame. Turns a place to face the camera (P27-99).
+ * The globe's pitch and yaw (Euler XYZ: the pitch about x after the yaw about +y, as the globe
+ * turns) that bring `pin`, a direction on the globe, to `toward`, a direction in the frame the
+ * globe turns in: the place centred, facing the camera (P27-116). Of the two turns that do it,
+ * the one with the globe least tilted; the pitch is kept within PITCH_LIMIT (a place too far
+ * north or south for it ends as near the centre as that allows).
  */
-export const yawToFace = (pin: Vector3, toward: Vector3): number =>
-  Math.atan2(toward.x * pin.z - toward.z * pin.x, toward.x * pin.x + toward.z * pin.z);
+export function faceAngles(pin: Vector3, toward: Vector3): { yaw: number; pitch: number } {
+  const r = Math.hypot(pin.x, pin.z);
+  const phi = Math.atan2(pin.z, pin.x);
+  const spread = Math.acos(Math.max(-1, Math.min(1, r > 1e-9 ? toward.x / r : 0)));
+  let best = { yaw: 0, pitch: 0 };
+  for (const yaw of [phi + spread, phi - spread]) {
+    // The pin after the yaw (its y and z: the pitch then turns them onto `toward`'s).
+    const y = pin.y;
+    const z = -pin.x * Math.sin(yaw) + pin.z * Math.cos(yaw);
+    const pitch = nearestAngle(0, Math.atan2(toward.z, toward.y) - Math.atan2(z, y));
+    if (yaw === phi + spread || Math.abs(pitch) < Math.abs(best.pitch)) best = { yaw, pitch };
+  }
+  return { yaw: best.yaw, pitch: Math.max(-PITCH_LIMIT, Math.min(PITCH_LIMIT, best.pitch)) };
+}
 
 /** `to` (radians), moved by whole turns to within half a turn of `from`: the short way round. */
 export function nearestAngle(from: number, to: number): number {
