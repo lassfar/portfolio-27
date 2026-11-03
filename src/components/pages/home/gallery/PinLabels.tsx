@@ -5,13 +5,14 @@ import { Camera } from "lucide-react";
 import { PHOTO_LOCATIONS } from "#/components/three.js/earth/data";
 import { pinHover, pinLabels, pinScreen, pinTurn } from "#/components/three.js/earth/pinScreen";
 import { selectKey, usePanelStore } from "#/stores/usePanelStore";
-import { PHONE_QUERY, keepOnScreen } from "#/components/pages/home/labels/screenEdge";
+import { LARGE_QUERY, PHONE_QUERY, keepOnScreen } from "#/components/pages/home/labels/screenEdge";
 import { type LabelBox, stackLabels } from "#/components/pages/home/labels/stack";
 import { ANCHORED, showAnchored } from "#/components/pages/home/labels/anchored";
 import SceneLabel from "#/components/pages/home/labels/SceneLabel";
 import { placeLabelId } from "#/components/pages/home/labels/labelIds";
 import { placeLabelAria, placeLabelMeta } from "#/components/pages/home/panel/content";
 import { PANEL_ID } from "#/components/pages/home/panel/config";
+import HiddenPlaces from "./HiddenPlaces";
 
 /** Gap (px) kept between labels that would otherwise overlap. */
 const LABEL_GAP = 6;
@@ -34,10 +35,13 @@ const OFFSET_Y = 8;
  *
  * The keyboard reaches every place while the Earth is in full view (P27-99, WCAG 2.1.1): on the
  * globe's far side a label stays in the Tab order, unseen; focused there, it shows and the globe
- * turns its place round to face you (`pinTurn`), then holds while it has the focus.
+ * turns its place round to face you (`pinTurn`), then holds while it has the focus. On a large
+ * screen (P27-116) a place behind the globe is a pill in the corner instead (HiddenPlaces, shown
+ * here in the same frame): its label leaves the Tab order, so each place has one way in, seen.
  */
 const PinLabels = () => {
   const refs = useRef<Record<string, HTMLButtonElement | null>>({});
+  const pills = useRef<Record<string, HTMLButtonElement | null>>({});
   const openKey = usePanelStore(selectKey);
   const opened = usePanelStore((s) => s.opened);
 
@@ -56,6 +60,15 @@ const PinLabels = () => {
     window.addEventListener("resize", remeasure);
     void document.fonts?.ready.then(remeasure);
     const phone = window.matchMedia(PHONE_QUERY); // phones keep each label on screen (P27-31)
+    const large = window.matchMedia(LARGE_QUERY); // the hidden places list in the corner (P27-116)
+    const pillBefore: Record<string, boolean> = {};
+    const setPill = (id: string, el: HTMLButtonElement, shown: boolean) => {
+      if (pillBefore[id] === shown) return;
+      pillBefore[id] = shown;
+      showAnchored(el, shown);
+      el.style.pointerEvents = shown ? "auto" : "none";
+      el.tabIndex = shown ? 0 : -1;
+    };
     // Shown; or `near`: on the globe's far side while it's in full view, unseen but still in the
     // Tab order (P27-99: the spin turns the places away half the time); or away.
     const setState = (id: string, el: HTMLButtonElement, state: "shown" | "near" | "away") => {
@@ -88,8 +101,11 @@ const PinLabels = () => {
           boxes.push({ el, cx: left + w / 2, left, top, w, h });
           setState(loc.id, el, "shown");
         } else {
-          setState(loc.id, el, s?.near ? "near" : "away");
+          // Behind the globe on a large screen: its pill is the way in, not an unseen label.
+          setState(loc.id, el, s?.near && !large.matches ? "near" : "away");
         }
+        const pill = pills.current[loc.id];
+        if (pill) setPill(loc.id, pill, large.matches && !!s?.near && !s.shown);
       }
 
       // 2. DE-OVERLAP: keep the lowest label anchored and lift any that collide above
@@ -108,7 +124,7 @@ const PinLabels = () => {
     };
   }, []);
 
-  return PHOTO_LOCATIONS.map((loc) => {
+  const labels = PHOTO_LOCATIONS.map((loc) => {
     const light = () => {
       pinHover.id = loc.id;
     };
@@ -145,6 +161,17 @@ const PinLabels = () => {
       />
     );
   });
+  return (
+    <>
+      {labels}
+      <HiddenPlaces
+        fresh={!opened}
+        pillRef={(id, el) => {
+          pills.current[id] = el;
+        }}
+      />
+    </>
+  );
 };
 
 export default PinLabels;

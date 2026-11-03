@@ -8,6 +8,9 @@
 
 /** Phones: narrower than Tailwind's `sm` (40rem). */
 export const PHONE_QUERY = "(width < 40rem)";
+/** Large screens: Tailwind's `lg` (64rem) and up, where the Earth's hidden places list in the
+ *  corner (P27-116, HiddenPlaces). */
+export const LARGE_QUERY = "(width >= 64rem)";
 /** The room a label keeps from the screen's edge (px). */
 export const LABEL_EDGE = 10;
 

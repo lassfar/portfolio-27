@@ -5,6 +5,7 @@ import {
   LAB_LABEL_ID,
   journeyLabelId,
   placeLabelId,
+  placePillId,
 } from "#/components/pages/home/labels/labelIds";
 import { PHOTO_LOCATIONS } from "#/components/three.js/earth/data";
 import { journeyScreen } from "#/components/three.js/parker/journeyScreen";
@@ -51,7 +52,10 @@ const TEXTS: Record<SceneChapter, ChapterText> = {
  * they come after everything, Contact included (P27-100).
  */
 const LABELS: Partial<Record<SceneChapter, string>> = {
-  earth: PHOTO_LOCATIONS.map((place) => placeLabelId(place.id)).join(" "),
+  // A place's label, or its pill in the corner while it's behind the globe (P27-116): one shows.
+  earth: PHOTO_LOCATIONS.flatMap((place) => [placeLabelId(place.id), placePillId(place.id)]).join(
+    " ",
+  ),
   lab: [...journeyScreen.markers.map((_, i) => journeyLabelId(i)), LAB_LABEL_ID].join(" "),
 };
 

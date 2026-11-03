@@ -15,8 +15,8 @@ const focus = (el: Element | null | undefined) => {
  *
  * Focus moves into what opens (its `data-autofocus` control) and comes back where it was
  * opened from: a photo → its card (`data-photo`), the panel → its scene label
- * (`data-scene-label`, by its key: a 3D pin or a click without focus opened it too),
- * if that's still shown.
+ * (`data-scene-label`, by its key: a 3D pin or a click without focus opened it too; an Earth
+ * place's label or its pill, P27-116), if that's still shown.
  */
 export function usePanelModal(
   panelRef: RefObject<HTMLElement | null>,
@@ -55,8 +55,10 @@ export function usePanelModal(
       focus(panel.querySelector(`[data-photo="${was.photo}"]`));
     else if (open && !was.open) focus(panel.querySelector("[data-autofocus]"));
     else if (!open && was.open && was.key) {
-      const label = document.querySelector<HTMLElement>(`[data-scene-label="${was.key}"]`);
-      if (label && label.tabIndex >= 0) focus(label);
+      // Its label, or its pill if the place is behind the globe (P27-116): the one that's shown.
+      const labels = document.querySelectorAll<HTMLElement>(`[data-scene-label="${was.key}"]`);
+      const label = [...labels].find((el) => el.tabIndex >= 0);
+      if (label) focus(label);
     }
     return undo;
   }, [open, view, photo, key, panelRef, viewerRef, mounted, alwaysModal]);

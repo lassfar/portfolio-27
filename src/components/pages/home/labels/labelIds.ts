@@ -4,6 +4,8 @@
  * 3D, so in the page they come after everything.
  */
 export const placeLabelId = (place: string) => `place-label-${place}`;
+/** A place's pill in the corner, while its label is behind the globe (P27-116, HiddenPlaces). */
+export const placePillId = (place: string) => `place-pill-${place}`;
 /** Parker's journey labels, by marker. */
 export const journeyLabelId = (marker: number) => `journey-label-${marker}`;
 /** The Lab's memory card. */
