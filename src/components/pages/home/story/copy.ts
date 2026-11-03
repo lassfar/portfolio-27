@@ -147,6 +147,18 @@ export const BOOK = {
 } as const;
 
 /**
+ * The loading screen (P27-115): a line in Aymane's voice under the planet he sketches, a hint at
+ * how the journey works, and a camera's settings in the viewfinder's corner (his photography);
+ * its name for screen readers (a progress bar).
+ */
+export const LOADER = {
+  label: "Loading the journey",
+  line: "Sketching the universe…",
+  hint: "Scroll to travel · the stars at the side jump to any chapter",
+  camera: "f/2.8 · 1/60 s · ISO 400",
+} as const;
+
+/**
  * The transition screen between the modes (P27-94): a line in Aymane's voice, by the mode it
  * goes to, and where the visitor lands: "Chapter 4 of 7 · Reduce motion on".
  */

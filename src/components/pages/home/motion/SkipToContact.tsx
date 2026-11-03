@@ -75,7 +75,7 @@ const SkipToContact = () => {
       href="#contact"
       onClick={skip}
       className={clsx(
-        "fixed top-4.5 right-17 z-46 sm:top-6 sm:right-18.5",
+        "fixed top-4.5 right-17 z-46 sm:top-6 sm:right-18.5 loading:z-48",
         "flex h-10 items-center rounded-full glass px-4 text-sm whitespace-nowrap text-white focus-ring",
         "pointer-events-none opacity-0 transition-opacity duration-200",
         // Away while a panel is open, and under the mode switch's screen.

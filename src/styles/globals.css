@@ -233,6 +233,10 @@
    `<html data-mode-switching>`): the motion switch stays above it, with the focus. */
 @custom-variant switching (&:where([data-mode-switching] *));
 
+/* `loading:` — while the loading screen covers the page (P27-115, `<html data-loading>`):
+   the page's controls stay above it. */
+@custom-variant loading (&:where([data-loading] *));
+
 /* The transition screen's constellation, back to motion (motion/ModeVeil): a link drawing in
    (pathLength 1). Under `moving:`, so it starts as the page turns to motion, behind it. */
 @keyframes veil-draw {
@@ -433,14 +437,80 @@
   display: inline;
 }
 
-/* ── Story timeline (P27-73) ─────────────────────────────────────────────────────────
-   A thin rail down one edge of the screen that fills with peach, one small four-point
-   star per chapter (the site's sparkles). StoryTimelineRail places it (any edge or
-   corner, inline) and passes the tuned sizes as custom properties from
-   timeline/config.ts; `is-vertical` / `is-horizontal` lay out the rail, and `tip-*` opens
-   tooltips toward the inside of the screen. */
-/* Not shown (the first screen): transparent and out of the pointer's way, but its stars stay
-   focusable, so Tab reaches them from the first screen (P27-99, WCAG 2.4.1 / 2.4.3). */
+/* The loading screen (P27-115, loading/PageLoader): shown while <html> is marked
+   `data-loading` (the head script, full motion only), over the journey, which stays hidden
+   meanwhile: not seen, not focusable (WCAG 2.4.11). `--load` (0–1) is the real progress
+   (useLoadProgress); `--lead` starts the pencil before the app's code arrives. 0–0.55: the
+   pencil sketches the planet and its ring; 0.55–1: the ink fills them. It fades out once the
+   journey is drawn. */
+@property --load {
+  syntax: "<number>";
+  inherits: true;
+  initial-value: 0;
+}
+@property --lead {
+  syntax: "<number>";
+  inherits: true;
+  initial-value: 0;
+}
+@property --load-pct {
+  syntax: "<integer>";
+  inherits: false;
+  initial-value: 0;
+}
+@keyframes page-loader-lead {
+  to {
+    --lead: 0.1;
+  }
+}
+html[data-loading]
+  :is(#smooth-wrapper, .story-timeline, .story-title, .story-subtitles, .nav-assistant) {
+  visibility: hidden;
+}
+.page-loader {
+  --shown: max(var(--lead), var(--load));
+  --sketch: clamp(0, var(--shown) / 0.55, 1);
+  --ink: clamp(0, (var(--shown) - 0.55) / 0.45, 1);
+  opacity: 0;
+  visibility: hidden;
+  transition:
+    --load 0.6s var(--ease-out-quint),
+    opacity 0.5s ease-out,
+    visibility 0s 0.5s;
+}
+html[data-loading] .page-loader {
+  opacity: 1;
+  visibility: visible;
+  animation: page-loader-lead 1.2s ease-out forwards;
+  transition: --load 0.6s var(--ease-out-quint);
+}
+.page-loader__pencil {
+  fill: none;
+  stroke: color-mix(in srgb, white 55%, transparent);
+  stroke-width: 0.6;
+  stroke-dasharray: 1;
+  stroke-dashoffset: calc(1 - var(--sketch));
+}
+.page-loader__ink {
+  fill: var(--color-peach);
+  opacity: var(--ink);
+}
+.page-loader__ink-ring {
+  fill: none;
+  stroke: var(--color-light-peach);
+  stroke-width: 1.6;
+  stroke-linecap: round;
+  stroke-dasharray: 1;
+  stroke-dashoffset: calc(1 - var(--ink));
+}
+.page-loader__pct {
+  --load-pct: calc(var(--shown) * 100);
+  counter-reset: load-pct var(--load-pct);
+}
+.page-loader__pct::after {
+  content: counter(load-pct) "%";
+}
+
 /* A link to a chapter (#craft, P27-113): the journey and its overlays stay hidden while it lands
    (data-arriving, set before the first paint by the head script), then fade in. The page's
    controls (the motion switch) stay. Full motion only: the head script never sets it in calm. */
@@ -455,6 +525,14 @@ html[data-arriving] .nav-assistant {
   transition: opacity 0.35s ease-out;
 }
 
+/* ── Story timeline (P27-73) ─────────────────────────────────────────────────────────
+   A thin rail down one edge of the screen that fills with peach, one small four-point
+   star per chapter (the site's sparkles). StoryTimelineRail places it (any edge or
+   corner, inline) and passes the tuned sizes as custom properties from
+   timeline/config.ts; `is-vertical` / `is-horizontal` lay out the rail, and `tip-*` opens
+   tooltips toward the inside of the screen. */
+/* Not shown (the first screen): transparent and out of the pointer's way, but its stars stay
+   focusable, so Tab reaches them from the first screen (P27-99, WCAG 2.4.1 / 2.4.3). */
 .story-timeline {
   position: fixed;
   z-index: 40; /* under the labels (z-45) and the panel (z-50) */

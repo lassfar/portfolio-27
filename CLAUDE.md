@@ -38,6 +38,7 @@ src/
 │   │   ├── loadJourney.ts      # Fetches the journey's motion code (journeyMotion.ts: HeroMotion, Smoother, JourneyParts…)
 │   │   ├── book/               # The calm book: cover, spreads, bridges, rail; dots/ (dotted shapes), drawings/
 │   │   ├── motion/             # ModeGate (journey or book), the Reduce motion switch, the live switch and its screen
+│   │   ├── loading/            # The loading screen (motion only): the planet sketched, then inked
 │   │   ├── hooks/              # useCosmicJourney: one scroll drives the whole story
 │   │   ├── story/              # The story's words, shared by the journey and the calm book
 │   │   ├── scroll/             # Glides, the chapter map, goTo()
@@ -129,6 +130,7 @@ The visitor's motion preference is `full` or `calm`: the device setting, unless 
 
 - **A tree can mount again:** anything global it sets up (listeners, module state, GSAP tweens and ticker listeners, a render target) is reset or released when it unmounts. ScrollTrigger can't be turned off and on again (GSAP 3.13 breaks on `enable()` after `disable()`): once loaded, it stays
 - **The journey's motion code loads apart** (P27-95): GSAP's scroll plugins (ScrollTrigger, ScrollSmoother, SplitText) and what uses them live behind `loadJourneyMotion` (`pages/home/loadJourney.ts`; motion visitors fetch it as the page loads), rendered with `useLoaded` (not `next/dynamic`: React holds a suspended part back ~300 ms). The calm side never imports them: `motion/boundary.test.ts` walks the page's static imports
+- **The loading screen** (P27-115): with motion only, `loading/PageLoader` covers the page from the first paint (`<html data-loading>`, set by the head script, 15 s fail-safe) while the journey loads: the planet sketched, then inked, following the real progress (`PageLoaderProgress`, `loadProgress.ts`). It lifts once the 3D is drawn, or at once if calm is chosen. The journey is hidden under it (`visibility`); the hero's intro waits for it (`pageLoaded()`); the Reduce motion switch steps away meanwhile (`loading:`)
 - **The page's controls come first:** the layout's `#page-controls` (before the page, kept above the switch's screen) holds the Reduce motion switch: the first Tab stop. Then "Skip to Contact" (P27-99), seen only while focused, away under the switch's screen
 - **The panel:** its layers portal together (`data-panel-layer`); on a phone its sheet swipes down to close (`panel/useSheetDrag`); in the book a tap on the dimmed page closes it (`data-panel-scrim`)
 - **Land on a chapter:** the journey with `scroll/land.ts` (`landJourney`, after `waitForJourney`), the book with `book/place.ts` (`landInBook`, `placeOnScreen`); a passage's place in the book is its bridge

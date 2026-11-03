@@ -18,6 +18,8 @@ type Props<T extends HTMLElement> = {
    *  enters view (instead of on mount). Use e.g. `{ trigger, start: "top 80%",
    *  toggleActions: "play none none reverse" }`. */
   scrollTrigger?: ScrollTrigger.Vars;
+  /** Write in only once this has settled too (the hero: once the loading screen has lifted). */
+  after?: Promise<unknown>;
   dependecies?: useGSAPConfig;
 };
 
@@ -27,6 +29,7 @@ const FONT_WAIT_MS = 1200;
 const useTextsWritingMotion = <T extends HTMLElement>({
   elements,
   scrollTrigger,
+  after,
   dependecies,
 }: Props<T>) => {
   useGSAP(
@@ -75,7 +78,8 @@ const useTextsWritingMotion = <T extends HTMLElement>({
         targets.map((el) => document.fonts?.load(`1em ${getComputedStyle(el).fontFamily}`)),
       );
       const timeout = new Promise((resolve) => window.setTimeout(resolve, FONT_WAIT_MS));
-      void Promise.race([fontsIn, timeout]).then(play, play);
+      const ready = Promise.race([fontsIn, timeout]);
+      void Promise.all([ready.catch(() => undefined), after?.catch(() => undefined)]).then(play);
 
       return () => {
         cancelled = true;

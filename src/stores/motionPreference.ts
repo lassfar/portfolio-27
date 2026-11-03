@@ -82,6 +82,12 @@ export function motionMode(calm: boolean): MotionChoice {
 }
 
 /**
+ * The longest the loading screen may cover the page (ms, P27-115): past it the page shows,
+ * loaded or not, even if the app's code never runs.
+ */
+export const LOADING_FAILSAFE_MS = 15_000;
+
+/**
  * Runs in <head> before the first paint: marks <html> with `data-motion` by the same
  * rules, so CSS knows the mode before any of the app loads. Plain ES5, every read guarded:
  * the device setting (no matchMedia: full motion), then a choice in the address, else the
@@ -89,6 +95,9 @@ export function motionMode(calm: boolean): MotionChoice {
  * In full motion, opened on a link to a chapter (`#craft`, P27-113), it also marks
  * `data-arriving`: the journey stays hidden until it has landed there (JourneyDeepLink), so the
  * hero doesn't flash first; its own 4 s timer shows the page if the journey's code never comes.
+ * In full motion it also marks `data-loading` (P27-115): the loading screen covers the page
+ * until the journey is drawn (useLoadProgress); its own timer (LOADING_FAILSAFE_MS) shows the
+ * page if the app's code never comes.
  */
 export const MOTION_SCRIPT =
   "(function(){var c=null,d=false,s=null;" +
@@ -98,5 +107,7 @@ export const MOTION_SCRIPT =
   `if(s===(d?${JSON.stringify(storedChoice("calm", true))}:${JSON.stringify(storedChoice("calm", false))}))c="calm";` +
   `else if(s===(d?${JSON.stringify(storedChoice("full", true))}:${JSON.stringify(storedChoice("full", false))}))c="full"}` +
   'var r=document.documentElement,m=c==="calm"||(c!=="full"&&d)?"calm":"full";r.setAttribute("data-motion",m);' +
+  'if(m==="full"){r.setAttribute("data-loading","");' +
+  `setTimeout(function(){try{r.removeAttribute("data-loading")}catch(e){}},${LOADING_FAILSAFE_MS})}` +
   'try{var h=location.hash;if(m==="full"&&h&&h.length>1&&h!=="#origin"){r.setAttribute("data-arriving","");' +
   'setTimeout(function(){try{r.removeAttribute("data-arriving")}catch(e){}},4000)}}catch(e){}})()';

@@ -17,7 +17,8 @@ import { useCalm, useMotion } from "#/stores/useMotion";
  * switch (`role="switch"`) drawn as a track of dots and a knob (MotionTrack, P27-114); its
  * tooltip names the mode on screen. On, the site is calm (short fades only, nothing moving);
  * off, full motion. It starts from the device setting and remembers the visitor's choice
- * (stores/useMotion). It steps away while a panel is open, whose controls take the corner.
+ * (stores/useMotion). It steps away while a panel is open, whose controls take the corner, and
+ * while the loading screen covers the page (P27-115: `loading:`, it fades in as it lifts).
  * Portalled first in the page (the layout's page controls, P27-95), so it's the first Tab stop;
  * only on the client, where its state lives. Shown to every visitor (P27-93): with motion on,
  * it's how the journey's motion stops (WCAG 2.2.2). The page then switches to the other mode
@@ -35,7 +36,7 @@ const MotionSwitch = () => {
       data-motion-switch
       data-mode-keep
       {...fetchJourney}
-      className="fixed top-4.5 right-4.5 z-46 transition-[opacity,visibility] duration-300 sm:top-6 sm:right-6 panel-open:invisible panel-open:opacity-0 switching:z-70"
+      className="fixed top-4.5 right-4.5 z-46 transition-[opacity,visibility] duration-300 sm:top-6 sm:right-6 panel-open:invisible panel-open:opacity-0 switching:z-70 loading:invisible loading:opacity-0"
     >
       <button
         type="button"

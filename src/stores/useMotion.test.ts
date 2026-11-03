@@ -63,6 +63,8 @@ function fakeBrowser({
     address: () => location.href.slice(origin.length),
     /** <html>'s `data-motion`. */
     mode: () => attributes.get("data-motion"),
+    /** Whether <html> is marked `data-loading` (the loading screen, P27-115). */
+    loading: () => attributes.has("data-loading"),
     /** The visitor changes the device setting. */
     change(next: boolean) {
       query.matches = next;
@@ -224,6 +226,8 @@ describe("the motion preference", () => {
           const painted = browser.mode();
           const { isCalm } = await loadStore();
           expect(painted, `${device} ${stored} ${search}`).toBe(isCalm() ? "calm" : "full");
+          // The loading screen: in full motion only (P27-115).
+          expect(browser.loading(), `loading: ${device} ${stored} ${search}`).toBe(!isCalm());
         }
       }
     }
