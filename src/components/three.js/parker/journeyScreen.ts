@@ -23,8 +23,9 @@ export const journeyScreen = {
     shown: false,
     here: 1 << i,
   })),
-  /** The line's tip while it draws: its dot's label, how close it has come to the Sun. */
-  tip: { x: 0, y: 0, shown: false, text: "" },
+  /** How close it has come to the Sun yet (millions of km), for the corner's readout: shown while
+   *  the line can be read; `record` once it's at its closest ever (ClosestYet, P27-118). */
+  readout: { shown: false, km: "", record: false },
   /** How close each marker's loops reach (millions of km, set once built): the launch
    *  (the Earth), then the loops after each flyby. */
   reach: [] as string[],
@@ -32,3 +33,6 @@ export const journeyScreen = {
 
 /** The DOM overlay's per-frame update — set by JourneyLabels, called by the line. */
 export const journeyLabels: { update: (() => void) | null } = { update: null };
+
+/** The corner readout's update — set by ClosestYet, called by the line. */
+export const journeyReadout: { update: (() => void) | null } = { update: null };

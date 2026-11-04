@@ -2,6 +2,7 @@
 
 import SceneLabelLayer from "#/components/pages/home/labels/SceneLabelLayer";
 import PinLabels from "#/components/pages/home/gallery/PinLabels";
+import ClosestYet from "#/components/pages/home/lab/ClosestYet";
 import JourneyLabels from "#/components/pages/home/lab/JourneyLabels";
 import RecordLabel from "#/components/pages/home/lab/RecordLabel";
 import PanelHost from "./PanelHost";
@@ -17,6 +18,7 @@ const SceneOverlays = () => (
     <SceneLabelLayer>
       <PinLabels />
       <JourneyLabels />
+      <ClosestYet />
       <RecordLabel />
     </SceneLabelLayer>
   </PanelHost>

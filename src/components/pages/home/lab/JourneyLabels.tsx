@@ -54,8 +54,7 @@ function setOpen(label: HTMLElement, open: boolean) {
 /**
  * The labels on Parker's journey line (P27-72): "Launch" on the Earth's orbit and
  * "Venus n" at the flybys, each appearing as the line passes it — a spot it passes
- * again names both ("Venus 1 · 2"), how close its loops reach on hover — and how close
- * its tip has come to the Sun yet, riding it. The 3D line publishes
+ * again names both ("Venus 1 · 2"), how close its loops reach on hover. The 3D line publishes
  * the markers' projected screen positions to `journeyScreen` once the camera has moved,
  * then calls our `update` in that same step (`journeyLabels`), so each label moves with
  * its dot in the very frame it's drawn — positioned imperatively (transform + opacity),
@@ -69,7 +68,6 @@ const JourneyLabels = () => {
   const refs = useRef<(HTMLButtonElement | null)[]>([]);
   const shortRefs = useRef<(HTMLSpanElement | null)[]>([]);
   const longRefs = useRef<(HTMLSpanElement | null)[]>([]);
-  const tipRef = useRef<HTMLSpanElement>(null);
   const id = useId();
 
   useEffect(() => {
@@ -79,13 +77,8 @@ const JourneyLabels = () => {
     const openBefore: boolean[] = [];
     // Each label's size, measured when its text changes (not every frame: that forces a layout).
     const sizes: ({ w: number; h: number } | undefined)[] = [];
-    // The tip's label: the same, for its text.
-    let tipShown = false;
-    let tipText = "";
-    let tipSize: { w: number; h: number } | undefined;
     const remeasure = () => {
       sizes.fill(undefined);
-      tipSize = undefined;
     };
     window.addEventListener("resize", remeasure);
     void document.fonts?.ready.then(remeasure);
@@ -130,37 +123,7 @@ const JourneyLabels = () => {
         const left = leftOf(s.x, w);
         boxes.push({ el, cx: centreOf(s.x, left, w), left, top: s.y - h - OFFSET_Y, w, h });
       });
-      const tip = journeyScreen.tip;
-      const tipEl = tipRef.current;
-      if (tipEl) {
-        if (tip.text !== tipText) {
-          // Its digits are tabular: it only needs measuring again when its length changes.
-          if (tip.text.length !== tipText.length) tipSize = undefined;
-          tipText = tip.text;
-          tipEl.textContent = tip.text;
-        }
-        if (tip.shown !== tipShown) {
-          tipShown = tip.shown;
-          showAnchored(tipEl, tip.shown);
-        }
-        if (tip.shown) {
-          const { w, h } = (tipSize ??= { w: tipEl.offsetWidth, h: tipEl.offsetHeight });
-          // Kept in place (it moves every frame): the others make way for it.
-          const left = leftOf(tip.x, w);
-          boxes.push({
-            el: tipEl,
-            cx: centreOf(tip.x, left, w),
-            left,
-            top: tip.y - h - OFFSET_Y,
-            w,
-            h,
-            pinned: true,
-          });
-        }
-      }
-
-      // 2. De-overlap: keep the tip's and then the lowest labels in place, lift any that
-      //    collide above them.
+      // 2. De-overlap: keep the lowest labels in place, lift any that collide above them.
       stackLabels(boxes, LABEL_GAP);
 
       // 3. Write.
@@ -225,12 +188,6 @@ const JourneyLabels = () => {
           </button>
         );
       })}
-      <QuietLabel
-        ref={tipRef}
-        aria-hidden="true"
-        tone="peach"
-        className={clsx("tabular-nums", ANCHORED)}
-      />
     </>
   );
 };

@@ -30,9 +30,8 @@ import { clamp01, easeOutCubic, remap01 } from "#/components/three.js/star/utils
 import { useGalaxyScroll } from "#/stores/useGalaxyScroll";
 import { useJourneyScroll } from "#/stores/useJourneyScroll";
 import { useLabScroll } from "#/stores/useLabScroll";
-import { useParkerAnchor } from "#/stores/useParkerAnchor";
 import { useSceneRotation } from "#/stores/useSceneRotation";
-import { PARKER_CAM, PARKER_JOURNEY, PARKER_VIEW } from "./config";
+import { PARKER_JOURNEY, PARKER_VIEW } from "./config";
 import {
   buildJourney,
   closestAt,
@@ -42,7 +41,7 @@ import {
   type JourneyData,
   type JourneyLine,
 } from "./journey";
-import { journeyLabels, journeyScreen } from "./journeyScreen";
+import { journeyLabels, journeyReadout, journeyScreen } from "./journeyScreen";
 import { julianNow } from "./orbit";
 
 const DATA_URL = "/data/parker-journey.json";
@@ -54,8 +53,6 @@ const LOAD_AHEAD_MP = 0.1;
 const SAME_SPOT = 0.1;
 /** A marker's label waits until the tip has moved on this far (days), out from under its own label. */
 const LABEL_AFTER_DAYS = 30;
-/** The tip's label hides once it's this close to the probe on screen (px): they've met. */
-const TIP_MEETS_PX = 28;
 
 const smoothstep = (a: number, b: number, x: number) => {
   const t = remap01(x, a, b);
@@ -64,7 +61,7 @@ const smoothstep = (a: number, b: number, x: number) => {
 
 type Built = {
   line: JourneyLine;
-  /** Its record, the closest it has ever come (millions of km): the tip's label changes there. */
+  /** Its record, the closest it has ever come (millions of km): the corner's readout says so. */
   record: string;
   geometry: BufferGeometry;
   /** The markers (launch, flybys 1–7), relative to the Sun, and their day since launch. */
@@ -100,11 +97,11 @@ function dotTexture(): CanvasTexture {
  * It lies on the planets' orbit lines (same frame, same distance compression; it moves
  * with the Sun and the scene's drag, like them). It draws itself over the whole Lab
  * trip: from the launch as you leave the Earth, in step with the dive, to the probe —
- * today — as you arrive there, a dot riding its tip with how close it has come to the
- * Sun yet (it only shrinks, loop by loop, to its record). It
+ * today — as you arrive there, a dot riding its tip, and how close it has come to the
+ * Sun yet in the corner (ClosestYet: it only shrinks, loop by loop, to its record). It
  * stays through the dive and the close-up (the flyby labels go with the planets), and
- * fades with the probe's marker in the finale. The path loads in idle time and is built
- * by the scene's build queue.
+ * fades as the finale starts pulling back from the probe. The path loads in idle time and is
+ * built by the scene's build queue.
  */
 const ParkerJourney = () => {
   const gl = useThree((s) => s.gl);
@@ -250,6 +247,7 @@ const ParkerJourney = () => {
   const now = useRef({
     on: false,
     reveal: 0,
+    pullingBack: false,
     done: false,
     day: -1,
     reached: 0,
@@ -258,7 +256,6 @@ const ParkerJourney = () => {
   const tip = useMemo(() => new Vector3(), []); // relative to the Sun
   const tipWorld = useMemo(() => new Vector3(), []);
   const scratch = useMemo(() => new Vector3(), []);
-  const probe = useMemo(() => new Vector3(), []);
   const hidden = useRef(true);
 
   // On the orbit lines' frame: centred on the (flying) Sun, turned with the scene's drag.
@@ -275,12 +272,13 @@ const ParkerJourney = () => {
     const f = now.current;
     const lab = clamp01(useLabScroll.getState().progress);
     const galaxy = clamp01(useGalaxyScroll.getState().progress);
-    // From leaving the Earth until the probe's marker has shrunk away in the finale.
-    f.on = lab > 0 && galaxy < PARKER_CAM.markerOut[1];
-    // In with the solar system as you leave the Earth, out with the probe's marker.
+    // From leaving the Earth until it has faded, as the finale pulls back from the probe.
+    f.on = lab > 0 && galaxy < PARKER_JOURNEY.fadeOut[1];
+    f.pullingBack = galaxy > PARKER_JOURNEY.fadeOut[0];
+    // In with the solar system as you leave the Earth, out as the camera leaves the probe.
     f.reveal = f.on
       ? easeOutCubic(remap01(lab, SOLAR.labReturn[0], SOLAR.labReturn[1])) *
-        (1 - smoothstep(PARKER_CAM.markerOut[0], PARKER_CAM.markerOut[1], galaxy))
+        (1 - smoothstep(PARKER_JOURNEY.fadeOut[0], PARKER_JOURNEY.fadeOut[1], galaxy))
       : 0;
     const b = built.current;
     const visible = !!b && f.reveal > 0.001;
@@ -322,8 +320,9 @@ const ParkerJourney = () => {
     const km = millionKmFromSun(closestAt(b.line, day));
     if (km !== f.km) {
       f.km = km;
-      const text = km === b.record ? PARKER_JOURNEY.record : PARKER_JOURNEY.closer;
-      journeyScreen.tip.text = text.replace("{km}", km);
+      journeyScreen.readout.km = km;
+      journeyScreen.readout.record = km === b.record;
+      journeyReadout.update?.();
     }
 
     const lineMaterial = line.material as LineBasicMaterial;
@@ -350,24 +349,18 @@ const ParkerJourney = () => {
       if (!hidden.current) {
         hidden.current = true;
         journeyScreen.markers.forEach((m) => (m.shown = false));
-        journeyScreen.tip.shown = false;
+        journeyScreen.readout.shown = false;
         journeyLabels.update?.();
+        journeyReadout.update?.();
       }
       return;
     }
     hidden.current = false;
 
-    // The tip's label, riding it — until it meets the probe.
-    const tipScreen = journeyScreen.tip;
-    tipScreen.shown = false;
-    if (!f.done) {
-      const ahead = projectPointToViewport(tipWorld, camera, gl.domElement, scratch);
-      tipScreen.x = scratch.x;
-      tipScreen.y = scratch.y;
-      const a = useParkerAnchor.getState();
-      projectPointToViewport(probe.set(a.x, a.y, a.z), camera, gl.domElement, probe);
-      tipScreen.shown =
-        ahead && Math.hypot(scratch.x - probe.x, scratch.y - probe.y) > TIP_MEETS_PX;
+    // The corner's readout, until the camera starts pulling back from the probe.
+    if (journeyScreen.readout.shown === f.pullingBack) {
+      journeyScreen.readout.shown = !f.pullingBack;
+      journeyReadout.update?.();
     }
 
     // The launch and flyby labels, with the planets (in the Lab, until the zoom focuses

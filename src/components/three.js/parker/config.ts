@@ -158,8 +158,14 @@ export const PARKER_JOURNEY = {
   opacity: 0.55,
   dotPx: 5, // the markers' size (CSS px)
   labels: true,
-  // The tip's label ({km}: millions of km from the Sun's surface): the closest it has
-  // come yet, and once it reaches its record (6.1, since Dec 2024)…
-  closer: "closest yet · {km} million km",
-  record: "{km} million km — closer than anything we've ever built",
+  // The finale's pull back from the probe (galaxy progress): the line and its markers fade out
+  // over this, and the corner's readout from its start (P27-118).
+  fadeOut: [0, 0.12] as [number, number],
+  // The corner's readout (ClosestYet, P27-118): millions of km from the Sun's surface, the
+  // closest it has come yet, and what it says once at its record (6.1, since Dec 2024).
+  readout: {
+    label: "closest yet",
+    unit: "million km",
+    record: "closer than anything we've ever built",
+  },
 };
