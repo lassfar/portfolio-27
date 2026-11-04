@@ -162,10 +162,12 @@ export const PARKER_JOURNEY = {
   // over this, and the corner's readout from its start (P27-118).
   fadeOut: [0, 0.12] as [number, number],
   // The corner's readout (ClosestYet, P27-118): millions of km from the Sun's surface, the
-  // closest it has come yet, and what it says once at its record (6.1, since Dec 2024).
+  // closest it has come yet, and what it says once at its record (6.1, since Dec 2024). `steps`:
+  // each new record its loops set, a dot each (journey.test.ts checks them against the data).
   readout: {
     label: "closest yet",
     unit: "million km",
     record: "closer than anything we've ever built",
+    steps: ["24.1", "18.6", "13.4", "10.4", "8.5", "7.2", "6.1"],
   },
 };

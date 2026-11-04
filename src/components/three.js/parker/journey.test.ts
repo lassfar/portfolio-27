@@ -13,6 +13,7 @@ import {
   type JourneyData,
   type JourneyLine,
 } from "./journey";
+import { PARKER_JOURNEY } from "./config";
 import { PARKER_ORBIT, parkerOffset } from "./orbit";
 
 const data: JourneyData = JSON.parse(
@@ -108,5 +109,16 @@ describe("Parker's journey line", () => {
     expect(millionKmFromSun(closestAt(line, data.perihelia[0].day))).toBe("24.1");
     expect(millionKmFromSun(closestAt(line, line.today))).toBe("6.1");
     expect(data.perihelia).toHaveLength(29);
+  });
+
+  it("has the corner's dots on each new record of the loops", () => {
+    let closest = Infinity;
+    const records: string[] = [];
+    for (const { au } of data.perihelia) {
+      const km = millionKmFromSun(au);
+      if (au < closest && km !== records.at(-1)) records.push(km);
+      closest = Math.min(closest, au);
+    }
+    expect(PARKER_JOURNEY.readout.steps).toEqual(records);
   });
 });

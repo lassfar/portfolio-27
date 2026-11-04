@@ -15,7 +15,7 @@ const Published = ({ km, record }: { km: string; record: boolean }) => {
   return <ClosestYet />;
 };
 
-/** How close Parker has come to the Sun yet, in the corner: a digit on each drum. Change `km` (Controls) to see them roll. */
+/** How close Parker has come to the Sun yet, in the corner: a big number and a dot per record. Change `km` (Controls) to see the digits roll and the dots light. */
 const meta = {
   title: "Home/ClosestYet",
   component: Published,
@@ -32,30 +32,36 @@ export default meta;
 
 type Story = StoryObj<typeof meta>;
 
-const drums = (root: HTMLElement) => [...root.querySelectorAll<HTMLElement>(".closest-yet__drum")];
+const digits = (root: HTMLElement) => [
+  ...root.querySelectorAll<HTMLElement>(".closest-yet__digit"),
+];
+const litDots = (root: HTMLElement) =>
+  root.querySelectorAll('.closest-yet__dot[data-lit="true"]').length;
 
-/** On its way: the digits on their drums, the leading drum away; its words for screen readers once it holds. */
+/** On its way: the leading digit away, one dot lit; its words for screen readers once it holds. */
 export const Default: Story = {
   play: async ({ canvas, canvasElement }) => {
     const root = canvasElement.ownerDocument.body;
     await waitFor(() => expect(canvas.getByText(PARKER_JOURNEY.readout.unit)).toBeVisible());
-    const [hundreds, tens, ones, tenths] = drums(root);
+    const [hundreds, tens, ones, tenths] = digits(root);
     await expect(hundreds).not.toBeVisible();
     await expect(tens.dataset.digit).toBe("2");
     await expect(ones.dataset.digit).toBe("4");
     await expect(tenths.dataset.digit).toBe("1");
+    await expect(litDots(root)).toBe(1);
     await waitFor(() => expect(canvas.getByRole("status")).toHaveTextContent("24.1 million km"), {
       timeout: 2000,
     });
   },
 };
 
-/** At its record: the digits in peach, with its line. */
+/** At its record: every dot lit, with its line. */
 export const Record: Story = {
   args: { km: "6.1", record: true },
   play: async ({ canvas, canvasElement }) => {
     const line = canvas.getByText(PARKER_JOURNEY.readout.record);
     const root = canvasElement.ownerDocument.querySelector<HTMLElement>("[data-closest-yet]")!;
+    await expect(litDots(root)).toBe(PARKER_JOURNEY.readout.steps.length);
     // Settled, for the accessibility check to measure its colours, not a fade.
     await waitFor(() => {
       expect(getComputedStyle(root).opacity).toBe("1");
