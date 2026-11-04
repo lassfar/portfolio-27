@@ -146,6 +146,9 @@ export const BOOK = {
   },
 } as const;
 
+/** The site's logo, a link back to the top (P27-119): the name it reads as. */
+export const LOGO_ALT = "Aymane Lassfar, back to the top";
+
 /**
  * The loading screen (P27-115): a line in Aymane's voice under the planet he sketches, a hint at
  * how the journey works, and a camera's settings in the viewfinder's corner (his photography);

@@ -20,7 +20,6 @@ gsap.registerPlugin(useGSAP, ScrollTrigger, SplitText);
  */
 const HeroMotion = ({
   containerRef,
-  logoRef,
   eyebrowRef,
   headlineRef,
   subRef,
@@ -51,16 +50,10 @@ const HeroMotion = ({
     ],
   });
 
-  // Logo, eyebrow, sub-line and button fade up around the headline.
+  // Eyebrow, sub-line and button fade up around the headline.
   useGSAP(() => {
     const tl = gsap.timeline({ paused: true });
-    tl.from(logoRef.current, {
-      opacity: 0,
-      y: -10,
-      duration: 0.8,
-      ease: "power2.out",
-    })
-      .from(eyebrowRef.current, { opacity: 0, y: 14, duration: 0.6, ease: "power2.out" }, 0.2)
+    tl.from(eyebrowRef.current, { opacity: 0, y: 14, duration: 0.6, ease: "power2.out" }, 0.2)
       .from(subRef.current, { opacity: 0, y: 18, duration: 0.9, ease: "power2.out" }, 1.0)
       .from(ctaRef.current, { opacity: 0, y: 14, duration: 0.7, ease: "power2.out" }, 1.4);
 
@@ -96,7 +89,6 @@ const HeroMotion = ({
   useCosmicJourney({
     containerRef,
     contentRef,
-    logoRef,
     aboutRevealRef,
     aboutTitleRef,
     aboutPara1Ref,

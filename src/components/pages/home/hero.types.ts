@@ -3,7 +3,6 @@ import type { RefObject } from "react";
 /** The Hero's elements its motion drives (HeroMotion). */
 export type HeroRefs = {
   containerRef: RefObject<HTMLDivElement | null>;
-  logoRef: RefObject<HTMLDivElement | null>;
   eyebrowRef: RefObject<HTMLParagraphElement | null>;
   headlineRef: RefObject<HTMLHeadingElement | null>;
   subRef: RefObject<HTMLParagraphElement | null>;

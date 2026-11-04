@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import { PAGE_CONTROLS_ID } from "#/components/pages/home/motion/pageControls";
+import PageLogo from "#/components/pages/home/motion/PageLogo";
 import { MOTION_SCRIPT } from "#/stores/motionPreference";
 import "#/styles/globals.css";
 import { greatVibes, hankenGrotesk, kronaOne } from "./fonts";
@@ -54,11 +55,11 @@ export default function RootLayout({
       {/* The page's black on the body: the journey's smooth scroll fixes its content, so the
           page itself has no height to paint (P27-93). */}
       <body suppressHydrationWarning className="dark bg-rich-black antialiased">
-        {/* The page's own controls, first in the Tab order: the Reduce motion switch (P27-95),
-            then "Skip to Contact" (P27-99). A header: the page's banner landmark (P27-101). */}
-        <header id={PAGE_CONTROLS_ID} data-mode-keep>
-          {/* Its name for screen readers: without JS (the book), it holds nothing else. */}
-          <span className="sr-only">Aymane Lassfar</span>
+        {/* The page's banner landmark (P27-101): its own controls, first in the Tab order (the
+            Reduce motion switch, P27-95, then "Skip to Contact", P27-99), then the logo. */}
+        <header data-mode-keep>
+          <div id={PAGE_CONTROLS_ID} />
+          <PageLogo />
         </header>
         {children}
       </body>

@@ -37,7 +37,6 @@ const SWASH_OVERLAP = 0.3;
 export type CosmicJourneyRefs = {
   containerRef: RefObject<HTMLDivElement | null>;
   contentRef: RefObject<HTMLDivElement | null>;
-  logoRef: RefObject<HTMLDivElement | null>;
   aboutRevealRef: RefObject<HTMLDivElement | null>;
   aboutTitleRef: RefObject<HTMLHeadingElement | null>;
   aboutPara1Ref: RefObject<HTMLParagraphElement | null>;
@@ -68,7 +67,6 @@ export default function useCosmicJourney(refs: CosmicJourneyRefs): void {
   const {
     containerRef,
     contentRef,
-    logoRef,
     aboutRevealRef,
     aboutTitleRef,
     aboutPara1Ref,
@@ -299,7 +297,6 @@ export default function useCosmicJourney(refs: CosmicJourneyRefs): void {
         { yPercent: -60, autoAlpha: 0, ease: "power1.in", duration: contentExit },
         0,
       )
-        .to(logoRef.current, { autoAlpha: 0, ease: "power1.in", duration: contentExit }, 0)
         // Spacer so the pin (and the scrubbed progress) spans the whole pin.
         .to({}, { duration: 1 - contentExit });
 

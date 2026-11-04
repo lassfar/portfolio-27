@@ -2,7 +2,6 @@
 
 import { useRef } from "react";
 import dynamic from "next/dynamic";
-import SunriseLogo from "#/components/assets/pictures/logos/sunrise-logo";
 import Button from "#/components/UI/buttons/Button";
 import Skills from "#/components/pages/home/skills/Skills";
 import Contact from "#/components/pages/home/contact/Contact";
@@ -36,7 +35,6 @@ const Hero = () => {
   // journey's motion code (P27-95), fetched apart so the calm mode never loads it.
   const journey = useLoaded(loadJourneyMotion, live);
   const containerRef = useRef<HTMLDivElement | null>(null);
-  const logoRef = useRef<HTMLDivElement | null>(null);
   const eyebrowRef = useRef<HTMLParagraphElement | null>(null);
   const headlineRef = useRef<HTMLHeadingElement | null>(null);
   const subRef = useRef<HTMLParagraphElement | null>(null);
@@ -69,15 +67,6 @@ const Hero = () => {
           Blurred + dimmed at the end of the journey for the About reveal. */}
         <div className="home-hero__canvas absolute inset-0 z-0" aria-hidden="true">
           {live && <CosmicScene />}
-        </div>
-
-        {/* Logo, top-left */}
-        <div
-          className="pointer-events-auto absolute top-6 left-6 z-10"
-          ref={logoRef}
-          aria-hidden="true"
-        >
-          <SunriseLogo width={56} height={48} className="h-auto w-10 sm:w-12" />
         </div>
 
         {/* Content overlay — pointer-events-none so drags reach the space;
@@ -237,7 +226,6 @@ const Hero = () => {
       {live && journey && (
         <journey.HeroMotion
           containerRef={containerRef}
-          logoRef={logoRef}
           eyebrowRef={eyebrowRef}
           headlineRef={headlineRef}
           subRef={subRef}
